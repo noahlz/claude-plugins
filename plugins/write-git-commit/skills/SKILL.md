@@ -25,30 +25,40 @@ description: Create git commit with Claude Code cost metrics embedded in footer.
 
 → Ask user for commit subject (brief description)
 → Optionally ask for body (longer explanation)
-→ Build HEREDOC structure:
+→ Build formatted message:
 
-```bash
-git commit -m "$(cat <<'EOF'
+```
 <subject-line>
 
 Co-Authored-By: 🤖 Claude Code <noreply@anthropic.com>
 ---
 {"sessionId":"<id>","cost":[{"model":"<model>","tokens":<n>,"cost":<n.nn>}],"date":"YYYY-MM-DD"}
-EOF
-)"
 ```
 
 ✓ Message formatted
 
-## 5. Create Commit
+## 5. Confirm Commit
 
-→ Execute the git commit command
+→ Display formatted commit message preview
+→ Use AskUserQuestion with options:
+  - Question: "Create commit with this message?"
+  - "Yes" (recommended) → Proceed to step 6
+  - "No, let me edit" → Return to step 4
+  - "Other" → Follow custom instruction
+
+✓ User chose "Yes" → Proceed to step 6
+✗ User chose "No, let me edit" → Return to step 4
+→ User chose "Other" → Follow their custom instruction
+
+## 6. Create Commit
+
+→ Build HEREDOC structure and execute git commit command
 ✓ Commit created (exit 0)
 ✗ Commit failed (exit non-zero)
   → Check `git status` and staging
   → Return to step 4
 
-## 6. Append to Metrics File
+## 7. Append to Metrics File
 
 → Create metrics directory if needed: `mkdir -p "$(dirname "$METRICS_FILE")"`
 → Get commit SHA: `SHA=$(git rev-parse HEAD)`
@@ -57,16 +67,16 @@ EOF
 → Append to metrics file (create if not exists)
 ✓ Metrics appended in compact format
 
-## 7. Check .gitignore
+## 8. Check .gitignore
 
 → Check if metrics file path is in `.gitignore`
-✓ Already ignored → proceed to step 8
+✓ Already ignored → proceed to step 9
 ✗ Not ignored → ask user: "Add `.claude/cost-metrics.json` to .gitignore?"
   → User confirms → add line to `.gitignore`
   → User declines → continue anyway
 ✓ .gitignore updated or skipped
 
-## 8. Verify
+## 9. Verify
 
 → Run `git log -1 --format='%B'`
 ✓ Cost metrics present in commit footer

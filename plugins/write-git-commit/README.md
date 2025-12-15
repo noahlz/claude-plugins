@@ -25,8 +25,11 @@ The skill will:
 1. Run cost delta script to calculate incremental spend
 2. Extract session ID from cost snapshot
 3. Ask you for commit subject (and optional body)
-4. Create commit with cost metrics in footer
-5. Verify commit was created successfully
+4. **Show commit message preview and ask for confirmation** before creating commit
+   - You can approve the message and proceed
+   - Or go back to edit the subject/body
+5. Create commit with cost metrics in footer
+6. Verify commit was created successfully
 
 ### Commit Format
 
