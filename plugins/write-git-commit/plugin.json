@@ -1,0 +1,8 @@
+{
+  "name": "write-git-commit",
+  "description": "Create git commits with Claude Code cost metrics embedded in commit footers",
+  "version": "1.0.0",
+  "author": "Noah Zucker",
+  "commands": ["./commands"],
+  "skills": ["./skills"]
+}
