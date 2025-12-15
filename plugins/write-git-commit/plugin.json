@@ -4,5 +4,6 @@
   "version": "0.0.1",
   "author": "Noah Zucker",
   "commands": ["./commands"],
-  "skills": ["./skills"]
+  "skills": ["./skills"],
+  "files": ["./commit-config.json", "./scripts"]
 }

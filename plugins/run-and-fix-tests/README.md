@@ -1,19 +1,41 @@
 # Run and Fix Tests Plugin
 
-Build project and run tests with clean output. Automatically fix any failures.
+Build project and run tests with clean output. Optionally fix any failures.
 
 ## Features
 
-- Silent build and test execution (logs only, no console spam)
-- Automatic error extraction and display
-- Configurable build and test commands
-- Support for custom project configurations
+- Silent build/test execution (output redirected to logs only)
+- Automatic error extraction and display (first N errors)
+- Ask user before fixing: "Do you want me to fix these errors?"
+- Configurable build and test commands per project
+- Deep merge of default + project-specific configs
+- Supports npm, yarn, and other build tools
 
-## Configuration
+## Usage
 
-### Default Configuration
+Trigger the skill: `/test` or say "run tests", "test", "build and test", "fix tests", or "make test".
 
-Default configuration in `build-config.json` supports npm + vite + jest projects:
+### Prerequisites
+
+- Project has `npm run build` and `npm test` (or configured alternatives)
+- Node.js available (for config loading)
+
+### Workflow
+
+1. Loads configuration (default + project override if present)
+2. Builds project silently, displays errors if build fails
+3. Runs all tests silently, displays errors if tests fail
+4. **Asks user**: "Do you want me to fix these errors?"
+   - **Yes** → Analyzes failures and fixes code, re-runs tests iteratively
+   - **No, I'll fix manually** → Stops, user fixes code
+   - **Other** → User provides custom instruction
+5. Repeats until all tests pass
+
+### Configuration
+
+#### Default
+
+Default config in `build-config.json` supports npm + vite + jest:
 
 ```json
 {
@@ -28,18 +50,23 @@ Default configuration in `build-config.json` supports npm + vite + jest projects
       "command": "npm test",
       "logFile": "{logDir}/test.log",
       "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+    },
+    "single": {
+      "command": "npm test -- {testFile}",
+      "logFile": "{logDir}/test-single.log",
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
     }
   }
 }
 ```
 
-### Project Override
+#### Project Override
 
-Create `.claude/build-config.json` in your project to override defaults:
+Create `.claude/build-config.json` in your project to customize:
 
 ```json
 {
-  "logDir": "build-logs",
+  "logDir": "build-output",
   "build": {
     "command": "yarn build"
   },
@@ -51,6 +78,8 @@ Create `.claude/build-config.json` in your project to override defaults:
 }
 ```
 
+Project config deep-merges with defaults (project values override).
+
 ## Author
 
-Noah Zucker
+[@noahlz](https://github.com/noahlz)

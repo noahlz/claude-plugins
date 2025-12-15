@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+.logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Claude Code
+.claude/settings.local.json
+
+# Cost metrics (sensitive - do not commit)
+.claude/cost-metrics.json

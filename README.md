@@ -22,6 +22,10 @@ Add the marketplace to your Claude Code settings:
 claude plugin marketplace add /path/to/claude-plugins
 ```
 
+## Author
+
+[@noahlz](https://github.com/noahlz)
+
 ## License
 
-MIT
+[MIT License (MIT)](./LICENSE)
