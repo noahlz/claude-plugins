@@ -5,84 +5,85 @@ description: Create git commit with Claude Code cost metrics embedded in footer.
 
 ## 1. Load Configuration
 
-→ Run: `source ${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh`
-→ Use `$METRICS_FILE` in subsequent steps (set by script to `.claude/cost-metrics.json` by default)
-✓ Configuration loaded
+→ Source: `${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh`
+✓ Configuration loaded → `$METRICS_FILE` available
 
 ## 2. Calculate Cost Delta
 
-→ Run `./scripts/claude-cost-delta.sh`
-→ Capture JSON output: `{"date":"YYYY-MM-DD","delta":{"cost":[[...]]}}`
-✓ Delta calculated
+→ Run: `COST_DELTA=$(${CLAUDE_PLUGIN_ROOT}/scripts/claude-cost-delta.sh "$METRICS_FILE")`
+✓ Script outputs JSON cost array: `[{"model":"...","tokens":N,"cost":N.NN}]`
+✗ Script fails → Display error and stop
 
-## 3. Extract Session ID
+## 3. Get Session ID and Date
 
-→ Read `.claude-cost-snapshot.json`
-→ Extract `sessionId` field value
-✓ Session ID obtained
+→ Extract session ID from current `ccusage` data: `ccusage session --json | jq -r '.sessions[0].sessionId'`
+→ Get current date/time in ISO 8601 format: `date -u +%Y-%m-%dT%H:%M:%SZ`
 
-## 4. Format Commit Message
+## 4. Get Commit Message
 
-→ Ask user for commit subject (brief description)
+→ Ask user for commit subject (brief, imperative)
 → Optionally ask for body (longer explanation)
-→ Build formatted message:
 
+## 5. Build Commit Message with Cost Footer
+
+→ Build single-line JSON cost footer:
+  `{"sessionId":"<id>","cost":<cost-array>,"date":"<ISO-8601-date>"}`
+  - Date format: YYYY-MM-DDTHH:MM:SSZ (ISO 8601)
+
+→ Format full commit message:
 ```
-<subject-line>
+<subject>
+
+<body (optional)>
 
 Co-Authored-By: 🤖 Claude Code <noreply@anthropic.com>
 ---
-{"sessionId":"<id>","cost":[{"model":"<model>","tokens":<n>,"cost":<n.nn>}],"date":"YYYY-MM-DD"}
+<cost-json-footer>
 ```
 
-✓ Message formatted
+## 6. Show Preview
 
-## 5. Confirm Commit
+→ Display formatted commit message to user
 
-→ Display formatted commit message preview
-→ Use AskUserQuestion with options:
-  - Question: "Create commit with this message?"
-  - "Yes" (recommended) → Proceed to step 6
-  - "No, let me edit" → Return to step 4
-  - "Other" → Follow custom instruction
+→ Use AskUserQuestion:
+  - "Proceed with this commit?" (recommended)
+  - "No, let me edit the message"
+  - "Other"
 
-✓ User chose "Yes" → Proceed to step 6
-✗ User chose "No, let me edit" → Return to step 4
-→ User chose "Other" → Follow their custom instruction
+✓ "Proceed" → Proceed to step 7
+✗ "No, let me edit" → Return to step 4
 
-## 6. Create Commit
+## 7. Create Commit
 
-→ Build HEREDOC structure and execute git commit command
-✓ Commit created (exit 0)
-✗ Commit failed (exit non-zero)
-  → Check `git status` and staging
-  → Return to step 4
+→ Execute: `git commit -m "..."`
+✓ Exit 0 → Commit created, proceed to step 8
+✗ Exit non-zero → Display error, return to step 4
 
-## 7. Append to Metrics File
+## 8. Append to Metrics File
 
-→ Create metrics directory if needed: `mkdir -p "$(dirname "$METRICS_FILE")"`
-→ Get commit SHA: `SHA=$(git rev-parse HEAD)`
-→ Create compact metrics object (single-line JSON):
-  `{"commit":"<sha>","subject":"<subject>","cost":[...],"date":"YYYY-MM-DD"}`
-→ Append to metrics file (create if not exists)
-✓ Metrics appended in compact format
+→ Get commit SHA: `COMMIT_SHA=$(git rev-parse HEAD)`
+→ Run: `${CLAUDE_PLUGIN_ROOT}/scripts/append-cost-metrics.sh "$METRICS_FILE" "$COMMIT_SHA" "<subject>" "$COST_DELTA"`
+✓ Script appends entry to metrics file
+✗ Script fails → Display error but continue (commit was created)
 
-## 8. Check .gitignore
+## 9. Update .gitignore (Optional)
 
-→ Check if metrics file path is in `.gitignore`
-✓ Already ignored → proceed to step 9
-✗ Not ignored → ask user: "Add `.claude/cost-metrics.json` to .gitignore?"
-  → User confirms → add line to `.gitignore`
-  → User declines → continue anyway
-✓ .gitignore updated or skipped
+→ Check if metrics file is in `.gitignore`
+✓ Already ignored → Proceed to step 10
+✗ Not ignored → Ask user: "Add metrics file to .gitignore?"
+  - "Yes" → Add to .gitignore
+  - "No" → Continue
 
-## 9. Verify
+## 10. Success
 
-→ Run `git log -1 --format='%B'`
-✓ Cost metrics present in commit footer
-✓ Metrics appended to `.claude/cost-metrics.json`
-✓ `.claude-cost-snapshot.json` updated with new totals
+✅ Commit created with cost metrics in footer
+✅ Metrics entry appended to historical file
+→ Display commit SHA
+→ Display metrics file location
 ✓ Done
 
 🔧 Configuration: `.claude/commit-config.json` (optional, set `metricsFile` path)
-📁 Metrics file: `.claude/cost-metrics.json` (default, appended to)
+📁 Metrics file: `.claude/cost-metrics.json` (NDJSON, one entry per line)
+📁 Scripts used:
+  - `claude-cost-delta.sh` - Calculates cost delta from ccusage
+  - `append-cost-metrics.sh` - Appends entry to metrics file

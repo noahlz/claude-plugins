@@ -3,194 +3,149 @@ name: run-and-fix-tests
 description: Build project and run tests with clean output, fix any failures. Activate when user says "run tests", "test", "build and test", "fix tests", or "make test".
 ---
 
-## 0. Discover and Propose Build Configuration
+## 0. Detect Build Configuration
 
-→ Check if build config exists in `.claude/build-config.json`
+→ Check if `.claude/build-config.json` exists and is not empty
+✓ Config exists → Proceed to step 1
+✗ Config missing/empty → Run detection script:
 
-✓ Config exists AND file is not empty → Proceed to step 1
+→ Source: `${CLAUDE_PLUGIN_ROOT}/scripts/detect-and-resolve.sh`
+  - Scans project for build tool config files (package.json, pom.xml, build.gradle, etc.)
+  - Loads merged config (default + project override)
+  - Returns: `$DETECTED_TOOLS` (JSON array), `$BUILD_CONFIG` (merged config)
 
-✗ Config missing OR file is empty → Discover build strategy:
+→ Check number of detected tools:
+  - Exactly 1 tool → Propose single build configuration
+  - Multiple tools → Proceed to step 0a
+  - 0 tools → Error: no build tools detected
 
-→ Inspect project to detect build tools:
-  - Read `CLAUDE.md` if present (extract build instructions)
-  - Check project root for config files: scan for files listed in `.tools.<toolname>.configFile` from merged config
-  - For each found config file, identify the tool name and extract working directory (where config file is located)
+## 0a. Resolve Ambiguity (if multiple tools at same location)
 
-→ Look up tool defaults from merged config (`.tools.<toolname>` in default + project config)
+→ Check if all detected tools are in same directory (e.g., all in project root)
+✓ All in different directories → Proceed to multi-build proposal
+✗ Multiple tools in same directory → Ask user to choose:
 
-→ Determine if single or multi-build:
-  - Single tool found → Create config with that tool's defaults, add to `.claude/build-config.json`
-  - Multiple tools found → Create multi-build config as array, add to `.claude/build-config.json`
+→ Use AskUserQuestion:
+  - Question: "Multiple build tools detected in [location]. Which should I use?"
+  - Options: List detected tools as choices
+  - Recommended: First detected tool
 
-→ Use AskUserQuestion to confirm before saving:
-  - Display proposed config JSON
-  - Options:
-    * "Yes, save this config" (recommended) → Save and proceed to step 1
-    * "No, I'll configure manually" → Stop, user creates `.claude/build-config.json`
-    * "Other" → Custom instruction
+✓ User selects tool → Create single-build config with selected tool, proceed to step 1
+✗ User chooses "Other/Configure manually" → Stop
 
-✓ Build configuration determined and saved → Proceed to step 1
+## 0b. Propose Configuration
+
+→ Display detected tools and their locations:
+  - Single tool: "Detected [tool] at [location]"
+  - Multiple tools: "Detected [tool1] at [location1], [tool2] at [location2], etc."
+
+→ Use AskUserQuestion to confirm:
+  - "Proceed with these build tools?" (recommended)
+  - "No, I'll configure manually"
+  - "Other"
+
+✓ User confirms → Save config to `.claude/build-config.json` and proceed to step 1
+✗ User declines → Stop, user creates `.claude/build-config.json` manually
 
 ## 1. Load Configuration
 
-→ Run: `source ${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh`
+→ Source: `${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh`
 ✗ Script fails → Display error and stop
-✓ Configuration loaded and merged
-→ Check command arguments: `TEST_FILE="$1"`
+✓ Script succeeds → Environment variables set:
+  - BUILD_CMD, BUILD_LOG, BUILD_ERROR_PATTERN, BUILD_WORKING_DIR
+  - TEST_CMD, TEST_LOG, TEST_ERROR_PATTERN
+  - TEST_SINGLE_CMD, TEST_SINGLE_LOG, TEST_SINGLE_ERROR_PATTERN
+  - LOG_DIR (tool-specific, e.g., dist/, build/, target/)
+  - BUILD_MULTI (true if multi-build, false if single)
+
+→ Check command argument: `TEST_FILE="$1"`
 → Determine mode:
-  - If `$TEST_FILE` is set → Single test mode
-  - If `$TEST_FILE` is empty → All tests mode
-→ Use in subsequent steps:
-  - `$BUILD_CMD` - Build command (default: `npm run build`)
-  - `$BUILD_LOG` - Build log file (default: `dist/build.log`)
-  - `$BUILD_ERROR_PATTERN` - Build error regex (default: `(error|Error|✘)`)
-  - `$TEST_CMD` - All tests command (default: `npm test`)
-  - `$TEST_LOG` - All tests log file (default: `dist/test.log`)
-  - `$TEST_ERROR_PATTERN` - Test error regex (default: `(FAIL|●|Error:|Expected|Received)`)
-  - `$TEST_SINGLE_CMD` - Single test command template (default: `npm test -- {testFile}`)
-  - `$TEST_SINGLE_LOG` - Single test log file (default: `dist/test-single.log`)
-  - `$TEST_SINGLE_ERROR_PATTERN` - Single test error regex (default: same as all tests)
-  - `$LOG_DIR` - Log directory (default: `dist`)
-  - `$TEST_FILE` - Test file argument from command (from `$1`)
+  - `$TEST_FILE` not empty → Single test mode
+  - `$TEST_FILE` empty → All tests mode
+
+→ Store initial working directory: `INITIAL_PWD=$(pwd)`
 
 ## 2. Build Project
 
 → Create log directory: `mkdir -p "$LOG_DIR"`
 → Check build type: `$BUILD_MULTI`
 
-**Single Build Mode** (`BUILD_MULTI=false`):
-→ Resolve placeholders in command: `RESOLVED_BUILD_CMD=$(echo "$BUILD_CMD" | sed "s|{logFile}|${BUILD_LOG}|g")`
-→ Change to working directory if specified: `cd "$BUILD_WORKING_DIR"`
-→ Determine logging approach:
-  - If original `$BUILD_CMD` contains `{logFile}` → Execute: `$RESOLVED_BUILD_CMD`
-  - Else → Execute with redirection: `$RESOLVED_BUILD_CMD > "$BUILD_LOG" 2>&1`
-→ Return to project root: `cd -`
-→ Check exit code
+**Single Build:**
+→ Change to build working directory: `cd "$BUILD_WORKING_DIR"`
+→ Execute build command (using BUILD_CMD, BUILD_LOG, BUILD_ERROR_PATTERN)
+✓ Exit 0 → Return to INITIAL_PWD, proceed to step 3
+✗ Exit non-zero → Extract errors from log
+  → Return to INITIAL_PWD
+  → Ask user: "Build failed. Should I fix it?"
+    - "Yes" → Analyze and fix issues, return to step 2
+    - "No" → Stop
 
-**Multi Build Mode** (`BUILD_MULTI=true`):
-→ Display: "🔨 Building $BUILD_COUNT modules..."
-→ For each build in `$BUILD_CONFIGS`:
-  - Extract: `TOOL=$(echo "$build" | jq -r '.tool')`
-  - Extract: `COMMAND=$(echo "$build" | jq -r '.command')`
-  - Extract: `WORKING_DIR=$(echo "$build" | jq -r '.workingDir // "."')`
-  - Extract: `LOG_FILE=$(echo "$build" | jq -r '.logFile' | sed "s|{logDir}|${LOG_DIR}|g")`
-  - Extract: `ERROR_PATTERN=$(echo "$build" | jq -r '.errorPattern')`
-  - Display: "Building with $TOOL (in $WORKING_DIR)"
-  - Change directory: `cd "$WORKING_DIR"`
-  - Resolve placeholders: `RESOLVED_CMD=$(echo "$COMMAND" | sed "s|{logFile}|${LOG_FILE}|g")`
-  - Determine logging approach:
-    * If original command contains `{logFile}` → Execute: `$RESOLVED_CMD`
-    * Else → Execute with redirection: `$RESOLVED_CMD > "$LOG_FILE" 2>&1`
-  - Return to project root: `cd -`
-  - Check exit code:
-    * ✓ Build succeeded (exit 0) → Continue to next build
-    * ✗ Build failed (exit non-zero) → Stop all builds, proceed to error handling
+**Multi-Build:**
+→ For each build in detected tools:
+  → Change to build working directory
+  → Execute build command
+  → On failure: extract errors, return to INITIAL_PWD, ask user to fix
+  → On success: continue to next build
 
-✓ All builds succeeded (exit 0)
-  → Proceed to step 3
-
-✗ Any build failed (exit non-zero)
-  → Extract errors from failed build's log file
-  → Display: "❌ Build failed ($TOOL in $WORKING_DIR):" + errors
-  → Display: "📁 Full log: $LOG_FILE"
-  → Ask user via AskUserQuestion: "Build failed using $TOOL in '$WORKING_DIR'. Should I analyze and fix the build issues?"
-    - "Yes" (recommended) → Analyze and fix, return to step 2
-    - "No, I'll fix manually" → Stop, user will fix
-    - "Other" → Follow custom instruction
+✓ All builds succeed → Return to INITIAL_PWD, proceed to step 3
+✗ Any build fails → Return to INITIAL_PWD, ask user: "Build failed in [tool]. Should I fix it?"
+  - "Yes" → Analyze and fix, return to step 2
+  - "No" → Stop
 
 ## 3. Run Tests
 
 → Determine test command based on mode:
-  - Single test mode: Replace `{testFile}` placeholder in `$TEST_SINGLE_CMD` with `$TEST_FILE`
-    - `ACTUAL_CMD=$(echo "$TEST_SINGLE_CMD" | sed "s|{testFile}|${TEST_FILE}|g")`
-    - `ACTUAL_LOG="$TEST_SINGLE_LOG"`
-    - `ACTUAL_PATTERN="$TEST_SINGLE_ERROR_PATTERN"`
-  - All tests mode:
-    - `ACTUAL_CMD="$TEST_CMD"`
-    - `ACTUAL_LOG="$TEST_LOG"`
-    - `ACTUAL_PATTERN="$TEST_ERROR_PATTERN"`
+  - Single test mode: TEST_CMD = `$TEST_SINGLE_CMD` with {testFile} replaced
+  - All tests mode: TEST_CMD = `$TEST_CMD`
 
-→ Display: "🧪 Running tests..." + (single test mode: " (${TEST_FILE})" or all tests mode: " (all tests)")
-→ Run tests silently: `$ACTUAL_CMD > "$ACTUAL_LOG" 2>&1`
-→ Check exit code
-
-✓ Tests passed (exit 0)
-  → Proceed to step 9
-
-✗ Tests failed (exit non-zero)
-  → Proceed to step 4
+→ Change to test working directory (if different from build dir)
+→ Execute test command (log to $TEST_LOG)
+✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 6
+✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 4
 
 ## 4. Extract Errors
 
-→ Extract errors: `grep -E "$ACTUAL_PATTERN" "$ACTUAL_LOG" | head -30 || echo "No errors matched pattern"`
-→ Count errors: `ERROR_COUNT=$(grep -cE "$ACTUAL_PATTERN" "$ACTUAL_LOG" || echo "0")`
-→ Display: "❌ Tests failed: $ERROR_COUNT errors found"
-→ Display: First 30 matching lines
-→ Display: "📁 Full log: $ACTUAL_LOG"
-→ Proceed to step 5
+→ Parse test log to identify failing tests
+→ Extract error patterns from log (up to 30 errors)
+→ Display error summary to user
 
-## 5. Analyze Failures and Create Fix Plan
+## 5. Create Fix Plan
 
-→ Analyze test failures to identify distinct failing tests
-→ For each failing test, determine:
-  - Test name/description
-  - Root cause of failure
-  - Files that need modification
-→ Use TodoWrite to create todo list with:
-  - One todo per failing test
-  - content: "Fix test: [test name]"
-  - activeForm: "Fixing test: [test name]"
-  - status: "pending" for all tests
-→ Display: "📋 Created fix plan for N failing tests"
-→ Proceed to step 6
+→ Analyze failures to identify distinct failing tests
+→ Use TodoWrite to create todo list (one per failing test)
+→ Status: "pending"
 
-## 6. Ask to Start Fixing
+## 6. Ask to Fix Tests
 
-→ Use AskUserQuestion with options:
-  - Question: "Start fixing tests one by one?"
-  - "Yes" (recommended) → Proceed to step 7
-  - "No, I'll fix manually" → Stop, user will fix
-  - "Other" → Follow custom instruction
+→ Use AskUserQuestion:
+  - "Start fixing tests one by one?" (recommended)
+  - "No, I'll fix manually"
+  - "Other"
 
-✓ User chose "Yes" → Proceed to step 7
-✗ User chose "No, I'll fix manually" → Stop
-→ User chose "Other" → Follow their custom instruction
+✓ "Yes" → Proceed to step 7
+✗ "No" → Stop
 
-## 7. Fix Next Test
+## 7. Fix Tests Iteratively
 
 → Get next pending test from todo list
-→ Mark current test as "in_progress" using TodoWrite
-→ Display: "🔧 Fixing: [test name]"
-→ Identify and display files to modify
-→ Fix issues: modify relevant code files
-→ Mark current test as "completed" using TodoWrite
-→ Proceed to step 8
+→ Mark as "in_progress"
+→ Fix the test (modify relevant code)
+→ Mark as "completed"
+→ Use AskUserQuestion:
+  - "Fix next test?" (if more remain)
+  - "Re-run all tests?"
+  - "Stop for now"
+  - "Other"
 
-## 8. Ask Next Action
+✓ "Fix next test" → If tests remain, return to step 7; else run step 3
+✓ "Re-run all tests" → Clear todos, return to step 3
+✗ "Stop for now" → Stop
 
-→ Count remaining pending tests in todo list
-→ Use AskUserQuestion with options:
-  - Question: "Test fixed! What next? (N tests remaining)"
-  - "Fix next test" (recommended if tests remain) → Return to step 7
-  - "Re-run all tests" → Clear todo list, return to step 3
-  - "Stop for now" → Stop, preserve todo list
-  - "Other" → Follow custom instruction
-
-✓ User chose "Fix next test" AND tests remain → Return to step 7
-✓ User chose "Fix next test" AND no tests remain → Display "All tests fixed!", return to step 3
-✓ User chose "Re-run all tests" → Clear todos with TodoWrite, return to step 3
-✗ User chose "Stop for now" → Stop
-→ User chose "Other" → Follow their custom instruction
-
-## 9. Success
+## 8. Success
 
 ✅ All tests passed
-✅ Build complete
-→ Clear any remaining todos with TodoWrite (empty list)
-→ Display: "✅ Success! Build and tests passed"
-→ Display: "📁 Build log: $BUILD_LOG"
-→ Display: "📁 Test log: $ACTUAL_LOG"
-✓ Done
+→ Clear todo list with TodoWrite (empty)
+→ Display success message with log file locations
 
 🔧 Configuration: `.claude/build-config.json` (optional project override)
-📁 Default logs: `dist/build.log`, `dist/test.log`, `dist/test-single.log`
+📁 Logs directory: `$LOG_DIR` (tool-specific: dist/ for npm, target/ for maven, build/ for gradle, etc.)

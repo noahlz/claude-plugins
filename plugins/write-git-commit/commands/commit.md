@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Create git commit with embedded Claude Code cost metrics
+description: Create git commit with Claude Code cost metrics embedded
 ---
 
-Execute the `write-git-commit` skill.
+Execute the `write-git-commit` skill
