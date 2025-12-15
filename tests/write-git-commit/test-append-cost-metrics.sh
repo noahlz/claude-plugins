@@ -33,7 +33,10 @@ run_append_script() {
   local metrics_file="${1:-.claude/cost-metrics.json}"
   local commit_sha="${2:-abc123def}"
   local subject="${3:-Test commit}"
-  local cost_json="${4:-[{\"model\":\"claude-haiku-4-5-20251001\",\"tokens\":100,\"cost\":0.05}]}"
+  local cost_fixture="${4:-default.json}"
+
+  # Read cost JSON from fixture file
+  local cost_json=$(cat "$TESTS_ROOT/fixtures/cost-arrays/$cost_fixture")
 
   bash "$CLAUDE_PLUGIN_ROOT/scripts/append-cost-metrics.sh" "$metrics_file" "$commit_sha" "$subject" "$cost_json"
   return $?
@@ -54,7 +57,7 @@ EOF
   assertEquals "Append succeeded" 0 "$exit_code"
 
   # Check that file has two lines now
-  local line_count=$(wc -l < .claude/cost-metrics.json)
+  local line_count=$(wc -l < .claude/cost-metrics.json | tr -d ' ')
   assertEquals "File has 2 entries" 2 "$line_count"
 }
 
@@ -115,11 +118,13 @@ test_formats_ndjson_correctly() {
 EOF
 
   # Append multiple entries
-  run_append_script ".claude/cost-metrics.json" "second" "Second" '[{"model":"test","tokens":10,"cost":0.01}]'
-  run_append_script ".claude/cost-metrics.json" "third" "Third" '[{"model":"test","tokens":20,"cost":0.02}]'
+  run_append_script ".claude/cost-metrics.json" "second" "Second" "single-test.json"
+  # For third entry, we need a different cost fixture
+  local cost_third='[{"model":"test","tokens":20,"cost":0.02}]'
+  bash "$CLAUDE_PLUGIN_ROOT/scripts/append-cost-metrics.sh" ".claude/cost-metrics.json" "third" "Third" "$cost_third"
 
   # Check that we have 3 lines
-  local line_count=$(wc -l < .claude/cost-metrics.json)
+  local line_count=$(wc -l < .claude/cost-metrics.json | tr -d ' ')
   assertEquals "Three entries" 3 "$line_count"
 
   # Each line should be valid JSON
@@ -160,7 +165,7 @@ test_entry_valid_json_structure() {
 
 # Test: Subject field is preserved correctly
 test_subject_field_preserved() {
-  bash "$CLAUDE_PLUGIN_ROOT/scripts/append-cost-metrics.sh" ".claude/cost-metrics.json" "abc123" "Fix bug" '[]'
+  run_append_script ".claude/cost-metrics.json" "abc123" "Fix bug" "empty.json"
 
   local entry=$(cat .claude/cost-metrics.json)
   local subject=$(echo "$entry" | jq -r '.subject')
@@ -170,7 +175,7 @@ test_subject_field_preserved() {
 
 # Test: Commit field is preserved correctly
 test_commit_field_preserved() {
-  bash "$CLAUDE_PLUGIN_ROOT/scripts/append-cost-metrics.sh" ".claude/cost-metrics.json" "commit123abc" "Test" '[]'
+  run_append_script ".claude/cost-metrics.json" "commit123abc" "Test" "empty.json"
 
   local entry=$(cat .claude/cost-metrics.json)
   local commit=$(echo "$entry" | jq -r '.commit')
