@@ -28,11 +28,21 @@ if ! command -v jq &> /dev/null; then
   exit 1
 fi
 
-# Get current session data (find the first ligeon session)
-CURRENT=$(ccusage session --json | jq -c ".sessions[] | select(.sessionId | contains(\"ligeon\")) | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: .cost}))}" | head -1)
+# Get current session data (filter by SESSION_FILTER if configured)
+if [ "$SESSION_FILTER" = "null" ] || [ -z "$SESSION_FILTER" ]; then
+  # No filter: use first session
+  CURRENT=$(ccusage session --json | jq -c ".sessions[0] | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: .cost}))}")
+else
+  # Filter by configured session name
+  CURRENT=$(ccusage session --json | jq -c ".sessions[] | select(.sessionId | contains(\"$SESSION_FILTER\")) | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: .cost}))}" | head -1)
+fi
 
 if [ -z "$CURRENT" ]; then
-  echo "Error: Could not find active ligeon session in ccusage data" >&2
+  if [ "$SESSION_FILTER" = "null" ] || [ -z "$SESSION_FILTER" ]; then
+    echo "Error: Could not find active Claude Code session in ccusage data" >&2
+  else
+    echo "Error: Could not find Claude Code session matching filter '$SESSION_FILTER' in ccusage data" >&2
+  fi
   exit 1
 fi
 

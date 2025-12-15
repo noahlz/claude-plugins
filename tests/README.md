@@ -1,0 +1,320 @@
+# Claude Plugins Test Suite
+
+Comprehensive test coverage for all shell scripts in the claude-plugins repository.
+
+## Overview
+
+Tests are written using [shUnit2](https://github.com/kward/shunit2), an xUnit-style testing framework for shell scripts. The test suite validates that scripts work correctly with mocked external dependencies.
+
+## Running Tests
+
+### Run all tests
+```bash
+./tests/run-all-tests.sh
+```
+
+### Run tests for a specific plugin
+```bash
+bash tests/write-git-commit/test-load-config.sh
+bash tests/run-and-fix-tests/test-load-config.sh
+```
+
+### Run a specific test case
+```bash
+bash tests/write-git-commit/test-load-config.sh testLoadsDefaultConfig
+```
+
+## Test Structure
+
+```
+tests/
+├── shunit2                      # Testing framework (binary)
+├── lib/
+│   ├── test-helpers.sh          # Common test utilities
+│   └── mocks/
+│       ├── ccusage              # Mock for Claude Code usage CLI
+│       └── git                  # Mock for git VCS commands
+├── fixtures/
+│   ├── configs/                 # Sample configuration files
+│   ├── metrics/                 # Sample metrics files
+│   └── projects/                # Sample project structures
+├── write-git-commit/
+│   ├── test-load-config.sh      # Tests for load-config.sh
+│   ├── test-claude-cost-delta.sh # Tests for claude-cost-delta.sh
+│   └── test-append-cost-metrics.sh # Tests for append-cost-metrics.sh
+├── run-and-fix-tests/
+│   ├── test-load-config.sh      # Tests for load-config.sh
+│   └── test-detect-and-resolve.sh # Tests for detect-and-resolve.sh
+├── run-all-tests.sh             # Master test runner
+└── README.md                    # This file
+```
+
+## Test Infrastructure
+
+### shUnit2 Framework
+
+Each test file sources shUnit2 at the end and defines test functions with the `test*` naming convention. For example:
+
+```bash
+test_loads_default_config() {
+  # Test body
+}
+
+# Source shUnit2 at the end
+. "$TESTS_ROOT/shunit2"
+```
+
+### Test Helpers (test-helpers.sh)
+
+Common utilities for test setup and assertions:
+
+- `setup_test_env()` - Initialize temp directory and PATH
+- `teardown_test_env()` - Clean up temp directory
+- `assert_json_equals()` - Compare JSON objects (order-independent)
+- `assert_json_has_key()` - Check if JSON object has a key
+- `assert_matches()` - Check if string matches regex pattern
+- `assert_file_exists()` / `assert_file_not_exists()` - File assertions
+- `create_fixture()` - Create test fixture files
+- `read_fixture()` - Read fixture files
+- `export_test_env_vars()` - Set required environment variables
+
+### Mock Scripts
+
+Mock scripts intercept external commands and return predefined responses:
+
+- **ccusage** - Returns mock Claude Code session data
+- **git** - Returns mock commit SHAs and status
+
+Mocks are placed in `tests/lib/mocks/` and are prepended to PATH during test execution.
+
+### Fixtures
+
+Pre-built test data in `tests/fixtures/`:
+
+- `configs/` - Sample JSON configuration files
+- `metrics/` - Sample NDJSON metrics files
+- `projects/` - Sample project structures with build files
+
+## Writing New Tests
+
+### 1. Create test file in appropriate plugin directory
+
+```bash
+# For write-git-commit scripts
+touch tests/write-git-commit/test-your-script.sh
+
+# For run-and-fix-tests scripts
+touch tests/run-and-fix-tests/test-your-script.sh
+```
+
+### 2. Set up test structure
+
+```bash
+#!/bin/bash
+# Tests for your-script.sh
+
+# Setup runs before each test
+setUp() {
+  if [ -z "$TESTS_ROOT" ]; then
+    TESTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    export TESTS_ROOT
+  fi
+
+  . "$TESTS_ROOT/lib/test-helpers.sh"
+  setup_test_env
+
+  export CLAUDE_PLUGIN_ROOT="/path/to/plugin"
+  cd "$TEST_TMPDIR" || exit 1
+}
+
+# Teardown runs after each test
+tearDown() {
+  teardown_test_env
+}
+
+# Test functions with test* prefix
+test_something() {
+  # Test implementation
+}
+
+# Source shUnit2 at the end
+SHUNIT2_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/shunit2"
+. "$SHUNIT2_PATH"
+```
+
+### 3. Use test helpers for assertions
+
+```bash
+test_example() {
+  # Create temporary config
+  create_fixture "test-config.json" '{"key":"value"}'
+
+  # Run your script
+  bash "$SCRIPT_PATH"
+
+  # Assert file exists
+  assert_file_exists "expected-output.json"
+
+  # Assert JSON structure
+  local result=$(cat expected-output.json)
+  assert_json_has_key "$result" "key"
+}
+```
+
+## Mocking Strategy
+
+### Using Mocks
+
+Mocks are automatically available on PATH during tests. The mock scripts intercept external CLI calls:
+
+```bash
+test_uses_external_command() {
+  # The mock 'git' is called instead of real git
+  git rev-parse HEAD
+
+  # Mock returns: abc123def456ghi789jkl012mno345pqr
+}
+```
+
+### Adding Mocks
+
+To create a new mock:
+
+1. Create file in `tests/lib/mocks/`
+2. Implement command logic
+3. Make it executable: `chmod +x tests/lib/mocks/your-command`
+
+Mock example:
+
+```bash
+#!/bin/bash
+# tests/lib/mocks/your-command
+
+if [ "$1" = "some-arg" ]; then
+  echo "mock response"
+  exit 0
+else
+  echo "Error: Unsupported argument" >&2
+  exit 1
+fi
+```
+
+## Test Coverage
+
+### write-git-commit plugin
+
+**load-config.sh** (7 tests)
+- Loads default configuration
+- Merges default and project configs
+- Exports METRICS_FILE and SESSION_FILTER variables
+- Handles empty project config
+- Validates required environment variables
+
+**claude-cost-delta.sh** (9 tests)
+- Returns full cost on first run (no metrics file)
+- Calculates delta with existing metrics file
+- Handles multiple models in session
+- Subtracts previous costs correctly
+- Outputs valid JSON array format
+- Respects SESSION_FILTER configuration
+
+**append-cost-metrics.sh** (8 tests)
+- Appends entries to existing metrics file
+- Creates metrics file if not exists
+- Creates nested directories if needed
+- Generates ISO 8601 timestamps
+- Formats entries as NDJSON
+- Preserves all entry fields
+
+### run-and-fix-tests plugin
+
+**load-config.sh** - Tests for build configuration loading
+**detect-and-resolve.sh** - Tests for build tool detection
+
+## Running Tests in CI/CD
+
+To run tests in GitHub Actions or other CI systems:
+
+```yaml
+- name: Run tests
+  run: |
+    cd ${{ github.workspace }}
+    ./tests/run-all-tests.sh
+```
+
+## Debugging Tests
+
+### Enable verbose output
+
+Run shUnit2 with debug flags:
+
+```bash
+bash -x tests/write-git-commit/test-load-config.sh testLoadsDefaultConfig
+```
+
+### Inspect test environment
+
+```bash
+test_debug() {
+  # Print working directory
+  echo "Working directory: $(pwd)"
+
+  # Print environment
+  echo "TEST_TMPDIR=$TEST_TMPDIR"
+
+  # List test files
+  ls -la "$TEST_TMPDIR"
+}
+```
+
+### Keep temp directories after test
+
+Modify `tearDown` temporarily to prevent cleanup:
+
+```bash
+tearDown() {
+  # Temporarily comment out to debug
+  # teardown_test_env
+  echo "Test directory: $TEST_TMPDIR"
+}
+```
+
+## Troubleshooting
+
+### "command not found" in tests
+
+Make sure mocks are executable and PATH includes `tests/lib/mocks`:
+
+```bash
+chmod +x tests/lib/mocks/*
+export PATH="tests/lib/mocks:$PATH"
+```
+
+### jq: parse error
+
+Ensure JSON fixtures are properly formatted:
+
+```bash
+jq '.' tests/fixtures/configs/*.json
+```
+
+### Temp directory not cleaning up
+
+Check that `tearDown` is called and `TEST_TMPDIR` is set:
+
+```bash
+# In test
+echo "TEST_TMPDIR=$TEST_TMPDIR"
+
+# Manual cleanup
+rm -rf "$TEST_TMPDIR"
+```
+
+## Future Improvements
+
+- [ ] Add integration tests for full workflows
+- [ ] Add performance benchmarks
+- [ ] Add GitHub Actions workflow file
+- [ ] Expand test coverage for run-and-fix-tests plugin
+- [ ] Add fixtures for more build tool types
+- [ ] Add support for conditional test skipping

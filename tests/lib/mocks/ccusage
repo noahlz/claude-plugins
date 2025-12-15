@@ -1,0 +1,59 @@
+#!/bin/bash
+# Mock ccusage command for testing
+
+# Default response for "ccusage session --json"
+if [ "$1" = "session" ] && [ "$2" = "--json" ]; then
+  # Return mock session data with multiple sessions
+  cat <<'EOF'
+{
+  "sessions": [
+    {
+      "sessionId": "claude-code-session-1234",
+      "modelBreakdowns": [
+        {
+          "modelName": "claude-haiku-4-5-20251001",
+          "inputTokens": 1000,
+          "outputTokens": 500,
+          "cacheCreationTokens": 0,
+          "cost": 0.45
+        },
+        {
+          "modelName": "claude-opus-4-5-20251101",
+          "inputTokens": 100,
+          "outputTokens": 50,
+          "cacheCreationTokens": 10,
+          "cost": 1.25
+        }
+      ]
+    },
+    {
+      "sessionId": "ligeon-session-5678",
+      "modelBreakdowns": [
+        {
+          "modelName": "claude-haiku-4-5-20251001",
+          "inputTokens": 2000,
+          "outputTokens": 1000,
+          "cacheCreationTokens": 100,
+          "cost": 0.95
+        }
+      ]
+    },
+    {
+      "sessionId": "older-session-9999",
+      "modelBreakdowns": [
+        {
+          "modelName": "claude-opus-4-5-20251101",
+          "inputTokens": 500,
+          "outputTokens": 250,
+          "cacheCreationTokens": 0,
+          "cost": 2.10
+        }
+      ]
+    }
+  ]
+}
+EOF
+else
+  echo "Error: Unsupported ccusage command" >&2
+  exit 1
+fi

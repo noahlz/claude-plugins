@@ -1,0 +1,37 @@
+#!/bin/bash
+# Mock git command for testing
+
+case "$1" in
+  "rev-parse")
+    if [ "$2" = "HEAD" ]; then
+      # Return a fake commit SHA
+      echo "abc123def456ghi789jkl012mno345pqr"
+    else
+      echo "Error: Unsupported rev-parse command" >&2
+      exit 1
+    fi
+    ;;
+  "commit")
+    # Extract message from -m flag
+    shift  # Remove "commit"
+    shift  # Remove "-m"
+    local message="$1"
+
+    # Simulate successful commit by returning exit code 0
+    # In real tests, this can be controlled by environment variables
+    exit 0
+    ;;
+  "status")
+    # Return simple status output
+    cat <<'EOF'
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+EOF
+    ;;
+  *)
+    echo "Error: Unsupported git command: $1" >&2
+    exit 1
+    ;;
+esac

@@ -6,7 +6,7 @@ description: Create git commit with Claude Code cost metrics embedded in footer.
 ## 1. Load Configuration
 
 → Source: `${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh`
-✓ Configuration loaded → `$METRICS_FILE` available
+✓ Configuration loaded → `$METRICS_FILE` and `$SESSION_FILTER` available
 
 ## 2. Calculate Cost Delta
 
@@ -82,7 +82,10 @@ Co-Authored-By: 🤖 Claude Code <noreply@anthropic.com>
 → Display metrics file location
 ✓ Done
 
-🔧 Configuration: `.claude/commit-config.json` (optional, set `metricsFile` path)
+🔧 Configuration: `.claude/commit-config.json` (optional)
+  - `metricsFile`: Path to metrics file (default: `.claude/cost-metrics.json`)
+  - `sessionFilter`: Optional session filter string (default: `null` = use first/most recent session)
+    - Example: `"ligeon"` to filter sessions containing "ligeon"
 📁 Metrics file: `.claude/cost-metrics.json` (NDJSON, one entry per line)
 📁 Scripts used:
   - `claude-cost-delta.sh` - Calculates cost delta from ccusage

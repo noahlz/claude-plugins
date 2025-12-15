@@ -1,4 +1,4 @@
-# CLAUDE.md
+# Claude Code Plugins
 
 ## Project Structure
 
@@ -26,7 +26,7 @@ claude-plugins/
 
 ### Skill File Format (SKILL.md)
 
-Follow [Anthropic Agent Skills spec](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview#skill-structure).
+Follow the standard Anthropic Agent Skills spec:
 
 **Frontmatter (required fields only):**
 ```yaml
@@ -102,6 +102,19 @@ description: What it does and when to trigger. Include activation phrases.
      "category": "development"
    }
    ```
+
+## Testing
+
+The `tests/` directory contains [`shUnit2`](https://github.com/kward/shunit2) unit tests for the various scripts used by these plugins.
+
+To run all tests:
+
+```bash
+./tests/run-all-tests.sh
+```
+
+Read @tests/README.md for detailed testing documentation.
+
 
 ## Important References
 

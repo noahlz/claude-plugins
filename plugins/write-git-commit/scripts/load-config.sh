@@ -8,3 +8,4 @@ CONFIG=$(echo "$DEFAULT" | jq -s '.[0] * .[1]' - <(echo "$PROJECT"))
 
 # Export config variables
 export METRICS_FILE=$(echo "$CONFIG" | jq -r '.metricsFile')
+export SESSION_FILTER=$(echo "$CONFIG" | jq -r '.sessionFilter // "null"')

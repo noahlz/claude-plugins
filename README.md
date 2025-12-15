@@ -1,6 +1,8 @@
 # Claude Code Plugins
 
-A marketplace of productivity plugins for Claude Code.
+Productivity plugins for Claude Code.
+
+See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-marketplaces)
 
 ## Available Plugins
 
