@@ -73,23 +73,32 @@ description: Build project and run tests with clean output, fix any failures. Ac
 **Single Build:**
 → Change to build working directory: `cd "$BUILD_WORKING_DIR"`
 → Execute build command (using BUILD_CMD, BUILD_LOG, BUILD_ERROR_PATTERN)
-✓ Exit 0 → Return to INITIAL_PWD, proceed to step 3
-✗ Exit non-zero → Extract errors from log
-  → Return to INITIAL_PWD
-  → Ask user: "Build failed. Should I fix it?"
-    - "Yes" → Analyze and fix issues, return to step 2
-    - "No" → Stop
+✓ Exit 0 → Return to INITIAL_PWD, proceed to section 3 (Run Tests)
+✗ Exit non-zero → Return to INITIAL_PWD, proceed to section 2a (Extract Build Errors)
 
 **Multi-Build:**
 → For each build in detected tools:
   → Change to build working directory
   → Execute build command
-  → On failure: extract errors, return to INITIAL_PWD, ask user to fix
   → On success: continue to next build
+  → On failure: return to INITIAL_PWD, proceed to section 2a (Extract Build Errors)
 
-✓ All builds succeed → Return to INITIAL_PWD, proceed to step 3
-✗ Any build fails → Return to INITIAL_PWD, ask user: "Build failed in [tool]. Should I fix it?"
-  - "Yes" → Analyze and fix, return to step 2
+✓ All builds succeed → Return to INITIAL_PWD, proceed to section 3 (Run Tests)
+
+## 2a. Extract Build Errors
+
+→ **Step 2a: Attempt Editor Integration (if available)**
+  → Try to get language diagnostics from active editor (VSCode/IDE with MCP support)
+  ✓ Editor diagnostics available → Use them to identify compilation errors (file paths, line numbers, error details)
+  ✗ Editor integration not available → Proceed to step 2b
+
+→ **Step 2b: Fallback to Log Parsing**
+  → Parse build log using BUILD_ERROR_PATTERN regex
+  → Extract error messages and file locations from log output
+  → Identify up to 30 distinct errors
+
+→ Ask user: "Build failed. Should I fix it?"
+  - "Yes" → Analyze and fix issues, return to step 2
   - "No" → Stop
 
 ## 3. Run Tests
@@ -100,20 +109,25 @@ description: Build project and run tests with clean output, fix any failures. Ac
 
 → Change to test working directory (if different from build dir)
 → Execute test command (log to $TEST_LOG)
-✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 6
-✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 4
+✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to section 6 (Ask to Fix Tests)
+✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to section 4 (Extract Test Errors)
 
-## 4. Extract Errors
+## 4. Extract Test Errors
 
 → Parse test log to identify failing tests
-→ Extract error patterns from log (up to 30 errors)
-→ Display error summary to user
+→ Extract error patterns from log using TEST_ERROR_PATTERN regex
+→ Identify up to 30 distinct test failures
+→ Display error summary to user with:
+  - List of failing tests
+  - Error messages and relevant output from test log
+→ Proceed to section 5 (Create Fix Plan)
 
 ## 5. Create Fix Plan
 
 → Analyze failures to identify distinct failing tests
 → Use TodoWrite to create todo list (one per failing test)
 → Status: "pending"
+→ Proceed to section 6 (Ask to Fix Tests)
 
 ## 6. Ask to Fix Tests
 
@@ -122,7 +136,7 @@ description: Build project and run tests with clean output, fix any failures. Ac
   - "No, I'll fix manually"
   - "Other"
 
-✓ "Yes" → Proceed to step 7
+✓ "Yes" → Proceed to section 7 (Fix Tests Iteratively)
 ✗ "No" → Stop
 
 ## 7. Fix Tests Iteratively
@@ -137,8 +151,8 @@ description: Build project and run tests with clean output, fix any failures. Ac
   - "Stop for now"
   - "Other"
 
-✓ "Fix next test" → If tests remain, return to step 7; else run step 3
-✓ "Re-run all tests" → Clear todos, return to step 3
+✓ "Fix next test" → If tests remain, return to section 7 (Fix Tests Iteratively); else proceed to section 3 (Run Tests)
+✓ "Re-run all tests" → Clear todos, return to section 3 (Run Tests)
 ✗ "Stop for now" → Stop
 
 ## 8. Success
