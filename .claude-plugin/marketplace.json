@@ -15,7 +15,8 @@
       "description": "Create git commits with Claude Code cost metrics embedded in commit footers",
       "version": "0.0.1",
       "author": {
-        "name": "Noah Zucker"
+        "name": "Noah Zucker",
+        "email": "nzucker@gmail.com"
       },
       "keywords": ["git", "commits", "cost-tracking", "metrics"],
       "category": "development"
@@ -26,7 +27,8 @@
       "description": "Run tests with clean output and fix any failures",
       "version": "0.0.1",
       "author": {
-        "name": "Noah Zucker"
+        "name": "Noah Zucker",
+        "email": "nzucker@gmail.com"
       },
       "keywords": ["testing", "debugging", "ci-cd", "automation"],
       "category": "development"

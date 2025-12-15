@@ -208,6 +208,21 @@
           "errorPattern": "FAIL|ERROR|Exception"
         }
       }
+    },
+    "shunit2": {
+      "configFile": "shunit2",
+      "test": {
+        "all": {
+          "command": "./tests/run-all-tests.sh",
+          "logFile": "{logDir}/shunit2-all.log",
+          "errorPattern": "FAILED|failures=|Error"
+        },
+        "single": {
+          "command": "bash tests/{testFile}",
+          "logFile": "{logDir}/shunit2-single.log",
+          "errorPattern": "FAILED|failures=|Error"
+        }
+      }
     }
   }
 }
