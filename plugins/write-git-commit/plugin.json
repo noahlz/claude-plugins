@@ -1,7 +1,7 @@
 {
   "name": "write-git-commit",
-  "description": "Create git commits with Claude Code cost metrics embedded in commit footers",
-  "version": "1.0.0",
+  "description": "Draft git commits with Claude Code cost metrics embedded as JSON.",
+  "version": "0.0.1",
   "author": "Noah Zucker",
   "commands": ["./commands"],
   "skills": ["./skills"]

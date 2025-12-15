@@ -1,6 +1,6 @@
 ---
 name: run-and-fix-tests
-description: Run tests with clean output and fix any failures
+description: Build and run tests as silently as possible, and fix errors.
 ---
 
 # Skill: Run and Fix Tests

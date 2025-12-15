@@ -1,6 +1,6 @@
 ---
 name: test
-description: Run tests with clean output and fix any failures
+description: Build and run as quietly as possible, and fix any errors.
 ---
 
-Execute the `run-and-fix-tests` skill to run tests silently and fix any failures.
+Execute the `run-and-fix-tests` skill.
