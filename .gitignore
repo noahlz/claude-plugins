@@ -22,5 +22,5 @@ build/
 # Claude Code
 .claude/settings.local.json
 
-# Cost metrics (sensitive - do not commit)
+# Cost metrics (meant to be per-user not per-project - do not commit)
 .claude/cost-metrics.json
