@@ -1,0 +1,20 @@
+{
+  "logDir": "dist",
+  "build": {
+    "command": "npm run build",
+    "logFile": "{logDir}/build.log",
+    "errorPattern": "(error|Error|✘)"
+  },
+  "test": {
+    "all": {
+      "command": "npm test",
+      "logFile": "{logDir}/test.log",
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+    },
+    "single": {
+      "command": "npm test -- {testFile}",
+      "logFile": "{logDir}/test-single.log",
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+    }
+  }
+}
