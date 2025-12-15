@@ -3,6 +3,34 @@ name: run-and-fix-tests
 description: Build project and run tests with clean output, fix any failures. Activate when user says "run tests", "test", "build and test", "fix tests", or "make test".
 ---
 
+## 0. Discover and Propose Build Configuration
+
+→ Check if build config exists in `.claude/build-config.json`
+
+✓ Config exists AND file is not empty → Proceed to step 1
+
+✗ Config missing OR file is empty → Discover build strategy:
+
+→ Inspect project to detect build tools:
+  - Read `CLAUDE.md` if present (extract build instructions)
+  - Check project root for config files: scan for files listed in `.tools.<toolname>.configFile` from merged config
+  - For each found config file, identify the tool name and extract working directory (where config file is located)
+
+→ Look up tool defaults from merged config (`.tools.<toolname>` in default + project config)
+
+→ Determine if single or multi-build:
+  - Single tool found → Create config with that tool's defaults, add to `.claude/build-config.json`
+  - Multiple tools found → Create multi-build config as array, add to `.claude/build-config.json`
+
+→ Use AskUserQuestion to confirm before saving:
+  - Display proposed config JSON
+  - Options:
+    * "Yes, save this config" (recommended) → Save and proceed to step 1
+    * "No, I'll configure manually" → Stop, user creates `.claude/build-config.json`
+    * "Other" → Custom instruction
+
+✓ Build configuration determined and saved → Proceed to step 1
+
 ## 1. Load Configuration
 
 → Run: `source ${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh`
@@ -28,17 +56,44 @@ description: Build project and run tests with clean output, fix any failures. Ac
 ## 2. Build Project
 
 → Create log directory: `mkdir -p "$LOG_DIR"`
-→ Run build silently: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
+→ Check build type: `$BUILD_MULTI`
+
+**Single Build Mode** (`BUILD_MULTI=false`):
+→ Resolve placeholders in command: `RESOLVED_BUILD_CMD=$(echo "$BUILD_CMD" | sed "s|{logFile}|${BUILD_LOG}|g")`
+→ Change to working directory if specified: `cd "$BUILD_WORKING_DIR"`
+→ Determine logging approach:
+  - If original `$BUILD_CMD` contains `{logFile}` → Execute: `$RESOLVED_BUILD_CMD`
+  - Else → Execute with redirection: `$RESOLVED_BUILD_CMD > "$BUILD_LOG" 2>&1`
+→ Return to project root: `cd -`
 → Check exit code
 
-✓ Build succeeded (exit 0)
+**Multi Build Mode** (`BUILD_MULTI=true`):
+→ Display: "🔨 Building $BUILD_COUNT modules..."
+→ For each build in `$BUILD_CONFIGS`:
+  - Extract: `TOOL=$(echo "$build" | jq -r '.tool')`
+  - Extract: `COMMAND=$(echo "$build" | jq -r '.command')`
+  - Extract: `WORKING_DIR=$(echo "$build" | jq -r '.workingDir // "."')`
+  - Extract: `LOG_FILE=$(echo "$build" | jq -r '.logFile' | sed "s|{logDir}|${LOG_DIR}|g")`
+  - Extract: `ERROR_PATTERN=$(echo "$build" | jq -r '.errorPattern')`
+  - Display: "Building with $TOOL (in $WORKING_DIR)"
+  - Change directory: `cd "$WORKING_DIR"`
+  - Resolve placeholders: `RESOLVED_CMD=$(echo "$COMMAND" | sed "s|{logFile}|${LOG_FILE}|g")`
+  - Determine logging approach:
+    * If original command contains `{logFile}` → Execute: `$RESOLVED_CMD`
+    * Else → Execute with redirection: `$RESOLVED_CMD > "$LOG_FILE" 2>&1`
+  - Return to project root: `cd -`
+  - Check exit code:
+    * ✓ Build succeeded (exit 0) → Continue to next build
+    * ✗ Build failed (exit non-zero) → Stop all builds, proceed to error handling
+
+✓ All builds succeeded (exit 0)
   → Proceed to step 3
 
-✗ Build failed (exit non-zero)
-  → Extract errors: `grep -E "$BUILD_ERROR_PATTERN" "$BUILD_LOG" | head -20 || echo "No errors matched pattern"`
-  → Display: "❌ Build failed:" + errors
-  → Display: "📁 Full log: $BUILD_LOG"
-  → Ask user via AskUserQuestion: "Build failed. Should I analyze and fix the build issues?"
+✗ Any build failed (exit non-zero)
+  → Extract errors from failed build's log file
+  → Display: "❌ Build failed ($TOOL in $WORKING_DIR):" + errors
+  → Display: "📁 Full log: $LOG_FILE"
+  → Ask user via AskUserQuestion: "Build failed using $TOOL in '$WORKING_DIR'. Should I analyze and fix the build issues?"
     - "Yes" (recommended) → Analyze and fix, return to step 2
     - "No, I'll fix manually" → Stop, user will fix
     - "Other" → Follow custom instruction

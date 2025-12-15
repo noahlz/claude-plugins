@@ -1,0 +1,21 @@
+{
+  "logDir": "target/logs",
+  "build": {
+    "tool": "sbt",
+    "command": "sbt clean compile",
+    "logFile": "{logDir}/sbt.log",
+    "errorPattern": "\\[error\\]|error:"
+  },
+  "test": {
+    "all": {
+      "command": "sbt test",
+      "logFile": "{logDir}/test.log",
+      "errorPattern": "\\[error\\]|FAILED|failed|error:"
+    },
+    "single": {
+      "command": "sbt 'testOnly {testFile}'",
+      "logFile": "{logDir}/test-single.log",
+      "errorPattern": "\\[error\\]|FAILED|failed|error:"
+    }
+  }
+}

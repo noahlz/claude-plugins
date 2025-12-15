@@ -1,0 +1,31 @@
+{
+  "logDir": "build-logs",
+  "build": [
+    {
+      "tool": "npm",
+      "command": "npm run build",
+      "workingDir": "frontend",
+      "logFile": "{logDir}/npm.log",
+      "errorPattern": "(error|Error|✘)"
+    },
+    {
+      "tool": "maven",
+      "command": "mvn clean install --quiet --log-file {logFile}",
+      "workingDir": "backend",
+      "logFile": "{logDir}/maven.log",
+      "errorPattern": "\\[ERROR\\]"
+    }
+  ],
+  "test": {
+    "all": {
+      "command": "npm test",
+      "logFile": "{logDir}/test.log",
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+    },
+    "single": {
+      "command": "npm test -- {testFile}",
+      "logFile": "{logDir}/test-single.log",
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+    }
+  }
+}
