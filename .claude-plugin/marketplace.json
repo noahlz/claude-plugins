@@ -2,23 +2,28 @@
   "name": "noahlz.github.io",
   "owner": {
     "name": "Noah Zucker",
-    "email": "nzucker@gmail.com"
+    "email": "nzucker@gmail.com",
+    "url": "https://github.com/noahlz"
   },
-  "description": "Productivity and development plugins",
+  "description": "Dev workflow plugins.",
   "repository": "https://github.com/noahlz/claude-plugins",
   "license": "MIT",
   "plugins": [
     {
-      "name": "write-git-commit",
-      "source": "./plugins/write-git-commit",
-      "keywords": ["git", "commits", "cost-tracking", "metrics"],
-      "category": "development"
-    },
-    {
-      "name": "run-and-fix-tests",
-      "source": "./plugins/run-and-fix-tests",
-      "keywords": ["testing", "debugging", "ci-cd", "automation"],
-      "category": "development"
+      "name": "dev-workflow",
+      "version": "0.0.1",
+      "license": "MIT",
+      "description": "Plugins for dev workflow productivity.",
+      "source": "./",
+      "strict" : false,
+      "skills": [
+          "./skills/run-and-fix-tests",
+          "./skills/write-git-commit"
+      ],
+      "commands": [
+          "./commands/test.md",
+          "./commands/commit.md"
+      ]
     }
   ]
 }

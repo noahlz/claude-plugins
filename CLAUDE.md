@@ -1,21 +1,26 @@
-# Claude Code Plugins
+# Claude Code Dev Workflow Plugins
+
+A collection of plugins for automating development workflow tasks:
+
+- Build / run / fix unit tests.
+- Write a git commit with Claude cost/productivity metrics.
 
 ## Project Structure
 
 ```
 claude-plugins/
 ├── .claude-plugin/marketplace.json
-├── plugins/
+├── commands/ 
+│   ├── commit.md
+│   └── test.md
+├── skills
 │   ├── write-git-commit/
-│   │   ├── plugin.json
-│   │   ├── README.md
-│   │   ├── commands/commit.md
-│   │   └── skills/SKILL.md
+│   │   ├── scripts/
+│   │   └── SKILL.md
 │   └── run-and-fix-tests/
-│       ├── plugin.json
-│       ├── README.md
-│       ├── commands/test.md
-│       └── skills/SKILL.md
+│       ├── scripts/
+│       └── SKILL.md
+├── tests/
 ├── README.md
 └── CLAUDE.md
 ```
@@ -60,7 +65,8 @@ description: What it does and when to trigger. Include activation phrases.
 
 - **Activate phrase**: Include in skill description (e.g., "Activate when user says 'run tests'")
 - **User confirmation**: Use `AskUserQuestion` for destructive operations (e.g., fixing code automatically)
-- **Configuration**: Use JSON config files + deep merge strategy
+- **Task Tracking**: Use `TodoWrite` when tracking tasks in a complex skill operation.
+- **Configuration**: Use default JSON config files + deep merge with user-specific JSON config using `jq`
 - **Error handling**: Display errors clearly, show log file paths, ask before proceeding
 
 ## Adding New Plugin
@@ -140,3 +146,5 @@ Rather than detailed walk-throughs of each change made.
 - [Anthropic Agent Skills Spec](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview#skill-structure)
 - [Claude Code Skills Guide](https://code.claude.com/docs/en/skills)
 - [Claude Code Plugins Reference](https://code.claude.com/docs/en/plugins-reference)
+- [Claude Code Marketplaces Reference](https://code.claude.com/docs/en/plugin-marketplaces#plugin-marketplaces)
+- [claude-plugins-official](https://github.com/anthropics/claude-plugins-official/) - Official plugins maintained by Anthropic.

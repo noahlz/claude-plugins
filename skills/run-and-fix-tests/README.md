@@ -1,6 +1,6 @@
 # Run and Fix Tests Plugin
 
-Build your project and run tests. If tests fail, optionally fix them automatically.
+Guides Claude through automatically building, running and fixing your project tests with minmimal token usage. 
 
 ## What It Does
 
@@ -9,6 +9,11 @@ Build your project and run tests. If tests fail, optionally fix them automatical
 - Fixes failing tests one by one (with your approval)
 - Supports single test execution: `/test MyTest`
 - Supports multi-module projects with different build tools
+
+## Prerequisites
+
+- bash (i.e. MiniGW if on Windows)
+- jq
 
 ## Usage
 
@@ -23,7 +28,7 @@ Or say: "run tests", "test", "build and test", "fix tests", "make test"
 ## Configuration
 
 The plugin auto-detects your build tool on first run by looking for standard config files:
-- `package.json` → npm
+- `package.json` → npm (with vite)
 - `pom.xml` → Maven
 - `build.gradle` → Gradle
 - `go.mod` → Go
@@ -75,12 +80,6 @@ For multi-module projects, use an array for `build`:
   }
 }
 ```
-
-## Prerequisites
-
-- bash shell
-- jq
-- grep
 
 ## Author
 
