@@ -41,6 +41,27 @@ run_delta_script() {
   "$CLAUDE_PLUGIN_ROOT/scripts/claude-cost-delta.sh" "$metrics_file" 2>/dev/null
 }
 
+# Helper: Run claude-cost-delta.sh and capture both stdout and stderr
+run_delta_script_with_stderr() {
+  local metrics_file="${1:-.claude/cost-metrics.json}"
+
+  # Ensure SESSION_FILTER is available (from config or default)
+  export SESSION_FILTER="${SESSION_FILTER:-null}"
+
+  "$CLAUDE_PLUGIN_ROOT/scripts/claude-cost-delta.sh" "$metrics_file" 2>&1
+}
+
+# Helper: Run claude-cost-delta.sh and capture exit code
+run_delta_script_exit_code() {
+  local metrics_file="${1:-.claude/cost-metrics.json}"
+
+  # Ensure SESSION_FILTER is available (from config or default)
+  export SESSION_FILTER="${SESSION_FILTER:-null}"
+
+  "$CLAUDE_PLUGIN_ROOT/scripts/claude-cost-delta.sh" "$metrics_file" > /dev/null 2>&1
+  echo $?
+}
+
 # Test: Returns full cost on first run (no metrics file)
 test_returns_full_cost_on_first_run() {
   # No metrics file exists
@@ -179,6 +200,130 @@ test_uses_default_session() {
 
   # Should have valid structure
   assertTrue "Valid cost data" "echo '$output' | jq -e '.[0].model' > /dev/null"
+}
+
+# Test: Detects negative delta and exits with code 2
+test_detects_negative_delta_exit_code() {
+  # Create metrics file with higher cost than current session
+  # Mock ccusage returns:
+  # - haiku: 1500 tokens (1000+500), 0.45 cost
+  # - opus: 160 tokens (100+50+10), 1.25 cost
+  # Set previous to higher values to trigger negative delta
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00},{"model":"claude-opus-4-5-20251101","tokens":300,"cost":2.00}],"date":"2025-12-15T10:00:00Z"}
+EOF
+
+  local exit_code=$(run_delta_script_exit_code)
+
+  # Should exit with code 2 (negative delta detected)
+  assertEquals "Exit code 2" "2" "$exit_code"
+}
+
+# Test: Outputs warning message for negative delta
+test_outputs_warning_for_negative_delta() {
+  # Create metrics file with higher cost than current session
+  # Force a negative delta for haiku model
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z"}
+EOF
+
+  local output=$(run_delta_script_with_stderr)
+
+  # Should contain warning message
+  assertTrue "Warning present" "echo '$output' | grep -q 'WARNING: Negative cost delta detected' || echo '$output' | grep -q 'WARNING'"
+
+  # Should explain typical causes
+  assertTrue "Session restart reason" "echo '$output' | grep -q 'session was restarted'"
+
+  # Should show the haiku model mentioned
+  assertTrue "Shows haiku model" "echo '$output' | grep -q 'claude-haiku-4-5-20251001'"
+}
+
+# Test: Shows raw negative delta values in warning
+test_shows_raw_negative_values() {
+  # Create metrics file with higher cost for multiple models
+  # haiku current 1500 < previous 3000 = -1500 tokens (negative)
+  # opus current 160 < previous 2000 = -1840 tokens (negative)
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":3000,"cost":1.50},{"model":"claude-opus-4-5-20251101","tokens":2000,"cost":2.00}],"date":"2025-12-15T10:00:00Z"}
+EOF
+
+  local output=$(run_delta_script_with_stderr)
+
+  # Should show models with negative values
+  # Haiku has 1500 current vs 3000 previous = -1500 tokens
+  assertTrue "Shows negative model info" "echo '$output' | grep -q 'claude-haiku-4-5-20251001'"
+
+  # Should show token count in the output
+  assertTrue "Shows tokens" "echo '$output' | grep -q 'tokens'"
+}
+
+# Test: Returns delta JSON even when negative (for skill to process)
+test_returns_delta_json_when_negative() {
+  # Create metrics file with higher cost (force negative)
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z"}
+EOF
+
+  # Capture with stderr to get warning
+  local output=$(bash "$CLAUDE_PLUGIN_ROOT/scripts/claude-cost-delta.sh" ".claude/cost-metrics.json" 2>&1)
+
+  # Extract just the JSON part (last line - after all warnings)
+  local delta_json=$(echo "$output" | tail -1)
+
+  # Should be valid JSON array (check with jq - if it returns the value, it's valid)
+  assertTrue "Valid JSON in output" "echo '$delta_json' | jq -e 'type == \"array\"' > /dev/null"
+
+  # Should contain the delta data (even if negative)
+  assertTrue "Contains delta data" "echo '$delta_json' | jq -e 'length > 0' > /dev/null"
+}
+
+# Test: Does not exit with code 2 when delta is positive
+test_positive_delta_does_not_exit_code_2() {
+  # Create metrics file with lower cost than current session
+  # Current will have ~1500 tokens for haiku, so set previous to 500
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T10:00:00Z"}
+EOF
+
+  local exit_code=$(run_delta_script_exit_code)
+
+  # Should exit with code 0 (success)
+  assertEquals "Exit code 0" "0" "$exit_code"
+}
+
+# Test: All models negative detected correctly
+test_all_models_negative_detected() {
+  # Create metrics file where all models have higher costs
+  # Mock returns haiku 1500 and opus 160, so set both to higher
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":3000,"cost":1.50},{"model":"claude-opus-4-5-20251101","tokens":3000,"cost":2.50}],"date":"2025-12-15T10:00:00Z"}
+EOF
+
+  local exit_code=$(run_delta_script_exit_code)
+
+  # Should exit with code 2 (negative delta detected)
+  assertEquals "Exit code 2 for all negative" "2" "$exit_code"
+}
+
+# Test: Mixed positive and negative models detected
+test_mixed_positive_negative_detected() {
+  # Create metrics file with mixed positive/negative
+  # Haiku current 1500 > previous 500 (positive delta: +1000)
+  # Opus current 160 < previous 300 (negative delta: -140)
+  # Overall: has at least one negative, should exit with code 2
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25},{"model":"claude-opus-4-5-20251101","tokens":300,"cost":1.00}],"date":"2025-12-15T10:00:00Z"}
+EOF
+
+  local exit_code=$(run_delta_script_exit_code)
+
+  # Should exit with code 2 because at least one model is negative
+  assertEquals "Exit code 2 for mixed" "2" "$exit_code"
+
+  # Verify warning is shown for negative model
+  local output=$(run_delta_script_with_stderr)
+  assertTrue "Warning for negative" "echo '$output' | grep -q 'WARNING'"
 }
 
 # Source shUnit2

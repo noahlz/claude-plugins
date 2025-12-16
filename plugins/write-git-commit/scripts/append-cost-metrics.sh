@@ -6,9 +6,13 @@
 # - commit subject
 # - cost array
 # - date
+# - session ID (for session continuity tracking)
 #
 # Usage: ${CLAUDE_PLUGIN_ROOT}/scripts/append-cost-metrics.sh <metrics-file> <commit-sha> <subject> <cost-json-array>
 # Example: append-cost-metrics.sh .claude/cost-metrics.json abc123def "Fix bug" '[{"model":"...","tokens":100,"cost":0.01}]'
+#
+# Environment:
+#   SESSION_ID - Claude Code session ID (optional, defaults to "unknown")
 
 set -e
 
@@ -40,5 +44,6 @@ jq -n \
   --arg subject "$SUBJECT" \
   --argjson cost "$COST_ARRAY" \
   --arg date "$DATE" \
-  '{commit: $commit, subject: $subject, cost: $cost, date: $date}' \
+  --arg session_id "${SESSION_ID:-unknown}" \
+  '{commit: $commit, subject: $subject, cost: $cost, date: $date, session_id: $session_id}' \
   | jq -c '.' >> "$METRICS_FILE"

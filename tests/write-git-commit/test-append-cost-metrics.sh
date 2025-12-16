@@ -183,6 +183,103 @@ test_commit_field_preserved() {
   assertEquals "Commit field" "commit123abc" "$commit"
 }
 
+# Test: Entry includes session_id field
+test_entry_has_session_id_field() {
+  run_append_script
+
+  local entry=$(cat .claude/cost-metrics.json)
+
+  # Verify session_id field exists
+  local has_session_id=$(echo "$entry" | jq 'has("session_id")')
+  assertEquals "Has session_id" "true" "$has_session_id"
+}
+
+# Test: Session_id uses environment variable when set
+test_session_id_from_environment() {
+  # Set SESSION_ID environment variable
+  export SESSION_ID="test-session-uuid-12345"
+
+  run_append_script ".claude/cost-metrics.json" "abc123" "Test commit" "empty.json"
+
+  local entry=$(cat .claude/cost-metrics.json)
+  local session_id=$(echo "$entry" | jq -r '.session_id')
+
+  assertEquals "Session ID from env" "test-session-uuid-12345" "$session_id"
+}
+
+# Test: Session_id defaults to "unknown" when not set
+test_session_id_defaults_to_unknown() {
+  # Unset SESSION_ID so it defaults to "unknown"
+  unset SESSION_ID
+
+  run_append_script ".claude/cost-metrics.json" "abc123" "Test commit" "empty.json"
+
+  local entry=$(cat .claude/cost-metrics.json)
+  local session_id=$(echo "$entry" | jq -r '.session_id')
+
+  assertEquals "Session ID defaults to unknown" "unknown" "$session_id"
+}
+
+# Test: Session_id is preserved across multiple entries
+test_session_id_preserved_multiple_entries() {
+  # Set specific session ID
+  export SESSION_ID="session-uuid-67890"
+
+  # Create first entry
+  run_append_script ".claude/cost-metrics.json" "first" "First" "empty.json"
+
+  # Change session ID
+  export SESSION_ID="session-uuid-different"
+
+  # Create second entry
+  local cost_json='[{"model":"test","tokens":10,"cost":0.01}]'
+  bash "$CLAUDE_PLUGIN_ROOT/scripts/append-cost-metrics.sh" ".claude/cost-metrics.json" "second" "Second" "$cost_json"
+
+  # Read both entries
+  local first_line=$(head -1 .claude/cost-metrics.json)
+  local second_line=$(tail -1 .claude/cost-metrics.json)
+
+  # Extract session IDs
+  local first_session=$(echo "$first_line" | jq -r '.session_id')
+  local second_session=$(echo "$second_line" | jq -r '.session_id')
+
+  # Both should have their own session IDs
+  assertEquals "First entry session ID" "session-uuid-67890" "$first_session"
+  assertEquals "Second entry session ID" "session-uuid-different" "$second_session"
+}
+
+# Test: Session_id field is valid for all JSON parsing
+test_session_id_valid_json_string() {
+  export SESSION_ID="uuid-with-special-chars-@#$"
+
+  run_append_script ".claude/cost-metrics.json" "abc123" "Test" "empty.json"
+
+  local entry=$(cat .claude/cost-metrics.json)
+
+  # Should be valid JSON even with special characters (properly escaped)
+  local parsed=$(echo "$entry" | jq '.')
+  assertTrue "JSON parses with special chars" "[ -n '$parsed' ]"
+
+  # Extract and verify session_id
+  local session_id=$(echo "$entry" | jq -r '.session_id')
+  # Note: jq will unescape the special characters
+  assertTrue "Session ID field accessible" "[ -n '$session_id' ]"
+}
+
+# Test: Empty SESSION_ID environment variable defaults to "unknown"
+test_empty_session_id_defaults_to_unknown() {
+  # Set SESSION_ID to empty string
+  export SESSION_ID=""
+
+  run_append_script ".claude/cost-metrics.json" "abc123" "Test" "empty.json"
+
+  local entry=$(cat .claude/cost-metrics.json)
+  local session_id=$(echo "$entry" | jq -r '.session_id')
+
+  # Empty SESSION_ID should default to "unknown"
+  assertEquals "Empty SESSION_ID defaults to unknown" "unknown" "$session_id"
+}
+
 # Source shUnit2
 SHUNIT2_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/shunit2"
 . "$SHUNIT2_PATH"

@@ -52,12 +52,35 @@ action_prepare() {
     exit 1
   fi
 
-  # Calculate cost delta
-  COST_DELTA=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/claude-cost-delta.sh" "$METRICS_FILE" 2>/dev/null)
-  if [ $? -ne 0 ]; then
+  # Calculate cost delta (capture both stdout and stderr)
+  COST_DELTA_OUTPUT=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/claude-cost-delta.sh" "$METRICS_FILE" 2>&1)
+  COST_DELTA_EXIT=$?
+
+  if [ $COST_DELTA_EXIT -eq 2 ]; then
+    # Negative delta detected - extract actual delta from output (last JSON line)
+    # and return warning status with has_negative flag
+    COST_DELTA=$(echo "$COST_DELTA_OUTPUT" | tail -1)
+
+    ISO_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+    local data=$(jq -n \
+      --arg session_id "unknown" \
+      --argjson cost_delta "$COST_DELTA" \
+      --arg iso_date "$ISO_DATE" \
+      --arg metrics_file "$METRICS_FILE" \
+      --arg has_negative "true" \
+      '{session_id: $session_id, cost_delta: $cost_delta, iso_date: $iso_date, metrics_file: $metrics_file, has_negative: $has_negative}')
+
+    json_response "warning" "$data" "Negative cost delta detected - user choice required"
+    exit 0
+
+  elif [ $COST_DELTA_EXIT -ne 0 ]; then
     json_response_simple "error" "Failed to calculate cost delta"
     exit 1
   fi
+
+  # Normal case - positive delta
+  COST_DELTA="$COST_DELTA_OUTPUT"
 
   # Extract session ID (respects SESSION_FILTER)
   if [ "$SESSION_FILTER" = "null" ] || [ -z "$SESSION_FILTER" ]; then
@@ -166,9 +189,23 @@ action_append_metrics() {
     exit 1
   fi
 
-  # Source config to get METRICS_FILE
+  # Source config to get METRICS_FILE and SESSION_FILTER
   export CLAUDE_PLUGIN_ROOT
   source "${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh"
+
+  # Extract session ID (respects SESSION_FILTER)
+  if [ "$SESSION_FILTER" = "null" ] || [ -z "$SESSION_FILTER" ]; then
+    SESSION_ID=$(ccusage session --json 2>/dev/null | jq -r '.sessions[0].sessionId' 2>/dev/null)
+  else
+    SESSION_ID=$(ccusage session --json 2>/dev/null | jq -r ".sessions[] | select(.sessionId | contains(\"$SESSION_FILTER\")) | .sessionId" 2>/dev/null | head -1)
+  fi
+
+  if [ -z "$SESSION_ID" ]; then
+    SESSION_ID="unknown"
+  fi
+
+  # Export SESSION_ID so it's available to append-cost-metrics.sh
+  export SESSION_ID
 
   # Append metrics
   if bash "${CLAUDE_PLUGIN_ROOT}/scripts/append-cost-metrics.sh" \

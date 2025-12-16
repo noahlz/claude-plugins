@@ -84,5 +84,27 @@ DELTA=$(jq -n \
     )
   ' | jq -c '.')
 
+# Validate delta - check for negative values
+NEGATIVE_MODELS=$(echo "$DELTA" | jq '[.[] | select(.tokens < 0 or .cost < 0)] | length')
+
+if [ "$NEGATIVE_MODELS" -gt 0 ]; then
+  # Negative delta detected - write warning to stderr with raw values
+  echo "WARNING: Negative cost delta detected. This typically happens when:" >&2
+  echo "  - Claude Code session was restarted" >&2
+  echo "  - Cache was invalidated between commits" >&2
+  echo "  - Multiple sessions with same filter active" >&2
+  echo "" >&2
+  echo "Current session costs vs last recorded:" >&2
+  echo "$DELTA" | jq '.[] | select(.tokens < 0 or .cost < 0) | "  - \(.model): \(.tokens) tokens, $\(.cost)"' -r >&2
+  echo "" >&2
+
+  # Output delta cost array to stdout (so skill can process it)
+  echo "$DELTA"
+
+  # Return special error status for negative delta
+  # Use exit code 2 to distinguish from other errors
+  exit 2
+fi
+
 # Output delta cost array for commit message
 echo "$DELTA"

@@ -11,9 +11,58 @@ description: Create a git commit with Claude Code cost metrics embedded in the c
   - `COST_DELTA` from `data.cost_delta` (JSON array)
   - `ISO_DATE` from `data.iso_date`
   - `METRICS_FILE` from `data.metrics_file`
+  - `HAS_NEGATIVE` from `data.has_negative` (optional)
 
 ✓ If status is "success" → Continue to section 2
+⚠ If status is "warning" and `has_negative` is true:
+
+→ Display warning to user:
+```
+⚠️  WARNING: Cost delta calculation detected negative values.
+
+This typically happens when:
+  - Claude Code session was restarted between commits
+  - Cache was invalidated/rebuilt
+  - Multiple sessions are active with the same filter
+
+The raw delta shows:
+```
+
+→ Extract models with negative values from `COST_DELTA` and display:
+```
+<for each model: "  - {model}: {tokens} tokens, ${cost}">
+```
+
+→ Use AskUserQuestion to present user with options:
+  - "Use partial cost (only positive models)" (recommended if some positive models exist)
+  - "Add warning in commit footer (cost data unavailable)"
+  - "Skip cost metrics for this commit"
+  - "Other"
+
+→ Based on response:
+  - **Partial cost**: Set `COST_DELTA_MODE="partial"`, continue to section 1a
+  - **Warning**: Set `COST_DELTA_MODE="warning"`, continue to section 1a
+  - **Skip metrics**: Set `COST_DELTA_MODE="skip"`, continue to section 2
+  - **Other**: Follow user's custom instruction
+
 ✗ If status is "error" → Display error message and stop
+
+## 1a. Filter Cost Delta (if partial cost chosen)
+
+→ If `COST_DELTA_MODE` is "partial":
+```bash
+COST_DELTA=$(echo "$COST_DELTA" | jq '[.[] | select(.tokens >= 0 and .cost >= 0)]')
+```
+
+→ If `COST_DELTA_MODE` is "warning":
+```bash
+COST_DELTA="[]"
+COST_DELTA_MODE="warning"
+```
+
+→ If filtered/warning `COST_DELTA` is empty, display notice: "No valid cost data available - commit will include cost unavailable message"
+
+→ Continue to section 2
 
 ## 2. Get Commit Message
 
@@ -22,7 +71,15 @@ description: Create a git commit with Claude Code cost metrics embedded in the c
 
 ## 3. Build and Preview Commit Message
 
-→ Run commit-workflow.sh to build message:
+→ If `COST_DELTA_MODE` is "skip":
+  - Build message without cost footer (just subject/body and Co-Authored line)
+  - Display note to user: "Commit will be created without cost metrics (as requested)"
+
+→ If `COST_DELTA_MODE` is "warning":
+  - Build message with empty cost array (signals unavailable in footer)
+  - Display note: "Commit will include notice that cost data was unavailable"
+
+→ Otherwise, run commit-workflow.sh to build message:
 ```bash
 RESPONSE=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/commit-workflow.sh build-message \
   "$COMMIT_SUBJECT" "$COMMIT_BODY" "$SESSION_ID" "$COST_DELTA" "$ISO_DATE")
@@ -50,14 +107,23 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 
 ## 5. Append to Metrics File
 
-→ Run: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/commit-workflow.sh append-metrics "$COMMIT_SHA" "$COMMIT_SUBJECT" "$COST_DELTA"`
+→ If `COST_DELTA_MODE` is "skip":
+  - Skip appending to metrics file
+  - Display note: "Skipping metrics append (as requested)"
+  - Continue to section 6
+
+→ Otherwise, run: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/commit-workflow.sh append-metrics "$COMMIT_SHA" "$COMMIT_SUBJECT" "$COST_DELTA"`
 
 ✓ If status is "success" → Display success message, continue to section 6
 ✗ If status is "error" → Display warning (commit was created), continue to section 6 anyway
 
 ## 6. Update .gitignore (Optional)
 
-→ Run: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/commit-workflow.sh check-gitignore`
+→ If `COST_DELTA_MODE` is "skip":
+  - Skip gitignore check (no metrics were appended)
+  - Continue to section 7
+
+→ Otherwise, run: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/commit-workflow.sh check-gitignore`
 → Parse JSON output to get `METRICS_IGNORED` from `data.ignored`
 
 ✓ If `METRICS_IGNORED` is true → Proceed to section 7
@@ -67,7 +133,16 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 
 ## 7. Success
 
-→ Display success summary:
+→ If `COST_DELTA_MODE` is "skip":
+  - Display success summary:
+```
+✅ Commit created successfully
+   SHA: <COMMIT_SHA>
+
+⚠️  Cost metrics were not recorded (skipped per user request)
+```
+
+→ Otherwise, display success summary:
 ```
 ✅ Commit created with cost metrics in footer
    SHA: <COMMIT_SHA>
@@ -77,7 +152,7 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 
 📊 Session metrics:
    ID: <SESSION_ID>
-   Cost: <total cost from COST_DELTA>
+   Cost: <total cost from COST_DELTA> (or "unavailable" if empty)
 ```
 
 ✓ Done - Return to user
