@@ -1,0 +1,19 @@
+{
+  "buildTools": [
+    {
+      "name": "shunit2",
+      "buildCmd": "./tests/run-all-tests.sh",
+      "testCmd": "./tests/run-all-tests.sh",
+      "testSingleCmd": "bash ./tests/{testFile}",
+      "buildWorkingDir": ".",
+      "buildLog": "out/build.log",
+      "buildErrorPattern": "(error|Error|ERROR|failed|Failed|FAILED)",
+      "testLog": "out/tests.log",
+      "testErrorPattern": "(FAILED|FAIL|Error:|ERROR)",
+      "testSingleLog": "out/test-single.log",
+      "testSingleErrorPattern": "(FAILED|FAIL|Error:|ERROR)",
+      "logDir": "out"
+    }
+  ],
+  "buildMulti": false
+}

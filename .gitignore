@@ -17,6 +17,5 @@ out/
 .claude/settings.local.json
 
 # Plugin configurations (meant to be per-user not per-project - do not commit)
-.claude/build-config.json
-.claude/commit-config.json
-.claude/cost-metrics.jsonl
+.claude/plugins.settings.run-and-fix-tests.json
+.claude/plugins.settings.write-git-commit.json

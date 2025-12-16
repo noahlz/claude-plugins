@@ -67,8 +67,10 @@ description: What it does and when to trigger. Include activation phrases.
 - **Activate phrase**: Include in skill description (e.g., "Activate when user says 'run tests'")
 - **User confirmation**: Use `AskUserQuestion` for destructive operations (e.g., fixing code automatically)
 - **Task Tracking**: Use `TodoWrite` when tracking tasks in a complex skill operation.
-- **Configuration**: Use default JSON config files + deep merge with user-specific JSON config using `jq`
+- **Configuration**: Use `settings.plugins.<plugin-name>.json` for project-specific config (auto-detected/auto-generated on first run preferred)
+- **Dependencies**: Document external tool requirements with installation links (e.g., ccusage)
 - **Error handling**: Display errors clearly, show log file paths, ask before proceeding
+- **Fallback methods**: For external tools, try direct invocation, then npx, then bunx
 
 ## Adding New Plugin
 
