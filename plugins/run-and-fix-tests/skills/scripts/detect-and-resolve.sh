@@ -17,7 +17,7 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Load merged config (default + project override)
-DEFAULT_CONFIG="${CLAUDE_PLUGIN_ROOT}/build-config.json"
+DEFAULT_CONFIG="${CLAUDE_PLUGIN_ROOT}/skills/build-config.json"
 PROJECT_CONFIG="./.claude/build-config.json"
 
 if [ ! -f "$DEFAULT_CONFIG" ]; then

@@ -4,22 +4,20 @@
 
 ```
 claude-plugins/
-├── .claude-plugin/marketplace.json     # Marketplace metadata
+├── .claude-plugin/marketplace.json
 ├── plugins/
 │   ├── write-git-commit/
-│   │   ├── plugin.json                 # Plugin config (name, version, author)
-│   │   ├── README.md                   # User-facing documentation
-│   │   ├── commands/commit.md          # Command files invoke skills
-│   │   └── skills/SKILL.md             # Agent skill (numbered steps)
+│   │   ├── plugin.json
+│   │   ├── README.md
+│   │   ├── commands/commit.md
+│   │   └── skills/SKILL.md
 │   └── run-and-fix-tests/
 │       ├── plugin.json
 │       ├── README.md
-│       ├── build-config.json           # Default build/test config
 │       ├── commands/test.md
-│       ├── skills/SKILL.md
-│       └── scripts/load-build-config.js # Config loading utility
-├── README.md                           # Marketplace overview
-└── CLAUDE.md                           # This file
+│       └── skills/SKILL.md
+├── README.md
+└── CLAUDE.md
 ```
 
 ## Plugin Authoring Guidelines
