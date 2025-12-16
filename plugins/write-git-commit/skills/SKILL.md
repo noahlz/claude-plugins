@@ -64,16 +64,45 @@ COST_DELTA_MODE="warning"
 
 → Continue to section 2
 
-## 2. Get Commit Message
+## 2. Generate Suggested Commit Message
 
-→ Ask user for commit subject (brief, imperative)
-→ Optionally ask for commit body (longer explanation, can be empty)
+→ Generate a suggested commit message based on staged changes:
+  - Analyze `git diff --cached` or use heuristics to suggest a message
+  - Format: "Action: Brief description" (imperative mood)
+
+→ Display suggested message to user:
+
+```
+[blank line]
+[suggested message here]
+[blank line]
+```
+
+→ Ask user with AskUserQuestion:
+  - "Accept this message?" (recommended)
+  - "Provide your own message"
+  - "Stop/Cancel commit"
+
+✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Continue to section 3
+✗ If "Provide own" → Go to section 2a
+✗ If "Stop" → Exit workflow
+
+## 2a. Get Custom Commit Message
+
+→ Ask user to enter their full commit message:
+  - Question: "Enter your commit message (first line is subject, additional lines are body)"
+
+→ Parse the input to extract:
+  - `COMMIT_SUBJECT` = First line
+  - `COMMIT_BODY` = Remaining lines (empty if only subject)
+
+→ Continue to section 3
 
 ## 3. Build and Preview Commit Message
 
 → If `COST_DELTA_MODE` is "skip":
   - Build message without cost footer (just subject/body and Co-Authored line)
-  - Display note to user: "Commit will be created without cost metrics (as requested)"
+  - Display note: "Commit will be created without cost metrics (as requested)"
 
 → If `COST_DELTA_MODE` is "warning":
   - Build message with empty cost array (signals unavailable in footer)
@@ -86,16 +115,20 @@ RESPONSE=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/commit-workflow.sh build-message \
 FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 ```
 
-→ Display `$FULL_MESSAGE` to user with line breaks preserved
+→ Display the full commit message to user in plain text (with blank lines before and after, no other borders):
 
-→ Ask user with AskUserQuestion:
+```
+[blank line]
+[FULL_MESSAGE displayed exactly as it will be committed]
+[blank line]
+```
+
+→ Use AskUserQuestion to ask user to confirm:
   - "Proceed with this commit?" (recommended)
-  - "No, let me edit the message"
-  - "Other"
+  - "No, let me revise the message"
 
 ✓ "Proceed" → Continue to section 4
-✗ "No, let me edit" → Return to section 2
-✗ "Other" → User provides custom message, use that for next attempt
+✗ "No, revise" → Return to section 2
 
 ## 4. Create Commit
 
