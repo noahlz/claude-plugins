@@ -1,11 +1,5 @@
-# Dependencies
-node_modules/
-package-lock.json
-yarn.lock
-
-# Build outputs
-dist/
-build/
+# test outputs
+out/
 
 # Logs
 *.log
@@ -23,5 +17,6 @@ build/
 .claude/settings.local.json
 
 # Plugin configurations (meant to be per-user not per-project - do not commit)
+.claude/build-config.json
 .claude/commit-config.json
 .claude/cost-metrics.jsonl

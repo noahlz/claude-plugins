@@ -14,10 +14,11 @@ claude-plugins/
 │   ├── commit.md
 │   └── test.md
 ├── skills
-│   ├── write-git-commit/
+│   ├── run-and-fix-tests/
+│   │   ├── examples/
 │   │   ├── scripts/
 │   │   └── SKILL.md
-│   └── run-and-fix-tests/
+│   └── write-git-commit/
 │       ├── scripts/
 │       └── SKILL.md
 ├── tests/
@@ -108,13 +109,24 @@ description: What it does and when to trigger. Include activation phrases.
 
 ## Testing
 
-The `tests/` directory contains [`shUnit2`](https://github.com/kward/shunit2) unit tests for the various scripts used by these plugins.
+After making changes to plugin scripts, use the `run-and-fix-tests` skill (if it is available).
 
-To run all tests:
+If the plugin is not available, follow these steps:
+
+1. Run all tests with the command:
 
 ```bash
-./tests/run-all-tests.sh
+./tests/run-all-tests.sh > ./out/tests.log > 2>&1
 ```
+
+2. Check the return code of the command.
+- If it is zero, all tests pass! Stop.
+- If it is non-zero, proceed to the next step.
+
+3. Fix the broken tests:
+- Search the contents of `./out/tests.log` for `fail` (case insensitive) to identify the failing tests.
+- Create a todo list of the failures with `TodoWrite`
+- Iterate the failing tests, fixing each. Mark todo list item as `completed` when fixed.
 
 Read @tests/README.md for detailed testing documentation.
 

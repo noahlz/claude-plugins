@@ -72,14 +72,14 @@ description: Build project and run tests with clean output, fix any failures. Ac
 
 **Single Build:**
 → Change to build working directory: `cd "$BUILD_WORKING_DIR"`
-→ Execute build command (using BUILD_CMD, BUILD_LOG, BUILD_ERROR_PATTERN)
+→ Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
 ✓ Exit 0 → Return to INITIAL_PWD, proceed to section 3 (Run Tests)
 ✗ Exit non-zero → Return to INITIAL_PWD, proceed to section 2a (Extract Build Errors)
 
 **Multi-Build:**
 → For each build in detected tools:
   → Change to build working directory
-  → Execute build command
+  → Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
   → On success: continue to next build
   → On failure: return to INITIAL_PWD, proceed to section 2a (Extract Build Errors)
 
@@ -108,7 +108,7 @@ description: Build project and run tests with clean output, fix any failures. Ac
   - All tests mode: TEST_CMD = `$TEST_CMD`
 
 → Change to test working directory (if different from build dir)
-→ Execute test command (log to $TEST_LOG)
+→ Execute test command silently to log file: `$TEST_CMD > "$TEST_LOG" 2>&1`
 ✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to section 6 (Ask to Fix Tests)
 ✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to section 4 (Extract Test Errors)
 
@@ -150,9 +150,9 @@ description: Build project and run tests with clean output, fix any failures. Ac
 → Increment `RETRY_COUNT`
 → Analyze the failing test error and identify what needs to be fixed
 → **Modify the source code** to address the root cause
-→ Run the **specific single test** (test class or test file) to verify the fix:
-  - For unit tests: `TEST_SINGLE_CMD` with the test file/class name
-  - Capture output and check exit code
+→ Run the **specific single test** (test class or test file) silently to verify the fix:
+  - For unit tests: `$TEST_SINGLE_CMD > "$TEST_SINGLE_LOG" 2>&1` with the test file/class name
+  - Capture exit code from command execution
 → Display result to user
 
 ✓ Test passes → Mark todo as "completed", proceed to section 7b
@@ -188,5 +188,6 @@ description: Build project and run tests with clean output, fix any failures. Ac
 
 **⚠️  CRITICAL DIRECTIVES**
 
-- NEVER assume test failures are "pre-existing."
-- Investigate all failures to their root cause (unless user halts the workflow).
+- NEVER use the `tee` command when building source or executing tests. All output should redirect to log files, that you inspect later based on the command return code (non-zero indicates failure).
+- NEVER assume compilation errors or test failures are "pre-existing."
+- Investigate all errors and failures to their root cause (unless user halts the workflow).

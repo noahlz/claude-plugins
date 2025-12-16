@@ -14,7 +14,12 @@
 
 set -e
 
-CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-.}"
+# Detect CLAUDE_PLUGIN_ROOT from script location if not set
+if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  CLAUDE_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+fi
+export CLAUDE_PLUGIN_ROOT
 ACTION="${1:-}"
 
 # Output JSON response

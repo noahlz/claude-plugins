@@ -5,10 +5,11 @@
 
 set -e
 
-# Validate environment
+# Detect CLAUDE_PLUGIN_ROOT from script location if not set
 if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
-  echo "Error: CLAUDE_PLUGIN_ROOT not set" >&2
-  exit 1
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  CLAUDE_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  export CLAUDE_PLUGIN_ROOT
 fi
 
 if ! command -v jq &> /dev/null; then
