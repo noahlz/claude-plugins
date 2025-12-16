@@ -31,10 +31,10 @@ fi
 # Get current session data (filter by SESSION_FILTER if configured)
 if [ "$SESSION_FILTER" = "null" ] || [ -z "$SESSION_FILTER" ]; then
   # No filter: use first session
-  CURRENT=$(ccusage session --json | jq -c ".sessions[0] | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: .cost}))}")
+  CURRENT=$(ccusage session --json | jq -c ".sessions[0] | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: ((.cost * 100 | round) / 100)}))}")
 else
   # Filter by configured session name
-  CURRENT=$(ccusage session --json | jq -c ".sessions[] | select(.sessionId | contains(\"$SESSION_FILTER\")) | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: .cost}))}" | head -1)
+  CURRENT=$(ccusage session --json | jq -c ".sessions[] | select(.sessionId | contains(\"$SESSION_FILTER\")) | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: ((.cost * 100 | round) / 100)}))}" | head -1)
 fi
 
 if [ -z "$CURRENT" ]; then
@@ -69,6 +69,7 @@ fi
 PREVIOUS_COST=$(echo "$LAST_ENTRY" | jq -c '.cost // []')
 
 # Calculate deltas for each model (current - previous)
+# Round cost to 2 decimal places
 DELTA=$(jq -n \
   --argjson current "$CURRENT_COST" \
   --argjson previous "$PREVIOUS_COST" \
@@ -79,7 +80,7 @@ DELTA=$(jq -n \
       {
         model: .model,
         tokens: (.tokens - $prev.tokens),
-        cost: (.cost - $prev.cost)
+        cost: (((.cost - $prev.cost) * 100 | round) / 100)
       }
     )
   ' | jq -c '.')
