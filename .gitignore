@@ -22,5 +22,6 @@ build/
 # Claude Code
 .claude/settings.local.json
 
-# Cost metrics (meant to be per-user not per-project - do not commit)
+# Plugin configurations (meant to be per-user not per-project - do not commit)
+.claude/commit-config.json
 .claude/cost-metrics.jsonl

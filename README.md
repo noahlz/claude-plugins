@@ -21,7 +21,8 @@ Run tests with clean output and fix any failures.
 Add the marketplace to your Claude Code settings:
 
 ```bash
-claude plugin marketplace add /path/to/claude-plugins
+claude plugin marketplace add https://github.com/noahlz/claude-plugins.git
+claude plugin install dev-workflow@noahlz.github.com
 ```
 
 ## Development
@@ -37,31 +38,13 @@ claude plugin marketplace add .
 
 ### Plugin Reinstallation
 
-When making changes to plugin code, you must fully uninstall and reinstall the plugin for changes to take effect:
+When making changes to plugin code, you must fully uninstall and reinstall the plugin for changes to take effect. Run the provided script `./reinstall.sh`
 
-```bash
-# Uninstall the plugin
-claude plugin uninstall <plugin-name>
-
-# Reinstall from the marketplace
-claude plugin install <plugin-name>
-```
-
-**Alternative:** Increment the version number in the plugin's `plugin.json` file to avoid reinstalling:
-
-```json
-{
-  "name": "write-git-commit",
-  "version": "1.0.1",
-  ...
-}
-```
-
-This allows Claude Code to recognize the plugin as updated and load the new version without requiring uninstall/reinstall.
+Alternatively, update the plugin version number in `marketplace.json` and then trigger a marketplace/plugin update in Claude Code.
 
 ## Testing
 
-Run the test suite to validate all plugin functionality:
+These plugins leverage bash scripting extenstively. Scripts are infamously fragile and hard to maintain, which is why we have test suite:
 
 ```bash
 ./tests/run-all-tests.sh

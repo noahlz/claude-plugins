@@ -2,8 +2,7 @@
   "name": "noahlz.github.io",
   "owner": {
     "name": "Noah Zucker",
-    "email": "nzucker@gmail.com",
-    "url": "https://github.com/noahlz"
+    "email": "nzucker@gmail.com"
   },
   "metadata": {
     "description": "Dev workflow plugins.",
@@ -16,6 +15,7 @@
       "description": "Plugins for dev workflow productivity.",
       "author": {
         "name": "Noah Zucker",
+        "email": "nzucker@gmail.com",
         "url": "https://github.com/noahlz"
       },
       "source": "./",
