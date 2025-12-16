@@ -188,6 +188,8 @@ description: Build project and run tests with clean output, fix any failures. Ac
 
 **⚠️  CRITICAL DIRECTIVES**
 
+- MANDATORY WORKFLOW: After extracting test failures (Step 4) and creating fix plan (Step 5), ALWAYS proceed to Step 6 (Ask to Fix Tests) and Step 7 (Fix Tests Iteratively). Do NOT skip these steps or declare testing a "separate task."
+- ALWAYS ask user via AskUserQuestion in Step 6 before fixing tests. Only skip to Step 7 if user confirms "Yes, start fixing tests."
 - NEVER use the `tee` command when building source or executing tests. All output should redirect to log files, that you inspect later based on the command return code (non-zero indicates failure).
 - NEVER assume compilation errors or test failures are "pre-existing."
 - Investigate all errors and failures to their root cause (unless user halts the workflow).

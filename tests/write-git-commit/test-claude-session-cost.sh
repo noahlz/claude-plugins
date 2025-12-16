@@ -25,6 +25,7 @@ tearDown() {
 # Helper: Run claude-session-cost.sh and capture output
 run_session_cost() {
   export SESSION_FILTER="${SESSION_FILTER:-}"
+  export PATH="$TESTS_ROOT/lib/mocks:$PATH"
   "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/claude-session-cost.sh" 2>/dev/null
 }
 
@@ -33,10 +34,10 @@ test_returns_json_array() {
   local output=$(run_session_cost)
 
   # Should be valid JSON array
-  assertTrue "Valid JSON array" "echo '$output' | jq -e 'type == \"array\"' > /dev/null"
+  [ "$(echo "$output" | jq 'type')" = '"array"' ] || fail "Valid JSON array"
 
   # Should have model data
-  assertTrue "Has at least one model" "echo '$output' | jq -e 'length > 0' > /dev/null"
+  [ "$(echo "$output" | jq 'length')" -gt 0 ] || fail "Has at least one model"
 }
 
 # Test: Output includes required fields
@@ -44,16 +45,16 @@ test_includes_required_fields() {
   local output=$(run_session_cost)
 
   # Should have model field
-  assertTrue "Has model field" "echo '$output' | jq -e '.[0].model' > /dev/null"
+  echo "$output" | jq -e '.[0].model' > /dev/null || fail "Has model field"
 
   # Should have inputTokens field
-  assertTrue "Has inputTokens field" "echo '$output' | jq -e '.[0].inputTokens' > /dev/null"
+  echo "$output" | jq -e '.[0].inputTokens' > /dev/null || fail "Has inputTokens field"
 
   # Should have outputTokens field
-  assertTrue "Has outputTokens field" "echo '$output' | jq -e '.[0].outputTokens' > /dev/null"
+  echo "$output" | jq -e '.[0].outputTokens' > /dev/null || fail "Has outputTokens field"
 
   # Should have cost field
-  assertTrue "Has cost field" "echo '$output' | jq -e '.[0].cost' > /dev/null"
+  echo "$output" | jq -e '.[0].cost' > /dev/null || fail "Has cost field"
 }
 
 # Test: Does not include cache token fields
@@ -63,8 +64,8 @@ test_excludes_cache_tokens() {
   local has_cache_creation=$(echo "$output" | jq '.[0] | has("cacheCreationTokens")' 2>/dev/null)
   local has_cache_read=$(echo "$output" | jq '.[0] | has("cacheReadTokens")' 2>/dev/null)
 
-  assertEquals "No cacheCreationTokens" "false" "$has_cache_creation"
-  assertEquals "No cacheReadTokens" "false" "$has_cache_read"
+  [ "$has_cache_creation" = "false" ] || fail "No cacheCreationTokens"
+  [ "$has_cache_read" = "false" ] || fail "No cacheReadTokens"
 }
 
 # Test: Handles multiple models in session
@@ -73,7 +74,7 @@ test_handles_multiple_models() {
   local model_count=$(echo "$output" | jq 'length' 2>/dev/null)
 
   # Mock returns 2 models (haiku + opus)
-  assertTrue "Has multiple models" "[ $model_count -ge 2 ]"
+  [ "$model_count" -ge 2 ] || fail "Has multiple models"
 }
 
 # Test: Costs are rounded to 2 decimal places
@@ -82,7 +83,7 @@ test_costs_rounded_to_two_decimals() {
   local cost=$(echo "$output" | jq '.[0].cost' 2>/dev/null)
 
   # Should be a valid cost format (N.NN or N.N)
-  assertTrue "Cost is valid decimal" "echo '$cost' | grep -E '^[0-9]+\.[0-9]{1,2}$' > /dev/null"
+  echo "$cost" | grep -E '^[0-9]+\.[0-9]{1,2}$' > /dev/null || fail "Cost is valid decimal"
 }
 
 # Test: Respects SESSION_FILTER when set
@@ -91,7 +92,7 @@ test_respects_session_filter() {
   local output=$(run_session_cost)
 
   # Should still return valid data
-  assertTrue "Has data with filter" "echo '$output' | jq -e 'type == \"array\" and length > 0' > /dev/null"
+  [ "$(echo "$output" | jq 'type')" = '"array"' ] && [ "$(echo "$output" | jq 'length')" -gt 0 ] || fail "Has data with filter"
 }
 
 # Test: Works with empty SESSION_FILTER (uses first session)
@@ -100,7 +101,7 @@ test_works_without_filter() {
   local output=$(run_session_cost)
 
   # Should return valid data
-  assertTrue "Has data without filter" "echo '$output' | jq -e 'type == \"array\" and length > 0' > /dev/null"
+  [ "$(echo "$output" | jq 'type')" = '"array"' ] && [ "$(echo "$output" | jq 'length')" -gt 0 ] || fail "Has data without filter"
 }
 
 # Test: Output format matches expected structure
@@ -109,7 +110,7 @@ test_output_format() {
 
   # Each model should have exactly 4 fields: model, inputTokens, outputTokens, cost
   local field_count=$(echo "$output" | jq '.[0] | keys | length' 2>/dev/null)
-  assertEquals "Exactly 4 fields per model" "4" "$field_count"
+  [ "$field_count" = "4" ] || fail "Exactly 4 fields per model (got $field_count)"
 }
 
 # Source shUnit2
