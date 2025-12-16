@@ -115,6 +115,27 @@ To run all tests:
 
 Read @tests/README.md for detailed testing documentation.
 
+## Communication Guidelines
+
+When working with Claude Code on this project:
+
+- **During implementation**: Keep explanations terse and focused
+- **After plan completion**: Provide only a brief summary of what was accomplished
+- **Avoid verbose output**: Don't explain each step or repeat what was already done
+- **Be concise**: Use bullet points for multiple items rather than full sentences
+- **Focus on results**: Let code and test results speak for themselves
+- **Don't auto-commit**: Let the user trigger git commit with `/commit` when ready - don't create commits automatically
+
+Example of preferred summary after implementation:
+```
+✅ Implementation complete
+- Added 3 new test cases
+- All 93 tests passing
+- Updated SKILL.md with new workflow
+```
+
+Rather than detailed walk-throughs of each change made.
+
 
 ## Important References
 
