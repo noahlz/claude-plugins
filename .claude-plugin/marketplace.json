@@ -5,7 +5,10 @@
     "email": "nzucker@gmail.com",
     "url": "https://github.com/noahlz"
   },
-  "description": "Dev workflow plugins.",
+  "metadata": {
+    "description": "Dev workflow plugins.",
+    "version": "0.0.1"
+  },
   "plugins": [
     {
       "name": "dev-workflow",
