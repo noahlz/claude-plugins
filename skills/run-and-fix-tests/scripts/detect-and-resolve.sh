@@ -1,6 +1,6 @@
 #!/bin/bash
 # Detect build tools and resolve configuration
-# Usage: source ${CLAUDE_PLUGIN_ROOT}/skills/scripts/detect-and-resolve.sh
+# Usage: source ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.sh
 # Output: Sets DETECTED_TOOLS (JSON array), BUILD_CONFIG (merged config)
 
 set -e
@@ -17,7 +17,7 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Load merged config (default + project override)
-DEFAULT_CONFIG="${CLAUDE_PLUGIN_ROOT}/skills/build-config.json"
+DEFAULT_CONFIG="${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-config.json"
 PROJECT_CONFIG="./.claude/build-config.json"
 
 if [ ! -f "$DEFAULT_CONFIG" ]; then

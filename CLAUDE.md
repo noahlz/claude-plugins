@@ -71,39 +71,38 @@ description: What it does and when to trigger. Include activation phrases.
 
 ## Adding New Plugin
 
-1. **Get author info from git config:**
+1. **Create structure:**
    ```bash
-   git config user.name   # Use for plugin.json "author"
-   git config user.email  # Use for marketplace.json if needed
+   mkdir -p skills/my-skill/{scripts}
+   mkdir -p commands
    ```
 
-2. **Create structure:**
-   ```bash
-   mkdir -p plugins/my-plugin/{skills,commands,scripts}
-   ```
-
-3. **Create plugin.json** with metadata
-
-4. **Create skills/SKILL.md** with:
+2. **Create skills/my-skill/SKILL.md** with:
    - Proper frontmatter (`name`, `description` only)
    - Numbered sections (## 1., ## 2., ...)
    - Symbol-based workflow (→, ✓, ✗, ⚠, 📁, 🔧)
    - Action-oriented language
 
-5. **Create commands/** that invoke the skill
+3. **Create skills/my-skill/README.md** with user documentation
 
-6. **Create README.md** with user documentation
+4. **Create skills/my-skill/<config>.json** with default configuration
 
-7. **Add to marketplace.json:**
+5. **Create commands/<skill-name>.md** that invoke the skill
+
+6. **Add to .claude-plugin/marketplace.json:**
    ```json
    {
-     "name": "my-plugin",
-     "source": "./plugins/my-plugin",
-     "description": "...",
+     "name": "dev-workflow",
      "version": "0.0.1",
-     "author": {"name": "..."},
-     "keywords": [...],
-     "category": "development"
+     "license": "MIT",
+     "description": "...",
+     "source": "./",
+     "skills": [
+       "./skills/my-skill"
+     ],
+     "commands": [
+       "./commands/my-command.md"
+     ]
    }
    ```
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tests for plugins/write-git-commit/skills/scripts/commit-workflow.sh
+# Tests for skills/write-git-commit/scripts/commit-workflow.sh
 
 # Setup test environment
 setUp() {
@@ -14,7 +14,7 @@ setUp() {
   setup_test_env
 
   # Set up plugin root
-  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins/plugins/write-git-commit"
+  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins"
 
   # Set up mocks path (prepend to PATH so mocks are found first)
   export PATH="$TESTS_ROOT/lib/mocks:$PATH"
@@ -35,7 +35,7 @@ tearDown() {
 run_workflow() {
   local action="$1"
   shift
-  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/commit-workflow.sh" "$action" "$@" 2>/dev/null
+  bash "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.sh" "$action" "$@" 2>/dev/null
 }
 
 # ========================================

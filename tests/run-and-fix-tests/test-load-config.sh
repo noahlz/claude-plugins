@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tests for plugins/run-and-fix-tests/scripts/load-config.sh
+# Tests for skills/run-and-fix-tests/scripts/load-config.sh
 
 # Setup test environment
 setUp() {
@@ -14,7 +14,7 @@ setUp() {
   setup_test_env
 
   # Set up plugin root
-  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins/plugins/run-and-fix-tests"
+  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins"
 
   # Set working directory to test temp dir
   cd "$TEST_TMPDIR" || exit 1
@@ -31,7 +31,7 @@ tearDown() {
 # Helper: Source load-config.sh and capture variables
 load_config() {
   # Source the config loader to export variables
-  source "${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh"
+  source "${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh"
 }
 
 # ========================================
@@ -218,7 +218,7 @@ test_handles_missing_claude_plugin_root() {
   unset CLAUDE_PLUGIN_ROOT
 
   # This should fail or handle gracefully
-  local result=$(bash "${TESTS_ROOT}/../lib/mocks/../../../plugins/run-and-fix-tests/scripts/load-config.sh" 2>&1)
+  local result=$(bash "${TESTS_ROOT}/../skills/run-and-fix-tests/scripts/load-config.sh" 2>&1)
 
   # Should either error or still load default
   # The script should handle this case
@@ -254,7 +254,7 @@ test_project_config_must_be_valid_json() {
 EOF
 
   # Should handle gracefully or error appropriately
-  local result=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh" 2>&1)
+  local result=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh" 2>&1)
 
   # Test that script doesn't crash catastrophically
   assertTrue "Script handles invalid JSON" "true"

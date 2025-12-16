@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tests for plugins/write-git-commit/skills/scripts/append-cost-metrics.sh
+# Tests for skills/write-git-commit/scripts/append-cost-metrics.sh
 
 # Setup test environment
 setUp() {
@@ -14,7 +14,7 @@ setUp() {
   setup_test_env
 
   # Set up plugin root
-  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins/plugins/write-git-commit"
+  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins"
 
   # Set working directory to test temp dir
   cd "$TEST_TMPDIR" || exit 1
@@ -38,7 +38,7 @@ run_append_script() {
   # Read cost JSON from fixture file
   local cost_json=$(cat "$TESTS_ROOT/fixtures/cost-arrays/$cost_fixture")
 
-  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/append-cost-metrics.sh" "$metrics_file" "$commit_sha" "$subject" "$cost_json"
+  bash "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/append-cost-metrics.sh" "$metrics_file" "$commit_sha" "$subject" "$cost_json"
   return $?
 }
 
@@ -121,7 +121,7 @@ EOF
   run_append_script ".claude/cost-metrics.jsonl" "second" "Second" "single-test.json"
   # For third entry, we need a different cost fixture
   local cost_third='[{"model":"test","tokens":20,"cost":0.02}]'
-  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/append-cost-metrics.sh" ".claude/cost-metrics.jsonl" "third" "Third" "$cost_third"
+  bash "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/append-cost-metrics.sh" ".claude/cost-metrics.jsonl" "third" "Third" "$cost_third"
 
   # Check that we have 3 lines
   local line_count=$(wc -l < .claude/cost-metrics.jsonl | tr -d ' ')
@@ -236,7 +236,7 @@ test_session_id_preserved_multiple_entries() {
 
   # Create second entry
   local cost_json='[{"model":"test","tokens":10,"cost":0.01}]'
-  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/append-cost-metrics.sh" ".claude/cost-metrics.jsonl" "second" "Second" "$cost_json"
+  bash "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/append-cost-metrics.sh" ".claude/cost-metrics.jsonl" "second" "Second" "$cost_json"
 
   # Read both entries
   local first_line=$(head -1 .claude/cost-metrics.jsonl)

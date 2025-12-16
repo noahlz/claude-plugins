@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tests for plugins/write-git-commit/skills/scripts/load-config.sh
+# Tests for skills/write-git-commit/scripts/load-config.sh
 
 # Setup test environment
 setUp() {
@@ -14,7 +14,7 @@ setUp() {
   setup_test_env
 
   # Set up plugin root
-  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins/plugins/write-git-commit"
+  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins"
 
   # Set working directory to test temp dir
   cd "$TEST_TMPDIR" || exit 1
@@ -30,7 +30,7 @@ test_loads_default_config() {
   mkdir -p "$TEST_TMPDIR/.claude"
 
   # Source the load-config script
-  . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
+  . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
   # Check that METRICS_FILE is set to default
   assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
@@ -51,7 +51,7 @@ test_merges_configs() {
 EOF
 
   # Source the load-config script
-  . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
+  . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
   # Check that metricsFile is overridden
   assertEquals ".custom/metrics.json" "$METRICS_FILE"
@@ -72,7 +72,7 @@ test_exports_session_filter() {
 EOF
 
   # Source the load-config script
-  . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
+  . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
   # Check that SESSION_FILTER is set from config
   assertEquals "myproject" "$SESSION_FILTER"
@@ -89,7 +89,7 @@ test_handles_empty_project_config() {
   echo '{}' > "$TEST_TMPDIR/.claude/commit-config.json"
 
   # Source the load-config script
-  . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
+  . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
   # Both should have defaults
   assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
@@ -104,7 +104,7 @@ test_errors_without_plugin_root() {
   unset CLAUDE_PLUGIN_ROOT
 
   # Try to source - should fail
-  (. "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh" 2>/dev/null)
+  (. "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh" 2>/dev/null)
 
   # Should not succeed
   assertTrue "[ $? -ne 0 ]"
@@ -125,7 +125,7 @@ test_deep_merges_json() {
 EOF
 
   # Source the load-config script
-  . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
+  . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
   # Check merged result
   assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
@@ -146,7 +146,7 @@ EOF
 
   # Source in a subshell and check exports
   (
-    . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
+    . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
     [ -n "$METRICS_FILE" ] && echo "METRICS_FILE=$METRICS_FILE"
     [ -n "$SESSION_FILTER" ] && echo "SESSION_FILTER=$SESSION_FILTER"
   ) | grep -q "METRICS_FILE"

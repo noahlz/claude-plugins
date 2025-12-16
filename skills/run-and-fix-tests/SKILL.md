@@ -9,7 +9,7 @@ description: Build project and run tests with clean output, fix any failures. Ac
 ✓ Config exists → Proceed to step 1
 ✗ Config missing/empty → Run detection script:
 
-→ Source: `${CLAUDE_PLUGIN_ROOT}/skills/scripts/detect-and-resolve.sh`
+→ Source: `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.sh`
   - Scans project for build tool config files (package.json, pom.xml, build.gradle, etc.)
   - Loads merged config (default + project override)
   - Returns: `$DETECTED_TOOLS` (JSON array), `$BUILD_CONFIG` (merged config)
@@ -49,7 +49,7 @@ description: Build project and run tests with clean output, fix any failures. Ac
 
 ## 1. Load Configuration
 
-→ Source: `${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh`
+→ Source: `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh`
 ✗ Script fails → Display error and stop
 ✓ Script succeeds → Environment variables set:
   - BUILD_CMD, BUILD_LOG, BUILD_ERROR_PATTERN, BUILD_WORKING_DIR

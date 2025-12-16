@@ -1,6 +1,6 @@
 #!/bin/bash
 # Load and merge run-and-fix-tests configuration
-# Usage: source ${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh
+# Usage: source ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh
 
 # Validate environment
 if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
@@ -15,7 +15,7 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Load and merge configs
-DEFAULT=$(cat "${CLAUDE_PLUGIN_ROOT}/build-config.json")
+DEFAULT=$(cat "${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-config.json")
 PROJECT=$(cat .claude/build-config.json 2>/dev/null || echo '{}')
 CONFIG=$(echo "$DEFAULT" | jq -s '.[0] * .[1]' - <(echo "$PROJECT"))
 

@@ -5,7 +5,7 @@ description: Create a git commit with Claude Code cost metrics embedded in the c
 
 ## 1. Prepare Cost Data
 
-→ Run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/scripts/commit-workflow.sh prepare`
+→ Run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh prepare`
 → Parse JSON output to extract:
   - `SESSION_ID` from `data.session_id`
   - `COST_DELTA` from `data.cost_delta` (JSON array)
@@ -110,7 +110,7 @@ COST_DELTA_MODE="warning"
 
 → Otherwise, run commit-workflow.sh to build message:
 ```bash
-RESPONSE=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/scripts/commit-workflow.sh build-message \
+RESPONSE=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh build-message \
   "$COMMIT_SUBJECT" "$COMMIT_BODY" "$SESSION_ID" "$COST_DELTA" "$ISO_DATE")
 FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 ```
@@ -132,7 +132,7 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 
 ## 4. Create Commit
 
-→ Run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/scripts/commit-workflow.sh create-commit "$FULL_MESSAGE"`
+→ Run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh create-commit "$FULL_MESSAGE"`
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 
 ✓ If status is "success" → Continue to section 5
@@ -145,7 +145,7 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
   - Display note: "Skipping metrics append (as requested)"
   - Continue to section 6
 
-→ Otherwise, run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/scripts/commit-workflow.sh append-metrics "$COMMIT_SHA" "$COMMIT_SUBJECT" "$COST_DELTA"`
+→ Otherwise, run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh append-metrics "$COMMIT_SHA" "$COMMIT_SUBJECT" "$COST_DELTA"`
 
 ✓ If status is "success" → Display success message, continue to section 6
 ✗ If status is "error" → Display warning (commit was created), continue to section 6 anyway
@@ -156,12 +156,12 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
   - Skip gitignore check (no metrics were appended)
   - Continue to section 7
 
-→ Otherwise, run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/scripts/commit-workflow.sh check-gitignore`
+→ Otherwise, run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh check-gitignore`
 → Parse JSON output to get `METRICS_IGNORED` from `data.ignored`
 
 ✓ If `METRICS_IGNORED` is true → Proceed to section 7
 ✗ If `METRICS_IGNORED` is false → Ask user: "Add metrics file to .gitignore?"
-  - "Yes" → Run `bash ${CLAUDE_PLUGIN_ROOT}/skills/scripts/commit-workflow.sh add-gitignore` → Proceed to section 7
+  - "Yes" → Run `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh add-gitignore` → Proceed to section 7
   - "No" → Proceed to section 7
 
 ## 7. Success
@@ -197,7 +197,7 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
   - `sessionFilter`: Filter sessions by substring (default: `null` = use first/most recent)
     - Example: `"claude-plugins"` to filter sessions containing "claude-plugins"
 
-📁 Scripts used:
+📁 Scripts used (all in `skills/write-git-commit/scripts/`):
   - `commit-workflow.sh` - Master orchestrator (handles all workflow logic)
   - `load-config.sh` - Config loading (sourced by workflow script)
   - `claude-cost-delta.sh` - Cost calculation (called by workflow script)

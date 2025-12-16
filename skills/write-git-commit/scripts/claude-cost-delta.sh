@@ -7,7 +7,7 @@
 # 3. Calculates delta (current - previous)
 # 4. Outputs cost array for embedding in commit message
 #
-# Usage: ${CLAUDE_PLUGIN_ROOT}/skills/scripts/claude-cost-delta.sh <metrics-file>
+# Usage: ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/claude-cost-delta.sh <metrics-file>
 # Output: JSON cost array for commit message: [{"model":"...","tokens":N,"cost":N.NN}]
 # Example: [{"model":"claude-sonnet-4-5-20250929","tokens":1234,"cost":0.45}]
 # Dates: ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)

@@ -8,7 +8,7 @@
 # - date
 # - session ID (for session continuity tracking)
 #
-# Usage: ${CLAUDE_PLUGIN_ROOT}/skills/scripts/append-cost-metrics.sh <metrics-file> <commit-sha> <subject> <cost-json-array>
+# Usage: ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/append-cost-metrics.sh <metrics-file> <commit-sha> <subject> <cost-json-array>
 # Example: append-cost-metrics.sh .claude/cost-metrics.jsonl abc123def4567890 "Fix bug" '[{"model":"...","tokens":100,"cost":0.01}]'
 # Note: The provided SHA is converted to short SHA (first 7 characters)
 #
