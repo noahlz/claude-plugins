@@ -28,8 +28,8 @@ run_test_file() {
 
   # Run the test file and capture output
   if output=$(bash "$test_file" 2>&1); then
-    # Count tests from output
-    local suite_tests=$(echo "$output" | grep "^Ran" | grep -oE '[0-9]+' | head -1)
+    # Count tests from output (strip ANSI codes first)
+    local suite_tests=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g' | grep "^Ran" | grep -oE '[0-9]+' | head -1)
     if [ -n "$suite_tests" ]; then
       TOTAL_TESTS=$((TOTAL_TESTS + suite_tests))
       PASSED_TESTS=$((PASSED_TESTS + suite_tests))
@@ -40,8 +40,8 @@ run_test_file() {
     echo -e "${RED}✗ $suite_name failed${NC}"
     FAILED_SUITES+=("$suite_name")
 
-    # Try to extract number of tests and failures
-    local suite_tests=$(echo "$output" | grep "^Ran" | grep -oE '[0-9]+' | head -1)
+    # Try to extract number of tests and failures (strip ANSI codes first)
+    local suite_tests=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g' | grep "^Ran" | grep -oE '[0-9]+' | head -1)
     local failures=$(echo "$output" | grep "FAILED" | grep -oE 'failures=[0-9]+' | grep -oE '[0-9]+')
 
     if [ -n "$suite_tests" ]; then
