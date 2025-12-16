@@ -8,7 +8,7 @@
 # - date
 # - session ID (for session continuity tracking)
 #
-# Usage: ${CLAUDE_PLUGIN_ROOT}/scripts/append-cost-metrics.sh <metrics-file> <commit-sha> <subject> <cost-json-array>
+# Usage: ${CLAUDE_PLUGIN_ROOT}/skills/scripts/append-cost-metrics.sh <metrics-file> <commit-sha> <subject> <cost-json-array>
 # Example: append-cost-metrics.sh .claude/cost-metrics.json abc123def "Fix bug" '[{"model":"...","tokens":100,"cost":0.01}]'
 #
 # Environment:

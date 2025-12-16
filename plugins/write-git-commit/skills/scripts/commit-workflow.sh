@@ -44,7 +44,7 @@ json_response_simple() {
 action_prepare() {
   # Source configuration
   export CLAUDE_PLUGIN_ROOT
-  source "${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh"
+  source "${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh"
 
   # Validate that config was loaded
   if [ -z "$METRICS_FILE" ]; then
@@ -53,7 +53,7 @@ action_prepare() {
   fi
 
   # Calculate cost delta (capture both stdout and stderr)
-  COST_DELTA_OUTPUT=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/claude-cost-delta.sh" "$METRICS_FILE" 2>&1)
+  COST_DELTA_OUTPUT=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/scripts/claude-cost-delta.sh" "$METRICS_FILE" 2>&1)
   COST_DELTA_EXIT=$?
 
   if [ $COST_DELTA_EXIT -eq 2 ]; then
@@ -191,7 +191,7 @@ action_append_metrics() {
 
   # Source config to get METRICS_FILE and SESSION_FILTER
   export CLAUDE_PLUGIN_ROOT
-  source "${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh"
+  source "${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh"
 
   # Extract session ID (respects SESSION_FILTER)
   if [ "$SESSION_FILTER" = "null" ] || [ -z "$SESSION_FILTER" ]; then
@@ -208,7 +208,7 @@ action_append_metrics() {
   export SESSION_ID
 
   # Append metrics
-  if bash "${CLAUDE_PLUGIN_ROOT}/scripts/append-cost-metrics.sh" \
+  if bash "${CLAUDE_PLUGIN_ROOT}/skills/scripts/append-cost-metrics.sh" \
     "$METRICS_FILE" "$commit_sha" "$subject" "$cost_delta" > /dev/null 2>&1; then
     local data=$(jq -n --arg file "$METRICS_FILE" '{metrics_file: $file}')
     json_response "success" "$data" "Metrics appended successfully"
@@ -222,7 +222,7 @@ action_append_metrics() {
 action_check_gitignore() {
   # Source config to get METRICS_FILE
   export CLAUDE_PLUGIN_ROOT
-  source "${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh"
+  source "${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh"
 
   METRICS_BASENAME=$(basename "$METRICS_FILE")
 
@@ -239,7 +239,7 @@ action_check_gitignore() {
 action_add_gitignore() {
   # Source config to get METRICS_FILE
   export CLAUDE_PLUGIN_ROOT
-  source "${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh"
+  source "${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh"
 
   METRICS_BASENAME=$(basename "$METRICS_FILE")
 

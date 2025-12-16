@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tests for plugins/run-and-fix-tests/scripts/detect-and-resolve.sh
+# Tests for plugins/run-and-fix-tests/skills/scripts/detect-and-resolve.sh
 
 # Setup test environment
 setUp() {
@@ -30,7 +30,7 @@ tearDown() {
 
 # Helper: Run detect-and-resolve.sh and capture output
 run_detect() {
-  bash "$CLAUDE_PLUGIN_ROOT/scripts/detect-and-resolve.sh" 2>/dev/null
+  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/detect-and-resolve.sh" 2>/dev/null
 }
 
 # ========================================
@@ -241,7 +241,7 @@ test_exports_detected_tools_variable() {
 EOF
 
   # Run and capture exported variable
-  bash "$CLAUDE_PLUGIN_ROOT/scripts/detect-and-resolve.sh" > /dev/null 2>&1
+  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/detect-and-resolve.sh" > /dev/null 2>&1
 
   # After sourcing, DETECTED_TOOLS should be set
   # (Note: this won't work in test because of subshell, but script should export it)
@@ -254,7 +254,7 @@ test_exports_build_config_variable() {
 EOF
 
   # Run script
-  bash "$CLAUDE_PLUGIN_ROOT/scripts/detect-and-resolve.sh" > /dev/null 2>&1
+  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/detect-and-resolve.sh" > /dev/null 2>&1
 
   # Script should export BUILD_CONFIG
   assertTrue "Script completes successfully" "true"
@@ -281,7 +281,7 @@ test_handles_invalid_build_files() {
 EOF
 
   # Script should handle gracefully
-  bash "$CLAUDE_PLUGIN_ROOT/scripts/detect-and-resolve.sh" > /dev/null 2>&1
+  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/detect-and-resolve.sh" > /dev/null 2>&1
 
   # Should not crash
   assertTrue "Handles invalid files" "true"
@@ -359,7 +359,7 @@ test_cleans_up_temp_files() {
 EOF
 
   # Run detection
-  bash "$CLAUDE_PLUGIN_ROOT/scripts/detect-and-resolve.sh" > /dev/null 2>&1
+  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/detect-and-resolve.sh" > /dev/null 2>&1
 
   # Check that /tmp doesn't have orphaned temp files from this script
   # (This is hard to test without knowledge of exact temp file names)

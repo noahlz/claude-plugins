@@ -1,6 +1,6 @@
 #!/bin/bash
 # Detect build tools and resolve configuration
-# Usage: source ${CLAUDE_PLUGIN_ROOT}/scripts/detect-and-resolve.sh
+# Usage: source ${CLAUDE_PLUGIN_ROOT}/skills/scripts/detect-and-resolve.sh
 # Output: Sets DETECTED_TOOLS (JSON array), BUILD_CONFIG (merged config)
 
 set -e

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tests for plugins/write-git-commit/scripts/claude-cost-delta.sh
+# Tests for plugins/write-git-commit/skills/scripts/claude-cost-delta.sh
 
 # Setup test environment
 setUp() {
@@ -38,7 +38,7 @@ run_delta_script() {
   # Ensure SESSION_FILTER is available (from config or default)
   export SESSION_FILTER="${SESSION_FILTER:-null}"
 
-  "$CLAUDE_PLUGIN_ROOT/scripts/claude-cost-delta.sh" "$metrics_file" 2>/dev/null
+  "$CLAUDE_PLUGIN_ROOT/skills/scripts/claude-cost-delta.sh" "$metrics_file" 2>/dev/null
 }
 
 # Helper: Run claude-cost-delta.sh and capture both stdout and stderr
@@ -48,7 +48,7 @@ run_delta_script_with_stderr() {
   # Ensure SESSION_FILTER is available (from config or default)
   export SESSION_FILTER="${SESSION_FILTER:-null}"
 
-  "$CLAUDE_PLUGIN_ROOT/scripts/claude-cost-delta.sh" "$metrics_file" 2>&1
+  "$CLAUDE_PLUGIN_ROOT/skills/scripts/claude-cost-delta.sh" "$metrics_file" 2>&1
 }
 
 # Helper: Run claude-cost-delta.sh and capture exit code
@@ -58,7 +58,7 @@ run_delta_script_exit_code() {
   # Ensure SESSION_FILTER is available (from config or default)
   export SESSION_FILTER="${SESSION_FILTER:-null}"
 
-  "$CLAUDE_PLUGIN_ROOT/scripts/claude-cost-delta.sh" "$metrics_file" > /dev/null 2>&1
+  "$CLAUDE_PLUGIN_ROOT/skills/scripts/claude-cost-delta.sh" "$metrics_file" > /dev/null 2>&1
   echo $?
 }
 
@@ -266,7 +266,7 @@ test_returns_delta_json_when_negative() {
 EOF
 
   # Capture with stderr to get warning
-  local output=$(bash "$CLAUDE_PLUGIN_ROOT/scripts/claude-cost-delta.sh" ".claude/cost-metrics.json" 2>&1)
+  local output=$(bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/claude-cost-delta.sh" ".claude/cost-metrics.json" 2>&1)
 
   # Extract just the JSON part (last line - after all warnings)
   local delta_json=$(echo "$output" | tail -1)

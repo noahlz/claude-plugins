@@ -31,7 +31,7 @@ tearDown() {
 # Helper: Source load-config.sh and capture variables
 load_config() {
   # Source the config loader to export variables
-  source "${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh"
+  source "${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh"
 }
 
 # ========================================
@@ -254,7 +254,7 @@ test_project_config_must_be_valid_json() {
 EOF
 
   # Should handle gracefully or error appropriately
-  local result=$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/load-config.sh" 2>&1)
+  local result=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/scripts/load-config.sh" 2>&1)
 
   # Test that script doesn't crash catastrophically
   assertTrue "Script handles invalid JSON" "true"

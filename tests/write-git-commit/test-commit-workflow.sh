@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tests for plugins/write-git-commit/scripts/commit-workflow.sh
+# Tests for plugins/write-git-commit/skills/scripts/commit-workflow.sh
 
 # Setup test environment
 setUp() {
@@ -35,7 +35,7 @@ tearDown() {
 run_workflow() {
   local action="$1"
   shift
-  bash "$CLAUDE_PLUGIN_ROOT/scripts/commit-workflow.sh" "$action" "$@" 2>/dev/null
+  bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/commit-workflow.sh" "$action" "$@" 2>/dev/null
 }
 
 # ========================================
