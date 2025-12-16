@@ -149,12 +149,35 @@ Every test failure must be investigated and traced to its root cause.
 
 → Get next pending test from todo list
 → Mark as "in_progress"
-→ Fix the test (modify relevant code)
-→ Mark as "completed"
+→ Initialize retry counter: `RETRY_COUNT=0`
+
+### 7a. Attempt Fix (Iterate up to 3 times)
+
+→ Increment `RETRY_COUNT`
+→ Analyze the failing test error and identify what needs to be fixed
+→ **Modify the source code** to address the root cause
+→ Run the **specific single test** (test class or test file) to verify the fix:
+  - For unit tests: `TEST_SINGLE_CMD` with the test file/class name
+  - Capture output and check exit code
+→ Display result to user
+
+✓ Test passes → Mark todo as "completed", proceed to section 7b
+✗ Test still fails:
+  - If `RETRY_COUNT < 3` → Display failure reason, ask "Try again?"
+    - "Yes" → Return to section 7a (Attempt Fix again)
+    - "No" → Skip this test and proceed to section 7b
+  - If `RETRY_COUNT == 3` → Display "Attempted fix 3 times without success"
+    → Use AskUserQuestion: "Continue trying to fix this test?"
+      - "Yes, keep trying" → Continue from section 7a (increment counter)
+      - "No, skip it" → Proceed to section 7b
+      - "No, stop for now" → Stop
+
+### 7b. Move to Next Test
+
 → Use AskUserQuestion:
-  - "Fix next test?" (if more remain)
-  - "Re-run all tests?"
-  - "Stop for now"
+  - "Fix next test?" (if more remain, recommended)
+  - "Re-run all tests?" (clear todos, return to section 3)
+  - "Stop for now" → Stop
   - "Other"
 
 ✓ "Fix next test" → If tests remain, return to section 7 (Fix Tests Iteratively); else proceed to section 3 (Run Tests)
