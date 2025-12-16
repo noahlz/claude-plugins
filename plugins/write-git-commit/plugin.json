@@ -1,9 +1,13 @@
 {
   "name": "write-git-commit",
-  "description": "Draft git commits with Claude Code cost metrics embedded as JSON.",
   "version": "0.0.1",
-  "author": "Noah Zucker",
-  "commands": ["./commands"],
-  "skills": ["./skills"],
-  "files": ["./commit-config.json", "./scripts"]
+  "description": "Draft git commits with Claude Code cost metrics embedded as JSON.",
+  "author": {
+    "name": "Noah Zucker",
+    "email": "nzucker@gmail.com",
+    "url": "https://github.com/noahlz"
+  },
+  "repository": "https://github.com/noahlz/claude-plugins",
+  "license": "MIT",
+  "commands": ["./commands/test.md"]
 }

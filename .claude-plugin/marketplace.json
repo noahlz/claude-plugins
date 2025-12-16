@@ -1,35 +1,22 @@
 {
-  "name": "noahlz-plugins",
+  "name": "noahlz.github.io",
   "owner": {
     "name": "Noah Zucker",
     "email": "nzucker@gmail.com"
   },
-  "description": "A collection of productivity and development plugins for Claude Code",
-  "homepage": "https://github.com/noahlz/claude-plugins",
+  "description": "Productivity and development plugins",
   "repository": "https://github.com/noahlz/claude-plugins",
   "license": "MIT",
   "plugins": [
     {
       "name": "write-git-commit",
       "source": "./plugins/write-git-commit",
-      "description": "Create git commits with Claude Code cost metrics embedded in commit footers",
-      "version": "0.0.1",
-      "author": {
-        "name": "Noah Zucker",
-        "email": "nzucker@gmail.com"
-      },
       "keywords": ["git", "commits", "cost-tracking", "metrics"],
       "category": "development"
     },
     {
       "name": "run-and-fix-tests",
       "source": "./plugins/run-and-fix-tests",
-      "description": "Run tests with clean output and fix any failures",
-      "version": "0.0.1",
-      "author": {
-        "name": "Noah Zucker",
-        "email": "nzucker@gmail.com"
-      },
       "keywords": ["testing", "debugging", "ci-cd", "automation"],
       "category": "development"
     }
