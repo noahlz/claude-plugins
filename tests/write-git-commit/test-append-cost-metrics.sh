@@ -173,14 +173,17 @@ test_subject_field_preserved() {
   assertEquals "Subject field" "Fix bug" "$subject"
 }
 
-# Test: Commit field is preserved correctly
-test_commit_field_preserved() {
-  run_append_script ".claude/cost-metrics.json" "commit123abc" "Test" "empty.json"
+# Test: Commit field is stored as short SHA (7 characters)
+test_commit_field_is_short_sha() {
+  # Use a long SHA (40 characters)
+  local long_sha="abc123def456ghi789jkl012mno345pqr6789xyz"
+  run_append_script ".claude/cost-metrics.json" "$long_sha" "Test" "empty.json"
 
   local entry=$(cat .claude/cost-metrics.json)
   local commit=$(echo "$entry" | jq -r '.commit')
 
-  assertEquals "Commit field" "commit123abc" "$commit"
+  # Should be short SHA (7 characters)
+  assertEquals "Commit field is short SHA" "abc123d" "$commit"
 }
 
 # Test: Entry includes session_id field

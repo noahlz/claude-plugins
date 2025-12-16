@@ -203,7 +203,8 @@ EOF
   assertEquals "Has subject field" "true" "$has_subject"
 
   local commit_value=$(echo "$entry" | jq -r '.commit')
-  assertEquals "Commit SHA is correct" "abc123def456" "$commit_value"
+  # SHA is stored as short SHA (7 characters)
+  assertEquals "Commit SHA is correct (short SHA)" "abc123d" "$commit_value"
 }
 
 test_append_metrics_appends_to_existing() {
