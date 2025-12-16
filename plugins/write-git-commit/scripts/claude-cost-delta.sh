@@ -28,13 +28,13 @@ if ! command -v jq &> /dev/null; then
   exit 1
 fi
 
-# Get current session data (filter by SESSION_FILTER if configured)
+# Get current session data and session ID (filter by SESSION_FILTER if configured)
 if [ "$SESSION_FILTER" = "null" ] || [ -z "$SESSION_FILTER" ]; then
   # No filter: use first session
-  CURRENT=$(ccusage session --json | jq -c ".sessions[0] | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: ((.cost * 100 | round) / 100)}))}")
+  CURRENT=$(ccusage session --json | jq -c ".sessions[0] | {sessionId: .sessionId, cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: ((.cost * 100 | round) / 100)}))}")
 else
   # Filter by configured session name
-  CURRENT=$(ccusage session --json | jq -c ".sessions[] | select(.sessionId | contains(\"$SESSION_FILTER\")) | {cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: ((.cost * 100 | round) / 100)}))}" | head -1)
+  CURRENT=$(ccusage session --json | jq -c ".sessions[] | select(.sessionId | contains(\"$SESSION_FILTER\")) | {sessionId: .sessionId, cost: (.modelBreakdowns | map({model: .modelName, tokens: (.inputTokens + .outputTokens + .cacheCreationTokens), cost: ((.cost * 100 | round) / 100)}))}" | head -1)
 fi
 
 if [ -z "$CURRENT" ]; then
@@ -46,7 +46,8 @@ if [ -z "$CURRENT" ]; then
   exit 1
 fi
 
-# Extract cost array from current session
+# Extract session ID and cost array from current session
+SESSION_ID=$(echo "$CURRENT" | jq -r '.sessionId')
 CURRENT_COST=$(echo "$CURRENT" | jq -c '.cost')
 
 # If metrics file doesn't exist, this is the first commit
@@ -56,17 +57,34 @@ if [ ! -f "$METRICS_FILE" ]; then
   exit 0
 fi
 
-# Read last entry from metrics file (NDJSON format - one JSON per line)
-LAST_ENTRY=$(tail -1 "$METRICS_FILE")
-
-if [ -z "$LAST_ENTRY" ]; then
+# Read all entries from metrics file (NDJSON format - one JSON per line)
+# Sum all previous deltas for the current session
+if [ ! -s "$METRICS_FILE" ]; then
   # File exists but is empty: output current cost as delta
   echo "$CURRENT_COST"
   exit 0
 fi
 
-# Extract cost array from last entry
-PREVIOUS_COST=$(echo "$LAST_ENTRY" | jq -c '.cost // []')
+# Sum all previous deltas for the current session
+# Filter by exact session_id match, then aggregate costs by model
+PREVIOUS_COST=$(cat "$METRICS_FILE" | jq -s \
+  --arg session_id "$SESSION_ID" \
+  '[
+    .[] |
+    select(.session_id == $session_id) |
+    .cost[]
+  ] |
+  if length == 0 then
+    []
+  else
+    group_by(.model) |
+    map({
+      model: .[0].model,
+      tokens: (map(.tokens) | add),
+      cost: ((map(.cost * 100 | round) | add) / 100)
+    })
+  end'
+)
 
 # Calculate deltas for each model (current - previous)
 # Round cost to 2 decimal places

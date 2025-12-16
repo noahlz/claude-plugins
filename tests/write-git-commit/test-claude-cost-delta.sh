@@ -210,7 +210,7 @@ test_detects_negative_delta_exit_code() {
   # - opus: 160 tokens (100+50+10), 1.25 cost
   # Set previous to higher values to trigger negative delta
   cat > .claude/cost-metrics.json <<'EOF'
-{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00},{"model":"claude-opus-4-5-20251101","tokens":300,"cost":2.00}],"date":"2025-12-15T10:00:00Z"}
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00},{"model":"claude-opus-4-5-20251101","tokens":300,"cost":2.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
   local exit_code=$(run_delta_script_exit_code)
@@ -224,7 +224,7 @@ test_outputs_warning_for_negative_delta() {
   # Create metrics file with higher cost than current session
   # Force a negative delta for haiku model
   cat > .claude/cost-metrics.json <<'EOF'
-{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z"}
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
   local output=$(run_delta_script_with_stderr)
@@ -245,7 +245,7 @@ test_shows_raw_negative_values() {
   # haiku current 1500 < previous 3000 = -1500 tokens (negative)
   # opus current 160 < previous 2000 = -1840 tokens (negative)
   cat > .claude/cost-metrics.json <<'EOF'
-{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":3000,"cost":1.50},{"model":"claude-opus-4-5-20251101","tokens":2000,"cost":2.00}],"date":"2025-12-15T10:00:00Z"}
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":3000,"cost":1.50},{"model":"claude-opus-4-5-20251101","tokens":2000,"cost":2.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
   local output=$(run_delta_script_with_stderr)
@@ -262,7 +262,7 @@ EOF
 test_returns_delta_json_when_negative() {
   # Create metrics file with higher cost (force negative)
   cat > .claude/cost-metrics.json <<'EOF'
-{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z"}
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
   # Capture with stderr to get warning
@@ -297,13 +297,74 @@ test_all_models_negative_detected() {
   # Create metrics file where all models have higher costs
   # Mock returns haiku 1500 and opus 160, so set both to higher
   cat > .claude/cost-metrics.json <<'EOF'
-{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":3000,"cost":1.50},{"model":"claude-opus-4-5-20251101","tokens":3000,"cost":2.50}],"date":"2025-12-15T10:00:00Z"}
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":3000,"cost":1.50},{"model":"claude-opus-4-5-20251101","tokens":3000,"cost":2.50}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
   local exit_code=$(run_delta_script_exit_code)
 
   # Should exit with code 2 (negative delta detected)
   assertEquals "Exit code 2 for all negative" "2" "$exit_code"
+}
+
+# Test: Sums multiple commits in same session (NEW - validates fix)
+test_sums_multiple_commits_in_session() {
+  # Create metrics file with MULTIPLE entries from the same session
+  # Each entry represents cost delta from one commit
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"First commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
+{"commit":"def456","subject":"Second commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":400,"cost":0.20}],"date":"2025-12-15T11:00:00Z","session_id":"claude-code-session-1234"}
+EOF
+
+  local output=$(run_delta_script)
+
+  # Previous sum: 500 + 400 = 900 tokens, 0.25 + 0.20 = 0.45 cost
+  # Current: 1500 tokens, 0.45 cost
+  # Delta: 1500 - 900 = 600 tokens, 0.45 - 0.45 = 0.00 cost
+
+  # Should have valid JSON
+  assertTrue "Valid JSON" "echo '$output' | jq -e 'type == \"array\"' > /dev/null"
+
+  # Should have data
+  assertTrue "Has data" "echo '$output' | jq -e 'length > 0' > /dev/null"
+
+  # Extract haiku tokens and verify delta (current 1500 - previous 900 = 600)
+  local tokens=$(echo "$output" | jq '.[0].tokens')
+  assertEquals "Correct delta (sum of all previous)" "600" "$tokens"
+}
+
+# Test: Filters by session_id (ignores entries from other sessions)
+test_filters_by_session_id() {
+  # Create metrics file with entries from DIFFERENT sessions
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Other session commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z","session_id":"other-session-9999"}
+{"commit":"def456","subject":"Our session commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T11:00:00Z","session_id":"claude-code-session-1234"}
+EOF
+
+  # Set default session filter (will select first session from mock: claude-code-session-1234)
+  export SESSION_FILTER="null"
+
+  local output=$(run_delta_script)
+
+  # Should only subtract the entry from our session (500 tokens)
+  # Current: 1500 tokens, delta: 1500 - 500 = 1000 tokens
+  local tokens=$(echo "$output" | jq '.[0].tokens')
+  assertEquals "Ignores other session" "1000" "$tokens"
+}
+
+# Test: Handles legacy null session_id entries
+test_handles_legacy_null_session_id() {
+  # Create metrics file with null session_id (old format)
+  cat > .claude/cost-metrics.json <<'EOF'
+{"commit":"abc123","subject":"Legacy commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T10:00:00Z","session_id":null}
+EOF
+
+  # When we query for current session_id (claude-code-session-1234), legacy null entries should not match
+  local output=$(run_delta_script)
+
+  # Should NOT subtract the legacy entry
+  # Current: 1500 tokens, delta: 1500 - 0 = 1500 tokens
+  local tokens=$(echo "$output" | jq '.[0].tokens')
+  assertEquals "Legacy null entries ignored" "1500" "$tokens"
 }
 
 # Test: Mixed positive and negative models detected
@@ -313,7 +374,7 @@ test_mixed_positive_negative_detected() {
   # Opus current 160 < previous 300 (negative delta: -140)
   # Overall: has at least one negative, should exit with code 2
   cat > .claude/cost-metrics.json <<'EOF'
-{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25},{"model":"claude-opus-4-5-20251101","tokens":300,"cost":1.00}],"date":"2025-12-15T10:00:00Z"}
+{"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25},{"model":"claude-opus-4-5-20251101","tokens":300,"cost":1.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
   local exit_code=$(run_delta_script_exit_code)
