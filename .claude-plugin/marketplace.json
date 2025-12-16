@@ -6,23 +6,29 @@
     "url": "https://github.com/noahlz"
   },
   "description": "Dev workflow plugins.",
-  "repository": "https://github.com/noahlz/claude-plugins",
-  "license": "MIT",
   "plugins": [
     {
       "name": "dev-workflow",
       "version": "0.0.1",
-      "license": "MIT",
       "description": "Plugins for dev workflow productivity.",
+      "author": {
+        "name": "Noah Zucker",
+        "url": "https://github.com/noahlz"
+      },
       "source": "./",
-      "strict" : false,
+      "strict": false,
+      "homepage": "https://github.com/noahlz/claude-plugins",
+      "repository": "https://github.com/noahlz/claude-plugins",
+      "license": "MIT",
+      "category": "development",
+      "tags": ["git", "testing", "workflow", "productivity"],
       "skills": [
-          "./skills/run-and-fix-tests",
-          "./skills/write-git-commit"
+        "./skills/run-and-fix-tests",
+        "./skills/write-git-commit"
       ],
       "commands": [
-          "./commands/test.md",
-          "./commands/commit.md"
+        "./commands/test.md",
+        "./commands/commit.md"
       ]
     }
   ]
