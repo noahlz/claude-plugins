@@ -1,4 +1,4 @@
 {
-  "metricsFile": ".claude/cost-metrics.json",
+  "metricsFile": ".claude/cost-metrics.jsonl",
   "sessionFilter": "ligeon"
 }

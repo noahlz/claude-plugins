@@ -169,7 +169,7 @@ test_append_metrics_requires_config() {
 test_append_metrics_creates_file() {
   # Use default config from plugin
   cat > .claude/commit-config.json <<'EOF'
-{"metricsFile":".claude/cost-metrics.json","sessionFilter":null}
+{"metricsFile":".claude/cost-metrics.jsonl","sessionFilter":null}
 EOF
 
   run_workflow append-metrics \
@@ -177,12 +177,12 @@ EOF
     "Test commit" \
     '[{"model":"test","tokens":100,"cost":0.05}]' > /dev/null
 
-  assertTrue "Metrics file created" "[ -f .claude/cost-metrics.json ]"
+  assertTrue "Metrics file created" "[ -f .claude/cost-metrics.jsonl ]"
 }
 
 test_append_metrics_valid_json_entry() {
   cat > .claude/commit-config.json <<'EOF'
-{"metricsFile":".claude/cost-metrics.json","sessionFilter":null}
+{"metricsFile":".claude/cost-metrics.jsonl","sessionFilter":null}
 EOF
 
   run_workflow append-metrics \
@@ -190,7 +190,7 @@ EOF
     "Test commit" \
     '[{"model":"test","tokens":100,"cost":0.05}]' > /dev/null
 
-  local entry=$(cat .claude/cost-metrics.json)
+  local entry=$(cat .claude/cost-metrics.jsonl)
 
   # Verify it's valid JSON
   assertTrue "Entry is valid JSON" "echo '$entry' | jq '.' > /dev/null"
@@ -209,18 +209,18 @@ EOF
 
 test_append_metrics_appends_to_existing() {
   cat > .claude/commit-config.json <<'EOF'
-{"metricsFile":".claude/cost-metrics.json","sessionFilter":null}
+{"metricsFile":".claude/cost-metrics.jsonl","sessionFilter":null}
 EOF
 
   # Create initial file
-  echo '{"commit":"first","subject":"First","cost":[],"date":"2025-12-15T10:00:00Z"}' > .claude/cost-metrics.json
+  echo '{"commit":"first","subject":"First","cost":[],"date":"2025-12-15T10:00:00Z"}' > .claude/cost-metrics.jsonl
 
   run_workflow append-metrics \
     "abc123def456" \
     "Second commit" \
     '[{"model":"test","tokens":100,"cost":0.05}]' > /dev/null
 
-  local line_count=$(wc -l < .claude/cost-metrics.json | tr -d ' ')
+  local line_count=$(wc -l < .claude/cost-metrics.jsonl | tr -d ' ')
   assertEquals "Two entries in file" 2 "$line_count"
 }
 
@@ -244,10 +244,10 @@ EOF
 
 test_check_gitignore_file_already_ignored() {
   cat > .claude/commit-config.json <<'EOF'
-{"metricsFile":".claude/cost-metrics.json","sessionFilter":null}
+{"metricsFile":".claude/cost-metrics.jsonl","sessionFilter":null}
 EOF
 
-  echo "cost-metrics.json" > .gitignore
+  echo "cost-metrics.jsonl" > .gitignore
 
   local output=$(run_workflow check-gitignore)
   local ignored=$(echo "$output" | jq -r '.data.ignored')
@@ -261,19 +261,19 @@ EOF
 
 test_add_gitignore_adds_to_file() {
   cat > .claude/commit-config.json <<'EOF'
-{"metricsFile":".claude/cost-metrics.json","sessionFilter":null}
+{"metricsFile":".claude/cost-metrics.jsonl","sessionFilter":null}
 EOF
 
   local output=$(run_workflow add-gitignore)
   local status=$(echo "$output" | jq -r '.status')
 
   assertEquals "Status is success" "success" "$status"
-  assertTrue "Entry in .gitignore" "grep -q 'cost-metrics.json' .gitignore"
+  assertTrue "Entry in .gitignore" "grep -q 'cost-metrics.jsonl' .gitignore"
 }
 
 test_add_gitignore_creates_file_if_not_exists() {
   cat > .claude/commit-config.json <<'EOF'
-{"metricsFile":".claude/cost-metrics.json","sessionFilter":null}
+{"metricsFile":".claude/cost-metrics.jsonl","sessionFilter":null}
 EOF
 
   [ -f .gitignore ] && rm .gitignore
@@ -281,7 +281,7 @@ EOF
   run_workflow add-gitignore > /dev/null
 
   assertTrue ".gitignore created" "[ -f .gitignore ]"
-  assertTrue "Entry in .gitignore" "grep -q 'cost-metrics.json' .gitignore"
+  assertTrue "Entry in .gitignore" "grep -q 'cost-metrics.jsonl' .gitignore"
 }
 
 # ========================================

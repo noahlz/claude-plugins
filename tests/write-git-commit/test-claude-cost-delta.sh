@@ -33,7 +33,7 @@ tearDown() {
 
 # Helper: Run claude-cost-delta.sh and capture output
 run_delta_script() {
-  local metrics_file="${1:-.claude/cost-metrics.json}"
+  local metrics_file="${1:-.claude/cost-metrics.jsonl}"
 
   # Ensure SESSION_FILTER is available (from config or default)
   export SESSION_FILTER="${SESSION_FILTER:-null}"
@@ -43,7 +43,7 @@ run_delta_script() {
 
 # Helper: Run claude-cost-delta.sh and capture both stdout and stderr
 run_delta_script_with_stderr() {
-  local metrics_file="${1:-.claude/cost-metrics.json}"
+  local metrics_file="${1:-.claude/cost-metrics.jsonl}"
 
   # Ensure SESSION_FILTER is available (from config or default)
   export SESSION_FILTER="${SESSION_FILTER:-null}"
@@ -53,7 +53,7 @@ run_delta_script_with_stderr() {
 
 # Helper: Run claude-cost-delta.sh and capture exit code
 run_delta_script_exit_code() {
-  local metrics_file="${1:-.claude/cost-metrics.json}"
+  local metrics_file="${1:-.claude/cost-metrics.jsonl}"
 
   # Ensure SESSION_FILTER is available (from config or default)
   export SESSION_FILTER="${SESSION_FILTER:-null}"
@@ -82,7 +82,7 @@ test_returns_full_cost_on_first_run() {
 # Test: Returns full cost when metrics file is empty
 test_returns_full_cost_when_metrics_empty() {
   # Create empty metrics file
-  touch .claude/cost-metrics.json
+  touch .claude/cost-metrics.jsonl
 
   local output=$(run_delta_script)
 
@@ -94,7 +94,7 @@ test_returns_full_cost_when_metrics_empty() {
 # Test: Calculates delta with valid metrics file
 test_calculates_delta_with_metrics_file() {
   # Create metrics file with previous entry
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T10:00:00Z"}
 EOF
 
@@ -129,7 +129,7 @@ test_handles_multiple_models() {
 # Test: Subtracts previous costs correctly
 test_subtracts_previous_costs() {
   # Create metrics file with previous entry
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":100,"cost":0.05}],"date":"2025-12-15T10:00:00Z"}
 EOF
 
@@ -162,7 +162,7 @@ test_outputs_valid_json() {
 # Test: Subtracts previous entry when present
 test_delta_with_previous_entry() {
   # Create metrics file with previous entry
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":100,"cost":0.05}],"date":"2025-12-15T10:00:00Z"}
 EOF
 
@@ -209,7 +209,7 @@ test_detects_negative_delta_exit_code() {
   # - haiku: 1500 tokens (1000+500), 0.45 cost
   # - opus: 160 tokens (100+50+10), 1.25 cost
   # Set previous to higher values to trigger negative delta
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00},{"model":"claude-opus-4-5-20251101","tokens":300,"cost":2.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
@@ -223,7 +223,7 @@ EOF
 test_outputs_warning_for_negative_delta() {
   # Create metrics file with higher cost than current session
   # Force a negative delta for haiku model
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
@@ -244,7 +244,7 @@ test_shows_raw_negative_values() {
   # Create metrics file with higher cost for multiple models
   # haiku current 1500 < previous 3000 = -1500 tokens (negative)
   # opus current 160 < previous 2000 = -1840 tokens (negative)
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":3000,"cost":1.50},{"model":"claude-opus-4-5-20251101","tokens":2000,"cost":2.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
@@ -261,12 +261,12 @@ EOF
 # Test: Returns delta JSON even when negative (for skill to process)
 test_returns_delta_json_when_negative() {
   # Create metrics file with higher cost (force negative)
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
   # Capture with stderr to get warning
-  local output=$(bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/claude-cost-delta.sh" ".claude/cost-metrics.json" 2>&1)
+  local output=$(bash "$CLAUDE_PLUGIN_ROOT/skills/scripts/claude-cost-delta.sh" ".claude/cost-metrics.jsonl" 2>&1)
 
   # Extract just the JSON part (last line - after all warnings)
   local delta_json=$(echo "$output" | tail -1)
@@ -282,7 +282,7 @@ EOF
 test_positive_delta_does_not_exit_code_2() {
   # Create metrics file with lower cost than current session
   # Current will have ~1500 tokens for haiku, so set previous to 500
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T10:00:00Z"}
 EOF
 
@@ -296,7 +296,7 @@ EOF
 test_all_models_negative_detected() {
   # Create metrics file where all models have higher costs
   # Mock returns haiku 1500 and opus 160, so set both to higher
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":3000,"cost":1.50},{"model":"claude-opus-4-5-20251101","tokens":3000,"cost":2.50}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 
@@ -310,7 +310,7 @@ EOF
 test_sums_multiple_commits_in_session() {
   # Create metrics file with MULTIPLE entries from the same session
   # Each entry represents cost delta from one commit
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"First commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 {"commit":"def456","subject":"Second commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":400,"cost":0.20}],"date":"2025-12-15T11:00:00Z","session_id":"claude-code-session-1234"}
 EOF
@@ -335,7 +335,7 @@ EOF
 # Test: Filters by session_id (ignores entries from other sessions)
 test_filters_by_session_id() {
   # Create metrics file with entries from DIFFERENT sessions
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Other session commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":2000,"cost":1.00}],"date":"2025-12-15T10:00:00Z","session_id":"other-session-9999"}
 {"commit":"def456","subject":"Our session commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T11:00:00Z","session_id":"claude-code-session-1234"}
 EOF
@@ -354,7 +354,7 @@ EOF
 # Test: Handles legacy null session_id entries
 test_handles_legacy_null_session_id() {
   # Create metrics file with null session_id (old format)
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Legacy commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25}],"date":"2025-12-15T10:00:00Z","session_id":null}
 EOF
 
@@ -373,7 +373,7 @@ test_mixed_positive_negative_detected() {
   # Haiku current 1500 > previous 500 (positive delta: +1000)
   # Opus current 160 < previous 300 (negative delta: -140)
   # Overall: has at least one negative, should exit with code 2
-  cat > .claude/cost-metrics.json <<'EOF'
+  cat > .claude/cost-metrics.jsonl <<'EOF'
 {"commit":"abc123","subject":"Previous commit","cost":[{"model":"claude-haiku-4-5-20251001","tokens":500,"cost":0.25},{"model":"claude-opus-4-5-20251101","tokens":300,"cost":1.00}],"date":"2025-12-15T10:00:00Z","session_id":"claude-code-session-1234"}
 EOF
 

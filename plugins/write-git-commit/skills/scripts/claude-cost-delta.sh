@@ -15,7 +15,7 @@
 set -e
 
 # Get metrics file path from argument
-METRICS_FILE="${1:-.claude/cost-metrics.json}"
+METRICS_FILE="${1:-.claude/cost-metrics.jsonl}"
 
 # Check for required tools
 if ! command -v ccusage &> /dev/null; then

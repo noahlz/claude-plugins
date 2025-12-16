@@ -33,7 +33,7 @@ test_loads_default_config() {
   . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
 
   # Check that METRICS_FILE is set to default
-  assertEquals ".claude/cost-metrics.json" "$METRICS_FILE"
+  assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
 
   # Check that SESSION_FILTER is set to null
   assertEquals "null" "$SESSION_FILTER"
@@ -78,7 +78,7 @@ EOF
   assertEquals "myproject" "$SESSION_FILTER"
 
   # Check that METRICS_FILE has default value
-  assertEquals ".claude/cost-metrics.json" "$METRICS_FILE"
+  assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
 }
 
 # Test: Handles empty project config file
@@ -92,7 +92,7 @@ test_handles_empty_project_config() {
   . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
 
   # Both should have defaults
-  assertEquals ".claude/cost-metrics.json" "$METRICS_FILE"
+  assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
   assertEquals "null" "$SESSION_FILTER"
 }
 
@@ -128,7 +128,7 @@ EOF
   . "$CLAUDE_PLUGIN_ROOT/skills/scripts/load-config.sh"
 
   # Check merged result
-  assertEquals ".claude/cost-metrics.json" "$METRICS_FILE"
+  assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
   assertEquals "custom" "$SESSION_FILTER"
 }
 

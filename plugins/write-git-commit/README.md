@@ -25,7 +25,7 @@ The plugin works out of the box. To customize, create `.claude/commit-config.jso
 
 ```json
 {
-  "metricsFile": ".claude/cost-metrics.json"
+  "metricsFile": ".claude/cost-metrics.jsonl"
 }
 ```
 

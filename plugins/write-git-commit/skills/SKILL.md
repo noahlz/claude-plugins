@@ -193,7 +193,7 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 ---
 
 🔧 Configuration: `.claude/commit-config.json` (optional)
-  - `metricsFile`: Path to metrics file (default: `.claude/cost-metrics.json`)
+  - `metricsFile`: Path to metrics file (default: `.claude/cost-metrics.jsonl`)
   - `sessionFilter`: Filter sessions by substring (default: `null` = use first/most recent)
     - Example: `"claude-plugins"` to filter sessions containing "claude-plugins"
 
