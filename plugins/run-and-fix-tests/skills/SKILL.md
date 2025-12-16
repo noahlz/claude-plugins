@@ -3,6 +3,12 @@ name: run-and-fix-tests
 description: Build project and run tests with clean output, fix any failures. Activate when user says "run tests", "test", "build and test", "fix tests", or "make test".
 ---
 
+⚠️ **CRITICAL DIRECTIVE:**
+
+**NEVER assume test failures are "pre-existing" and skip investigating them.**
+
+Every test failure must be investigated and traced to its root cause.
+
 ## 0. Detect Build Configuration
 
 → Check if `.claude/build-config.json` exists and is not empty
