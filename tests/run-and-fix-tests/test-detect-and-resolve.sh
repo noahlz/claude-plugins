@@ -215,7 +215,7 @@ test_merges_config_with_defaults() {
 EOF
 
   # Create project-specific config
-  cat > .claude/build-config.json <<'EOF'
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {
   "npm": {
     "build": {

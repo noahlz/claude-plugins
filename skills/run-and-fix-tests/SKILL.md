@@ -5,7 +5,7 @@ description: Build project and run tests with clean output, fix any failures. Ac
 
 ## 0. Detect Build Configuration
 
-→ Check if `.claude/build-config.json` exists and is not empty
+→ Check if `.claude/settings.plugins.run-and-fix-tests.json` exists and is not empty
 ✓ Config exists → Proceed to step 1
 ✗ Config missing/empty → Run detection script:
 
@@ -44,8 +44,8 @@ description: Build project and run tests with clean output, fix any failures. Ac
   - "No, I'll configure manually"
   - "Other"
 
-✓ User confirms → Save config to `.claude/build-config.json` and proceed to step 1
-✗ User declines → Stop, user creates `.claude/build-config.json` manually
+✓ User confirms → Save config to `.claude/settings.plugins.run-and-fix-tests.json` and proceed to step 1
+✗ User declines → Stop, user creates `.claude/settings.plugins.run-and-fix-tests.json` manually
 
 ## 1. Load Configuration
 

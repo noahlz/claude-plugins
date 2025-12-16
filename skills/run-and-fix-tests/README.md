@@ -39,7 +39,7 @@ The plugin auto-detects your build tool on first run by looking for standard con
 - `deps.edn` → Clojure CLI
 - `Makefile` → Make
 
-To customize build or test commands, create `.claude/build-config.json`:
+To customize build or test commands, create `.claude/settings.plugins.run-and-fix-tests.json`:
 
 ```json
 {

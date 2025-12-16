@@ -18,8 +18,8 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Load merged config (default + project override)
-DEFAULT_CONFIG="${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-config.json"
-PROJECT_CONFIG="./.claude/build-config.json"
+DEFAULT_CONFIG="${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/settings.plugins.run-and-fix-tests.json"
+PROJECT_CONFIG="./.claude/settings.plugins.run-and-fix-tests.json"
 
 if [ ! -f "$DEFAULT_CONFIG" ]; then
   echo "Error: Default config not found at $DEFAULT_CONFIG" >&2

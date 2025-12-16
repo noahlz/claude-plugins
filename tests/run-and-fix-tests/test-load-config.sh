@@ -86,7 +86,7 @@ test_exports_test_commands() {
 
 test_merges_project_config_with_defaults() {
   # Create project config that overrides build command
-  cat > .claude/build-config.json <<'EOF'
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {
   "npm": {
     "build": {
@@ -105,7 +105,7 @@ EOF
 
 test_handles_empty_project_config() {
   # Create empty project config
-  cat > .claude/build-config.json <<'EOF'
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {}
 EOF
 
@@ -118,7 +118,7 @@ EOF
 
 test_merges_nested_configs() {
   # Create project config with nested properties
-  cat > .claude/build-config.json <<'EOF'
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {
   "npm": {
     "build": {
@@ -151,7 +151,7 @@ test_handles_single_build_config() {
 
 test_handles_multi_build_config() {
   # Create multi-build project config
-  cat > .claude/build-config.json <<'EOF'
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {
   "build": [
     {
@@ -249,7 +249,7 @@ test_logdir_contains_build_artifacts_path() {
 
 test_project_config_must_be_valid_json() {
   # Create invalid JSON
-  cat > .claude/build-config.json <<'EOF'
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {invalid json}
 EOF
 
@@ -266,7 +266,7 @@ EOF
 
 test_project_config_overrides_defaults() {
   # Create project config with custom test pattern
-  cat > .claude/build-config.json <<'EOF'
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {
   "npm": {
     "test": {

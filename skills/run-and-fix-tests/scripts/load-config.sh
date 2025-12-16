@@ -16,8 +16,8 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # Load and merge configs
-DEFAULT=$(cat "${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-config.json")
-PROJECT=$(cat .claude/build-config.json 2>/dev/null || echo '{}')
+DEFAULT=$(cat "${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/settings.plugins.run-and-fix-tests.json")
+PROJECT=$(cat .claude/settings.plugins.run-and-fix-tests.json 2>/dev/null || echo '{}')
 CONFIG=$(echo "$DEFAULT" | jq -s '.[0] * .[1]' - <(echo "$PROJECT"))
 
 # Extract logDir first
