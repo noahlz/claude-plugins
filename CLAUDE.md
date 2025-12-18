@@ -10,10 +10,12 @@ A collection of plugins for automating development workflow tasks:
 ```
 claude-plugins/
 ├── .claude-plugin/marketplace.json
-├── commands/ 
+├── agents/
+│   └── test-runner-fixer.md
+├── commands/
 │   ├── commit.md
 │   └── test.md
-├── skills
+├── skills/
 │   ├── run-and-fix-tests/
 │   │   ├── examples/
 │   │   ├── scripts/
@@ -27,6 +29,16 @@ claude-plugins/
 ```
 
 ## Plugin Authoring Guidelines
+
+### Agent Definitions
+
+**File location:** `agents/<agent-name>.md`
+
+**Guidelines:**
+- Separate agent approach/guidance from skill procedural steps
+- Use decision-making frameworks instead of step-by-step instructions
+- Include safeguards (e.g., asking permission before destructive actions)
+- Reference skills the agent will invoke, not replicate their workflows
 
 ### Skill File Format (SKILL.md)
 

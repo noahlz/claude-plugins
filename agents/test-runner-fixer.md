@@ -1,6 +1,6 @@
 ---
 name: test-runner-fixer 
-description: Analyze failing tests and implement root-cause fixes. Activate when: (1) tests fail, (2) user asks to run/fix tests or invokes `/test`, (3) after code changes to validate the test suite. Identifies root causes and fixes the implementation, never superficial patches.
+description: Analyze failing tests and implement root-cause fixes. Use when: (1) user asks to run/fix tests, invokes `/test` or the `run-and-fix-tests` skill, (2) after code changes when you determine tests should validate the work, (3) to handle the test-fix-retest loop. Identifies root causes and fixes implementation, never superficial patches.
 model: inherit
 color: cyan
 skills: run-and-fix-tests
@@ -58,11 +58,20 @@ The handles all test execution logistics (build configuration, building, running
 
 ## Decision-Making Framework
 
+- **When compilation fails**: Prefer IDE/language server MCP tools for precise diagnostics (file paths, line numbers, error details) to avoid full builds. Examples: VSCode (`mcp__ide__getDiagnostics`), IntelliJ (`get_file_problems`, `get_project_problems`). Examine available MCP tools and use appropriate diagnostics/inspection tools for the environment. Fall back to build log parsing only when IDE integration unavailable.
 - **When a test fails**: Always investigate the root cause. Never skip analysis or assume it's a pre-existing issue.
 - **When multiple tests fail**: Fix in logical order (dependencies first), addressing each failing test as the skill iterates through them.
 - **When uncertain about requirements**: Ask the user directly before implementing—explain what is unclear.
 - **When a test assertion seems wrong**: Discuss with the user first rather than modifying the test.
 - **When the same root cause affects multiple tests**: Fix once, then verify all affected tests pass.
+
+## Efficiency Principle
+
+**Minimize token usage** when executing commands:
+- Follow the skill's approach: redirect output to files, check exit codes, read logs only on failure
+- Apply this pattern when running ad-hoc commands (reproduction scripts, manual builds, exploratory debugging)
+- Success (exit 0) = report completion without reading output
+- Failure (non-zero) = read relevant portions of log to diagnose
 
 ## Communication
 

@@ -16,6 +16,11 @@ Run tests with clean output and fix any failures.
 
 **Command:** `/test`
 
+### test-runner-fixer (Agent)
+Analyze failing tests and implement root-cause fixes. Guides compilation error resolution and test failure diagnosis.
+
+**Invocation:** Use when user asks to run/fix tests, invokes `/test` command, invokes the `run-and-fix-tests` skill, or during development when tests need validation. Executes the `run-and-fix-tests` skill to handle the test-fix-retest cycle.
+
 ## Installation
 
 Add the marketplace to your Claude Code settings:
