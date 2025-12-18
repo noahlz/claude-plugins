@@ -27,9 +27,15 @@ description: Create a git commit with Claude Code session cost metrics embedded 
 
 ## 2. Generate Suggested Commit Message
 
-→ Generate a suggested commit message based on staged changes:
-  - Analyze `git diff --cached` or use heuristics to suggest a message
-  - Format: "Action: Brief description" (imperative mood)
+→ Analyze staged changes with `git diff --cached` and generate commit message:
+  - **Subject line**: Action verb + brief description (imperative mood, max 72 chars)
+    - Examples: "Add dark mode toggle", "Fix authentication bug", "Refactor user service"
+  - **Body** (optional, use when needed):
+    - Max 3 bullet points
+    - Prioritize most significant changes
+    - **Always highlight new files added** (if any)
+    - Focus on "what" and "why", not "how"
+    - Each bullet should be concise and specific
 
 → Display suggested message to user:
 
@@ -41,23 +47,34 @@ description: Create a git commit with Claude Code session cost metrics embedded 
 
 → Ask user with AskUserQuestion:
   - "Accept this message?" (recommended)
-  - "Provide your own message"
+  - "Make changes"
   - "Stop/Cancel commit"
 
 ✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Continue to section 3
-✗ If "Provide own" → Go to section 2a
+✗ If "Make changes" → Go to section 2a
 ✗ If "Stop" → Exit workflow
 
-## 2a. Get Custom Commit Message
+## 2a. Get Feedback and Regenerate Message
 
-→ Ask user to enter their full commit message:
-  - Question: "Enter your commit message (first line is subject, additional lines are body)"
+→ Ask user what changes they'd like to make:
+  - Question: "What would you like to change about this commit message?"
+  - They should describe the issue (e.g., "add more detail about X", "remove Y", "focus on Z")
 
-→ Parse the input to extract:
-  - `COMMIT_SUBJECT` = First line
-  - `COMMIT_BODY` = Remaining lines (empty if only subject)
+→ Analyze feedback and regenerate commit message with adjustments:
+  - Apply user's requested changes
+  - Maintain same guidelines: max 3 bullets, highlight new files, imperative mood
+  - Generate new version of the message
 
-→ Continue to section 3
+→ Return to section 2 and display the revised message
+
+→ Ask user with AskUserQuestion:
+  - "Accept this revised message?" (recommended)
+  - "Provide more feedback"
+  - "Stop/Cancel commit"
+
+✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Continue to section 3
+✗ If "More feedback" → Stay in section 2a and loop
+✗ If "Stop" → Exit workflow
 
 ## 3. Build and Preview Commit Message
 
@@ -76,16 +93,22 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 [blank line]
 ```
 
+⚠ IMPORTANT: The commit message MUST be displayed above BEFORE calling AskUserQuestion
+
 → Use AskUserQuestion to ask user to confirm:
   - "Proceed with this commit?" (recommended)
   - "No, let me revise the message"
+  - "Stop/Cancel commit"
 
 ✓ "Proceed" → Continue to section 4
 ✗ "No, revise" → Return to section 2
+✗ "Stop" → Exit workflow
 
 ## 4. Create Commit
 
 → Run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh create-commit "$FULL_MESSAGE"`
+⚠ IMPORTANT: This bash command should NOT trigger permission prompts - user already approved the commit in section 3
+
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 
 ✓ If status is "success" → Continue to section 5
