@@ -25,6 +25,9 @@
       "license": "MIT",
       "category": "development",
       "tags": ["git", "testing", "workflow", "productivity"],
+      "agents": [
+          "./agents/test-runner-fixer.md"
+      ],
       "skills": [
         "./skills/run-and-fix-tests",
         "./skills/write-git-commit"

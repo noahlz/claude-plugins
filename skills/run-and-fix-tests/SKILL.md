@@ -73,33 +73,49 @@ description: Build project and run tests with clean output, fix any failures. Ac
 **Single Build:**
 → Change to build working directory: `cd "$BUILD_WORKING_DIR"`
 → Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
-✓ Exit 0 → Return to INITIAL_PWD, proceed to section 3 (Run Tests)
-✗ Exit non-zero → Return to INITIAL_PWD, proceed to section 2a (Extract Build Errors)
+✓ Exit 0 → Return to INITIAL_PWD, proceed to step 3 (Run Tests)
+✗ Exit non-zero → Return to INITIAL_PWD, proceed to step 2a (Extract Build Errors)
 
 **Multi-Build:**
 → For each build in detected tools:
   → Change to build working directory
   → Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
   → On success: continue to next build
-  → On failure: return to INITIAL_PWD, proceed to section 2a (Extract Build Errors)
+  → On failure: return to INITIAL_PWD, proceed to step 2a (Extract Build Errors)
 
-✓ All builds succeed → Return to INITIAL_PWD, proceed to section 3 (Run Tests)
+✓ All builds succeed → Return to INITIAL_PWD, proceed to step 3 (Run Tests)
 
 ## 2a. Extract Build Errors
 
-→ **Step 2a: Attempt Editor Integration (if available)**
-  → Try to get language diagnostics from active editor (VSCode/IDE with MCP support)
-  ✓ Editor diagnostics available → Use them to identify compilation errors (file paths, line numbers, error details)
-  ✗ Editor integration not available → Proceed to step 2b
+→ Try to get language diagnostics from editor using mcp__ide__getDiagnostics tool
+✓ Editor diagnostics available → Parse diagnostics JSON for:
+  - File paths with errors
+  - Line numbers and column positions
+  - Error messages and severity
+  - Error codes (if available)
+  → Display compilation errors to user with file:line references
+✗ Editor diagnostics not available or empty → Proceed to log parsing
 
-→ **Step 2b: Fallback to Log Parsing**
-  → Parse build log using BUILD_ERROR_PATTERN regex
-  → Extract error messages and file locations from log output
-  → Identify up to 30 distinct errors
+→ Parse build log at `$BUILD_LOG` using regex from `$BUILD_ERROR_PATTERN`
+→ Extract up to 30 distinct compilation errors with:
+  - File paths
+  - Line numbers (if present in log)
+  - Error messages
+→ Display compilation error summary to user
 
-→ Ask user: "Build failed. Should I fix it?"
-  - "Yes" → Analyze and fix issues, return to step 2
+→ Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
+  - "Yes" (recommended) → Proceed to step 2b
   - "No" → Stop
+
+## 2b. Fix Compilation Errors
+
+→ For each compilation error identified:
+  → Read the file with the error
+  → Identify the compilation issue (syntax error, type error, missing import, etc.)
+  → Implement fix to the source code
+  → Mark error as addressed
+
+→ When all errors are addressed, return to step 2 (Build Project)
 
 ## 3. Run Tests
 
@@ -109,25 +125,28 @@ description: Build project and run tests with clean output, fix any failures. Ac
 
 → Change to test working directory (if different from build dir)
 → Execute test command silently to log file: `$TEST_CMD > "$TEST_LOG" 2>&1`
-✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to section 6 (Ask to Fix Tests)
-✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to section 4 (Extract Test Errors)
+✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 8 (Success)
+✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 4 (Extract Test Errors)
 
 ## 4. Extract Test Errors
 
-→ Parse test log to identify failing tests
-→ Extract error patterns from log using TEST_ERROR_PATTERN regex
+→ Parse test log at `$TEST_LOG` to identify failing tests
+→ Extract error patterns from log using `$TEST_ERROR_PATTERN` regex
 → Identify up to 30 distinct test failures
 → Display error summary to user with:
-  - List of failing tests
+  - List of failing test names/paths
   - Error messages and relevant output from test log
-→ Proceed to section 5 (Create Fix Plan)
+  - Stack traces (if available)
+→ Proceed to step 5 (Create Fix Plan)
 
 ## 5. Create Fix Plan
 
-→ Analyze failures to identify distinct failing tests
-→ Use TodoWrite to create todo list (one per failing test)
-→ Status: "pending"
-→ Proceed to section 6 (Ask to Fix Tests)
+→ Analyze extracted failures to identify distinct failing tests
+→ Use TodoWrite to create todo list with one item per failing test:
+  - content: "Fix [test name]"
+  - activeForm: "Fixing [test name]"
+  - status: "pending"
+→ Proceed to step 6 (Ask to Fix Tests)
 
 ## 6. Ask to Fix Tests
 
@@ -136,46 +155,46 @@ description: Build project and run tests with clean output, fix any failures. Ac
   - "No, I'll fix manually"
   - "Other"
 
-✓ "Yes" → Proceed to section 7 (Fix Tests Iteratively)
-✗ "No" → Stop
+✓ User confirms → Proceed to step 7 (Fix Tests Iteratively)
+✗ User declines → Stop
 
 ## 7. Fix Tests Iteratively
 
 → Get next pending test from todo list
-→ Mark as "in_progress"
+→ Mark test as "in_progress" using TodoWrite
 → Initialize retry counter: `RETRY_COUNT=0`
 
 ### 7a. Attempt Fix (Iterate up to 3 times)
 
 → Increment `RETRY_COUNT`
-→ Analyze the failing test error and identify what needs to be fixed
-→ **Modify the source code** to address the root cause
-→ Run the **specific single test** (test class or test file) silently to verify the fix:
-  - For unit tests: `$TEST_SINGLE_CMD > "$TEST_SINGLE_LOG" 2>&1` with the test file/class name
+→ Read failing test file and implementation file
+→ Implement fix to source code
+→ Run specific single test silently to verify fix:
+  - Command: `$TEST_SINGLE_CMD > "$TEST_SINGLE_LOG" 2>&1` with test file/class name
   - Capture exit code from command execution
 → Display result to user
 
-✓ Test passes → Mark todo as "completed", proceed to section 7b
-✗ Test still fails:
-  - If `RETRY_COUNT < 3` → Display failure reason, ask "Try again?"
-    - "Yes" → Return to section 7a (Attempt Fix again)
-    - "No" → Skip this test and proceed to section 7b
+✓ Test passes (exit code 0) → Mark todo as "completed", proceed to step 7b
+✗ Test still fails (exit code non-zero):
+  - If `RETRY_COUNT < 3` → Display failure reason, use AskUserQuestion: "Try again?"
+    - "Yes" → Return to step 7a (Attempt Fix again)
+    - "No" → Skip this test and proceed to step 7b
   - If `RETRY_COUNT == 3` → Display "Attempted fix 3 times without success"
     → Use AskUserQuestion: "Continue trying to fix this test?"
-      - "Yes, keep trying" → Continue from section 7a (increment counter)
-      - "No, skip it" → Proceed to section 7b
+      - "Yes, keep trying" → Continue from step 7a (increment counter)
+      - "No, skip it" → Proceed to step 7b
       - "No, stop for now" → Stop
 
 ### 7b. Move to Next Test
 
 → Use AskUserQuestion:
   - "Fix next test?" (if more remain, recommended)
-  - "Re-run all tests?" (clear todos, return to section 3)
+  - "Re-run all tests?" (clear todos, return to step 3)
   - "Stop for now" → Stop
   - "Other"
 
-✓ "Fix next test" → If tests remain, return to section 7 (Fix Tests Iteratively); else proceed to section 3 (Run Tests)
-✓ "Re-run all tests" → Clear todos, return to section 3 (Run Tests)
+✓ "Fix next test" → If tests remain, return to step 7; else proceed to step 3 (Run Tests)
+✓ "Re-run all tests" → Clear todos with TodoWrite, return to step 3 (Run Tests)
 ✗ "Stop for now" → Stop
 
 ## 8. Success
@@ -186,10 +205,10 @@ description: Build project and run tests with clean output, fix any failures. Ac
 
 ---
 
-**⚠️  CRITICAL DIRECTIVES**
+**⚠️  CRITICAL EXECUTION RULES**
 
-- MANDATORY WORKFLOW: After extracting test failures (Step 4) and creating fix plan (Step 5), ALWAYS proceed to Step 6 (Ask to Fix Tests) and Step 7 (Fix Tests Iteratively). Do NOT skip these steps or declare testing a "separate task."
-- ALWAYS ask user via AskUserQuestion in Step 6 before fixing tests. Only skip to Step 7 if user confirms "Yes, start fixing tests."
-- NEVER use the `tee` command when building source or executing tests. All output should redirect to log files, that you inspect later based on the command return code (non-zero indicates failure).
-- NEVER assume compilation errors or test failures are "pre-existing."
-- Investigate all errors and failures to their root cause (unless user halts the workflow).
+- **Mandatory flow**: After step 4 (Extract Test Errors) and step 5 (Create Fix Plan), ALWAYS proceed to step 6 (Ask to Fix Tests). Do NOT stop or skip to user.
+- **User confirmation required**: ALWAYS ask user via AskUserQuestion in step 6 before proceeding to step 7. Only proceed to step 7 if user confirms.
+- **Silent execution**: NEVER use `tee` when running build or test commands. Redirect all output to log files (`> "$LOG_FILE" 2>&1`). Only inspect logs when command returns non-zero exit code.
+- **Exit code checking**: Always capture and check exit codes. Zero = success, non-zero = failure.
+- **No assumptions**: Never assume errors are "pre-existing" or skip investigating them. All errors must be analyzed unless user explicitly stops the workflow.
