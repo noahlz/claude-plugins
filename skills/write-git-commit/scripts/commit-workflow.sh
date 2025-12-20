@@ -5,6 +5,7 @@
 # Usage: commit-workflow.sh <action>
 #
 # Actions:
+#   check-config      - Check if config file exists and is valid
 #   prepare           - Load config, verify session, get session costs
 #   commit            - Build message with footer and create commit
 #                       Requires env vars: COMMIT_SUBJECT, COMMIT_BODY, SESSION_ID, CURRENT_COST
@@ -47,6 +48,33 @@ json_response_simple() {
     --arg status "$status" \
     --arg message "$message" \
     '{status: $status, data: {}, message: $message}'
+}
+
+# Action: check-config - Verify config file exists and is valid
+action_check_config() {
+  CONFIG_FILE=".claude/settings.plugins.write-git-commit.json"
+
+  # Check if config file exists
+  if [ ! -f "$CONFIG_FILE" ]; then
+    json_response_simple "not_found" "Configuration file not found: $CONFIG_FILE"
+    exit 0
+  fi
+
+  # Check if file is empty
+  if [ ! -s "$CONFIG_FILE" ]; then
+    json_response_simple "empty" "Configuration file is empty: $CONFIG_FILE"
+    exit 0
+  fi
+
+  # Try to parse as JSON
+  if ! CONFIG_DATA=$(jq '.' "$CONFIG_FILE" 2>/dev/null); then
+    json_response_simple "invalid" "Configuration file is not valid JSON: $CONFIG_FILE"
+    exit 0
+  fi
+
+  # Config exists and is valid
+  local data=$(jq -n --argjson config "$CONFIG_DATA" '{config: $config}')
+  json_response "found" "$data" "Configuration file exists and is valid"
 }
 
 # Action: prepare - Load config, verify session, get current session costs
@@ -185,6 +213,9 @@ action_create_commit() {
 
 # Main dispatcher
 case "$ACTION" in
+  check-config)
+    action_check_config
+    ;;
   prepare)
     action_prepare
     ;;
