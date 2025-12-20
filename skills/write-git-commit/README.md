@@ -36,15 +36,22 @@ Claude-Cost-Metrics: {"sessionId":"...","cost":[{"model":"...","inputTokens":N,"
 
 ## Configuration
 
-The plugin auto-detects the session filter from your project directory name. On first run, it will ask you to confirm.
+The skill auto-detects your session ID from the current working directory on first run.
 
-To manually override, create `settings.plugins.write-git-commit.json`:
+**Session ID format:** Absolute paths are converted by replacing `/` with `-`:
+- `/Users/noahlz/projects/claude-plugins` → `-Users-noahlz-projects-claude-plugins`
+
+The skill will verify this session exists in your ccusage data and prompt you to save it.
+
+**Manual configuration:** Create `.claude/settings.plugins.write-git-commit.json`:
 
 ```json
 {
-  "sessionFilter": "my-project-name"
+  "sessionId": "-Users-noahlz-projects-my-project"
 }
 ```
+
+**Finding your session ID:** Run `ccusage session --json` to see all available sessions.
 
 ## Prerequisites
 

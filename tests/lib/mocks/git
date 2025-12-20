@@ -2,6 +2,18 @@
 # Mock git command for testing
 
 case "$1" in
+  "init")
+    # Mock git init - just return success
+    exit 0
+    ;;
+  "config")
+    # Mock git config - just return success
+    exit 0
+    ;;
+  "add")
+    # Mock git add - just return success
+    exit 0
+    ;;
   "rev-parse")
     if [ "$2" = "HEAD" ]; then
       # Return a fake commit SHA

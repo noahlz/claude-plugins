@@ -1,23 +1,17 @@
 #!/bin/bash
-# Get current Claude Code session costs
-#
-# This script:
-# 1. Gets current session cost data from ccusage
-# 2. Outputs cost array for embedding in commit message
-#
-# Usage: ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/claude-session-cost.sh
-# Output: JSON cost array: [{"model":"...","inputTokens":N,"outputTokens":N,"cost":N.NN}]
-# Example: [{"model":"claude-sonnet-4-5-20250929","inputTokens":1000,"outputTokens":234,"cost":0.45}]
+# Get current session costs for exact SESSION_ID
+# Usage: claude-session-cost.sh
+# Requires: SESSION_ID environment variable
+# Output: JSON cost array
 
 set -e
 
-# Check for required tools
-if ! command -v jq &> /dev/null; then
-  echo "Error: 'jq' not found. Install with: brew install jq (macOS) or apt-get install jq (Linux)" >&2
+if [ -z "$SESSION_ID" ]; then
+  echo "Error: SESSION_ID environment variable not set" >&2
   exit 1
 fi
 
-# Try to find and use ccusage - try direct, then npx, then bunx
+# Find ccusage
 find_ccusage() {
   if command -v ccusage &> /dev/null; then
     echo "ccusage"
@@ -32,37 +26,17 @@ find_ccusage() {
 
 CCUSAGE=$(find_ccusage 2>/dev/null)
 if [ -z "$CCUSAGE" ]; then
-  echo "Error: 'ccusage' not found. Install with: npm install -g ccusage" >&2
-  echo "Or make sure npm or bun is installed for npx/bunx fallback." >&2
-  echo "Visit https://github.com/ryoppippi/ccusage for more information." >&2
+  echo "Error: ccusage not found. Install with: npm install -g ccusage" >&2
   exit 1
 fi
 
-# Get current session data and session ID (filter by SESSION_FILTER if configured)
-if [ -z "$SESSION_FILTER" ]; then
-  # No filter: use first session
-  CURRENT=$($CCUSAGE session --json | jq -c '.sessions[0] | {sessionId: .sessionId, cost: (.modelBreakdowns | map({model: .modelName, inputTokens: .inputTokens, outputTokens: .outputTokens, cost: ((.cost * 100 | round) / 100)}))}' 2>/dev/null)
-else
-  # Filter by configured session name
-  CURRENT=$($CCUSAGE session --json | jq -c --arg filter "$SESSION_FILTER" \
-    '.sessions[] | select(.sessionId | contains($filter)) | {sessionId: .sessionId, cost: (.modelBreakdowns | map({model: .modelName, inputTokens: .inputTokens, outputTokens: .outputTokens, cost: ((.cost * 100 | round) / 100)}))}'  2>/dev/null | head -1)
-fi
+# Use --jq to extract costs for exact session
+JQ_EXPR=".sessions[] | select(.sessionId == \"$SESSION_ID\") | .modelBreakdowns | map({model: .modelName, inputTokens: .inputTokens, outputTokens: .outputTokens, cost: ((.cost * 100 | round) / 100)})"
+CURRENT_COST=$($CCUSAGE session --jq "$JQ_EXPR" 2>/dev/null)
 
-if [ -z "$CURRENT" ]; then
-  if [ -z "$SESSION_FILTER" ]; then
-    echo "Error: Could not find active Claude Code session in ccusage data" >&2
-  else
-    echo "Error: Could not find Claude Code session matching filter '$SESSION_FILTER' in ccusage data" >&2
-  fi
+if [ -z "$CURRENT_COST" ]; then
+  echo "Error: Session '$SESSION_ID' not found in ccusage data" >&2
   exit 1
 fi
 
-# Extract session ID and cost array from current session
-SESSION_ID=$(echo "$CURRENT" | jq -r '.sessionId')
-CURRENT_COST=$(echo "$CURRENT" | jq -c '.cost')
-
-# Output current session cost array for commit message
 echo "$CURRENT_COST"
-
-# Export SESSION_ID for use by other scripts
-export SESSION_ID

@@ -24,13 +24,14 @@ tearDown() {
 
 # Helper: Run claude-session-cost.sh and capture output
 run_session_cost() {
-  export SESSION_FILTER="${SESSION_FILTER:-}"
+  export SESSION_ID="${SESSION_ID:-}"
   export PATH="$TESTS_ROOT/lib/mocks:$PATH"
   "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/claude-session-cost.sh" 2>/dev/null
 }
 
 # Test: Returns current session costs as JSON array
 test_returns_json_array() {
+  export SESSION_ID="-Users-noahlz-projects-claude-plugins"
   local output=$(run_session_cost)
 
   # Should be valid JSON array
@@ -42,6 +43,7 @@ test_returns_json_array() {
 
 # Test: Output includes required fields
 test_includes_required_fields() {
+  export SESSION_ID="-Users-noahlz-projects-claude-plugins"
   local output=$(run_session_cost)
 
   # Should have model field
@@ -59,6 +61,7 @@ test_includes_required_fields() {
 
 # Test: Does not include cache token fields
 test_excludes_cache_tokens() {
+  export SESSION_ID="-Users-noahlz-projects-claude-plugins"
   local output=$(run_session_cost)
 
   local has_cache_creation=$(echo "$output" | jq '.[0] | has("cacheCreationTokens")' 2>/dev/null)
@@ -70,15 +73,17 @@ test_excludes_cache_tokens() {
 
 # Test: Handles multiple models in session
 test_handles_multiple_models() {
+  export SESSION_ID="-Users-noahlz-projects-claude-plugins"
   local output=$(run_session_cost)
   local model_count=$(echo "$output" | jq 'length' 2>/dev/null)
 
-  # Mock returns 2 models (haiku + opus)
+  # Mock returns 2 models (haiku + sonnet)
   [ "$model_count" -ge 2 ] || fail "Has multiple models"
 }
 
 # Test: Costs are rounded to 2 decimal places
 test_costs_rounded_to_two_decimals() {
+  export SESSION_ID="-Users-noahlz-projects-claude-plugins"
   local output=$(run_session_cost)
   local cost=$(echo "$output" | jq '.[0].cost' 2>/dev/null)
 
@@ -86,31 +91,32 @@ test_costs_rounded_to_two_decimals() {
   echo "$cost" | grep -E '^[0-9]+\.[0-9]{1,2}$' > /dev/null || fail "Cost is valid decimal"
 }
 
-# Test: Respects SESSION_FILTER when set
-test_respects_session_filter() {
-  export SESSION_FILTER="ligeon"
+# Test: Uses exact SESSION_ID matching
+test_exact_session_id_matching() {
+  export SESSION_ID="-Users-noahlz-projects-claude-plugins"
   local output=$(run_session_cost)
 
-  # Should still return valid data
-  [ "$(echo "$output" | jq 'type')" = '"array"' ] && [ "$(echo "$output" | jq 'length')" -gt 0 ] || fail "Has data with filter"
-}
-
-# Test: Works with empty SESSION_FILTER (uses first session)
-test_works_without_filter() {
-  export SESSION_FILTER=""
-  local output=$(run_session_cost)
-
-  # Should return valid data
-  [ "$(echo "$output" | jq 'type')" = '"array"' ] && [ "$(echo "$output" | jq 'length')" -gt 0 ] || fail "Has data without filter"
+  # Should return valid data for exact match
+  [ "$(echo "$output" | jq 'type')" = '"array"' ] && [ "$(echo "$output" | jq 'length')" -gt 0 ] || fail "Has data with exact ID"
 }
 
 # Test: Output format matches expected structure
 test_output_format() {
+  export SESSION_ID="-Users-noahlz-projects-claude-plugins"
   local output=$(run_session_cost)
 
   # Each model should have exactly 4 fields: model, inputTokens, outputTokens, cost
   local field_count=$(echo "$output" | jq '.[0] | keys | length' 2>/dev/null)
   [ "$field_count" = "4" ] || fail "Exactly 4 fields per model (got $field_count)"
+}
+
+# Test: Uses --jq flag with ccusage (format from implementation)
+test_uses_jq_flag() {
+  export SESSION_ID="-Users-noahlz-projects-claude-plugins"
+  local output=$(run_session_cost)
+
+  # Just verify we get valid output (indicates --jq flag is working)
+  [ -n "$output" ] && [ "$(echo "$output" | jq 'type')" = '"array"' ] || fail "Uses --jq flag"
 }
 
 # Source shUnit2

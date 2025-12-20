@@ -6,24 +6,30 @@ description: Create a git commit with Claude Code session cost metrics embedded 
 ## 1. Prepare Cost Data
 
 → Run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh prepare`
-→ Parse JSON output to extract:
-  - `SESSION_ID` from `data.session_id`
-  - `CURRENT_COST` from `data.current_cost` (JSON array)
+→ Parse JSON output based on status:
 
-✓ If status is "success" → Continue to section 2
+✓ If status is "success":
+  - Extract `SESSION_ID` from `data.session_id`
+  - Extract `CURRENT_COST` from `data.current_cost` (JSON array)
+  - Continue to section 2
+
 ⚠ If status is "confirm_session":
-  - Extract `detected_filter` from response
-  - Display to user: "Auto-detected session filter: '{detected_filter}'"
+  - Extract `detected_id` from `data.detected_id`
+  - Display: "Auto-detected session ID: '{detected_id}'"
   - Use AskUserQuestion:
-    - "Yes, use this session filter" (recommended)
-    - "No, let me specify a different filter"
-  - If "Yes": Save to `settings.plugins.write-git-commit.json`:
+    - "Yes, use this session ID" (recommended)
+    - "No, let me specify a different ID"
+  - If "Yes": Save to config:
     ```bash
-    echo '{"sessionFilter":"'$detected_filter'"}' | jq '.' > settings.plugins.write-git-commit.json
+    mkdir -p .claude
+    echo '{"sessionId":"'$detected_id'"}' | jq '.' > .claude/settings.plugins.write-git-commit.json
     ```
-  - If "No": Ask user for session filter substring, save it, then re-run prepare step
+    Then re-run prepare step
+  - If "No": Ask user for exact session ID, save to config, re-run prepare
 
-✗ If status is "error" → Display error message and stop
+✗ If status is "error":
+  - Display error message and stop
+  - Suggest: Run `ccusage session --json` to see available sessions
 
 ## 2. Generate Suggested Commit Message
 
@@ -130,13 +136,14 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 
 ---
 
-🔧 Configuration: `settings.plugins.write-git-commit.json` (optional, created on first run)
-  - `sessionFilter`: Filter sessions by substring (auto-detected from project directory on first run)
-    - Example: `"claude-plugins"` to filter sessions containing "claude-plugins"
+🔧 Configuration: `.claude/settings.plugins.write-git-commit.json` (created on first run)
+  - `sessionId`: Exact session ID (e.g., "-Users-noahlz-projects-claude-plugins")
+  - Auto-detected from project path on first run
 
 📁 Scripts used (all in `skills/write-git-commit/scripts/`):
   - `commit-workflow.sh` - Master orchestrator (handles all workflow logic)
   - `load-config.sh` - Config loading with auto-detection (sourced by workflow script)
+  - `verify-session.sh` - Session ID verification (called by workflow script)
   - `claude-session-cost.sh` - Fetch current session costs (called by workflow script)
 
 📝 Cost metrics are stored in git commit footers using the `Claude-Cost-Metrics:` git trailer format

@@ -25,133 +25,82 @@ tearDown() {
   teardown_test_env
 }
 
-# Test: Loads default config when no project config exists
-test_loads_default_config() {
+# Test: Auto-detects session ID from pwd when no config
+test_auto_detects_session_id() {
   mkdir -p "$TEST_TMPDIR/.claude"
 
   # Source the load-config script
   . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
-  # Check that METRICS_FILE is set to default
-  assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
-
-  # Check that SESSION_FILTER is set to null
-  assertEquals "null" "$SESSION_FILTER"
+  # Should have auto-detected SESSION_ID from pwd
+  assertEquals "true" "$SESSION_AUTO_DETECTED"
+  assertEquals "false" "$CONFIG_EXISTS"
+  # SESSION_ID will be the converted pwd
+  assertTrue "[ -n \"$SESSION_ID\" ]"
 }
 
-# Test: Merges default and project config correctly
-test_merges_configs() {
+# Test: Loads config from .claude/settings.plugins.write-git-commit.json
+test_loads_config_from_file() {
   mkdir -p "$TEST_TMPDIR/.claude"
 
-  # Create project config that overrides metricsFile
-  cat > "$TEST_TMPDIR/.claude/commit-config.json" <<'EOF'
+  # Create config file with sessionId
+  cat > "$TEST_TMPDIR/.claude/settings.plugins.write-git-commit.json" <<'EOF'
 {
-  "metricsFile": ".custom/metrics.json"
+  "sessionId": "-Users-noahlz-projects-test"
 }
 EOF
 
   # Source the load-config script
   . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
-  # Check that metricsFile is overridden
-  assertEquals ".custom/metrics.json" "$METRICS_FILE"
-
-  # Check that SESSION_FILTER still has default
-  assertEquals "null" "$SESSION_FILTER"
+  # Should load from config file
+  assertEquals "-Users-noahlz-projects-test" "$SESSION_ID"
+  assertEquals "true" "$CONFIG_EXISTS"
+  assertEquals "false" "$SESSION_AUTO_DETECTED"
 }
 
-# Test: Exports SESSION_FILTER from config
-test_exports_session_filter() {
+# Test: pwd_to_session_id function converts paths correctly
+test_pwd_to_session_id_conversion() {
   mkdir -p "$TEST_TMPDIR/.claude"
 
-  # Create project config with custom session filter
-  cat > "$TEST_TMPDIR/.claude/commit-config.json" <<'EOF'
+  # Source the load-config script to get the function
+  . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh" > /dev/null 2>&1 || true
+
+  # Test the function (it may already be available from sourcing)
+  # /Users/noahlz/projects/claude-plugins → -Users-noahlz-projects-claude-plugins
+  result=$(pwd_to_session_id "/Users/noahlz/projects/claude-plugins")
+  assertEquals "-Users-noahlz-projects-claude-plugins" "$result"
+}
+
+# Test: Config overrides auto-detected session ID
+test_config_overrides_auto_detect() {
+  mkdir -p "$TEST_TMPDIR/.claude"
+
+  # Create config file with sessionId
+  cat > "$TEST_TMPDIR/.claude/settings.plugins.write-git-commit.json" <<'EOF'
 {
-  "sessionFilter": "myproject"
+  "sessionId": "-custom-session-id"
 }
 EOF
 
   # Source the load-config script
   . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
-  # Check that SESSION_FILTER is set from config
-  assertEquals "myproject" "$SESSION_FILTER"
-
-  # Check that METRICS_FILE has default value
-  assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
+  # Config should override
+  assertEquals "-custom-session-id" "$SESSION_ID"
+  assertEquals "false" "$SESSION_AUTO_DETECTED"
 }
 
-# Test: Handles empty project config file
-test_handles_empty_project_config() {
+# Test: Validates SESSION_ID is set
+test_validates_session_id_set() {
+  # This test will be tricky - if we can't get SESSION_ID it should error
+  # For now just verify that SESSION_ID is always exported
   mkdir -p "$TEST_TMPDIR/.claude"
 
-  # Create empty project config
-  echo '{}' > "$TEST_TMPDIR/.claude/commit-config.json"
-
-  # Source the load-config script
   . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
 
-  # Both should have defaults
-  assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
-  assertEquals "null" "$SESSION_FILTER"
-}
-
-# Test: Works without CLAUDE_PLUGIN_ROOT set (should error)
-test_errors_without_plugin_root() {
-  mkdir -p "$TEST_TMPDIR/.claude"
-
-  # Unset CLAUDE_PLUGIN_ROOT
-  unset CLAUDE_PLUGIN_ROOT
-
-  # Try to source - should fail
-  (. "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh" 2>/dev/null)
-
-  # Should not succeed
-  assertTrue "[ $? -ne 0 ]"
-}
-
-# Test: Deep merges nested JSON correctly
-test_deep_merges_json() {
-  mkdir -p "$TEST_TMPDIR/.claude"
-
-  # Create default config with nested structure
-  # (this tests that the merge strategy works)
-
-  # Create project config that overrides only sessionFilter
-  cat > "$TEST_TMPDIR/.claude/commit-config.json" <<'EOF'
-{
-  "sessionFilter": "custom"
-}
-EOF
-
-  # Source the load-config script
-  . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
-
-  # Check merged result
-  assertEquals ".claude/cost-metrics.jsonl" "$METRICS_FILE"
-  assertEquals "custom" "$SESSION_FILTER"
-}
-
-# Test: Exports variables to environment
-test_exports_to_environment() {
-  mkdir -p "$TEST_TMPDIR/.claude"
-
-  # Create project config
-  cat > "$TEST_TMPDIR/.claude/commit-config.json" <<'EOF'
-{
-  "metricsFile": ".custom/metrics.json",
-  "sessionFilter": "test-project"
-}
-EOF
-
-  # Source in a subshell and check exports
-  (
-    . "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/load-config.sh"
-    [ -n "$METRICS_FILE" ] && echo "METRICS_FILE=$METRICS_FILE"
-    [ -n "$SESSION_FILTER" ] && echo "SESSION_FILTER=$SESSION_FILTER"
-  ) | grep -q "METRICS_FILE"
-
-  assertTrue "[ $? -eq 0 ]"
+  # SESSION_ID should be set
+  assertTrue "[ -n \"$SESSION_ID\" ]"
 }
 
 # Source shUnit2

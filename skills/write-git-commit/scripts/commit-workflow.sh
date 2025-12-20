@@ -14,10 +14,10 @@
 
 set -e
 
-# Detect CLAUDE_PLUGIN_ROOT from script location if not set
+# CLAUDE_PLUGIN_ROOT must be set by caller
 if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  CLAUDE_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+  jq -n '{status: "error", message: "CLAUDE_PLUGIN_ROOT not set"}' >&2
+  exit 1
 fi
 export CLAUDE_PLUGIN_ROOT
 ACTION="${1:-}"
@@ -45,42 +45,56 @@ json_response_simple() {
     '{status: $status, data: {}, message: $message}'
 }
 
-# Action: prepare - Load config, get current session costs, and check if session filter confirmation needed
+# Action: prepare - Load config, verify session, get current session costs
 action_prepare() {
-  # Source configuration
-  export CLAUDE_PLUGIN_ROOT
+  # Source configuration (sets SESSION_ID, CONFIG_EXISTS, SESSION_AUTO_DETECTED)
   source "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/load-config.sh"
 
-  # Check if session filter needs confirmation (first run scenario)
-  if [ "$SESSION_FILTER_CONFIRMED" = "false" ]; then
-    # Return status to ask user for confirmation
-    local data=$(jq -n \
-      --arg detected "$AUTO_DETECTED_FILTER" \
-      '{detected_filter: $detected}')
-    json_response "confirm_session" "$data" "Session filter needs confirmation"
-    exit 0
-  fi
+  # Verify session exists
+  VERIFY_RESULT=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/verify-session.sh" "$SESSION_ID")
+  VERIFY_STATUS=$(echo "$VERIFY_RESULT" | jq -r '.status')
+
+  case "$VERIFY_STATUS" in
+    verified)
+      VERIFIED_ID=$(echo "$VERIFY_RESULT" | jq -r '.data.session_id')
+
+      # If config doesn't exist OR session was auto-detected, prompt to save
+      if [ "$CONFIG_EXISTS" = "false" ] || [ "$SESSION_AUTO_DETECTED" = "true" ]; then
+        local data=$(jq -n --arg detected "$VERIFIED_ID" '{detected_id: $detected}')
+        json_response "confirm_session" "$data" "Session detected, confirm to save"
+        exit 0
+      fi
+
+      # Config exists and verified - proceed
+      ;;
+
+    not_found)
+      json_response_simple "error" "Session ID not found: $SESSION_ID. Check ccusage session --json for available sessions."
+      exit 1
+      ;;
+
+    error)
+      ERROR_MSG=$(echo "$VERIFY_RESULT" | jq -r '.message')
+      json_response_simple "error" "$ERROR_MSG"
+      exit 1
+      ;;
+  esac
 
   # Get current session costs
+  export SESSION_ID
   CURRENT_COST=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/claude-session-cost.sh" 2>&1)
   if [ $? -ne 0 ]; then
-    json_response_simple "error" "Failed to fetch current session costs"
+    json_response_simple "error" "Failed to fetch session costs: $CURRENT_COST"
     exit 1
   fi
 
-  # Extract session ID (already set by load-config.sh)
-  if [ -z "$SESSION_ID" ]; then
-    json_response_simple "error" "Failed to extract session ID"
-    exit 1
-  fi
-
-  # Return as JSON
+  # Return verified session and costs
   local data=$(jq -n \
     --arg session_id "$SESSION_ID" \
     --argjson current_cost "$CURRENT_COST" \
     '{session_id: $session_id, current_cost: $current_cost}')
 
-  json_response "success" "$data" "Fetched current session costs"
+  json_response "success" "$data" "Session verified and costs fetched"
 }
 
 # Action: build-message - Build commit message with footer

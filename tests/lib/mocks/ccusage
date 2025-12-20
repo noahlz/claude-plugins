@@ -1,14 +1,11 @@
 #!/bin/bash
 # Mock ccusage command for testing
 
-# Default response for "ccusage session --json"
-if [ "$1" = "session" ] && [ "$2" = "--json" ]; then
-  # Return mock session data with multiple sessions
-  cat <<'EOF'
+MOCK_DATA=$(cat <<'EOF'
 {
   "sessions": [
     {
-      "sessionId": "claude-code-session-1234",
+      "sessionId": "-Users-noahlz-projects-claude-plugins",
       "modelBreakdowns": [
         {
           "modelName": "claude-haiku-4-5-20251001",
@@ -18,7 +15,7 @@ if [ "$1" = "session" ] && [ "$2" = "--json" ]; then
           "cost": 0.45
         },
         {
-          "modelName": "claude-opus-4-5-20251101",
+          "modelName": "claude-sonnet-4-5-20250929",
           "inputTokens": 100,
           "outputTokens": 50,
           "cacheCreationTokens": 10,
@@ -27,7 +24,7 @@ if [ "$1" = "session" ] && [ "$2" = "--json" ]; then
       ]
     },
     {
-      "sessionId": "ligeon-session-5678",
+      "sessionId": "-Users-noahlz-projects-ligeon",
       "modelBreakdowns": [
         {
           "modelName": "claude-haiku-4-5-20251001",
@@ -37,22 +34,19 @@ if [ "$1" = "session" ] && [ "$2" = "--json" ]; then
           "cost": 0.95
         }
       ]
-    },
-    {
-      "sessionId": "older-session-9999",
-      "modelBreakdowns": [
-        {
-          "modelName": "claude-opus-4-5-20251101",
-          "inputTokens": 500,
-          "outputTokens": 250,
-          "cacheCreationTokens": 0,
-          "cost": 2.10
-        }
-      ]
     }
   ]
 }
 EOF
+)
+
+# Handle "ccusage session --json"
+if [ "$1" = "session" ] && [ "$2" = "--json" ]; then
+  echo "$MOCK_DATA"
+# Handle "ccusage session --jq <expression>"
+elif [ "$1" = "session" ] && [ "$2" = "--jq" ]; then
+  JQ_EXPR="$3"
+  echo "$MOCK_DATA" | jq -r "$JQ_EXPR"
 else
   echo "Error: Unsupported ccusage command" >&2
   exit 1
