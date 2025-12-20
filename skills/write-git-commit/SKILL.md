@@ -82,21 +82,29 @@ description: Create a git commit with Claude Code session cost metrics embedded 
 ✗ If "More feedback" → Stay in section 2a and loop
 ✗ If "Stop" → Exit workflow
 
-## 3. Build and Preview Commit Message
+## 3. Preview Commit Message
 
-→ Run commit-workflow.sh to build message:
-```bash
-RESPONSE=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh build-message \
-  "$COMMIT_SUBJECT" "$COMMIT_BODY" "$SESSION_ID" "$CURRENT_COST")
-FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
-```
-
-→ Display the full commit message to user in plain text (with blank lines before and after):
+→ Build the full commit message preview showing exactly what will be committed:
 
 ```
-[blank line]
-[FULL_MESSAGE displayed exactly as it will be committed]
-[blank line]
+[COMMIT_SUBJECT]
+
+[COMMIT_BODY if not empty]
+
+Co-Authored-By: 🤖 Claude Code <noreply@anthropic.com>
+Claude-Cost-Metrics: {"sessionId":"[SESSION_ID]","cost":[CURRENT_COST as compact JSON]}
+```
+
+→ Display to user clearly with markdown formatting:
+
+```markdown
+
+Here's the commit message that will be created:
+
+---
+[paste the full message above with proper line breaks]
+---
+
 ```
 
 ⚠ IMPORTANT: The commit message MUST be displayed above BEFORE calling AskUserQuestion
@@ -112,8 +120,18 @@ FULL_MESSAGE=$(echo "$RESPONSE" | jq -r '.data.full_message')
 
 ## 4. Create Commit
 
-→ Run: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh create-commit "$FULL_MESSAGE"`
-⚠ IMPORTANT: This bash command should NOT trigger permission prompts - user already approved the commit in section 3
+→ Export environment variables and run commit action:
+```bash
+export COMMIT_SUBJECT="[the subject line]"
+export COMMIT_BODY="[the body, or empty string if none]"
+export SESSION_ID="[from section 1]"
+export CURRENT_COST='[JSON array from section 1]'
+bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh commit
+```
+
+⚠ IMPORTANT:
+  - This bash command should NOT trigger permission prompts - user already approved in section 3
+  - Using env vars for JSON avoids shell escaping issues (zsh glob patterns)
 
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 

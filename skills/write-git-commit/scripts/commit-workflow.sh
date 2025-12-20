@@ -2,15 +2,19 @@
 # Master orchestrator script for write-git-commit workflow
 # Handles all bash logic and outputs JSON for the skill to consume
 #
-# Usage: commit-workflow.sh <action> [options]
+# Usage: commit-workflow.sh <action>
 #
 # Actions:
-#   prepare           - Load config, calculate costs, get session info
-#   build-message     - Build commit message with footer
-#   create-commit     - Execute git commit and return SHA
-#   append-metrics    - Append metrics entry to file
-#   check-gitignore   - Check if metrics file is in .gitignore
-#   add-gitignore     - Add metrics file to .gitignore
+#   prepare           - Load config, verify session, get session costs
+#   commit            - Build message with footer and create commit
+#                       Requires env vars: COMMIT_SUBJECT, COMMIT_BODY, SESSION_ID, CURRENT_COST
+#
+# Environment variables:
+#   CLAUDE_PLUGIN_ROOT - Required, path to plugin root
+#   COMMIT_SUBJECT     - Required for commit action
+#   COMMIT_BODY        - Optional for commit action
+#   SESSION_ID         - Required for commit action
+#   CURRENT_COST       - Required for commit action (JSON array)
 
 set -e
 
@@ -97,19 +101,24 @@ action_prepare() {
   json_response "success" "$data" "Session verified and costs fetched"
 }
 
-# Action: build-message - Build commit message with footer
-action_build_message() {
-  local subject="${1:-}"
-  local body="${2:-}"
-  local session_id="${3:-}"
-  local current_cost="${4:-}"
+# Action: commit - Build message with footer and create commit
+# Expects environment variables:
+#   COMMIT_SUBJECT - Subject line
+#   COMMIT_BODY - Body (optional)
+#   SESSION_ID - Session ID
+#   CURRENT_COST - JSON array of costs
+action_commit() {
+  local subject="${COMMIT_SUBJECT:-}"
+  local body="${COMMIT_BODY:-}"
+  local session_id="${SESSION_ID:-}"
+  local current_cost="${CURRENT_COST:-}"
 
   if [ -z "$subject" ] || [ -z "$session_id" ] || [ -z "$current_cost" ]; then
-    json_response_simple "error" "Missing required parameters for build-message"
+    json_response_simple "error" "Missing required environment variables: COMMIT_SUBJECT, SESSION_ID, CURRENT_COST"
     exit 1
   fi
 
-  # Build JSON cost footer (no date field - git commit has timestamp)
+  # Build JSON cost footer
   COST_FOOTER=$(jq -n \
     --arg sessionId "$session_id" \
     --argjson cost "$current_cost" \
@@ -130,11 +139,21 @@ Co-Authored-By: 🤖 Claude Code <noreply@anthropic.com>
 Claude-Cost-Metrics: $COST_FOOTER"
   fi
 
-  # Escape for JSON output
-  local message_json=$(jq -R -s '.' <<< "$FULL_MESSAGE")
+  # Execute git commit
+  if ! git commit -m "$FULL_MESSAGE" > /dev/null 2>&1; then
+    json_response_simple "error" "Failed to create git commit"
+    exit 1
+  fi
 
-  local data=$(jq -n --argjson message "$message_json" '{full_message: $message}')
-  json_response "success" "$data" "Built commit message with cost metrics footer"
+  # Get commit SHA
+  COMMIT_SHA=$(git rev-parse HEAD)
+  if [ -z "$COMMIT_SHA" ]; then
+    json_response_simple "error" "Failed to retrieve commit SHA"
+    exit 1
+  fi
+
+  local data=$(jq -n --arg sha "$COMMIT_SHA" '{commit_sha: $sha}')
+  json_response "success" "$data" "Commit created successfully"
 }
 
 # Action: create-commit - Execute git commit and return SHA
@@ -169,8 +188,8 @@ case "$ACTION" in
   prepare)
     action_prepare
     ;;
-  build-message)
-    action_build_message "$2" "$3" "$4" "$5"
+  commit)
+    action_commit
     ;;
   create-commit)
     action_create_commit "$2"
