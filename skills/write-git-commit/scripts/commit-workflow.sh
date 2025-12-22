@@ -146,7 +146,14 @@ action_commit() {
 
   # Read remaining lines as body - use || true to prevent set -e from terminating on EOF
   local line
+  local first_blank_skipped=false
   while IFS= read -r line || [ -n "$line" ]; do
+    # Skip the first blank line (separator between subject and body)
+    if [ -z "$line" ] && [ "$first_blank_skipped" = "false" ]; then
+      first_blank_skipped=true
+      continue
+    fi
+
     if [ -n "$line" ]; then
       if [ -n "$body" ]; then
         body="${body}
@@ -154,8 +161,6 @@ ${line}"
       else
         body="$line"
       fi
-    else
-      break
     fi
   done
 
