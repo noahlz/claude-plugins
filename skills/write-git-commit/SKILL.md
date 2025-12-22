@@ -44,8 +44,10 @@ description: Create a git commit with Claude Code session cost metrics and attri
   - **Subject line**: Action verb + brief description (imperative mood, max 72 chars)
     - Examples: "Add dark mode toggle", "Fix authentication bug", "Refactor user service"
   - **Body**:
-    - 1 to 3 bullet points summarizing most significant changes. Focus on "what changed" and "why changed" - but not "how changed"
-    - *DO NOT* Include metrics obtainable from a git diff or CI/CD logs, such as files edited or number of passing tests.
+    - Prefer concise, minimal bullets on first attempt. Target 1-2 bullets max, only up to 3 if there are distinct, separate concerns
+    - Focus on the most significant changes. Avoid trying to capture every detail
+    - Each bullet: focus on "what changed" and "why changed" - not "how changed"
+    - *DO NOT* Include metrics obtainable from a git diff or CI/CD logs, such as files edited or number of passing tests
 
 → Display suggested message to user:
 
