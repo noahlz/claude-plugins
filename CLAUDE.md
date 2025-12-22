@@ -3,7 +3,7 @@
 A collection of plugins for automating development workflow tasks:
 
 - Build / run / fix unit tests.
-- Write a git commit with Claude cost/productivity metrics.
+- Write a git commit with concise summary and git trailers for Claude attribution and cost/productivity metrics.
 
 ## Project Structure
 
@@ -146,7 +146,7 @@ Read @tests/README.md for detailed testing documentation.
 
 ## Communication Guidelines
 
-When working with Claude Code on this project:
+When working on this project:
 
 - **During implementation**: Keep explanations terse and focused
 - **After plan completion**: Provide only a brief summary of what was accomplished
@@ -165,6 +165,9 @@ Example of preferred summary after implementation:
 
 Rather than detailed walk-throughs of each change made.
 
+**IMPORTANT** When running ad-hoc Bash commands:
+1. Always provide a brief (single sentence) explanation of what you're doing and why, i.e. "Run the script in a /tmp directory to figure out why it's failing"
+2. Even if permissions allow running a Bash tool command, always ask the user before running potentially destructive commands.
 
 ## Important References
 

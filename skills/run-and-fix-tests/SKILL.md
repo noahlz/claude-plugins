@@ -1,7 +1,9 @@
 ---
 name: run-and-fix-tests
-description: Build project and run tests with clean output, fix any failures. Activate when user says "run tests", "test", "build and test", "fix tests", or "make test".
+description: Use the test-runner-fixer agent to build the project and run tests with clean output, fix any failures. Activate when user says "run tests", "test", "build and test", "fix tests", or "make test".
 ---
+
+Use the `test-runner-fixer` agent to perform the following steps:
 
 ## 0. Detect Build Configuration
 
