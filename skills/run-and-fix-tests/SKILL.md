@@ -5,6 +5,10 @@ description: Use the test-runner-fixer agent to build the project and run tests 
 
 Use the `test-runner-fixer` agent to perform the following steps:
 
+**Division of responsibilities:**
+- This skill handles all procedural execution (build commands, test runs, error extraction, workflow control)
+- The agent provides analytical intelligence (root cause analysis, implementing fixes, code quality decisions)
+
 ## 0. Detect Build Configuration
 
 → Check if `.claude/settings.plugins.run-and-fix-tests.json` exists and is not empty

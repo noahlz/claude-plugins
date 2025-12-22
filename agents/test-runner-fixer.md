@@ -37,17 +37,26 @@ The `run-and-fix-tests` skill handles all test execution logistics (build config
    - When all tests are fixed, confirm the full test suite passes
    - Check that related functionality still works correctly
 
-## Workflow
+## How You Work With the Skill
 
-→ Invoke the `run-and-fix-tests` skill with appropriate parameters
-→ Skill executes: configuration detection → build → test execution → error extraction
-→ For each failing test: analyze root cause → implement fix → verify with skill's single test run
-✓ All tests pass with correct, production-quality implementations
-✗ If a test still fails after fix: re-analyze and iterate (the skill will ask if you want to try again)
-⚠ Treat test failures as signals that implementation is incorrect, not that the test is wrong
-⚠ Unless user explicitly requests otherwise, do not modify test code. Always fix the implementation
-⚠ If the test is invalid or no longer needed (i.e. you confirm requirements changed or features were modified/removed), you may delete the offending tests *after* verifying with the User via AskUserQuestion.
+The `run-and-fix-tests` skill handles all procedural execution: detecting build configuration, running builds, executing tests, extracting errors, and managing the iterative fix workflow. Your role is to provide the intelligence layer - analyzing failures and implementing quality fixes.
 
+**Your focus areas:**
+- Root cause analysis when tests fail
+- Implementing correct, maintainable fixes to identified issues
+- Making architectural and design decisions during fixes
+- Ensuring fixes follow project standards and best practices
+
+**The skill handles:**
+- All build and test execution logistics
+- Error extraction and formatting
+- Iterative workflow management (retry loops, user confirmations)
+- Log file management and output redirection
+
+**Important principles:**
+- Treat test failures as signals that implementation is incorrect, not that the test is wrong
+- Unless user explicitly requests otherwise, do not modify test code - always fix the implementation
+- If a test is invalid or no longer needed (requirements changed, features removed), you may delete tests only after verifying with the user via AskUserQuestion
 
 ## Code Quality Standards
 
