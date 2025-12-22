@@ -38,7 +38,7 @@ description: Create a git commit with Claude Code session cost metrics and attri
   - Display error message and stop
   - Suggest: Run `ccusage session --json` to see available sessions
 
-## 2. Generate Suggested Commit Message
+## 2. Generate and Approve Commit Message
 
 → Analyze staged changes with `git diff --cached` and generate commit message:
   - **Subject line**: Action verb + brief description (imperative mood, max 72 chars)
@@ -62,7 +62,7 @@ description: Create a git commit with Claude Code session cost metrics and attri
   - "Make changes"
   - "Stop/Cancel commit"
 
-✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Continue to section 3
+✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Set internal flag `REVISION_REQUESTED=false` → Continue to section 3
 ✗ If "Make changes" → Go to section 2a
 ✗ If "Stop" → Exit workflow
 
@@ -77,14 +77,14 @@ description: Create a git commit with Claude Code session cost metrics and attri
   - Maintain same guidelines: max 3 bullets, highlight new files, imperative mood
   - Generate new version of the message
 
-→ Return to section 2 and display the revised message
+→ Display the revised message
 
 → Ask user with AskUserQuestion:
   - "Accept this revised message?"
   - "Provide more feedback"
   - "Stop/Cancel commit"
 
-✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Continue to section 3
+✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Set internal flag `REVISION_REQUESTED=true` → Continue to section 3
 ✗ If "More feedback" → Stay in section 2a and loop
 ✗ If "Stop" → Exit workflow
 
@@ -113,16 +113,22 @@ Here's the commit message that will be created:
 
 ```
 
-⚠ IMPORTANT: The commit message MUST be displayed above BEFORE calling AskUserQuestion
+⚠ IMPORTANT: Always display the preview above BEFORE any confirmation logic
 
-→ Use AskUserQuestion to ask user to confirm:
-  - "Proceed with this commit?"
-  - "No, let me revise the message"
-  - "Stop/Cancel commit"
+→ Fast-track path (if `REVISION_REQUESTED=false`):
+  - User already approved the message in section 2 without requesting changes
+  - Show the preview for final verification only
+  - Proceed directly to section 4 (no additional approval needed)
 
-✓ "Proceed" → Continue to section 4
-✗ "No, revise" → Return to section 2
-✗ "Stop" → Exit workflow
+→ Revision review path (if `REVISION_REQUESTED=true`):
+  - User approved a revised message in section 2a
+  - Use AskUserQuestion to get final confirmation:
+    - "Proceed with this commit?"
+    - "No, let me revise the message"
+    - "Stop/Cancel commit"
+  - ✓ If "Proceed" → Continue to section 4
+  - ✗ If "No, revise" → Return to section 2a
+  - ✗ If "Stop" → Exit workflow
 
 ## 4. Create Commit
 
@@ -136,7 +142,7 @@ EOF
 ```
 
 ⚠ IMPORTANT:
-  - This bash command should NOT trigger permission prompts - user already approved in section 3
+  - This bash command should NOT trigger permission prompts - user already approved in section 2 or 3
   - Commit message is passed via stdin (heredoc)
   - SESSION_ID and CURRENT_COST are auto-fetched by the commit action
   - Optional: Override SESSION_ID with inline env var: `SESSION_ID="..." bash ...`
