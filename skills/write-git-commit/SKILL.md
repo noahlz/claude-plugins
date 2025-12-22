@@ -5,14 +5,14 @@ description: Create a git commit with Claude Code session cost metrics and attri
 
 ## 1. Prepare Cost Data
 
-→ First, check if config exists: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh check-config`
+→ First, check if config exists: `bash skills/write-git-commit/scripts/commit-workflow.sh check-config`
 → Parse JSON output based on status:
 
 ✓ If status is "found": Config exists and is valid, proceed to prepare step
 ✗ If status is "not_found" or "empty": Config missing, proceed with auto-detection in prepare step
 ✗ If status is "invalid": Config file is corrupted, display error and stop
 
-→ Run prepare: `bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh prepare`
+→ Run prepare: `bash skills/write-git-commit/scripts/commit-workflow.sh prepare`
 → Parse JSON output based on status:
 
 ✓ If status is "success":
@@ -134,7 +134,7 @@ Here's the commit message that will be created:
 
 → Run commit action with commit message via stdin:
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh commit <<'EOF'
+bash skills/write-git-commit/scripts/commit-workflow.sh commit <<'EOF'
 [COMMIT_SUBJECT]
 
 [COMMIT_BODY if not empty]
