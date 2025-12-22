@@ -24,7 +24,7 @@ description: Create a git commit with Claude Code session cost metrics and attri
   - Extract `detected_id` from `data.detected_id`
   - Display: "Auto-detected session ID: '{detected_id}'"
   - Use AskUserQuestion:
-    - "Yes, use this session ID" (recommended)
+    - "Yes, use this session ID"
     - "No, let me specify a different ID"
   - If "Yes": Save to config:
     ```bash
@@ -58,7 +58,7 @@ description: Create a git commit with Claude Code session cost metrics and attri
 ```
 
 → Ask user with AskUserQuestion:
-  - "Accept this message?" (recommended)
+  - "Accept this message?"
   - "Make changes"
   - "Stop/Cancel commit"
 
@@ -80,7 +80,7 @@ description: Create a git commit with Claude Code session cost metrics and attri
 → Return to section 2 and display the revised message
 
 → Ask user with AskUserQuestion:
-  - "Accept this revised message?" (recommended)
+  - "Accept this revised message?"
   - "Provide more feedback"
   - "Stop/Cancel commit"
 
@@ -116,7 +116,7 @@ Here's the commit message that will be created:
 ⚠ IMPORTANT: The commit message MUST be displayed above BEFORE calling AskUserQuestion
 
 → Use AskUserQuestion to ask user to confirm:
-  - "Proceed with this commit?" (recommended)
+  - "Proceed with this commit?"
   - "No, let me revise the message"
   - "Stop/Cancel commit"
 
