@@ -63,29 +63,7 @@ Use the `/test` command to validate changes. This invokes the `run-and-fix-tests
 /test
 ```
 
-### Manual Testing (Fallback)
-
-If the `/test` command is unavailable, manually run tests:
-
-1. Run all tests:
-```bash
-./tests/run-all-tests.sh > ./out/tests.log 2>&1
-```
-
-2. Check exit code (0 = all passing, non-zero = failures)
-
-3. Identify failures:
-```bash
-grep -i "fail" ./out/tests.log
-```
-
-4. Fix issues and re-run specific test files:
-```bash
-bash tests/write-git-commit/test-load-config.sh
-bash tests/run-and-fix-tests/test-load-config.sh
-```
-
-See `@tests/README.md` for detailed testing documentation.
+**If the `run-and-fix-tests` skill is unavailable:** halt the workflow and inform the user that you are unable to proceed, and that they will need to install the plugin or manually run/fix the broken tests.
 
 ## Understanding Plugin Architecture
 
