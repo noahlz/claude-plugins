@@ -12,15 +12,14 @@ Guides Claude through automatically building, running and fixing your project te
 
 ## Prerequisites
 
-- bash (i.e. MiniGW if on Windows)
-- jq
+- `bash` (i.e. MiniGW if on Windows)
+- `jq`
 
 ## Usage
 
 ```bash
 /test              # Run all tests
 /test MyTest       # Run a single test
-/test pattern.*    # Run tests matching a pattern
 ```
 
 Or say: "run tests", "test", "build and test", "fix tests", "make test"

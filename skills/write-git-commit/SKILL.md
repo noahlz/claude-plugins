@@ -43,12 +43,9 @@ description: Create a git commit with Claude Code session cost metrics embedded 
 → Analyze staged changes with `git diff --cached` and generate commit message:
   - **Subject line**: Action verb + brief description (imperative mood, max 72 chars)
     - Examples: "Add dark mode toggle", "Fix authentication bug", "Refactor user service"
-  - **Body** (optional, use when needed):
-    - Max 3 bullet points
-    - Prioritize most significant changes
-    - **Always highlight new files added** (if any)
-    - Focus on "what" and "why", not "how"
-    - Each bullet should be concise and specific
+  - **Body**:
+    - 1 to 3 bullet points summarizing most significant changes. Focus on "what changed" and "why changed" - but not "how changed"
+    - *DO NOT* Include metrics obtainable from a git diff or CI/CD logs, such as files edited or number of passing tests.
 
 → Display suggested message to user:
 

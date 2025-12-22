@@ -148,11 +148,9 @@ Read @tests/README.md for detailed testing documentation.
 
 When working on this project:
 
-- **During implementation**: Keep explanations terse and focused
+- **Explain Steps**: Keep the user informed as you work i.e. "Making edits to <filename> to implement <feature>" or "Running ad-hoc commands to investigate the bug"
+- **Be concise**: Use terse sentences or bullet points for multiple items rather than a paragraph explanation. 
 - **After plan completion**: Provide only a brief summary of what was accomplished
-- **Avoid verbose output**: Don't explain each step or repeat what was already done
-- **Be concise**: Use bullet points for multiple items rather than full sentences
-- **Focus on results**: Let code and test results speak for themselves
 - **Don't auto-commit**: Let the user trigger git commit with `/commit` when ready - don't create commits automatically
 
 Example of preferred summary after implementation:

@@ -11,6 +11,8 @@ Create git commits with Claude Code cost metrics embedded in commit footers.
 
 **Command:** `/commit`
 
+NOTE: Requires local installation of [`ccusage`](https://github.com/ryoppippi/ccusage)
+
 ### run-and-fix-tests
 Run tests with clean output and fix any failures.
 
