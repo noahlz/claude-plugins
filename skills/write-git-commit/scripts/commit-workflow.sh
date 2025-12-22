@@ -50,6 +50,45 @@ json_response_simple() {
     '{status: $status, data: {}, message: $message}'
 }
 
+# Helper: Verify session and return status
+# Input: $1 = SESSION_ID to verify
+# Sets global VERIFY_RESULT with JSON response
+# Exits on error
+verify_session() {
+  local session_id="$1"
+
+  VERIFY_RESULT=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/verify-session.sh" "$session_id")
+  VERIFY_STATUS=$(echo "$VERIFY_RESULT" | jq -r '.status')
+
+  case "$VERIFY_STATUS" in
+    verified)
+      # Session verified successfully
+      return 0
+      ;;
+    not_found)
+      json_response_simple "error" "Session ID not found: $session_id. Check ccusage session --json for available sessions."
+      exit 1
+      ;;
+    error)
+      ERROR_MSG=$(echo "$VERIFY_RESULT" | jq -r '.message')
+      json_response_simple "error" "$ERROR_MSG"
+      exit 1
+      ;;
+  esac
+}
+
+# Helper: Fetch session costs
+# Requires SESSION_ID to be exported
+# Sets global CURRENT_COST variable on success
+# Exits on error
+fetch_costs() {
+  CURRENT_COST=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/claude-session-cost.sh" 2>&1)
+  if [ $? -ne 0 ]; then
+    json_response_simple "error" "Failed to fetch session costs: $CURRENT_COST"
+    exit 1
+  fi
+}
+
 # Action: check-config - Verify config file exists and is valid
 action_check_config() {
   CONFIG_FILE=".claude/settings.plugins.write-git-commit.json"
@@ -83,42 +122,19 @@ action_prepare() {
   source "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/load-config.sh"
 
   # Verify session exists
-  VERIFY_RESULT=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/verify-session.sh" "$SESSION_ID")
-  VERIFY_STATUS=$(echo "$VERIFY_RESULT" | jq -r '.status')
+  verify_session "$SESSION_ID"
+  VERIFIED_ID=$(echo "$VERIFY_RESULT" | jq -r '.data.session_id')
 
-  case "$VERIFY_STATUS" in
-    verified)
-      VERIFIED_ID=$(echo "$VERIFY_RESULT" | jq -r '.data.session_id')
-
-      # If config doesn't exist OR session was auto-detected, prompt to save
-      if [ "$CONFIG_EXISTS" = "false" ] || [ "$SESSION_AUTO_DETECTED" = "true" ]; then
-        local data=$(jq -n --arg detected "$VERIFIED_ID" '{detected_id: $detected}')
-        json_response "confirm_session" "$data" "Session detected, confirm to save"
-        exit 0
-      fi
-
-      # Config exists and verified - proceed
-      ;;
-
-    not_found)
-      json_response_simple "error" "Session ID not found: $SESSION_ID. Check ccusage session --json for available sessions."
-      exit 1
-      ;;
-
-    error)
-      ERROR_MSG=$(echo "$VERIFY_RESULT" | jq -r '.message')
-      json_response_simple "error" "$ERROR_MSG"
-      exit 1
-      ;;
-  esac
+  # If config doesn't exist OR session was auto-detected, prompt to save
+  if [ "$CONFIG_EXISTS" = "false" ] || [ "$SESSION_AUTO_DETECTED" = "true" ]; then
+    local data=$(jq -n --arg detected "$VERIFIED_ID" '{detected_id: $detected}')
+    json_response "confirm_session" "$data" "Session detected, confirm to save"
+    exit 0
+  fi
 
   # Get current session costs
   export SESSION_ID
-  CURRENT_COST=$(bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/claude-session-cost.sh" 2>&1)
-  if [ $? -ne 0 ]; then
-    json_response_simple "error" "Failed to fetch session costs: $CURRENT_COST"
-    exit 1
-  fi
+  fetch_costs
 
   # Return verified session and costs
   local data=$(jq -n \
@@ -130,21 +146,52 @@ action_prepare() {
 }
 
 # Action: commit - Build message with footer and create commit
-# Expects environment variables:
-#   COMMIT_SUBJECT - Subject line
-#   COMMIT_BODY - Body (optional)
-#   SESSION_ID - Session ID
-#   CURRENT_COST - JSON array of costs
+# Reads commit message from stdin:
+#   First line = subject (required)
+#   Remaining lines = body (optional)
+# Auto-fetches SESSION_ID and CURRENT_COST if not provided via env vars
 action_commit() {
-  local subject="${COMMIT_SUBJECT:-}"
-  local body="${COMMIT_BODY:-}"
-  local session_id="${SESSION_ID:-}"
-  local current_cost="${CURRENT_COST:-}"
+  # Read commit message from stdin
+  # First line is subject, rest is body
+  local subject=""
+  local body=""
 
-  if [ -z "$subject" ] || [ -z "$session_id" ] || [ -z "$current_cost" ]; then
-    json_response_simple "error" "Missing required environment variables: COMMIT_SUBJECT, SESSION_ID, CURRENT_COST"
+  # Read first line (subject) - use || true to prevent set -e from terminating on EOF
+  IFS= read -r subject || true
+  if [ -z "$subject" ]; then
+    json_response_simple "error" "Missing commit subject (first line of stdin)"
     exit 1
   fi
+
+  # Read remaining lines as body - use || true to prevent set -e from terminating on EOF
+  local line
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [ -n "$line" ]; then
+      if [ -n "$body" ]; then
+        body="${body}
+${line}"
+      else
+        body="$line"
+      fi
+    else
+      break
+    fi
+  done
+
+  # Auto-load SESSION_ID if not provided via env var
+  if [ -z "${SESSION_ID:-}" ]; then
+    source "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/load-config.sh"
+  fi
+  local session_id="$SESSION_ID"
+
+  # Auto-fetch CURRENT_COST if not provided via env var
+  if [ -z "${CURRENT_COST:-}" ]; then
+    # Verify session and fetch costs
+    verify_session "$session_id"
+    export SESSION_ID="$session_id"
+    fetch_costs
+  fi
+  local current_cost="$CURRENT_COST"
 
   # Build JSON cost footer
   COST_FOOTER=$(jq -n \

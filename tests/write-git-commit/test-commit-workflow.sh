@@ -41,6 +41,18 @@ run_workflow() {
   bash "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.sh" "$action" "$@" 2>/dev/null
 }
 
+# Helper: Run commit action with stdin message
+run_commit_with_message() {
+  local subject="$1"
+  local body="$2"
+
+  if [ -n "$body" ]; then
+    printf "%s\n%s" "$subject" "$body" | bash "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.sh" commit
+  else
+    printf "%s" "$subject" | bash "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.sh" commit
+  fi
+}
+
 # ========================================
 # Tests for: prepare action
 # ========================================
@@ -89,12 +101,14 @@ test_commit_with_subject_and_body() {
   echo "test" > test.txt
   git add test.txt > /dev/null 2>&1
 
-  export COMMIT_SUBJECT="Test commit subject"
-  export COMMIT_BODY="Test body content"
-  export SESSION_ID="test-session-id"
-  export CURRENT_COST='[{"model":"test","inputTokens":100,"outputTokens":50,"cost":0.05}]'
+  # Create config file for auto-fetching SESSION_ID
+  cat > .claude/settings.plugins.write-git-commit.json <<'EOF'
+{"sessionId":"-Users-noahlz-projects-claude-plugins"}
+EOF
 
-  local output=$(run_workflow commit)
+  # Pass commit message via stdin (subject + body)
+  # The script auto-fetches SESSION_ID and CURRENT_COST from mocked ccusage
+  local output=$(run_commit_with_message "Test commit subject" "Test body content")
   local status=$(echo "$output" | jq -r '.status')
 
   assertEquals "Status is success" "success" "$status"
@@ -111,12 +125,14 @@ test_commit_without_body() {
   echo "test2" > test2.txt
   git add test2.txt > /dev/null 2>&1
 
-  export COMMIT_SUBJECT="Minimal commit"
-  export COMMIT_BODY=""
-  export SESSION_ID="test-session-id"
-  export CURRENT_COST='[{"model":"test","inputTokens":100,"outputTokens":50,"cost":0.05}]'
+  # Create config file for auto-fetching SESSION_ID
+  cat > .claude/settings.plugins.write-git-commit.json <<'EOF'
+{"sessionId":"-Users-noahlz-projects-claude-plugins"}
+EOF
 
-  local output=$(run_workflow commit)
+  # Pass only subject via stdin
+  # The script auto-fetches SESSION_ID and CURRENT_COST from mocked ccusage
+  local output=$(run_commit_with_message "Minimal commit" "")
   local status=$(echo "$output" | jq -r '.status')
 
   assertEquals "Status is success" "success" "$status"
@@ -126,52 +142,64 @@ test_commit_with_multiple_models() {
   echo "test3" > test3.txt
   git add test3.txt > /dev/null 2>&1
 
-  export COMMIT_SUBJECT="Multi-model test"
-  export COMMIT_BODY=""
-  export SESSION_ID="test-session-id"
-  export CURRENT_COST='[{"model":"haiku","inputTokens":100,"outputTokens":50,"cost":0.05},{"model":"sonnet","inputTokens":200,"outputTokens":100,"cost":0.10}]'
+  # Create config file for auto-fetching SESSION_ID
+  cat > .claude/settings.plugins.write-git-commit.json <<'EOF'
+{"sessionId":"-Users-noahlz-projects-claude-plugins"}
+EOF
 
-  local output=$(run_workflow commit)
+  # Pass commit message via stdin
+  # The script auto-fetches SESSION_ID and CURRENT_COST from mocked ccusage
+  local output=$(run_commit_with_message "Multi-model test" "")
   local status=$(echo "$output" | jq -r '.status')
 
   assertEquals "Status is success" "success" "$status"
 
-  # Verify the output contains the correct env vars (cost array with multiple models)
-  local cost=$(echo "$output" | jq '.data' 2>/dev/null)
+  # Verify the output contains the correct cost array (multiple models)
   assertTrue "Output indicates success" "echo '$output' | jq -e '.status == \"success\"' > /dev/null"
 }
 
 test_commit_missing_subject_returns_error() {
-  export COMMIT_SUBJECT=""
-  export COMMIT_BODY="body"
-  export SESSION_ID="test-session-id"
-  export CURRENT_COST='[{"model":"test","inputTokens":100,"outputTokens":50,"cost":0.05}]'
+  # Create config file for auto-fetching SESSION_ID
+  cat > .claude/settings.plugins.write-git-commit.json <<'EOF'
+{"sessionId":"-Users-noahlz-projects-claude-plugins"}
+EOF
 
-  local output=$(run_workflow commit)
+  # Pass empty subject via stdin (no input)
+  # The script should return error because subject is required
+  local output=$(printf "" | bash "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.sh" commit)
   local status=$(echo "$output" | jq -r '.status')
 
   assertEquals "Status is error" "error" "$status"
 }
 
 test_commit_missing_session_id_returns_error() {
-  export COMMIT_SUBJECT="subject"
-  export COMMIT_BODY=""
-  export SESSION_ID=""
-  export CURRENT_COST='[{"model":"test","inputTokens":100,"outputTokens":50,"cost":0.05}]'
+  # Don't create config file - SESSION_ID will not be auto-fetchable
+  # Also don't set SESSION_ID env var
+  unset SESSION_ID
 
-  local output=$(run_workflow commit)
+  # Pass commit message via stdin - commit should fail because SESSION_ID is missing
+  # The script tries to load config and auto-fetch SESSION_ID, both fail
+  local output=$(run_commit_with_message "subject" "")
   local status=$(echo "$output" | jq -r '.status')
 
   assertEquals "Status is error" "error" "$status"
 }
 
 test_commit_missing_cost_returns_error() {
-  export COMMIT_SUBJECT="subject"
-  export COMMIT_BODY=""
-  export SESSION_ID="test-session-id"
-  export CURRENT_COST=""
+  echo "test" > test.txt
+  git add test.txt > /dev/null 2>&1
 
-  local output=$(run_workflow commit)
+  # Create config file with a SESSION_ID that does NOT exist in mocked ccusage
+  cat > .claude/settings.plugins.write-git-commit.json <<'EOF'
+{"sessionId":"-nonexistent-session-id"}
+EOF
+
+  # Don't set CURRENT_COST env var - commit should auto-fetch it
+  # The mocked ccusage does not have this session, so cost fetching should fail
+  # This test verifies that the script properly handles cost fetching failures
+  unset CURRENT_COST
+
+  local output=$(run_commit_with_message "subject" "")
   local status=$(echo "$output" | jq -r '.status')
 
   assertEquals "Status is error" "error" "$status"

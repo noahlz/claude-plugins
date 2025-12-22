@@ -127,18 +127,20 @@ Here's the commit message that will be created:
 
 ## 4. Create Commit
 
-→ Export environment variables and run commit action:
+→ Run commit action with commit message via stdin:
 ```bash
-export COMMIT_SUBJECT="[the subject line]"
-export COMMIT_BODY="[the body, or empty string if none]"
-export SESSION_ID="[from section 1]"
-export CURRENT_COST='[JSON array from section 1]'
-bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh commit
+bash ${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh commit <<'EOF'
+[COMMIT_SUBJECT]
+
+[COMMIT_BODY if not empty]
+EOF
 ```
 
 ⚠ IMPORTANT:
   - This bash command should NOT trigger permission prompts - user already approved in section 3
-  - Using env vars for JSON avoids shell escaping issues (zsh glob patterns)
+  - Commit message is passed via stdin (heredoc)
+  - SESSION_ID and CURRENT_COST are auto-fetched by the commit action
+  - Optional: Override SESSION_ID with inline env var: `SESSION_ID="..." bash ...`
 
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 

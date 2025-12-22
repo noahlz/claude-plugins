@@ -2,7 +2,7 @@
 name: test-runner-fixer 
 description: Analyze failing tests and implement root-cause fixes. Use when: (1) user asks to run/fix tests, invokes `/test` or the `run-and-fix-tests` skill, (2) after code changes when you determine tests should validate the work, (3) to handle the test-fix-retest loop. Identifies root causes and fixes implementation, never superficial patches.
 model: inherit
-color: cyan
+color: orange 
 skills: run-and-fix-tests
 ---
 
