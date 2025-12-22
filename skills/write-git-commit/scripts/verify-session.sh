@@ -5,25 +5,15 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
+
 SESSION_ID="${1:-}"
 
 if [ -z "$SESSION_ID" ]; then
   jq -n '{status: "error", message: "No session ID provided"}'
   exit 1
 fi
-
-# Find ccusage (existing pattern from claude-session-cost.sh)
-find_ccusage() {
-  if command -v ccusage &> /dev/null; then
-    echo "ccusage"
-  elif command -v npx &> /dev/null; then
-    echo "npx ccusage"
-  elif command -v bunx &> /dev/null; then
-    echo "bunx ccusage"
-  else
-    return 1
-  fi
-}
 
 CCUSAGE=$(find_ccusage 2>/dev/null)
 if [ -z "$CCUSAGE" ]; then

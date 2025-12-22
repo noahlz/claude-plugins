@@ -7,15 +7,15 @@
 # Actions:
 #   check-config      - Check if config file exists and is valid
 #   prepare           - Load config, verify session, get session costs
-#   commit            - Build message with footer and create commit
-#                       Requires env vars: COMMIT_SUBJECT, COMMIT_BODY, SESSION_ID, CURRENT_COST
+#   commit            - Read commit message from stdin, build with footer, and create commit
+#                       Reads: First line = subject, remaining lines = body (optional)
+#                       Auto-fetches: SESSION_ID, CURRENT_COST (if not in env)
+#   create-commit     - Execute git commit with provided message and return SHA
 #
 # Environment variables:
-#   CLAUDE_PLUGIN_ROOT - Required, path to plugin root
-#   COMMIT_SUBJECT     - Required for commit action
-#   COMMIT_BODY        - Optional for commit action
-#   SESSION_ID         - Required for commit action
-#   CURRENT_COST       - Required for commit action (JSON array)
+#   CLAUDE_PLUGIN_ROOT - Optional, auto-detected from script location if not set
+#   SESSION_ID         - Optional for commit action (auto-loaded from config if not set)
+#   CURRENT_COST       - Optional for commit action (auto-fetched if not set)
 
 set -e
 
@@ -25,30 +25,11 @@ if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
   CLAUDE_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 fi
 export CLAUDE_PLUGIN_ROOT
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
+
 ACTION="${1:-}"
-
-# Output JSON response
-json_response() {
-  local status="$1"
-  local data="$2"
-  local message="$3"
-
-  jq -n \
-    --arg status "$status" \
-    --argjson data "$data" \
-    --arg message "$message" \
-    '{status: $status, data: $data, message: $message}'
-}
-
-json_response_simple() {
-  local status="$1"
-  local message="$2"
-
-  jq -n \
-    --arg status "$status" \
-    --arg message "$message" \
-    '{status: $status, data: {}, message: $message}'
-}
 
 # Helper: Verify session and return status
 # Input: $1 = SESSION_ID to verify

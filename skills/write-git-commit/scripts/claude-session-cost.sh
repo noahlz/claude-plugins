@@ -6,23 +6,13 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
+
 if [ -z "$SESSION_ID" ]; then
   echo "Error: SESSION_ID environment variable not set" >&2
   exit 1
 fi
-
-# Find ccusage
-find_ccusage() {
-  if command -v ccusage &> /dev/null; then
-    echo "ccusage"
-  elif command -v npx &> /dev/null; then
-    echo "npx ccusage"
-  elif command -v bunx &> /dev/null; then
-    echo "bunx ccusage"
-  else
-    return 1
-  fi
-}
 
 CCUSAGE=$(find_ccusage 2>/dev/null)
 if [ -z "$CCUSAGE" ]; then

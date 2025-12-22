@@ -21,7 +21,7 @@ Run tests with clean output and fix any failures.
 ### test-runner-fixer (Agent)
 Analyze failing tests and implement root-cause fixes. Guides compilation error resolution and test failure diagnosis.
 
-**Invocation:** Use when user asks to run/fix tests or when new/changed code needs validaiton. Uses the `run-and-fix-tests` skill. 
+**Invocation:** Use when user asks to run/fix tests or when new/changed code needs validation. Uses the `run-and-fix-tests` skill. 
 
 ## Installation
 
@@ -51,7 +51,7 @@ Alternatively, update the plugin version number in `marketplace.json` and then t
 
 ## Testing
 
-These plugins leverage bash scripting extenstively. Scripts are infamously fragile and hard to maintain, which is why we have test suite:
+These plugins leverage bash scripting extensively. Scripts are infamously fragile and hard to maintain, which is why we have a test suite:
 
 ```bash
 ./tests/run-all-tests.sh
