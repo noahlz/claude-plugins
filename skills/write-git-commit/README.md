@@ -1,6 +1,6 @@
 # Write Git Commit Plugin
 
-Create git commits with Claude Code. Automatically embeds session cost metrics in commit footers.
+Create git commits with Claude Code. Automatically embeds attribution and session cost metrics in Git trailers.
 
 ## What It Does
 

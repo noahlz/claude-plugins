@@ -1,6 +1,6 @@
 ---
 name: write-git-commit
-description: Create a git commit with Claude Code session cost metrics embedded in the commit footer. Activate when user wants to commit changes or mentions commit, git commit, or create commit.
+description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user wants to commit changes or mentions commit, git commit, or create commit.
 ---
 
 ## 1. Prepare Cost Data
@@ -165,9 +165,9 @@ EOF
   - Auto-detected from project path on first run
 
 📁 Scripts used (all in `skills/write-git-commit/scripts/`):
+  - `claude-session-cost.sh` - Fetch current session costs (called by workflow script)
   - `commit-workflow.sh` - Master orchestrator (handles all workflow logic)
   - `load-config.sh` - Config loading with auto-detection (sourced by workflow script)
   - `verify-session.sh` - Session ID verification (called by workflow script)
-  - `claude-session-cost.sh` - Fetch current session costs (called by workflow script)
 
 📝 Cost metrics are stored in git commit footers using the `Claude-Cost-Metrics:` git trailer format
