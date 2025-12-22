@@ -19,10 +19,10 @@
 
 set -e
 
-# CLAUDE_PLUGIN_ROOT must be set by caller
+# Auto-detect CLAUDE_PLUGIN_ROOT from script location if not set
 if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
-  jq -n '{status: "error", message: "CLAUDE_PLUGIN_ROOT not set"}' >&2
-  exit 1
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  CLAUDE_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 fi
 export CLAUDE_PLUGIN_ROOT
 ACTION="${1:-}"
