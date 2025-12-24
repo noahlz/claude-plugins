@@ -25,31 +25,6 @@ claude-plugins/
 └── CLAUDE.md
 ```
 
-## Communication Guidelines
-
-When working on this project:
-
-- **Explain Steps**: Keep the user informed as you work i.e. "Making edits to <filename> to implement <feature>" or "Running ad-hoc commands to investigate the bug"
-- **Be concise**: Use terse sentences or bullet points for multiple items rather than a paragraph explanation.
-- **After plan completion**: Provide only a brief summary of what was accomplished
-- **Don't auto-commit**: Let the user trigger git commit with `/commit` when ready - don't create commits automatically
-
-Example of preferred summary after implementation:
-```
-✅ Implementation complete
-- Added 3 new test cases
-- All 93 tests passing
-- Updated SKILL.md with new workflow
-```
-
-Rather than detailed walk-throughs of each change made.
-
-**IMPORTANT** When running ad-hoc Bash commands:
-1. Always provide a brief (single sentence) explanation of what you're doing and why, i.e. "Run the script in a /tmp directory to figure out why it's failing"
-2. Even if permissions allow running a Bash tool command, always ask the user before running potentially destructive commands.
-
-## Development Workflow
-
 ### Running Tests
 
 Use the `/test` command to validate changes. This invokes the `run-and-fix-tests` skill with the **test-runner-fixer agent**, which automatically:
