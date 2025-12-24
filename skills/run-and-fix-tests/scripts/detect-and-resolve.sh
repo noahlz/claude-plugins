@@ -5,41 +5,12 @@
 
 set -e
 
-# Detect CLAUDE_PLUGIN_ROOT from script location if not set
-if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  CLAUDE_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-  export CLAUDE_PLUGIN_ROOT
-fi
+# Source shared utilities (handles CLAUDE_PLUGIN_ROOT detection and jq check)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
 
-if ! command -v jq &> /dev/null; then
-  echo "Error: jq command not found" >&2
-  exit 1
-fi
-
-# Load merged config (default + project override)
-DEFAULT_CONFIG="${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/settings.plugins.run-and-fix-tests.json"
-PROJECT_CONFIG="./.claude/settings.plugins.run-and-fix-tests.json"
-
-if [ ! -f "$DEFAULT_CONFIG" ]; then
-  echo "Error: Default config not found at $DEFAULT_CONFIG" >&2
-  exit 1
-fi
-
-# Create temporary files for merging
-DEFAULT_TMP=$(mktemp)
-PROJECT_TMP=$(mktemp)
-trap "rm -f $DEFAULT_TMP $PROJECT_TMP" EXIT
-
-cat "$DEFAULT_CONFIG" > "$DEFAULT_TMP"
-if [ -f "$PROJECT_CONFIG" ]; then
-  cat "$PROJECT_CONFIG" > "$PROJECT_TMP"
-else
-  echo '{}' > "$PROJECT_TMP"
-fi
-
-# Merge configs using jq
-MERGED_CONFIG=$(jq -s '.[0] * .[1]' "$DEFAULT_TMP" "$PROJECT_TMP")
+# Load and merge skill configuration
+load_and_merge_skill_config "run-and-fix-tests"
 
 # Extract all tool names from merged config
 TOOLS=$(echo "$MERGED_CONFIG" | jq -r '.tools | keys[]')

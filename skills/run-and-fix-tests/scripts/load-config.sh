@@ -2,23 +2,15 @@
 # Load and merge run-and-fix-tests configuration
 # Usage: source ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh
 
-# Detect CLAUDE_PLUGIN_ROOT from script location if not set
-if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  CLAUDE_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-  export CLAUDE_PLUGIN_ROOT
-fi
+set -e
 
-# Check jq availability
-if ! command -v jq &> /dev/null; then
-  echo "Error: jq command not found. Install jq to use this plugin." >&2
-  exit 1
-fi
+# Source shared utilities (handles CLAUDE_PLUGIN_ROOT detection and jq check)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
 
-# Load and merge configs
-DEFAULT=$(cat "${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/settings.plugins.run-and-fix-tests.json")
-PROJECT=$(cat .claude/settings.plugins.run-and-fix-tests.json 2>/dev/null || echo '{}')
-CONFIG=$(echo "$DEFAULT" | jq -s '.[0] * .[1]' - <(echo "$PROJECT"))
+# Load and merge skill configuration
+load_and_merge_skill_config "run-and-fix-tests"
+CONFIG="$MERGED_CONFIG"
 
 # Extract logDir first
 LOG_DIR=$(echo "$CONFIG" | jq -r '.logDir // "dist"')

@@ -1,6 +1,13 @@
 #!/bin/bash
 # Shared utilities for write-git-commit scripts
 
+# Source shared utilities from skills/lib
+if [ -z "${CLAUDE_PLUGIN_ROOT}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  CLAUDE_PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+fi
+source "${CLAUDE_PLUGIN_ROOT}/skills/lib/common.sh"
+
 # Find ccusage command
 # Returns the command to invoke ccusage (e.g., "ccusage", "npx ccusage")
 # Exits with error if not found
@@ -14,28 +21,4 @@ find_ccusage() {
   else
     return 1
   fi
-}
-
-# Output JSON response with status, data, and message
-json_response() {
-  local status="$1"
-  local data="$2"
-  local message="$3"
-
-  jq -n \
-    --arg status "$status" \
-    --argjson data "$data" \
-    --arg message "$message" \
-    '{status: $status, data: $data, message: $message}'
-}
-
-# Output JSON response with status and message (empty data)
-json_response_simple() {
-  local status="$1"
-  local message="$2"
-
-  jq -n \
-    --arg status "$status" \
-    --arg message "$message" \
-    '{status: $status, data: {}, message: $message}'
 }
