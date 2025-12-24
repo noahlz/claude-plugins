@@ -40,7 +40,7 @@ description: Build the project, run tests and systematically fix any failures. A
   - Multiple tools: "Detected [tool1] at [location1], [tool2] at [location2], etc."
 
 → Use AskUserQuestion to confirm:
-  - "Proceed with these build tools?" (recommended)
+  - "Proceed with these build tools?"
   - "No, I'll configure manually"
   - "Other"
 
@@ -104,7 +104,7 @@ description: Build the project, run tests and systematically fix any failures. A
 → Display compilation error summary to user
 
 → Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
-  - "Yes" (recommended) → Proceed to step 2b
+  - "Yes" → Proceed to step 2b
   - "No" → Stop
 
 ## 2b. Fix Compilation Errors
@@ -188,7 +188,7 @@ description: Build the project, run tests and systematically fix any failures. A
 ### 7b. Move to Next Test
 
 → Use AskUserQuestion:
-  - "Fix next test?" (if more remain, recommended)
+  - "Fix next test?"
   - "Re-run all tests?" (clear todos, return to step 3)
   - "Stop for now" → Stop
   - "Other"
