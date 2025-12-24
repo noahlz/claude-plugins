@@ -36,12 +36,13 @@ tests/
 │       └── git                  # Mock for git VCS commands
 ├── fixtures/
 │   ├── configs/                 # Sample configuration files
+│   ├── cost-arrays/             # Sample cost array data
 │   ├── metrics/                 # Sample metrics files
 │   └── projects/                # Sample project structures
 ├── write-git-commit/
 │   ├── test-load-config.sh      # Tests for load-config.sh
-│   ├── test-claude-cost-delta.sh # Tests for claude-cost-delta.sh
-│   └── test-append-cost-metrics.sh # Tests for append-cost-metrics.sh
+│   ├── test-claude-session-cost.sh # Tests for claude-session-cost.sh
+│   └── test-commit-workflow.sh  # Tests for commit-workflow.sh
 ├── run-and-fix-tests/
 │   ├── test-load-config.sh      # Tests for load-config.sh
 │   └── test-detect-and-resolve.sh # Tests for detect-and-resolve.sh
@@ -92,6 +93,7 @@ Mocks are placed in `tests/lib/mocks/` and are prepended to PATH during test exe
 Pre-built test data in `tests/fixtures/`:
 
 - `configs/` - Sample JSON configuration files
+- `cost-arrays/` - Sample cost array data for metrics testing
 - `metrics/` - Sample NDJSON metrics files
 - `projects/` - Sample project structures with build files
 
