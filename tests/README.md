@@ -199,49 +199,6 @@ else
 fi
 ```
 
-## Test Coverage
-
-### write-git-commit plugin
-
-**load-config.sh** (7 tests)
-- Loads default configuration
-- Merges default and project configs
-- Exports METRICS_FILE and SESSION_FILTER variables
-- Handles empty project config
-- Validates required environment variables
-
-**claude-cost-delta.sh** (9 tests)
-- Returns full cost on first run (no metrics file)
-- Calculates delta with existing metrics file
-- Handles multiple models in session
-- Subtracts previous costs correctly
-- Outputs valid JSON array format
-- Respects SESSION_FILTER configuration
-
-**append-cost-metrics.sh** (8 tests)
-- Appends entries to existing metrics file
-- Creates metrics file if not exists
-- Creates nested directories if needed
-- Generates ISO 8601 timestamps
-- Formats entries as NDJSON
-- Preserves all entry fields
-
-### run-and-fix-tests plugin
-
-**load-config.sh** - Tests for build configuration loading
-**detect-and-resolve.sh** - Tests for build tool detection
-
-## Running Tests in CI/CD
-
-To run tests in GitHub Actions or other CI systems:
-
-```yaml
-- name: Run tests
-  run: |
-    cd ${{ github.workspace }}
-    ./tests/run-all-tests.sh
-```
-
 ## Debugging Tests
 
 ### Enable verbose output
@@ -309,12 +266,3 @@ echo "TEST_TMPDIR=$TEST_TMPDIR"
 # Manual cleanup
 rm -rf "$TEST_TMPDIR"
 ```
-
-## Future Improvements
-
-- [ ] Add integration tests for full workflows
-- [ ] Add performance benchmarks
-- [ ] Add GitHub Actions workflow file
-- [ ] Expand test coverage for run-and-fix-tests plugin
-- [ ] Add fixtures for more build tool types
-- [ ] Add support for conditional test skipping
