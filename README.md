@@ -49,6 +49,13 @@ When making changes to plugin code, you must fully uninstall and reinstall the p
 
 Alternatively, update the plugin version number in `marketplace.json` and then trigger a marketplace/plugin update in Claude Code.
 
+### Shared Utilities
+
+All skill scripts source shared utilities from `skills/lib/common.sh`. When adding new skills or utilities:
+- Add generic, reusable functions to `skills/lib/common.sh`
+- Create a skill-specific `scripts/common.sh` that sources the library and adds skill-specific helpers
+- This keeps code DRY and ensures consistent patterns across skills
+
 ## Testing
 
 These plugins leverage bash scripting extensively. Scripts are infamously fragile and hard to maintain, which is why we have a test suite:

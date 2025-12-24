@@ -6,23 +6,17 @@ A collection of plugins for automating development workflow tasks.
 
 ```
 claude-plugins/
-├── .claude-plugin/marketplace.json
+├── .claude-plugin/
 ├── agents/
-│   └── test-runner-fixer.md
 ├── commands/
-│   ├── commit.md
-│   └── test.md
 ├── skills/
+│   ├── lib/                    # Shared utilities for all skill scripts
 │   ├── run-and-fix-tests/
 │   │   ├── examples/
-│   │   ├── scripts/
-│   │   └── SKILL.md
+│   │   └── scripts/
 │   └── write-git-commit/
-│       ├── scripts/
-│       └── SKILL.md
-├── tests/
-├── README.md
-└── CLAUDE.md
+│       └── scripts/
+└── tests/
 ```
 
 ### Running Tests
@@ -109,6 +103,17 @@ Scripts live in `skills/<name>/scripts/`:
 - Each script handles a specific concern (e.g., `load-config.sh`, `detect-and-resolve.sh`)
 - Scripts are tested individually via files in `tests/<name>/`
 - Tests use shUnit2 framework with mocks for external commands
+
+**Shared Utilities:** Plugin-wide bash utilities are centralized in `skills/lib/common.sh`:
+- `detect_plugin_root()` - Set CLAUDE_PLUGIN_ROOT from script location
+- `check_jq()` - Verify jq availability
+- `check_command()` - Generic command checker
+- `load_and_merge_skill_config()` - Parameterized config loader (merges default + project configs)
+- `json_response()`, `json_response_simple()` - JSON output helpers
+
+Each skill's `scripts/common.sh` sources `skills/lib/common.sh` and adds skill-specific helpers:
+- `write-git-commit`: `find_ccusage()`
+- `run-and-fix-tests`: (none currently, but extensible)
 
 ## Important References
 
