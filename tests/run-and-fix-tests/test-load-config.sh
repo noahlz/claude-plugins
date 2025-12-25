@@ -13,8 +13,8 @@ setUp() {
   . "$TESTS_ROOT/lib/test-helpers.sh"
   setup_test_env
 
-  # Set up plugin root
-  export CLAUDE_PLUGIN_ROOT="/Users/noahlz/projects/claude-plugins"
+  # Set up plugin root (compute dynamically from TESTS_ROOT: project root is parent of tests)
+  export CLAUDE_PLUGIN_ROOT="$(cd "$TESTS_ROOT/.." && pwd)"
 
   # Set working directory to test temp dir
   cd "$TEST_TMPDIR" || exit 1
