@@ -56,6 +56,25 @@ All skill scripts source shared utilities from `skills/lib/common.sh`. When addi
 - Create a skill-specific `scripts/common.sh` that sources the library and adds skill-specific helpers
 - This keeps code DRY and ensures consistent patterns across skills
 
+### Plugin Root Resolution
+
+Skills need to locate the plugin installation directory to source their scripts. Claude Code's `CLAUDE_PLUGIN_ROOT` environment variable [doesn't work in command markdown files](https://github.com/anthropics/claude-code/issues/9354).
+
+**Solution:** The `.claude/resolve_plugin_root.sh` script reads `~/.claude/plugins/installed_plugins.json` to dynamically locate the plugin.
+
+**How it works:**
+3. Uses `CLAUDE_PLUGIN_ROOT` environment variable if already set (forward compatibility)
+2. SKILL.md files call the resolver with the plugin identifier:
+   ```bash
+   CLAUDE_PLUGIN_ROOT="$(./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io")"
+   ```
+3. The resolver queries the installed plugins registry to find the plugin's installation path
+
+**For plugin users:** The `.claude/resolve_plugin_root.sh` file must exist in your project. It's created automatically when you install the plugin, or you can copy it manually from the plugin repository.
+
+**See also:**
+- [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https://github.com/anthropics/claude-code/issues/9354) - Details about the core issue this resolver works around
+
 ## Testing
 
 These plugins leverage bash scripting extensively. Scripts are infamously fragile and hard to maintain, which is why we have a test suite:

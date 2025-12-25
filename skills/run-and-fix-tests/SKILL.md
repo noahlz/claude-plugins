@@ -3,10 +3,20 @@ name: run-and-fix-tests
 description: Build the project, run tests and systematically fix any failures. Activate when user says phrases such as "run tests", "test", "build and test" or "fix tests".
 ---
 
-## 0. Detect Build Configuration
+## 0. Resolve Plugin Root
+
+→ Resolve plugin root environment:
+```bash
+CLAUDE_PLUGIN_ROOT="$(./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io")" || { echo "Error: Failed to resolve plugin root" >&2; exit 1; }
+export CLAUDE_PLUGIN_ROOT
+```
+
+✓ Plugin root resolved → Proceed to step 1 (Detect Build Configuration)
+
+## 1. Detect Build Configuration
 
 → Check if `.claude/settings.plugins.run-and-fix-tests.json` exists
-✓ Config exists → Proceed to step 1
+✓ Config exists → Proceed to step 2
 ✗ Config missing → Run detection and auto-config:
 
 → Source: `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.sh`
@@ -21,11 +31,11 @@ description: Build the project, run tests and systematically fix any failures. A
   - No matching default exists → Use `example.json` placeholder template (user must customize)
   - 0 tools detected → Error: no build tools detected
 
-✓ Config created successfully → Proceed to step 1
+✓ Config created successfully → Proceed to step 2
 ✗ No tools detected → Error, user must create `.claude/settings.plugins.run-and-fix-tests.json` manually
-✗ Using placeholder config → User must edit `.claude/settings.plugins.run-and-fix-tests.json` before step 1
+✗ Using placeholder config → User must edit `.claude/settings.plugins.run-and-fix-tests.json` before step 2
 
-## 1. Load Configuration
+## 2. Load Configuration
 
 → Source: `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh`
 ✗ Script fails → Display error and stop
@@ -43,7 +53,7 @@ description: Build the project, run tests and systematically fix any failures. A
 
 → Store initial working directory: `INITIAL_PWD=$(pwd)`
 
-## 2. Build Project
+## 3. Build Project
 
 → Create log directory: `mkdir -p "$LOG_DIR"`
 → Check build type: `$BUILD_MULTI`
@@ -51,19 +61,19 @@ description: Build the project, run tests and systematically fix any failures. A
 **Single Build:**
 → Change to build working directory: `cd "$BUILD_WORKING_DIR"`
 → Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
-✓ Exit 0 → Return to INITIAL_PWD, proceed to step 3 (Run Tests)
-✗ Exit non-zero → Return to INITIAL_PWD, proceed to step 2a (Extract Build Errors)
+✓ Exit 0 → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
+✗ Exit non-zero → Return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)
 
 **Multi-Build:**
 → For each build in detected tools:
   → Change to build working directory
   → Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
   → On success: continue to next build
-  → On failure: return to INITIAL_PWD, proceed to step 2a (Extract Build Errors)
+  → On failure: return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)
 
-✓ All builds succeed → Return to INITIAL_PWD, proceed to step 3 (Run Tests)
+✓ All builds succeed → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
 
-## 2a. Extract Build Errors
+## 3a. Extract Build Errors
 
 → Try to get language diagnostics from editor using mcp__ide__getDiagnostics tool
 ✓ Editor diagnostics available → Parse diagnostics JSON for:
@@ -82,10 +92,10 @@ description: Build the project, run tests and systematically fix any failures. A
 → Display compilation error summary to user
 
 → Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
-  - "Yes" → Proceed to step 2b
+  - "Yes" → Proceed to step 3b
   - "No" → Stop
 
-## 2b. Fix Compilation Errors
+## 3b. Fix Compilation Errors
 
 → For each compilation error identified:
   → Read the file with the error
@@ -93,9 +103,9 @@ description: Build the project, run tests and systematically fix any failures. A
   → Implement fix to the source code
   → Mark error as addressed
 
-→ When all errors are addressed, return to step 2 (Build Project)
+→ When all errors are addressed, return to step 3 (Build Project)
 
-## 3. Run Tests
+## 4. Run Tests
 
 → Determine test command based on mode:
   - Single test mode: TEST_CMD = `$TEST_SINGLE_CMD` with {testFile} replaced
@@ -103,10 +113,10 @@ description: Build the project, run tests and systematically fix any failures. A
 
 → Change to test working directory (if different from build dir)
 → Execute test command silently to log file: `$TEST_CMD > "$TEST_LOG" 2>&1`
-✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 8 (Success)
-✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 4 (Extract Test Errors)
+✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 9 (Success)
+✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 5 (Extract Test Errors)
 
-## 4. Extract Test Errors
+## 5. Extract Test Errors
 
 → Parse test log at `$TEST_LOG` to identify failing tests
 → Extract error patterns from log using `$TEST_ERROR_PATTERN` regex
@@ -115,34 +125,34 @@ description: Build the project, run tests and systematically fix any failures. A
   - List of failing test names/paths
   - Error messages and relevant output from test log
   - Stack traces (if available)
-→ Proceed to step 5 (Create Fix Plan)
+→ Proceed to step 6 (Create Fix Plan)
 
-## 5. Create Fix Plan
+## 6. Create Fix Plan
 
 → Analyze extracted failures to identify distinct failing tests
 → Use TodoWrite to create todo list with one item per failing test:
   - content: "Fix [test name]"
   - activeForm: "Fixing [test name]"
   - status: "pending"
-→ Proceed to step 6 (Ask to Fix Tests)
+→ Proceed to step 7 (Ask to Fix Tests)
 
-## 6. Ask to Fix Tests
+## 7. Ask to Fix Tests
 
 → Use AskUserQuestion:
   - "Start fixing tests one by one?" (recommended)
   - "No, I'll fix manually"
   - "Other"
 
-✓ User confirms → Proceed to step 7 (Fix Tests Iteratively)
+✓ User confirms → Proceed to step 8 (Fix Tests Iteratively)
 ✗ User declines → Stop
 
-## 7. Fix Tests Iteratively
+## 8. Fix Tests Iteratively
 
 → Get next pending test from todo list
 → Mark test as "in_progress" using TodoWrite
 → Initialize retry counter: `RETRY_COUNT=0`
 
-### 7a. Attempt Fix (Iterate up to 3 times)
+### 8a. Attempt Fix (Iterate up to 3 times)
 
 → Increment `RETRY_COUNT`
 → Read failing test file and implementation file
@@ -152,30 +162,30 @@ description: Build the project, run tests and systematically fix any failures. A
   - Capture exit code from command execution
 → Display result to user
 
-✓ Test passes (exit code 0) → Mark todo as "completed", proceed to step 7b
+✓ Test passes (exit code 0) → Mark todo as "completed", proceed to step 8b
 ✗ Test still fails (exit code non-zero):
   - If `RETRY_COUNT < 3` → Display failure reason, use AskUserQuestion: "Try again?"
-    - "Yes" → Return to step 7a (Attempt Fix again)
-    - "No" → Skip this test and proceed to step 7b
+    - "Yes" → Return to step 8a (Attempt Fix again)
+    - "No" → Skip this test and proceed to step 8b
   - If `RETRY_COUNT == 3` → Display "Attempted fix 3 times without success"
     → Use AskUserQuestion: "Continue trying to fix this test?"
-      - "Yes, keep trying" → Continue from step 7a (increment counter)
-      - "No, skip it" → Proceed to step 7b
+      - "Yes, keep trying" → Continue from step 8a (increment counter)
+      - "No, skip it" → Proceed to step 8b
       - "No, stop for now" → Stop
 
-### 7b. Move to Next Test
+### 8b. Move to Next Test
 
 → Use AskUserQuestion:
   - "Fix next test?"
-  - "Re-run all tests?" (clear todos, return to step 3)
+  - "Re-run all tests?" (clear todos, return to step 4)
   - "Stop for now" → Stop
   - "Other"
 
-✓ "Fix next test" → If tests remain, return to step 7; else proceed to step 3 (Run Tests)
-✓ "Re-run all tests" → Clear todos with TodoWrite, return to step 3 (Run Tests)
+✓ "Fix next test" → If tests remain, return to step 8; else proceed to step 4 (Run Tests)
+✓ "Re-run all tests" → Clear todos with TodoWrite, return to step 4 (Run Tests)
 ✗ "Stop for now" → Stop
 
-## 8. Success
+## 9. Success
 
 ✅ All tests passed
 → Clear todo list with TodoWrite (empty)
@@ -185,8 +195,8 @@ description: Build the project, run tests and systematically fix any failures. A
 
 **⚠️  CRITICAL EXECUTION RULES**
 
-- **Mandatory flow**: After step 4 (Extract Test Errors) and step 5 (Create Fix Plan), ALWAYS proceed to step 6 (Ask to Fix Tests). Do NOT stop or skip to user.
-- **User confirmation required**: ALWAYS ask user via AskUserQuestion in step 6 before proceeding to step 7. Only proceed to step 7 if user confirms.
+- **Mandatory flow**: After step 5 (Extract Test Errors) and step 6 (Create Fix Plan), ALWAYS proceed to step 7 (Ask to Fix Tests). Do NOT stop or skip to user.
+- **User confirmation required**: ALWAYS ask user via AskUserQuestion in step 7 before proceeding to step 8. Only proceed to step 8 if user confirms.
 - **Silent execution**: NEVER use `tee` when running build or test commands. Redirect all output to log files (`> "$LOG_FILE" 2>&1`). Only inspect logs when command returns non-zero exit code.
 - **Exit code checking**: Always capture and check exit codes. Zero = success, non-zero = failure.
 - **No assumptions**: Never assume errors are "pre-existing" or skip investigating them. All errors must be analyzed unless user explicitly stops the workflow.

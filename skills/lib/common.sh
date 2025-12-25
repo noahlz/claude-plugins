@@ -1,5 +1,15 @@
 #!/bin/bash
 # Shared utilities for skill scripts
+#
+# CLAUDE_PLUGIN_ROOT resolution strategy:
+# 1. SKILL.md files set CLAUDE_PLUGIN_ROOT using ./.claude/resolve_plugin_root.sh
+#    - This resolver reads ~/.claude/plugins/installed_plugins.json
+#    - Works around Claude Code Issue #9354 where CLAUDE_PLUGIN_ROOT doesn't
+#      expand in skill markdown files
+#    - See: https://github.com/anthropics/claude-code/issues/9354
+# 2. Fallback: Scripts detect plugin root from file location
+#    - Used when called directly or outside skill execution
+#
 # Usage: source "${CLAUDE_PLUGIN_ROOT}/skills/lib/common.sh"
 
 # Detect CLAUDE_PLUGIN_ROOT from script location if not set
