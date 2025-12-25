@@ -1,0 +1,8 @@
+{
+  "logDir": "dist",
+  "build": {
+    "command": "make build",
+    "logFile": "{logDir}/make.log",
+    "errorPattern": "Error|error:"
+  }
+}

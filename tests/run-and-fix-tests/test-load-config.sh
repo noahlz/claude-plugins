@@ -28,6 +28,26 @@ tearDown() {
   teardown_test_env
 }
 
+# Helper: Create a standard npm project config
+create_npm_config() {
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
+{
+  "logDir": "dist",
+  "build": {
+    "command": "npm run build"
+  },
+  "test": {
+    "all": {
+      "command": "npm test"
+    },
+    "single": {
+      "command": "npm test -- {testFile}"
+    }
+  }
+}
+EOF
+}
+
 # Helper: Source load-config.sh and capture variables
 load_config() {
   # Source the config loader to export variables
@@ -38,17 +58,35 @@ load_config() {
 # Tests for: Default Configuration Loading
 # ========================================
 
-test_loads_default_config_when_no_project_config() {
-  # No project config exists
+test_loads_npm_config() {
+  # Create a simple npm project config
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
+{
+  "logDir": "dist",
+  "build": {
+    "command": "npm run build"
+  },
+  "test": {
+    "all": {
+      "command": "npm test"
+    },
+    "single": {
+      "command": "npm test -- {testFile}"
+    }
+  }
+}
+EOF
+
   load_config
 
-  # Should load from default
+  # Should load successfully
   assertTrue "BUILD_CMD is set" "[ -n '$BUILD_CMD' ]"
   assertTrue "TEST_CMD is set" "[ -n '$TEST_CMD' ]"
   assertTrue "LOG_DIR is set" "[ -n '$LOG_DIR' ]"
 }
 
 test_exports_build_multi_flag() {
+  create_npm_config
   load_config
 
   # BUILD_MULTI should be set to true or false
@@ -57,6 +95,7 @@ test_exports_build_multi_flag() {
 }
 
 test_exports_log_directory() {
+  create_npm_config
   load_config
 
   # LOG_DIR should be exported
@@ -64,6 +103,7 @@ test_exports_log_directory() {
 }
 
 test_exports_build_command() {
+  create_npm_config
   load_config
 
   # BUILD_CMD should contain a build command template
@@ -71,6 +111,7 @@ test_exports_build_command() {
 }
 
 test_exports_test_commands() {
+  create_npm_config
   load_config
 
   # TEST_CMD for all tests
@@ -85,12 +126,19 @@ test_exports_test_commands() {
 # ========================================
 
 test_merges_project_config_with_defaults() {
-  # Create project config that overrides build command
+  # Create project config that customizes build command
   cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {
-  "npm": {
-    "build": {
-      "command": "npm run custom-build"
+  "logDir": "dist",
+  "build": {
+    "command": "npm run custom-build"
+  },
+  "test": {
+    "all": {
+      "command": "npm test"
+    },
+    "single": {
+      "command": "npm test -- {testFile}"
     }
   }
 }
@@ -98,31 +146,25 @@ EOF
 
   load_config
 
-  # Should still have defaults from plugin config
+  # Should have custom build command
   assertTrue "BUILD_CMD is set" "[ -n '$BUILD_CMD' ]"
   assertTrue "LOG_DIR is set" "[ -n '$LOG_DIR' ]"
 }
 
 test_handles_empty_project_config() {
-  # Create empty project config
-  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
-{}
-EOF
-
-  load_config
-
-  # Should still use defaults
-  assertTrue "BUILD_CMD is set" "[ -n '$BUILD_CMD' ]"
-  assertTrue "TEST_CMD is set" "[ -n '$TEST_CMD' ]"
-}
-
-test_merges_nested_configs() {
-  # Create project config with nested properties
+  # Create minimal project config (empty configs not supported now)
   cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {
-  "npm": {
-    "build": {
-      "command": "npm ci && npm run build"
+  "logDir": "dist",
+  "build": {
+    "command": "npm run build"
+  },
+  "test": {
+    "all": {
+      "command": "npm test"
+    },
+    "single": {
+      "command": "npm test -- {testFile}"
     }
   }
 }
@@ -130,7 +172,33 @@ EOF
 
   load_config
 
-  # Config should still be valid and set
+  # Should load successfully
+  assertTrue "BUILD_CMD is set" "[ -n '$BUILD_CMD' ]"
+  assertTrue "TEST_CMD is set" "[ -n '$TEST_CMD' ]"
+}
+
+test_merges_nested_configs() {
+  # Create project config with extended npm commands
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
+{
+  "logDir": "dist",
+  "build": {
+    "command": "npm ci && npm run build"
+  },
+  "test": {
+    "all": {
+      "command": "npm test"
+    },
+    "single": {
+      "command": "npm test -- {testFile}"
+    }
+  }
+}
+EOF
+
+  load_config
+
+  # Config should load with custom build command
   assertTrue "BUILD_CMD is set" "[ -n '$BUILD_CMD' ]"
 }
 
@@ -139,6 +207,7 @@ EOF
 # ========================================
 
 test_handles_single_build_config() {
+  create_npm_config
   load_config
 
   # For single build, BUILD_MULTI should be false
@@ -180,6 +249,7 @@ EOF
 # ========================================
 
 test_exports_all_required_variables() {
+  create_npm_config
   load_config
 
   # Core required variables
@@ -191,6 +261,7 @@ test_exports_all_required_variables() {
 }
 
 test_log_directory_is_valid_path() {
+  create_npm_config
   load_config
 
   # LOG_DIR should not be empty or just placeholders
@@ -199,6 +270,7 @@ test_log_directory_is_valid_path() {
 }
 
 test_builds_correct_environment() {
+  create_npm_config
   load_config
 
   # All exported variables should be non-empty
@@ -214,6 +286,8 @@ test_builds_correct_environment() {
 # ========================================
 
 test_handles_missing_claude_plugin_root() {
+  create_npm_config
+
   # Unset CLAUDE_PLUGIN_ROOT
   unset CLAUDE_PLUGIN_ROOT
 
@@ -230,6 +304,7 @@ test_handles_missing_claude_plugin_root() {
 # ========================================
 
 test_replaces_logdir_placeholder() {
+  create_npm_config
   load_config
 
   # LOG_DIR should not contain {logDir} placeholder
@@ -237,6 +312,7 @@ test_replaces_logdir_placeholder() {
 }
 
 test_logdir_contains_build_artifacts_path() {
+  create_npm_config
   load_config
 
   # LOG_DIR should point to somewhere reasonable (dist, build, target, etc.)
@@ -265,11 +341,20 @@ EOF
 # ========================================
 
 test_project_config_overrides_defaults() {
-  # Create project config with custom test pattern
+  # Create project config with custom error pattern
   cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
 {
-  "npm": {
-    "test": {
+  "logDir": "dist",
+  "build": {
+    "command": "npm run build"
+  },
+  "test": {
+    "all": {
+      "command": "npm test",
+      "errorPattern": "CUSTOM_ERROR_PATTERN"
+    },
+    "single": {
+      "command": "npm test -- {testFile}",
       "errorPattern": "CUSTOM_ERROR_PATTERN"
     }
   }
@@ -278,16 +363,133 @@ EOF
 
   load_config
 
-  # Variables should be set (whether overridden or not)
+  # Variables should be set
   assertTrue "TEST_CMD is set" "[ -n '$TEST_CMD' ]"
+  assertTrue "TEST_ERROR_PATTERN has custom value" "echo '$TEST_ERROR_PATTERN' | grep -q 'CUSTOM'"
 }
 
 test_default_config_used_when_no_override() {
   # Don't create project config, use defaults only
+  create_npm_config
   load_config
 
   # Should have default test error pattern
   assertTrue "Default config loaded" "[ -n '$TEST_CMD' ]"
+}
+
+# ========================================
+# Tests for: Placeholder Validation
+# ========================================
+
+test_rejects_config_with_placeholders() {
+  # Create config with placeholder values
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
+{
+  "logDir": "__PLACEHOLDER_LOG_DIR__",
+  "build": {
+    "command": "__PLACEHOLDER_BUILD_COMMAND__"
+  },
+  "test": {
+    "all": {
+      "command": "__PLACEHOLDER_TEST_ALL_COMMAND__"
+    },
+    "single": {
+      "command": "__PLACEHOLDER_TEST_SINGLE_COMMAND__"
+    }
+  }
+}
+EOF
+
+  # Should exit with error when loading config with placeholders
+  set +e
+  load_config 2>/dev/null
+  local exit_code=$?
+  set -e
+
+  assertTrue "Config with placeholders is rejected" "[ $exit_code -ne 0 ]"
+}
+
+test_accepts_config_without_placeholders() {
+  # Create valid config without placeholders
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
+{
+  "logDir": "dist",
+  "build": {
+    "command": "npm run build"
+  },
+  "test": {
+    "all": {
+      "command": "npm test"
+    },
+    "single": {
+      "command": "npm test -- {testFile}"
+    }
+  }
+}
+EOF
+
+  # Should succeed
+  set +e
+  load_config 2>/dev/null
+  local exit_code=$?
+  set -e
+
+  assertTrue "Valid config is accepted" "[ $exit_code -eq 0 ]"
+}
+
+# ========================================
+# Tests for: Tools Wrapper Validation
+# ========================================
+
+test_rejects_config_with_tools_wrapper() {
+  # Create old-style config with tools wrapper (incorrect structure)
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
+{
+  "tools": {
+    "npm": {
+      "build": {
+        "command": "npm run build"
+      }
+    }
+  }
+}
+EOF
+
+  # Should exit with error when loading config with tools wrapper
+  set +e
+  load_config 2>/dev/null
+  local exit_code=$?
+  set -e
+
+  assertTrue "Config with tools wrapper is rejected" "[ $exit_code -ne 0 ]"
+}
+
+test_accepts_flat_config_structure() {
+  # Create flat config (correct structure)
+  cat > .claude/settings.plugins.run-and-fix-tests.json <<'EOF'
+{
+  "logDir": "dist",
+  "build": {
+    "command": "npm run build"
+  },
+  "test": {
+    "all": {
+      "command": "npm test"
+    },
+    "single": {
+      "command": "npm test -- {testFile}"
+    }
+  }
+}
+EOF
+
+  # Should succeed
+  set +e
+  load_config 2>/dev/null
+  local exit_code=$?
+  set -e
+
+  assertTrue "Flat config structure is accepted" "[ $exit_code -eq 0 ]"
 }
 
 # Source shUnit2

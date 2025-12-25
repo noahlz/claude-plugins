@@ -1,0 +1,20 @@
+{
+  "logDir": "dist",
+  "build": {
+    "command": "vite build",
+    "logFile": "{logDir}/vite.log",
+    "errorPattern": "(error|Error|✘|failed)"
+  },
+  "test": {
+    "all": {
+      "command": "jest",
+      "logFile": "{logDir}/jest.log",
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+    },
+    "single": {
+      "command": "jest {testFile}",
+      "logFile": "{logDir}/jest-single.log",
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+    }
+  }
+}

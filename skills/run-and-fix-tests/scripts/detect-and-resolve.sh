@@ -89,3 +89,10 @@ export BUILD_CONFIG="$MERGED_CONFIG"
 # Output detected tools as formatted list for user confirmation
 echo "Detected build tools:"
 echo "$DETECTED_JSON" | jq -r '.[] | "  - \(.tool) (\(.location))"'
+
+# Check if project config exists, if not select and apply default
+if [ ! -f ".claude/settings.plugins.run-and-fix-tests.json" ]; then
+  echo ""
+  # Source the default selection script
+  source "${SCRIPT_DIR}/select-default.sh"
+fi

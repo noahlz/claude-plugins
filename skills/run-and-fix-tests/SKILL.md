@@ -5,47 +5,25 @@ description: Build the project, run tests and systematically fix any failures. A
 
 ## 0. Detect Build Configuration
 
-→ Check if `.claude/settings.plugins.run-and-fix-tests.json` exists and is not empty
+→ Check if `.claude/settings.plugins.run-and-fix-tests.json` exists
 ✓ Config exists → Proceed to step 1
-✗ Config missing/empty → Run detection script:
+✗ Config missing → Run detection and auto-config:
 
 → Source: `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.sh`
   - Scans project for build tool config files (package.json, pom.xml, build.gradle, etc.)
-  - Loads merged config (default + project override)
-  - Returns: `$DETECTED_TOOLS` (JSON array), `$BUILD_CONFIG` (merged config)
+  - Detects which tools are present
+  - Automatically selects and applies appropriate default configuration
 
-→ Check number of detected tools:
-  - Exactly 1 tool → Propose single build configuration
-  - Multiple tools → Proceed to step 0a
-  - 0 tools → Error: no build tools detected
+→ Auto-selection rules:
+  - Exactly 1 tool detected → Use `defaults/{tool}.json`
+  - Multiple tools in different locations → Generate polyglot config (🔧 shown to user)
+  - Multiple tools in same location → Generate polyglot config
+  - No matching default exists → Use `example.json` placeholder template (user must customize)
+  - 0 tools detected → Error: no build tools detected
 
-## 0a. Resolve Ambiguity (if multiple tools at same location)
-
-→ Check if all detected tools are in same directory (e.g., all in project root)
-✓ All in different directories → Proceed to multi-build proposal
-✗ Multiple tools in same directory → Ask user to choose:
-
-→ Use AskUserQuestion:
-  - Question: "Multiple build tools detected in [location]. Which should I use?"
-  - Options: List detected tools as choices
-  - Recommended: First detected tool
-
-✓ User selects tool → Create single-build config with selected tool, proceed to step 1
-✗ User chooses "Other/Configure manually" → Stop
-
-## 0b. Propose Configuration
-
-→ Display detected tools and their locations:
-  - Single tool: "Detected [tool] at [location]"
-  - Multiple tools: "Detected [tool1] at [location1], [tool2] at [location2], etc."
-
-→ Use AskUserQuestion to confirm:
-  - "Proceed with these build tools?"
-  - "No, I'll configure manually"
-  - "Other"
-
-✓ User confirms → Save config to `.claude/settings.plugins.run-and-fix-tests.json` and proceed to step 1
-✗ User declines → Stop, user creates `.claude/settings.plugins.run-and-fix-tests.json` manually
+✓ Config created successfully → Proceed to step 1
+✗ No tools detected → Error, user must create `.claude/settings.plugins.run-and-fix-tests.json` manually
+✗ Using placeholder config → User must edit `.claude/settings.plugins.run-and-fix-tests.json` before step 1
 
 ## 1. Load Configuration
 

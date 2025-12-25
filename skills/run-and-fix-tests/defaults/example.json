@@ -1,0 +1,23 @@
+{
+  "logDir": "__PLACEHOLDER_LOG_DIR__",
+  "build": {
+    "tool": "__PLACEHOLDER_TOOL_NAME__",
+    "command": "__PLACEHOLDER_BUILD_COMMAND__",
+    "logFile": "{logDir}/__PLACEHOLDER_LOG_FILE__",
+    "errorPattern": "__PLACEHOLDER_ERROR_PATTERN__",
+    "workingDir": "."
+  },
+  "test": {
+    "all": {
+      "command": "__PLACEHOLDER_TEST_ALL_COMMAND__",
+      "logFile": "{logDir}/__PLACEHOLDER_TEST_LOG__",
+      "errorPattern": "__PLACEHOLDER_TEST_ERROR_PATTERN__"
+    },
+    "single": {
+      "command": "__PLACEHOLDER_TEST_SINGLE_COMMAND__",
+      "logFile": "{logDir}/__PLACEHOLDER_TEST_SINGLE_LOG__",
+      "errorPattern": "__PLACEHOLDER_TEST_ERROR_PATTERN__"
+    }
+  },
+  "_instructions": "REPLACE ALL __PLACEHOLDER_*__ VALUES WITH YOUR PROJECT'S BUILD/TEST COMMANDS AND ERROR PATTERNS"
+}
