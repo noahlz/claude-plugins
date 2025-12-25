@@ -5,9 +5,18 @@ description: Create a git commit with Claude Code session cost metrics and attri
 
 ## 1. Prepare Cost Data
 
-→ Resolve plugin root environment:
+→ Resolve plugin root environment (check local project first, then user home):
 ```bash
-CLAUDE_PLUGIN_ROOT="$(./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io")" || { echo "Error: Failed to resolve plugin root" >&2; exit 1; }
+RESOLVER=""
+if [ -x "./.claude/resolve_plugin_root.sh" ]; then
+  RESOLVER="./.claude/resolve_plugin_root.sh"
+elif [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
+  RESOLVER="$HOME/.claude/resolve_plugin_root.sh"
+else
+  echo "Error: resolve_plugin_root.sh not found in ./.claude/ or $HOME/.claude/" >&2
+  exit 1
+fi
+CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || { echo "Error: Failed to resolve plugin root" >&2; exit 1; }
 export CLAUDE_PLUGIN_ROOT
 ```
 

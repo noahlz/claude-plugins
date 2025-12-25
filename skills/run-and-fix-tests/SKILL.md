@@ -5,9 +5,18 @@ description: Build the project, run tests and systematically fix any failures. A
 
 ## 0. Resolve Plugin Root
 
-→ Resolve plugin root environment:
+→ Resolve plugin root environment (check local project first, then user home):
 ```bash
-CLAUDE_PLUGIN_ROOT="$(./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io")" || { echo "Error: Failed to resolve plugin root" >&2; exit 1; }
+RESOLVER=""
+if [ -x "./.claude/resolve_plugin_root.sh" ]; then
+  RESOLVER="./.claude/resolve_plugin_root.sh"
+elif [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
+  RESOLVER="$HOME/.claude/resolve_plugin_root.sh"
+else
+  echo "Error: resolve_plugin_root.sh not found in ./.claude/ or $HOME/.claude/" >&2
+  exit 1
+fi
+CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || { echo "Error: Failed to resolve plugin root" >&2; exit 1; }
 export CLAUDE_PLUGIN_ROOT
 ```
 
@@ -37,7 +46,10 @@ export CLAUDE_PLUGIN_ROOT
 
 ## 2. Load Configuration
 
-→ Source: `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh`
+→ Execute load-config script to output configuration as eval-able statements:
+```bash
+eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "${CLAUDE_PLUGIN_ROOT}")"
+```
 ✗ Script fails → Display error and stop
 ✓ Script succeeds → Environment variables set:
   - BUILD_CMD, BUILD_LOG, BUILD_ERROR_PATTERN, BUILD_WORKING_DIR
