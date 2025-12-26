@@ -17,22 +17,16 @@ claude plugin marketplace add https://github.com/noahlz/claude-plugins.git
 claude plugin install dev-workflow@noahlz.github.com
 ```
 
-#### Skill: `write-git-commit`
-Create git commits with Claude Code cost metrics embedded in commit footers.
+#### Skills
 
-**Command:** `/dev-workflow:commit` (or `/commit`)
+| Skill | Description | Command |
+|-------|-------------|---------|
+| `write-git-commit` | Create git commits with Claude Code cost metrics embedded in commit footers. Requires [`ccusage`](https://github.com/ryoppippi/ccusage). | `/dev-workflow:commit` (or `/commit`) |
+| `run-and-fix-tests` | Run tests with clean output and fix any failures using the `test-fixer` agent. | `/dev-workflow:test` (or `/test`) |
 
-**NOTE:** Requires local installation of [`ccusage`](https://github.com/ryoppippi/ccusage)
+#### Agents
 
-#### Skill: `run-and-fix-tests`
-Run tests with clean output and fix any failures using the `test-fixer` agent.
-
-**Command:** `/dev-workflow:test` (or `/test`)
-
-#### Agent: `test-fixer` (Agent)
-Analyze failing tests and implement root-cause fixes. Guides compilation error resolution and test failure diagnosis.
-
-**Invocation:** Use when user asks to fix failing tests or when `run-and-fix-tests` skill encounters failing tests. 
+`test-fixer` - Analyze failing tests and implement root-cause fixes. Guides compilation error resolution and test failure diagnosis. Invoke when user asks to fix failing tests or when `run-and-fix-tests` skill encounters failing tests. 
 
 ## Development
 
@@ -54,31 +48,9 @@ Alternatively, update the plugin version number in `marketplace.json` and then t
 
 ### Plugin Root Resolution
 
-Skills need to locate the plugin installation directory to source their scripts. Claude Code's `CLAUDE_PLUGIN_ROOT` environment variable [doesn't work in command markdown files](https://github.com/anthropics/claude-code/issues/9354).
+Skills need to locate the plugin installation directory at runtime. The [`resolve_plugin_root.sh`](./.claude/resolve_plugin_root.sh) script handles this automatically by querying `~/.claude/plugins/installed_plugins.json` to find the installation path.
 
-**The Problem:**
-- **Source location** (development): Plugin code lives in `plugins/dev-workflow/` in the git repository
-- **Installed location** (runtime): Plugins are installed to `~/.claude/plugins/cache/<publisher>/<plugin>/<version>/` with the same directory structure
-- Scripts need to work from either location and locate dependencies correctly
-
-**Solution:** The [`resolve_plugin_root.sh`](./.claude/resolve_plugin_root.sh) script automatically finds the installed plugin location at runtime.
-
-**How it works:**
-1. SKILL.md files check for the resolver script in two locations:
-   - First checks local project: `./.claude/resolve_plugin_root.sh`
-   - Falls back to user home directory: `$HOME/.claude/resolve_plugin_root.sh`
-2. The resolver queries `~/.claude/plugins/installed_plugins.json` to find the plugin's installation path
-3. Returns the installation path (e.g., `~/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.0.1/`)
-4. Scripts use `${CLAUDE_PLUGIN_ROOT}` to reference skill files relative to the installation path
-5. Uses `CLAUDE_PLUGIN_ROOT` environment variable if already set (forward compatibility)
-
-**For plugin developers:** The resolver script is located at [`./.claude/resolve_plugin_root.sh`](./.claude/resolve_plugin_root.sh) and handles plugin discovery automatically.
-
-**For plugin users:** The resolver script is copied to your project during plugin installation. No manual setup required—skills automatically locate their dependencies.
-
-**See also:**
-- [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https://github.com/anthropics/claude-code/issues/9354) - Details about the core issue this resolver works around
-- [`plugins/dev-workflow/skills/lib/common.sh`](./plugins/dev-workflow/skills/lib/common.sh) - Shared utility functions used by all skills
+Related: [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https://github.com/anthropics/claude-code/issues/9354)
 
 ## Testing
 
