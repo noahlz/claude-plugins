@@ -14,15 +14,15 @@ Add the marketplace to your Claude Code settings:
 
 ```bash
 claude plugin marketplace add https://github.com/noahlz/claude-plugins.git
-claude plugin install dev-workflow@noahlz.github.com
+claude plugin install dev-workflow@noahlz.github.io
 ```
 
 #### Skills
 
-| Skill | Description | Command |
-|-------|-------------|---------|
-| `write-git-commit` | Create git commits with Claude Code cost metrics embedded in commit footers. Requires [`ccusage`](https://github.com/ryoppippi/ccusage). | `/dev-workflow:commit` (or `/commit`) |
-| `run-and-fix-tests` | Run tests with clean output and fix any failures using the `test-fixer` agent. | `/dev-workflow:test` (or `/test`) |
+| Skill | Description | Command | Documentation |
+|-------|-------------|---------|---------------|
+| `write-git-commit` | Create git commits with Claude Code cost metrics embedded in commit footers. Requires [`ccusage`](https://github.com/ryoppippi/ccusage). | `/dev-workflow:commit` (or `/commit`) | [README.md](./plugins/dev-workflow/skills/write-git-commit/README.md) |
+| `run-and-fix-tests` | Run tests with clean output and fix any failures using the `test-fixer` agent. | `/dev-workflow:test` (or `/test`) | [README.md](./plugins/dev-workflow/skills/run-and-fix-tests/README.md) |
 
 #### Agents
 

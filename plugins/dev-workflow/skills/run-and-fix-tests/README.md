@@ -1,14 +1,13 @@
 # Run and Fix Tests Plugin
 
-Guides Claude through automatically building, running and fixing your project tests with minmimal token usage. 
+Guides Claude through automatically building, running and fixing your project tests with minimal token usage. 
 
 ## What It Does
 
-- Builds your project using the appropriate build tool
-- Runs tests and displays failures
+- Builds and tests your project using the appropriate build tool
 - Fixes failing tests one by one (with your approval)
 - Supports single test execution: `/test MyTest`
-- Supports multi-module projects with different build tools
+- Supports multi-module projects with different build tools (custom configuration required)
 
 ## Prerequisites
 
@@ -34,33 +33,9 @@ When you run `/test` for the first time, the plugin automatically:
 2. **Selects** the appropriate default configuration from the `defaults/` directory
 3. **Creates** `.claude/settings.plugins.run-and-fix-tests.json` in your project
 
-**Detected build tools:**
-- `package.json` → npm (with vite)
-- `pom.xml` → Maven
-- `build.gradle` → Gradle
-- `go.mod` → Go
-- `build.sbt` → SBT
-- `Cargo.toml` → Rust (cargo)
-- `*.csproj` → .NET (dotnet)
-- `project.clj` → Leiningen
-- `deps.edn` → Clojure CLI
-- `Makefile` → Make
+See [settings.plugins.run-and-fix-tests.json](./settings.plugins.run-and-fix-tests.json) for out-of-the-box supported tools and files under [defaults/](./defaults) for default configurations. You can also customize your projects tool detection in your project or user-level plugin configuration. The configurations are merged.
 
-### Available Default Configurations
-
-The plugin includes pre-built default configurations for each tool:
-
-- `npm.json` - Node.js/Vite projects
-- `maven.json` - Maven with native logging
-- `gradle.json` - Gradle (single or multi-module)
-- `go.json` - Go projects
-- `sbt.json` - Scala/SBT
-- `cargo.json` - Rust (release build)
-- `rust.json` - Rust (debug build)
-- `dotnet.json` - .NET projects
-- `make.json` - Makefile-based
-- `leiningen.json`, `clojure.json` - Clojure
-- `polyglot.json` - Multi-tool projects
+Note: The default `polyglot.json` serves as an example multi-module build (see next section).
 
 ### Multi-Tool Projects
 
@@ -74,25 +49,9 @@ The generated config uses an array structure for `build` to run each tool in ord
 
 ### Placeholder Configuration
 
-If your build tool isn't recognized, the plugin creates a placeholder template:
+If your build tool isn't recognized, the plugin creates a placeholder template.  You must edit the config before using the plugin. Replace the placeholders with your actual commands.
 
-```
-🚨 PLACEHOLDER CONFIG CREATED - YOU MUST CUSTOMIZE IT
-   Edit: .claude/settings.plugins.run-and-fix-tests.json
-   Replace all __PLACEHOLDER_*__ values with your build/test commands
-```
-
-You must edit the config before using the plugin. Replace the placeholders with your actual commands.
-
-If you try to run the plugin with uncustomized placeholders, you'll see:
-
-```
-🚨🚨🚨 CONFIGURATION REQUIRED 🚨🚨🚨
-
-Your config contains placeholder values that must be replaced.
-```
-
-See the `defaults/example.json` file for the placeholder template structure.
+See the [`defaults/example.json`](./defaults/example.json) file for the placeholder template structure.
 
 ### Customizing Configuration
 

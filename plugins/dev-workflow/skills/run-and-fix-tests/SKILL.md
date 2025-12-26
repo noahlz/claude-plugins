@@ -87,8 +87,8 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 ## 3a. Extract Build Errors
 
-→ Try to get language diagnostics from editor using mcp__ide__getDiagnostics tool
-✓ Editor diagnostics available → Parse diagnostics JSON for:
+→ Try to get language diagnostics from editor using available IDE MCP or LSP tools
+✓ MCP or LSP tool available → use it to find and resolve:
   - File paths with errors
   - Line numbers and column positions
   - Error messages and severity
@@ -164,7 +164,7 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 ## 8. Delegate to Test-Fixer Agent
 
-→ Invoke the `test-fixer` agent to fix failing tests one-by-one.
+→ Use the `test-fixer` agent to fix failing tests one-by-one.
 
 → Provide agent with context in natural language:
   - Failed test list: [bulleted list with test names and error excerpts from step 5]
@@ -176,19 +176,14 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
   - LOG_DIR actual path (e.g., "logs/")
   - INITIAL_PWD actual path (e.g., "/current/working/directory")
 
-→ Agent handles:
-  - TodoWrite tracking of all failed tests
-  - One-by-one fixing with user control after each test
-  - Retry logic (up to 3 attempts per test)
-  - Root cause analysis and quality fixes
-  - User choice after each fix: "Fix next" / "Stop" (no auto re-run in agent)
+→ Agent fixes the tests per its instructions and context provided.
 
 ✓ Agent completes → Proceed to step 8a
 
 ## 8a. Ask User to Re-run Tests
 
 → Use AskUserQuestion:
-  - "Re-run all tests to verify fixes?" (recommended)
+  - "Re-run all tests to verify fixes?"
   - "No, stop for now"
 
 ✓ User confirms → Proceed to step 4 (Run Tests)
@@ -212,10 +207,7 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 **⚠️  CRITICAL EXECUTION RULES**
 
-- **Zero-failure exit**: If step 5 detects 0 failures, skip directly to step 9 (do not ask user to fix tests).
-- **User confirmation required**: ALWAYS ask user via AskUserQuestion in step 7 before proceeding to step 8. Only proceed to step 8 if user confirms.
-- **Agent delegation**: Step 8 invokes the `test-fixer` agent; skill does not fix tests directly. Pass environment variable values explicitly in the agent invocation.
-- **Re-run confirmation**: ALWAYS ask user in step 8a whether to re-run all tests after agent completes. Do not auto-proceed to step 4.
 - **Silent execution**: NEVER use `tee` when running build or test commands. Redirect all output to log files (`> "$LOG_FILE" 2>&1`). Only inspect logs when command returns non-zero exit code.
-- **Exit code checking**: Always capture and check exit codes. Zero = success, non-zero = failure.
+- **Exit code checking**: Always capture and check exit codes to resolve build and test success/failure. Zero = success, non-zero = failure.
 - **No assumptions**: Never assume errors are "pre-existing" or skip investigating them. All errors must be analyzed unless user explicitly stops the workflow.
+- **No Git Commits:** DO NOT commit changes as part of this workflow. Users will do that separately.

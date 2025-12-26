@@ -1,17 +1,17 @@
 {
   "tools": {
-    "npm": { "configFile": "package.json" },
-    "vite": { "configFile": "vite.config.ts" },
-    "maven": { "configFile": "pom.xml" },
-    "gradle": { "configFile": "build.gradle" },
-    "sbt": { "configFile": "build.sbt" },
-    "go": { "configFile": "go.mod" },
-    "make": { "configFile": "Makefile" },
     "cargo": { "configFile": "Cargo.toml" },
-    "rust": { "configFile": "Cargo.toml" },
-    "dotnet": { "configFile": "*.csproj" },
-    "leiningen": { "configFile": "project.clj" },
     "clojure": { "configFile": "deps.edn" },
-    "shunit2": { "configFile": "shunit2" }
+    "dotnet": { "configFile": "*.csproj" },
+    "go": { "configFile": "go.mod" },
+    "gradle": { "configFile": "build.gradle" },
+    "leiningen": { "configFile": "project.clj" },
+    "make": { "configFile": "Makefile" },
+    "maven": { "configFile": "pom.xml" },
+    "npm": { "configFile": "package.json" },
+    "rust": { "configFile": "Cargo.toml" },
+    "sbt": { "configFile": "build.sbt" },
+    "shunit2": { "configFile": "shunit2" },
+    "vite": { "configFile": "vite.config.ts" }
   }
 }
