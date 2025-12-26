@@ -132,83 +132,90 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 → Parse test log at `$TEST_LOG` to identify failing tests
 → Extract error patterns from log using `$TEST_ERROR_PATTERN` regex
-→ Identify up to 30 distinct test failures
+→ Identify failing tests (up to 30 distinct failures)
+
+✓ 0 failures detected → Proceed to step 9 (Completion)
+✗ 1-30 failures → Display error summary, proceed to step 7
+✗ 30+ failures → Display count, proceed to step 7
+
 → Display error summary to user with:
   - List of failing test names/paths
   - Error messages and relevant output from test log
   - Stack traces (if available)
-→ Proceed to step 6 (Create Fix Plan)
-
-## 6. Create Fix Plan
-
-→ Analyze extracted failures to identify distinct failing tests
-→ Use TodoWrite to create todo list with one item per failing test:
-  - content: "Fix [test name]"
-  - activeForm: "Fixing [test name]"
-  - status: "pending"
-→ Proceed to step 7 (Ask to Fix Tests)
 
 ## 7. Ask to Fix Tests
 
+→ Check failure count from step 5:
+
+**If 30+ failures:**
+⚠️ Display: "30+ tests failed. This is too many for efficient fixing in one chat."
 → Use AskUserQuestion:
-  - "Start fixing tests one by one?" (recommended)
+  - "Attempt to fix 30+ tests?" (not recommended)
+  - "No, I'll stop and create a plan"
+→ If "No" → Stop (user exits to create plan)
+→ If "Yes" → Continue to step 8
+
+**If 1-29 failures:**
+→ Use AskUserQuestion:
+  - "Start fixing tests?" (recommended)
   - "No, I'll fix manually"
-  - "Other"
+→ If "Yes" → Continue to step 8
+→ If "No" → Stop
 
-✓ User confirms → Proceed to step 8 (Fix Tests Iteratively)
-✗ User declines → Stop
+## 8. Delegate to Test-Fixer Agent
 
-## 8. Fix Tests Iteratively
+→ Invoke the `test-fixer` agent to fix failing tests one-by-one.
 
-→ Get next pending test from todo list
-→ Mark test as "in_progress" using TodoWrite
-→ Initialize retry counter: `RETRY_COUNT=0`
+→ Provide agent with context in natural language:
+  - Failed test list: [bulleted list with test names and error excerpts from step 5]
+  - Example failed test entry: "TestLoginFlow (test/auth.test.js) - Expected 'logged in', got undefined"
 
-### 8a. Attempt Fix (Iterate up to 3 times)
+→ Provide env variable values to agent:
+  - TEST_SINGLE_CMD actual value (e.g., "npm test --testNamePattern={testName}")
+  - TEST_SINGLE_LOG actual path (e.g., "logs/test-single.log")
+  - LOG_DIR actual path (e.g., "logs/")
+  - INITIAL_PWD actual path (e.g., "/current/working/directory")
 
-→ Increment `RETRY_COUNT`
-→ Read failing test file and implementation file
-→ Implement fix to source code
-→ Run specific single test silently to verify fix:
-  - Command: `$TEST_SINGLE_CMD > "$TEST_SINGLE_LOG" 2>&1` with test file/class name
-  - Capture exit code from command execution
-→ Display result to user
+→ Agent handles:
+  - TodoWrite tracking of all failed tests
+  - One-by-one fixing with user control after each test
+  - Retry logic (up to 3 attempts per test)
+  - Root cause analysis and quality fixes
+  - User choice after each fix: "Fix next" / "Stop" (no auto re-run in agent)
 
-✓ Test passes (exit code 0) → Mark todo as "completed", proceed to step 8b
-✗ Test still fails (exit code non-zero):
-  - If `RETRY_COUNT < 3` → Display failure reason, use AskUserQuestion: "Try again?"
-    - "Yes" → Return to step 8a (Attempt Fix again)
-    - "No" → Skip this test and proceed to step 8b
-  - If `RETRY_COUNT == 3` → Display "Attempted fix 3 times without success"
-    → Use AskUserQuestion: "Continue trying to fix this test?"
-      - "Yes, keep trying" → Continue from step 8a (increment counter)
-      - "No, skip it" → Proceed to step 8b
-      - "No, stop for now" → Stop
+✓ Agent completes → Proceed to step 8a
 
-### 8b. Move to Next Test
+## 8a. Ask User to Re-run Tests
 
 → Use AskUserQuestion:
-  - "Fix next test?"
-  - "Re-run all tests?" (clear todos, return to step 4)
-  - "Stop for now" → Stop
-  - "Other"
+  - "Re-run all tests to verify fixes?" (recommended)
+  - "No, stop for now"
 
-✓ "Fix next test" → If tests remain, return to step 8; else proceed to step 4 (Run Tests)
-✓ "Re-run all tests" → Clear todos with TodoWrite, return to step 4 (Run Tests)
-✗ "Stop for now" → Stop
+✓ User confirms → Proceed to step 4 (Run Tests)
+✗ User declines → Proceed to step 9
 
-## 9. Success
+## 9. Completion
 
-✅ All tests passed
+→ Check if all originally-failing tests were fixed:
+  - If yes → Display: "✅ All tests fixed and passed!"
+  - If no → Display: "⚠️ Workflow incomplete. Some tests remain unfixed."
+
+→ Show summary:
+  - Tests fixed in this session
+  - Tests skipped/remaining
+  - Root causes addressed
+
 → Clear todo list with TodoWrite (empty)
-→ Display success message with log file locations
+→ Exit
 
 ---
 
 **⚠️  CRITICAL EXECUTION RULES**
 
-- **Mandatory flow**: After step 5 (Extract Test Errors) and step 6 (Create Fix Plan), ALWAYS proceed to step 7 (Ask to Fix Tests). Do NOT stop or skip to user.
+- **Zero-failure exit**: If step 5 detects 0 failures, skip directly to step 9 (do not ask user to fix tests).
 - **User confirmation required**: ALWAYS ask user via AskUserQuestion in step 7 before proceeding to step 8. Only proceed to step 8 if user confirms.
+- **Agent delegation**: Step 8 invokes the `test-fixer` agent; skill does not fix tests directly. Pass environment variable values explicitly in the agent invocation.
+- **Re-run confirmation**: ALWAYS ask user in step 8a whether to re-run all tests after agent completes. Do not auto-proceed to step 4.
 - **Silent execution**: NEVER use `tee` when running build or test commands. Redirect all output to log files (`> "$LOG_FILE" 2>&1`). Only inspect logs when command returns non-zero exit code.
 - **Exit code checking**: Always capture and check exit codes. Zero = success, non-zero = failure.
 - **No assumptions**: Never assume errors are "pre-existing" or skip investigating them. All errors must be analyzed unless user explicitly stops the workflow.
