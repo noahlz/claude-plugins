@@ -6,24 +6,9 @@ See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-m
 
 ## Available Plugins
 
-### write-git-commit
-Create git commits with Claude Code cost metrics embedded in commit footers.
+### Dev Workflow
 
-**Command:** `/commit`
-
-NOTE: Requires local installation of [`ccusage`](https://github.com/ryoppippi/ccusage)
-
-### run-and-fix-tests
-Run tests with clean output and fix any failures.
-
-**Command:** `/test`
-
-### test-runner-fixer (Agent)
-Analyze failing tests and implement root-cause fixes. Guides compilation error resolution and test failure diagnosis.
-
-**Invocation:** Use when user asks to run/fix tests or when new/changed code needs validation. Uses the `run-and-fix-tests` skill. 
-
-## Installation
+Efficient workflows for common development tasks.
 
 Add the marketplace to your Claude Code settings:
 
@@ -31,6 +16,23 @@ Add the marketplace to your Claude Code settings:
 claude plugin marketplace add https://github.com/noahlz/claude-plugins.git
 claude plugin install dev-workflow@noahlz.github.com
 ```
+
+#### Skill: `write-git-commit`
+Create git commits with Claude Code cost metrics embedded in commit footers.
+
+**Command:** `/dev-workflow:commit` (or `/commit`)
+
+**NOTE:** Requires local installation of [`ccusage`](https://github.com/ryoppippi/ccusage)
+
+#### Skill: `run-and-fix-tests`
+Run tests with clean output and fix any failures using the `test-fixer` agent.
+
+**Command:** `/dev-workflow:test` (or `/test`)
+
+#### Agent: `test-fixer` (Agent)
+Analyze failing tests and implement root-cause fixes. Guides compilation error resolution and test failure diagnosis.
+
+**Invocation:** Use when user asks to fix failing tests or when `run-and-fix-tests` skill encounters failing tests. 
 
 ## Development
 
@@ -40,7 +42,7 @@ When developing these plugins, you can test them locally using the marketplace p
 
 ```bash
 # From the claude-plugins directory, add the local marketplace
-claude plugin marketplace add .
+claude plugin marketplace add ./
 ```
 
 ### Plugin Reinstallation
@@ -49,12 +51,6 @@ When making changes to plugin code, you must fully uninstall and reinstall the p
 
 Alternatively, update the plugin version number in `marketplace.json` and then trigger a marketplace/plugin update in Claude Code.
 
-### Shared Utilities
-
-All skill scripts source shared utilities from [`plugins/dev-workflow/skills/lib/common.sh`](./plugins/dev-workflow/skills/lib/common.sh). When adding new skills or utilities:
-- Add generic, reusable functions to [`plugins/dev-workflow/skills/lib/common.sh`](./plugins/dev-workflow/skills/lib/common.sh)
-- Create a skill-specific `scripts/common.sh` that sources the library and adds skill-specific helpers
-- This keeps code DRY and ensures consistent patterns across skills
 
 ### Plugin Root Resolution
 
