@@ -3,7 +3,7 @@ name: write-git-commit
 description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user wants to commit changes or mentions commit, git commit, or create commit.
 ---
 
-## 1. Prepare Cost Data
+## 0. Resolve CLAUDE_PLUGIN_ROOT
 
 → Resolve plugin root environment (check local project first, then user home):
 ```bash
@@ -20,7 +20,55 @@ CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || { echo "Err
 export CLAUDE_PLUGIN_ROOT
 ```
 
-→ First, check if config exists: `bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" check-config`
+## 1. Generate and Approve Commit Message
+
+### 1a. Analyze staged changes 
+
+→ Examine staged changes
+  - Run `git diff --cached`
+
+### 1b. Generate a Commit Message
+
+Generate a commit message based on diff changes and the current chat context.
+
+→ General Guidelines:
+  - Follow any user direction / customizations from their prompt i.e. "write a git commit summaring this refactoring."
+  - *DO NOT* Include metrics obtainable from a git diff or CI/CD logs, such as files edited, count or % of lines of code added/removed, or count of passing tests
+  - **Important: Incorporate user feedback** If this is revision of a previously-generated commit body, take into account any user feedback on the previous iteration.
+
+→ Subject and Body Guidelines:
+  - **Subject line**: Action verb + brief description (imperative mood, max 72 chars)
+    - Examples: "Add dark mode toggle", "Fix authentication bug", "Refactor user service"
+  - **Body** (if needed):
+    - Omit the body if the summary is sufficient, or if the user prompted i.e "commit with just a summary"
+    - Prefer concise, minimal bullets on first attempt. **Maximum 3 bullet points**
+    - Focus on the most significant changes. Avoid trying to capture every detail
+    - Each bullet: focus on "what changed" and "why changed" - not "how changed"
+
+### 1c. Display the Proposed Message
+
+→ Display suggested message to user:
+
+```
+[blank line]
+[suggested message here]
+[blank line]
+```
+
+### 1d. Obtain User Approval or Revisions
+
+→ Ask user with AskUserQuestion:
+  - "Accept this message?"
+  - "Make changes"
+  - "Stop/Cancel commit"
+
+✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Set internal flag `REVISION_REQUESTED=false` → Continue to section 2
+✗ If "Make changes" → Return to 1b and regenerate the commit based on user feedback
+✗ If "Stop" → Exit workflow
+
+## 2. Prepare Cost Data
+
+→ Check if config exists: `bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" check-config`
 → Parse JSON output based on status:
 
 ✓ If status is "found": Config exists and is valid, proceed to prepare step
@@ -33,7 +81,7 @@ export CLAUDE_PLUGIN_ROOT
 ✓ If status is "success":
   - Extract `SESSION_ID` from `data.session_id`
   - Extract `CURRENT_COST` from `data.current_cost` (JSON array)
-  - Continue to section 2
+  - Continue to section 3
 
 ⚠ If status is "confirm_session":
   - Extract `detected_id` from `data.detected_id`
@@ -53,99 +101,7 @@ export CLAUDE_PLUGIN_ROOT
   - Display error message and stop
   - Suggest: Run `ccusage session --json` to see available sessions
 
-## 2. Generate and Approve Commit Message
-
-→ Analyze staged changes with `git diff --cached` and generate commit message:
-  - **Subject line**: Action verb + brief description (imperative mood, max 72 chars)
-    - Examples: "Add dark mode toggle", "Fix authentication bug", "Refactor user service"
-  - **Body**:
-    - Prefer concise, minimal bullets on first attempt. Target 1-2 bullets max, only up to 3 if there are distinct, separate concerns
-    - Focus on the most significant changes. Avoid trying to capture every detail
-    - Each bullet: focus on "what changed" and "why changed" - not "how changed"
-    - *DO NOT* Include metrics obtainable from a git diff or CI/CD logs, such as files edited or number of passing tests
-
-→ Display suggested message to user:
-
-```
-[blank line]
-[suggested message here]
-[blank line]
-```
-
-→ Ask user with AskUserQuestion:
-  - "Accept this message?"
-  - "Make changes"
-  - "Stop/Cancel commit"
-
-✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Set internal flag `REVISION_REQUESTED=false` → Continue to section 3
-✗ If "Make changes" → Go to section 2a
-✗ If "Stop" → Exit workflow
-
-## 2a. Get Feedback and Regenerate Message
-
-→ Ask user what changes they'd like to make:
-  - Question: "What would you like to change about this commit message?"
-  - They should describe the issue (e.g., "add more detail about X", "remove Y", "focus on Z")
-
-→ Analyze feedback and regenerate commit message with adjustments:
-  - Apply user's requested changes
-  - Maintain same guidelines: max 3 bullets, highlight new files, imperative mood
-  - Generate new version of the message
-
-→ Display the revised message
-
-→ Ask user with AskUserQuestion:
-  - "Accept this revised message?"
-  - "Provide more feedback"
-  - "Stop/Cancel commit"
-
-✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Set internal flag `REVISION_REQUESTED=true` → Continue to section 3
-✗ If "More feedback" → Stay in section 2a and loop
-✗ If "Stop" → Exit workflow
-
-## 3. Preview Commit Message
-
-→ Build the full commit message preview showing exactly what will be committed:
-
-```
-[COMMIT_SUBJECT]
-
-[COMMIT_BODY if not empty]
-
-Co-Authored-By: 🤖 Claude Code <noreply@anthropic.com>
-Claude-Cost-Metrics: {"sessionId":"[SESSION_ID]","cost":[CURRENT_COST as compact JSON]}
-```
-
-→ Display to user clearly with markdown formatting:
-
-```markdown
-
-Here's the commit message that will be created:
-
----
-[paste the full message above with proper line breaks]
----
-
-```
-
-⚠ IMPORTANT: Always display the preview above BEFORE any confirmation logic
-
-→ Fast-track path (if `REVISION_REQUESTED=false`):
-  - User already approved the message in section 2 without requesting changes
-  - Show the preview for final verification only
-  - Proceed directly to section 4 (no additional approval needed)
-
-→ Revision review path (if `REVISION_REQUESTED=true`):
-  - User approved a revised message in section 2a
-  - Use AskUserQuestion to get final confirmation:
-    - "Proceed with this commit?"
-    - "No, let me revise the message"
-    - "Stop/Cancel commit"
-  - ✓ If "Proceed" → Continue to section 4
-  - ✗ If "No, revise" → Return to section 2a
-  - ✗ If "Stop" → Exit workflow
-
-## 4. Create Commit
+## 3. Create Commit
 
 → Run commit action with commit message via stdin:
 ```bash
@@ -164,10 +120,10 @@ EOF
 
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 
-✓ If status is "success" → Continue to section 5
+✓ If status is "success" → Continue to section 4
 ✗ If status is "error" → Display error, return to section 2
 
-## 5. Success
+## 4. Success
 
 → Display success summary:
 ```
@@ -187,11 +143,7 @@ EOF
   - `sessionId`: Exact session ID (e.g., "-Users-noahlz-projects-claude-plugins")
   - Auto-detected from project path on first run
 
-📁 Scripts used (all in `skills/write-git-commit/scripts/`):
-  - `claude-session-cost.sh` - Fetch current session costs (called by workflow script)
-  - `commit-workflow.sh` - Master orchestrator (handles all workflow logic)
-  - `load-config.sh` - Config loading with auto-detection (sourced by workflow script)
-  - `verify-session.sh` - Session ID verification (called by workflow script)
+📁 Use scripts under `$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/`
 
 📝 Cost metrics are stored in git commit footers using the `Claude-Cost-Metrics:` git trailer format
 
@@ -199,9 +151,5 @@ EOF
 
 **⚠️  CRITICAL EXECUTION RULES**
 
-- **Display then approve**: ALWAYS generate commit message in step 2, DISPLAY the full message (subject + body) to user in markdown code block, then ask user via AskUserQuestion for approval. NEVER ask for approval without displaying the message first.
-- **Preview with metrics**: ALWAYS display the full commit message preview with cost metrics in step 3 before creating the commit.
-- **Use commit-workflow.sh script**: ALWAYS use the `commit-workflow.sh commit` action in step 4. NEVER manually construct `git commit` commands or metrics JSON.
-- **Follow sequential flow**: Execute steps 1→2→3→4→5 in order. Do not skip steps or combine them.
-- **No improvisation**: The commit-workflow.sh script handles all commit creation logic (message assembly, metrics embedding, git execution). Do not duplicate or bypass this logic.
+- **No improvisation**: The `commit-workflow.sh` script handles all commit creation logic (message assembly, metrics embedding, git execution). Do not duplicate or bypass this logic.
 - **Metrics are automatic**: The `commit` action auto-fetches SESSION_ID and CURRENT_COST if not in env. You only need to provide the commit message (subject + body) via stdin.
