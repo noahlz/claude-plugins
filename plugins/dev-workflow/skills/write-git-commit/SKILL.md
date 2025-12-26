@@ -194,3 +194,14 @@ EOF
   - `verify-session.sh` - Session ID verification (called by workflow script)
 
 📝 Cost metrics are stored in git commit footers using the `Claude-Cost-Metrics:` git trailer format
+
+---
+
+**⚠️  CRITICAL EXECUTION RULES**
+
+- **Display then approve**: ALWAYS generate commit message in step 2, DISPLAY the full message (subject + body) to user in markdown code block, then ask user via AskUserQuestion for approval. NEVER ask for approval without displaying the message first.
+- **Preview with metrics**: ALWAYS display the full commit message preview with cost metrics in step 3 before creating the commit.
+- **Use commit-workflow.sh script**: ALWAYS use the `commit-workflow.sh commit` action in step 4. NEVER manually construct `git commit` commands or metrics JSON.
+- **Follow sequential flow**: Execute steps 1→2→3→4→5 in order. Do not skip steps or combine them.
+- **No improvisation**: The commit-workflow.sh script handles all commit creation logic (message assembly, metrics embedding, git execution). Do not duplicate or bypass this logic.
+- **Metrics are automatic**: The `commit` action auto-fetches SESSION_ID and CURRENT_COST if not in env. You only need to provide the commit message (subject + body) via stdin.
