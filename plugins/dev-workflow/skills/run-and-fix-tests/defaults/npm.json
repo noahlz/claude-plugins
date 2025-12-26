@@ -1,19 +1,19 @@
 {
   "logDir": "dist",
   "build": {
-    "command": "vite build",
-    "logFile": "{logDir}/vite.log",
-    "errorPattern": "(error|Error|✘|failed)"
+    "command": "npm run build",
+    "logFile": "{logDir}/npm-build.log",
+    "errorPattern": "(error|Error|ERR!|failed)"
   },
   "test": {
     "all": {
-      "command": "vitest",
-      "logFile": "{logDir}/jest.log",
+      "command": "npm test",
+      "logFile": "{logDir}/npm-test.log",
       "errorPattern": "(FAIL|●|Error:|Expected|Received)"
     },
     "single": {
-      "command": "vitest {testFile}",
-      "logFile": "{logDir}/jest-single.log",
+      "command": "npm test -- {testFile}",
+      "logFile": "{logDir}/npm-test-single.log",
       "errorPattern": "(FAIL|●|Error:|Expected|Received)"
     }
   }
