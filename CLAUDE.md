@@ -7,16 +7,19 @@ A collection of plugins for automating development workflow tasks.
 ```
 claude-plugins/
 ├── .claude-plugin/
-├── agents/
-├── commands/
-├── skills/
-│   ├── lib/                    # Shared utilities for all skill scripts
-│   ├── run-and-fix-tests/
-│   │   ├── examples/
-│   │   └── scripts/
-│   └── write-git-commit/
-│       └── scripts/
-└── tests/
+│   └── marketplace.json        # Plugin marketplace definition
+├── plugins/
+│   └── dev-workflow/           # Plugin source code (same structure when installed)
+│       ├── agents/
+│       ├── commands/
+│       └── skills/
+│           ├── lib/            # Shared utilities for all skill scripts
+│           ├── run-and-fix-tests/
+│           │   ├── examples/
+│           │   └── scripts/
+│           └── write-git-commit/
+│               └── scripts/
+└── tests/                      # Test suite (separate from plugin source)
 ```
 
 ### Running Tests
@@ -38,7 +41,7 @@ Use the `/test` command to validate changes. This invokes the `run-and-fix-tests
 
 Plugins consist of three main components:
 
-### Agents (`agents/<agent-name>.md`)
+### Agents (`plugins/dev-workflow/agents/<agent-name>.md`)
 
 Autonomous decision-makers that coordinate plugin workflows. Agents:
 - Use decision-making frameworks instead of step-by-step instructions
@@ -46,7 +49,7 @@ Autonomous decision-makers that coordinate plugin workflows. Agents:
 - Include safeguards (e.g., `AskUserQuestion` before destructive actions)
 - Reference skill execution, not duplicate their logic
 
-### Skills (`skills/<name>/SKILL.md`)
+### Skills (`plugins/dev-workflow/skills/<name>/SKILL.md`)
 
 Procedural workflows that follow the Anthropic Agent Skills spec:
 
@@ -78,7 +81,7 @@ description: What it does and when to trigger. Include activation phrases.
 - Code examples in backticks
 - External shell scripts for complex logic
 
-### Commands (`commands/<name>.md`)
+### Commands (`plugins/dev-workflow/commands/<name>.md`)
 
 Entry points that trigger skills. Commands are invoked with `/name` and typically delegate to a skill and optional agent.
 
@@ -99,19 +102,19 @@ When modifying or debugging scripts:
 
 ### Script Organization
 
-Scripts live in `skills/<name>/scripts/`:
+Scripts live in `plugins/dev-workflow/skills/<name>/scripts/`:
 - Each script handles a specific concern (e.g., `load-config.sh`, `detect-and-resolve.sh`)
 - Scripts are tested individually via files in `tests/<name>/`
 - Tests use shUnit2 framework with mocks for external commands
 
-**Shared Utilities:** Plugin-wide bash utilities are centralized in `skills/lib/common.sh`:
+**Shared Utilities:** Plugin-wide bash utilities are centralized in `plugins/dev-workflow/skills/lib/common.sh`:
 - `detect_plugin_root()` - Set CLAUDE_PLUGIN_ROOT from script location
 - `check_jq()` - Verify jq availability
 - `check_command()` - Generic command checker
 - `load_and_merge_skill_config()` - Parameterized config loader (merges default + project configs)
 - `json_response()`, `json_response_simple()` - JSON output helpers
 
-Each skill's `scripts/common.sh` sources `skills/lib/common.sh` and adds skill-specific helpers:
+Each skill's `scripts/common.sh` sources `../lib/common.sh` (relative path to the shared library) and adds skill-specific helpers:
 - `write-git-commit`: `find_ccusage()`
 - `run-and-fix-tests`: (none currently, but extensible)
 
@@ -129,26 +132,45 @@ Each skill's `scripts/common.sh` sources `skills/lib/common.sh` and adds skill-s
 
 This project primarily focuses on maintaining and developing existing plugins. New plugin creation is rare but follows this structure:
 
-1. Create directories:
+### Plugin Structure
+
+New plugins are added as siblings to `dev-workflow` under the `plugins/` directory:
+
+```bash
+plugins/
+├── dev-workflow/          # Existing plugin
+└── my-plugin/             # New plugin
+    ├── agents/
+    ├── commands/
+    └── skills/
+```
+
+### Creating a New Skill within a Plugin
+
+1. Create skill directories:
    ```bash
-   mkdir -p skills/my-skill/{scripts}
+   mkdir -p plugins/my-plugin/skills/my-skill/{scripts}
    ```
 
-2. Create `skills/my-skill/SKILL.md` following the format above
+2. Create `plugins/my-plugin/skills/my-skill/SKILL.md` following the format in the Skills section above
 
-3. Create `skills/my-skill/README.md` with user documentation
+3. Create `plugins/my-plugin/skills/my-skill/README.md` with user documentation
 
-4. Add test files in `tests/my-skill/test-*.sh`
+4. Add test files in `tests/my-plugin/my-skill/test-*.sh`
 
-5. Create `commands/my-command.md` that invokes the skill (optionally with an agent)
+5. Create `plugins/my-plugin/commands/my-command.md` that invokes the skill (optionally with an agent)
 
 6. Register in `.claude-plugin/marketplace.json`:
    ```json
    {
-     "name": "dev-workflow",
-     "skills": ["./skills/my-skill"],
-     "commands": ["./commands/my-command.md"]
+     "name": "my-plugin",
+     "skills": ["./plugins/my-plugin/skills/my-skill"],
+     "commands": ["./plugins/my-plugin/commands/my-command.md"]
    }
    ```
+
+### Plugin Installation
+
+When installed, the plugin is copied to `~/.claude/plugins/cache/<publisher>/<plugin>/<version>/` with the same directory structure. The `resolve_plugin_root.sh` script automatically locates the installed plugin path at runtime.
 
 For detailed guidelines, refer to the Anthropic Agent Skills Spec linked above.

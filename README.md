@@ -51,8 +51,8 @@ Alternatively, update the plugin version number in `marketplace.json` and then t
 
 ### Shared Utilities
 
-All skill scripts source shared utilities from `skills/lib/common.sh`. When adding new skills or utilities:
-- Add generic, reusable functions to `skills/lib/common.sh`
+All skill scripts source shared utilities from [`plugins/dev-workflow/skills/lib/common.sh`](./plugins/dev-workflow/skills/lib/common.sh). When adding new skills or utilities:
+- Add generic, reusable functions to [`plugins/dev-workflow/skills/lib/common.sh`](./plugins/dev-workflow/skills/lib/common.sh)
 - Create a skill-specific `scripts/common.sh` that sources the library and adds skill-specific helpers
 - This keeps code DRY and ensures consistent patterns across skills
 
@@ -60,23 +60,29 @@ All skill scripts source shared utilities from `skills/lib/common.sh`. When addi
 
 Skills need to locate the plugin installation directory to source their scripts. Claude Code's `CLAUDE_PLUGIN_ROOT` environment variable [doesn't work in command markdown files](https://github.com/anthropics/claude-code/issues/9354).
 
-**Solution:** The `.claude/resolve_plugin_root.sh` script reads `~/.claude/plugins/installed_plugins.json` to dynamically locate the plugin.
+**The Problem:**
+- **Source location** (development): Plugin code lives in `plugins/dev-workflow/` in the git repository
+- **Installed location** (runtime): Plugins are installed to `~/.claude/plugins/cache/<publisher>/<plugin>/<version>/` with the same directory structure
+- Scripts need to work from either location and locate dependencies correctly
+
+**Solution:** The [`resolve_plugin_root.sh`](./.claude/resolve_plugin_root.sh) script automatically finds the installed plugin location at runtime.
 
 **How it works:**
 1. SKILL.md files check for the resolver script in two locations:
    - First checks local project: `./.claude/resolve_plugin_root.sh`
    - Falls back to user home directory: `$HOME/.claude/resolve_plugin_root.sh`
 2. The resolver queries `~/.claude/plugins/installed_plugins.json` to find the plugin's installation path
-3. Uses `CLAUDE_PLUGIN_ROOT` environment variable if already set (forward compatibility)
+3. Returns the installation path (e.g., `~/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.0.1/`)
+4. Scripts use `${CLAUDE_PLUGIN_ROOT}` to reference skill files relative to the installation path
+5. Uses `CLAUDE_PLUGIN_ROOT` environment variable if already set (forward compatibility)
 
-**For plugin users:** Place `.claude/resolve_plugin_root.sh` in either:
-- Your project directory (`./.claude/resolve_plugin_root.sh`) - highest priority
-- Your home directory (`$HOME/.claude/resolve_plugin_root.sh`) - fallback location
+**For plugin developers:** The resolver script is located at [`./.claude/resolve_plugin_root.sh`](./.claude/resolve_plugin_root.sh) and handles plugin discovery automatically.
 
-The script is included in the plugin repository and copied to your project during installation.
+**For plugin users:** The resolver script is copied to your project during plugin installation. No manual setup required—skills automatically locate their dependencies.
 
 **See also:**
 - [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https://github.com/anthropics/claude-code/issues/9354) - Details about the core issue this resolver works around
+- [`plugins/dev-workflow/skills/lib/common.sh`](./plugins/dev-workflow/skills/lib/common.sh) - Shared utility functions used by all skills
 
 ## Testing
 
