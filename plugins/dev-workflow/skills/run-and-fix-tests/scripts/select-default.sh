@@ -21,7 +21,7 @@ select_single_tool_default() {
     # No default exists for this tool - use placeholder template
     echo "⚠️  No default found for $TOOL_NAME"
     echo "📝 Creating template config - YOU MUST CUSTOMIZE IT BEFORE USE"
-    cp "${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/defaults/example.json" \
+    cp "${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/defaults/TEMPLATE.json" \
        ".claude/settings.plugins.run-and-fix-tests.json"
     echo ""
     echo "🚨 PLACEHOLDER CONFIG CREATED - YOU MUST CUSTOMIZE IT"

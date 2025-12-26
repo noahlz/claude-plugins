@@ -1,14 +1,11 @@
-# Write Git Commit Plugin
+# Write Git Commit with Cost Metrics
 
 Create git commits with Claude Code. Automatically embeds attribution and session cost metrics in Git trailers.
 
 ## What It Does
 
 - Analyzes staged changes and creates a descriptive commit message
-- Asks you to review the message before committing
-- **Automatically embeds Claude Code session cost metrics in commit footers** (Git trailer format)
-- Creates commit with proper authorship attribution
-- Auto-detects project session from current directory name
+- Automatically embeds Claude Code attribution and session cost metrics as [Git trailers](https://git-scm.com/docs/git-interpret-trailers)
 
 ## Usage
 

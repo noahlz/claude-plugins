@@ -37,7 +37,7 @@ export CLAUDE_PLUGIN_ROOT
   - Exactly 1 tool detected → Use `defaults/{tool}.json`
   - Multiple tools in different locations → Generate polyglot config (🔧 shown to user)
   - Multiple tools in same location → Generate polyglot config
-  - No matching default exists → Use `example.json` placeholder template (user must customize)
+  - No matching default exists → Use `TEMPLATE.json` placeholder template (user must customize)
   - 0 tools detected → Error: no build tools detected
 
 ✓ Config created successfully → Proceed to step 2

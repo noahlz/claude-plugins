@@ -26,7 +26,7 @@ claude plugin install dev-workflow@noahlz.github.io
 
 #### Agents
 
-`test-fixer` - Analyze failing tests and implement root-cause fixes. Guides compilation error resolution and test failure diagnosis. Invoke when user asks to fix failing tests or when `run-and-fix-tests` skill encounters failing tests. 
+`test-fixer` - Analyze failing tests and implement root-cause fixes. Guides compilation error resolution and test failure diagnosis. Intended for use by the `run-and-fix-tests` skill. 
 
 ## Development
 

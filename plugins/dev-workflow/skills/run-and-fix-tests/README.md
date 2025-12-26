@@ -1,4 +1,4 @@
-# Run and Fix Tests Plugin
+# Run and Fix Tests
 
 Guides Claude through automatically building, running and fixing your project tests with minimal token usage. 
 
@@ -51,7 +51,7 @@ The generated config uses an array structure for `build` to run each tool in ord
 
 If your build tool isn't recognized, the plugin creates a placeholder template.  You must edit the config before using the plugin. Replace the placeholders with your actual commands.
 
-See the [`defaults/example.json`](./defaults/example.json) file for the placeholder template structure.
+See the [`defaults/TEMPLATE.json`](./defaults/TEMPLATE.json) file for the placeholder template structure.
 
 ### Customizing Configuration
 
