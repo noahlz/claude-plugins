@@ -22,12 +22,17 @@ export CLAUDE_PLUGIN_ROOT
 
 ## 1. Generate and Approve Commit Message
 
-### 1a. Analyze staged changes 
+### 1a. Stage changes
+
+→ Stage all uncommitted changes
+  - Run `git add -A`
+
+### 1b. Analyze staged changes
 
 → Examine staged changes
   - Run `git diff --cached`
 
-### 1b. Generate a Commit Message
+### 1c. Generate a Commit Message
 
 Generate a commit message based on diff changes and the current chat context.
 
@@ -45,7 +50,7 @@ Generate a commit message based on diff changes and the current chat context.
     - Focus on the most significant changes. Avoid trying to capture every detail
     - Each bullet: focus on "what changed" and "why changed" - not "how changed"
 
-### 1c. Display the Proposed Message
+### 1d. Display the Proposed Message
 
 → Display suggested message to user:
 
@@ -55,7 +60,7 @@ Generate a commit message based on diff changes and the current chat context.
 [blank line]
 ```
 
-### 1d. Obtain User Approval or Revisions
+### 1e. Obtain User Approval or Revisions
 
 → Ask user with AskUserQuestion:
   - "Accept this message?"
@@ -63,7 +68,7 @@ Generate a commit message based on diff changes and the current chat context.
   - "Stop/Cancel commit"
 
 ✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Set internal flag `REVISION_REQUESTED=false` → Continue to section 2
-✗ If "Make changes" → Return to 1b and regenerate the commit based on user feedback
+✗ If "Make changes" → Return to 1c and regenerate the commit based on user feedback
 ✗ If "Stop" → Exit workflow
 
 ## 2. Prepare Cost Data
