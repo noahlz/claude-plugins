@@ -5,37 +5,26 @@
     "email": "nzucker@gmail.com"
   },
   "metadata": {
-    "description": "Dev workflow plugins.",
+    "description": "Dev workflows for claude code.",
     "version": "0.0.1"
   },
   "plugins": [
     {
       "name": "dev-workflow",
       "version": "0.0.1",
-      "description": "Plugins for dev workflow productivity.",
+      "description": "Plugins for claude code workflow productivity.",
       "author": {
         "name": "Noah Zucker",
         "email": "nzucker@gmail.com",
         "url": "https://github.com/noahlz"
       },
-      "source": "./",
+      "source": "./plugins/dev-workflow",
       "strict": false,
       "homepage": "https://github.com/noahlz/claude-plugins",
       "repository": "https://github.com/noahlz/claude-plugins",
       "license": "MIT",
       "category": "development",
-      "tags": ["git", "testing", "workflow", "productivity"],
-      "agents": [
-          "./agents/test-runner-fixer.md"
-      ],
-      "skills": [
-        "./skills/run-and-fix-tests",
-        "./skills/write-git-commit"
-      ],
-      "commands": [
-        "./commands/test.md",
-        "./commands/commit.md"
-      ]
+      "tags": ["git", "testing", "workflow", "productivity"]
     }
   ]
 }
