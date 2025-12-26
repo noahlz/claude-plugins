@@ -19,7 +19,7 @@ claude-plugins/
 │           │   └── scripts/
 │           └── write-git-commit/
 │               └── scripts/
-└── tests/                      # Test suite (separate from plugin source)
+└── tests/                      # Test suites for scripts used by plugins
 ```
 
 ## Development Philosophy
@@ -28,15 +28,12 @@ claude-plugins/
 - Prefer writing and invoking pre-existing scripts over dynamic code generation or ad-hoc commands.
 - When writing new scripts, keep code DRY with shared scripts under a sibling `lib/` directory i.e. `plugins/dev-workflow/skills/lib`
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
+- Write tests for scripts, placing them under `tests/` in directories named for the corresponding skills and plugins.
 - This keeps workflows testable, maintainable, and predictable.
 
 ## NOTE: Reinstall After Changing
 
 When modifying or debugging scripts **prompt the user to re-install the plugin**.  Changes do not take effect immediately. The user needs to exit the session, run the provided `./reinstall.sh` script, and restart the session.
-
-## Testing
-
-Plugin test suites reside under `tests/`
 
 ---
 
