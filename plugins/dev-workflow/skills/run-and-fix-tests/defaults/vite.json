@@ -7,12 +7,12 @@
   },
   "test": {
     "all": {
-      "command": "vitest",
+      "command": "jest",
       "logFile": "{logDir}/jest.log",
       "errorPattern": "(FAIL|●|Error:|Expected|Received)"
     },
     "single": {
-      "command": "vitest {testFile}",
+      "command": "jest {testFile}",
       "logFile": "{logDir}/jest-single.log",
       "errorPattern": "(FAIL|●|Error:|Expected|Received)"
     }

@@ -1,6 +1,7 @@
 {
   "tools": {
     "npm": { "configFile": "package.json" },
+    "vite": { "configFile": "vite.config.ts" },
     "maven": { "configFile": "pom.xml" },
     "gradle": { "configFile": "build.gradle" },
     "sbt": { "configFile": "build.sbt" },
