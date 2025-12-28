@@ -1,0 +1,12 @@
+{
+  "name": "claude-plugins",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Tests for scripts included with the dev-workflow Claude Code plugins",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node tests/node/run-all-tests.js"
+  }
+}
