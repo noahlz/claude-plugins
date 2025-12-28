@@ -36,17 +36,23 @@ These rules apply to all sections below. Violations break the workflow:
 
 ### 1a. Stage changes
 
+**Step description**: "Staging all uncommitted changes"
+
 → Stage all uncommitted changes
   - Run `git add -A`
 
 ### 1b. Analyze staged changes
+
+**Step description**: "Analyzing staged changes"
 
 → Examine staged changes
   - Run `git diff --cached`
 
 ### 1c. Generate a Commit Message
 
-Generate a commit message based on diff changes and the current chat context.
+**Step description**: "Generating commit message"
+
+Generate a commit message based on diff changes and the current chat context, but do not display it to the user yet.
 
 → General Guidelines:
   - Follow any user direction / customizations from their prompt i.e. "write a git commit summarizing this refactoring."
@@ -76,9 +82,11 @@ Generate a commit message based on diff changes and the current chat context.
 
 ⚠️ CRITICAL: The user MUST see the commit message before being asked to approve it
 
+⚠️ MANDATORY FORMAT REQUIREMENT: You MUST display the commit message with ASCII box borders (━ characters). This is NOT optional.
+
 → Display the commit message with visual formatting (plain text output, NOT a tool call):
 
-**Format to show user:**
+**REQUIRED Format - Use this exact template:**
 ```
 Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -88,16 +96,20 @@ Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Example Subject Line and Body:**
+**Example (with actual content):**
 ```
+Proposed commit message:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Add user authentication feature
 
 - Implement JWT-based auth flow
 - Add login/logout endpoints
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-⚠️ IMPORTANT:
-  - Output MUST be plain text, NOT a tool call
+⚠️ CRITICAL REQUIREMENTS:
+  - Output MUST be plain text (direct output, NOT a tool call)
+  - Box borders (━ lines) are MANDATORY - do not skip them
   - Do NOT batch this with step 1e - display first, THEN ask for approval
   - Do NOT output internal checkpoint text to the user
 
