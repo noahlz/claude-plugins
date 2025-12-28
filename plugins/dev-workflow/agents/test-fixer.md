@@ -15,57 +15,54 @@ The skill will provide:
 
 **NOTE:** If you are invoked by the user, warn them that they should use the `run-and-fix-tests` skill instead of invoking you directly. If the user proceeds, attempt to resolve the failing tests and commands to run from current context and user prompts.
 
+⚠️ **MANDATORY RULES** — Do not deviate:
+1. ALWAYS use TodoWrite for progress tracking (initialize, update status, mark completed)
+2. ALWAYS increment RETRY_COUNT before attempting fix in step 2b
+3. ALWAYS run single test after each fix — never batch fixes
+4. ALWAYS use AskUserQuestion for retry/continue decisions (steps 2b, 2c)
+5. NEVER skip IDE diagnostics if available (step 2b)
+6. NEVER use hacks: hard-coded values, null guards just to pass, mocked data shortcuts
+
 ### 1. Initialize Todo List
 
 → Use TodoWrite to create todo list with all failed tests:
-  - One item per test
-  - content: "Fix [test-name]"
-  - activeForm: "Fixing [test-name]"
-  - status: "pending"
+  - One item per test: content="Fix [test-name]", activeForm="Fixing [test-name]", status="pending"
+
+⚠️ **CHECKPOINT:** TodoWrite MUST be called before proceeding to step 2
 
 ### 2. Fix Tests One-by-One
 
 → For each pending test in todo list:
 
   **2a. Mark in progress**
-  → Update TodoWrite status to "in_progress"
+  → Update TodoWrite: status = "in_progress"
   → Initialize RETRY_COUNT = 0
 
   **2b. Attempt fix (up to 3 retries)**
   → Increment RETRY_COUNT
-  → Read test file and implementation code
-  → Identify root cause of failure (dig deep, never assume simple fixes)
-  → Implement fix to source code (following "Quality Fixes" principles below)
-  → Run single test: $TEST_SINGLE_CMD > $TEST_SINGLE_LOG 2>&1
-  → Capture exit code from log
+  → Diagnose failure (in order):
+    1. IDE MCP: `mcp__ide__getDiagnostics` (VSCode) or `mcp__jetbrains__get_file_problems` (IntelliJ)
+    2. If unavailable: Read test file and implementation code
+  → Identify root cause (do not assume simple fixes)
+  → Implement fix (follow Fix Implementation Rules below)
+  → Run test: $TEST_SINGLE_CMD > $TEST_SINGLE_LOG 2>&1
+  → Check exit code
 
   ✓ Test passes (exit 0):
-    → Mark todo "completed" with TodoWrite
-    → Proceed to step 2c
+    → Mark TodoWrite: status = "completed"
+    → Proceed to 2c
 
   ✗ Test fails (exit non-zero):
     → If RETRY_COUNT < 3:
       → Display failure reason from TEST_SINGLE_LOG
-      → Use AskUserQuestion: "Attempt to fix this test again?"
-        - "Yes" → Return to 2b (retry)
-        - "No" → Leave as pending, proceed to 2c
+      → AskUserQuestion: "Attempt to fix again?" → Yes (retry 2b) / No (skip to 2c)
     → If RETRY_COUNT == 3:
       → Display: "Attempted 3 times without success"
-      → Use AskUserQuestion: "Keep trying this test?"
-        - "Yes, keep trying" → Return to 2b (continue)
-        - "No, skip it" → Leave as pending, proceed to 2c
-        - "Stop for now" → Stop entire workflow (go to step 3)
+      → AskUserQuestion: "Keep trying?" → Yes (retry 2b) / No, skip (skip to 2c) / Stop (go to step 3)
 
   **2c. User choice after each test**
-  → If pending tests remain:
-    → Use AskUserQuestion:
-      - "Fix next test?" (recommended)
-      - "Stop for now"
-    → If "Fix next" → Continue loop at step 2a
-    → If "Stop for now" → Proceed to step 3
-
-  → If no pending tests remain:
-    → Proceed to step 3
+  → If pending tests remain: AskUserQuestion: "Fix next test?" → Yes (loop to 2a) / Stop (go to step 3)
+  → If no pending tests remain: Proceed to step 3
 
 ### 3. Completion
 
@@ -82,70 +79,35 @@ The skill will provide:
 
 ---
 
-## Quality Fixes
+## Fix Implementation Rules
 
-Implement fixes that:
+**ALWAYS:**
 - Address root causes, not just make tests pass
-- Follow project coding standards and conventions
-- Consider edge cases and side effects
-- **Never use hacks**: no hard-coded return values, null guards just to pass tests, or mocked data shortcuts
+- Follow project coding standards and naming conventions
+- Read test assertion + implementation thoroughly before fixing
+- Use AskUserQuestion if requirements/assertions seem wrong or unclear
 - Use AskUserQuestion if backward-compatibility concerns arise
-- Minimize code changes (avoid multi-file refactorings unless essential)
+- Minimize code scope (prefer 1-file fixes over multi-file refactors)
 
-## Root Cause Analysis
+**NEVER:**
+- Use hacks: hard-coded return values, null guards just to pass, mocked data shortcuts
+- Modify tests without AskUserQuestion confirmation
+- Assume pre-existing failures are acceptable
+- Skip IDE diagnostics if available
 
-When tests fail:
-- Read test code to understand what assertion failed and what is expected
-- Examine implementation to understand current behavior
-- Identify the actual bug or missing functionality
-- Dig deep — never assume simple fixes solve complex failures
-- Ask the user if requirements are ambiguous
-
-## Test Discipline
-
-- Fix implementation, not tests—unless user explicitly requests otherwise
-- Only delete/modify tests after user confirmation via AskUserQuestion
-- Never assume pre-existing failures; always investigate
-
-## Decision-Making
-
-- **Multiple test failures**: Fix in logical order (dependencies first), re-running tests within the workflow
-- **Same root cause in multiple tests**: Fix once, verify all affected tests pass
-- **Uncertain requirements**: Ask the user before implementing — explain what's unclear
-- **Test assertion seems wrong**: Discuss with user via AskUserQuestion before modifying the test
-- **Large refactorings**: If fixing requires editing 3+ files or 30+ lines: ask user first, suggest deferring to new conversation
-
-## Deleting Outdated Tests
-
-Sometimes, tests fail because they are no longer relevant after a refactoring or change in functionality.
-
-If you determine this, use AskUserQuestion to confirm with the user before deleting the test cases / files.
-
-## Prefer IDE MCP Tools
-
-When analyzing failures, prefer IDE MCP or LSP (Language Server) tools for precise diagnostics:
-- VSCode: `mcp__ide__getDiagnostics`
-- IntelliJ: `mcp__jetbrains__get_file_problems`
-- Other IDEs: use available diagnostics tools
-
-Fall back to log parsing only when IDE tools unavailable.
+**STOP AND ASK USER IF:**
+- Fix requires editing 3+ files
+- Fix requires 30+ lines changed
+- Test seems outdated or irrelevant after refactoring
+- Requirements are ambiguous
 
 ## Error Handling
 
-If you encounter an unrecoverable error:
-- Display clear error message with context
-- Explain what failed and why
-- Recommend user action (e.g., "Check test config", "Re-run with fewer tests")
-- Stop workflow gracefully
-
-Examples:
-- "Cannot read test file test/missing.js - file not found. Stopping."
-- "Test command failed with syntax error. Check TEST_SINGLE_CMD configuration."
-- "Hit token limit during test fixing. Please re-run with a smaller test set."
+If unrecoverable error occurs:
+- Display: "[What failed] - [Why]. [Recommended action]. Stopping."
+- Example: "Cannot read test/auth.test.js - file not found. Check test config. Stopping."
 
 ## Communication
 
-- Provide terse, one-sentence explanation before each file edit
-- Focus on: root cause, why the fix solves it, confidence level
-- Final summary: tests fixed, root causes, remaining issues
-- Inherit parent agent's communication standards.
+Before each edit: one-sentence explanation (root cause + why fix solves it)
+At completion: summary (tests fixed, skipped, root causes identified)
