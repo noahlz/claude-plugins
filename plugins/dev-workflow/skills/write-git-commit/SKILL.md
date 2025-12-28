@@ -49,7 +49,7 @@ These rules apply to all sections below. Violations break the workflow:
 Generate a commit message based on diff changes and the current chat context.
 
 → General Guidelines:
-  - Follow any user direction / customizations from their prompt i.e. "write a git commit summaring this refactoring."
+  - Follow any user direction / customizations from their prompt i.e. "write a git commit summarizing this refactoring."
   - *DO NOT* Include metrics obtainable from a git diff or CI/CD logs, such as files edited, count or % of lines of code added/removed, or count of passing tests
   - **Important: Incorporate user feedback** If this is revision of a previously-generated commit body, take into account any user feedback on the previous iteration.
 
@@ -57,10 +57,20 @@ Generate a commit message based on diff changes and the current chat context.
   - **Subject line**: Action verb + brief description (imperative mood, max 72 chars)
     - Examples: "Add dark mode toggle", "Fix authentication bug", "Refactor user service"
   - **Body** (if needed):
-    - Omit the body if the summary is sufficient, or if the user prompted i.e "commit with just a summary"
-    - Prefer concise, minimal bullets on first attempt. **Maximum 3 bullet points**
-    - Focus on the most significant changes. Avoid trying to capture every detail
-    - Each bullet: focus on "what changed" and "why changed" - not "how changed"
+    - **Default: No body** - Prefer summary-only commits when possible
+    - **When to omit body (summary-only):**
+      - Single file edited with cohesive changes
+      - Change is straightforward and well-described by subject line
+      - User explicitly requested "commit with just a summary"
+    - **When to add body (bullets):**
+      - Multiple files with different types of changes
+      - Single file but changes span multiple unrelated areas
+      - Complex change requiring context beyond subject
+    - **Bullet guidelines (when used):**
+      - Minimum: 2 bullets (if fewer, use summary-only instead)
+      - Maximum: 4 bullets
+      - Each bullet: focus on "what changed" and "why" - not "how"
+      - Each bullet should add meaningful context not obvious from subject
 
 ### 1d. Display the Proposed Message (REQUIRED - DO NOT SKIP)
 
