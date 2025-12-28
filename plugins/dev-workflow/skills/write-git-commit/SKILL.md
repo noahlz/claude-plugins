@@ -20,6 +20,18 @@ CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || { echo "Err
 export CLAUDE_PLUGIN_ROOT
 ```
 
+---
+
+**⚠️ CRITICAL EXECUTION RULES**
+
+These rules apply to all sections below. Violations break the workflow:
+
+- **No improvisation**: The `commit-workflow.sh` script handles all commit creation logic (message assembly, metrics embedding, git execution). Do not duplicate or bypass this logic.
+- **Metrics are automatic**: The `commit` action auto-fetches `SESSION_ID` and `CURRENT_COST` if not in env. You only need to provide the commit message (subject + body) via stdin.
+- **User approval is mandatory**: Section 1e MUST execute AskUserQuestion before any commit is created. Never skip to section 2 without explicit user approval. This is a hard requirement.
+
+---
+
 ## 1. Generate and Approve Commit Message
 
 ### 1a. Stage changes
@@ -50,28 +62,70 @@ Generate a commit message based on diff changes and the current chat context.
     - Focus on the most significant changes. Avoid trying to capture every detail
     - Each bullet: focus on "what changed" and "why changed" - not "how changed"
 
-### 1d. Display the Proposed Message
+### 1d. Display the Proposed Message (REQUIRED - DO NOT SKIP)
 
-→ Display suggested message to user:
+⚠️ CRITICAL: The user MUST see the commit message before being asked to approve it
 
+→ Output the commit message as TEXT in your response (do NOT use tools):
+  - Add a blank line
+  - Output the complete commit message (subject + body if present)
+  - Add a blank line after
+
+**Example:**
 ```
-[blank line]
-[suggested message here]
-[blank line]
+<blank line>
+Add user authentication feature
+
+- Implement JWT-based auth flow
+- Add login/logout endpoints
+<blank line>
 ```
 
-### 1e. Obtain User Approval or Revisions
+⚠️ IMPORTANT:
+  - This MUST be plain text output, NOT a tool call
+  - Do NOT batch this with step 1e - display first, THEN ask for approval
+  - The message must be visible to the user before AskUserQuestion is called
 
-→ Ask user with AskUserQuestion:
-  - "Accept this message?"
+---
+⚠️ CHECKPOINT: Commit message must be displayed above before proceeding to step 1e
+---
+
+### 1e. Obtain User Approval or Revisions (REQUIRED - DO NOT SKIP)
+
+⚠️ CRITICAL DECISION POINT: This step MUST be completed before any further action
+
+→ MUST use AskUserQuestion with these exact options:
+  - "Accept this message?" (Recommended)
   - "Make changes"
   - "Stop/Cancel commit"
 
-✓ If "Accept" → Extract `COMMIT_SUBJECT` (first line) and `COMMIT_BODY` (remaining) → Set internal flag `REVISION_REQUESTED=false` → Continue to section 2
-✗ If "Make changes" → Return to 1c and regenerate the commit based on user feedback
-✗ If "Stop" → Exit workflow
+→ Handle user response:
+
+✓ If "Accept this message?"
+  → Extract `COMMIT_SUBJECT` (first line)
+  → Extract `COMMIT_BODY` (remaining lines, may be empty)
+  → Proceed to section 2
+
+✗ If "Make changes"
+  → Return to step 1c
+  → Regenerate message based on user feedback
+  → Return to step 1e (loop until approved or cancelled)
+
+✗ If "Stop/Cancel commit"
+  → Exit workflow immediately
+  → Do NOT proceed to section 2
+  → Return control to user
+
+---
+⚠️ CHECKPOINT: Do not proceed past this line without user approval from AskUserQuestion above
+---
 
 ## 2. Prepare Cost Data
+
+⚠️ PREREQUISITE: Section 1e MUST be completed before entering this section
+   - User MUST have been prompted via AskUserQuestion in step 1e
+   - User MUST have selected "Accept this message?"
+   - If not completed, STOP and return to section 1
 
 → Check if config exists: `bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" check-config`
 → Parse JSON output based on status:
@@ -108,20 +162,29 @@ Generate a commit message based on diff changes and the current chat context.
 
 ## 3. Create Commit
 
+⚠️ PREREQUISITE: Sections 1e and 2 MUST be completed
+   - User approved commit message in 1e
+   - Cost data prepared successfully in section 2
+   - If not completed, STOP
+
 → Run commit action with commit message via stdin:
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" commit <<'EOF'
-[COMMIT_SUBJECT]
-
-[COMMIT_BODY if not empty]
+COMMIT_SUBJECT
+[blank line]
+COMMIT_BODY (if present)
 EOF
 ```
 
+**Format rules:**
+  - If body is empty: Only subject (no blank line after)
+  - If body exists: Subject, blank line, then body
+
 ⚠ IMPORTANT:
-  - This bash command should NOT trigger permission prompts - user already approved in section 2 or 3
+  - This bash command should NOT trigger permission prompts - user already approved message in section 1e and session in section 2
   - Commit message is passed via stdin (heredoc)
-  - SESSION_ID and CURRENT_COST are auto-fetched by the commit action
-  - Optional: Override SESSION_ID with inline env var: `SESSION_ID="..." bash ...`
+  - `SESSION_ID` and `CURRENT_COST` are auto-fetched by the commit action
+  - Optional: Override `SESSION_ID` with inline env var: `SESSION_ID="..." bash ...`
 
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 
@@ -130,14 +193,16 @@ EOF
 
 ## 4. Success
 
+⚠️ PREREQUISITE: Section 3 completed successfully (commit created)
+
 → Display success summary:
 ```
 ✅ Commit created with session cost metrics in footer
-   SHA: <COMMIT_SHA>
+   SHA: `COMMIT_SHA`
 
 📊 Session metrics:
-   ID: <SESSION_ID>
-   <for each model in CURRENT_COST: "   - {model}: {inputTokens} in + {outputTokens} out = ${cost}">
+   ID: `SESSION_ID`
+   (for each model in `CURRENT_COST`): "   - {model}: {inputTokens} in + {outputTokens} out = ${cost}"
 ```
 
 ✓ Done - Return to user
@@ -151,10 +216,3 @@ EOF
 📁 Use scripts under `$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/`
 
 📝 Cost metrics are stored in git commit footers using the `Claude-Cost-Metrics:` git trailer format
-
----
-
-**⚠️  CRITICAL EXECUTION RULES**
-
-- **No improvisation**: The `commit-workflow.sh` script handles all commit creation logic (message assembly, metrics embedding, git execution). Do not duplicate or bypass this logic.
-- **Metrics are automatic**: The `commit` action auto-fetches SESSION_ID and CURRENT_COST if not in env. You only need to provide the commit message (subject + body) via stdin.
