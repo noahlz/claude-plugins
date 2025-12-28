@@ -86,17 +86,17 @@ One item per test: content="Fix [test-name]", activeForm="Fixing [test-name]", s
 - Use AskUserQuestion if backward-compatibility concerns arise
 - Minimize code scope (prefer 1-file fixes over multi-file refactors)
 
-**NEVER:**
-- Use hacks: hard-coded return values, null guards just to pass, mocked data shortcuts
-- Modify tests without AskUserQuestion confirmation
-- Assume pre-existing failures are acceptable
-- Skip IDE diagnostics if available
-
 **STOP AND ASK USER IF:**
 - Fix requires editing 3+ files
 - Fix requires 30+ lines changed
 - Test seems outdated or irrelevant after refactoring
 - Requirements are ambiguous
+
+**NEVER:**
+- Use hacks: hard-coded return values, null guards just to pass, mocked data shortcuts
+- Modify tests without AskUserQuestion confirmation
+- Assume pre-existing failures are acceptable
+- Delete / comment out / annotate tests to be skipped just to make tests pass (unless requested by the user)
 
 ## Error Handling
 

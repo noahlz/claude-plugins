@@ -9,7 +9,7 @@ claude-plugins/
 ├── .claude-plugin/
 │   └── marketplace.json        # Plugin marketplace definition
 ├── plugins/
-│   └── dev-workflow/           # Plugin source code (same structure when installed)
+│   └── dev-workflow/           # Plugin source code
 │       ├── agents/
 │       ├── commands/
 │       └── skills/
@@ -38,7 +38,9 @@ claude-plugins/
 
 ## NOTE: Reinstall After Changing
 
-When modifying or debugging scripts **prompt the user to re-install the plugin**.  Changes do not take effect immediately. The user needs to exit the session, run the provided `./reinstall.sh` script, and restart the session.
+When modifying or debugging scripts **prompt the user to re-install the plugin**.
+
+Changes do not take effect immediately. The user needs to exit the session, run the provided `./reinstall.sh` script, and restart the session.
 
 ---
 
