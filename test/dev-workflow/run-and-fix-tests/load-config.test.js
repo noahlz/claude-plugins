@@ -6,6 +6,7 @@ import {
   setupTestEnv,
   teardownTestEnv,
   assertFileExists,
+  readFixture,
   PLUGIN_ROOT
 } from '../../helpers.js';
 import { loadConfig, generateEnv, formatJson } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/load-config.js';
@@ -35,27 +36,17 @@ describe('run-and-fix-tests: load-config.js', () => {
     );
   }
 
+  function loadConfigFixture(fixtureName, modifyFn) {
+    const fixtureData = readFixture(`configs/${fixtureName}`);
+    let config = JSON.parse(fixtureData);
+    if (modifyFn) {
+      config = modifyFn(config);
+    }
+    writeConfig(config);
+  }
+
   it('loads single-build npm config', () => {
-    writeConfig({
-      logDir: 'dist',
-      build: {
-        command: 'npm run build',
-        logFile: '{logDir}/build.log',
-        errorPattern: '(error|Error|ERR!)'
-      },
-      test: {
-        all: {
-          command: 'npm test',
-          logFile: '{logDir}/test.log',
-          errorPattern: '(FAIL|Error)'
-        },
-        single: {
-          command: 'npm test -- {testFile}',
-          logFile: '{logDir}/test-single.log',
-          errorPattern: '(FAIL|Error)'
-        }
-      }
-    });
+    loadConfigFixture('single-build-npm.json');
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
 
@@ -66,25 +57,9 @@ describe('run-and-fix-tests: load-config.js', () => {
   });
 
   it('resolves {logDir} variable in paths', () => {
-    writeConfig({
-      logDir: 'build-logs',
-      build: {
-        command: 'npm run build',
-        logFile: '{logDir}/build.log',
-        errorPattern: '(error)'
-      },
-      test: {
-        all: {
-          command: 'npm test',
-          logFile: '{logDir}/test.log',
-          errorPattern: '(FAIL)'
-        },
-        single: {
-          command: 'npm test -- {testFile}',
-          logFile: '{logDir}/test-single.log',
-          errorPattern: '(FAIL)'
-        }
-      }
+    loadConfigFixture('single-build-npm.json', (config) => {
+      config.logDir = 'build-logs';
+      return config;
     });
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
@@ -94,37 +69,7 @@ describe('run-and-fix-tests: load-config.js', () => {
   });
 
   it('handles multi-build config with array', () => {
-    writeConfig({
-      logDir: 'dist',
-      build: [
-        {
-          tool: 'npm',
-          command: 'npm run build',
-          workingDir: 'frontend',
-          logFile: '{logDir}/npm.log',
-          errorPattern: '(error)'
-        },
-        {
-          tool: 'maven',
-          command: 'mvn clean install',
-          workingDir: 'backend',
-          logFile: '{logDir}/maven.log',
-          errorPattern: '\\[ERROR\\]'
-        }
-      ],
-      test: {
-        all: {
-          command: 'npm test',
-          logFile: '{logDir}/test.log',
-          errorPattern: '(FAIL)'
-        },
-        single: {
-          command: 'npm test -- {testFile}',
-          logFile: '{logDir}/test-single.log',
-          errorPattern: '(FAIL)'
-        }
-      }
-    });
+    loadConfigFixture('multi-build-polyglot.json');
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
 
@@ -138,23 +83,7 @@ describe('run-and-fix-tests: load-config.js', () => {
   });
 
   it('normalizes old schema (buildTools array)', () => {
-    writeConfig({
-      buildTools: [
-        {
-          buildCmd: 'npm run build',
-          buildLog: 'dist/build.log',
-          buildErrorPattern: '(error)',
-          buildWorkingDir: '.',
-          testCmd: 'npm test',
-          testLog: 'dist/test.log',
-          testErrorPattern: '(FAIL)',
-          testSingleCmd: 'npm test -- {file}',
-          testSingleLog: 'dist/test-single.log',
-          testSingleErrorPattern: '(FAIL)',
-          logDir: 'dist'
-        }
-      ]
-    });
+    loadConfigFixture('old-schema-buildtools.json');
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
 
@@ -165,26 +94,7 @@ describe('run-and-fix-tests: load-config.js', () => {
   });
 
   it('validates required fields', () => {
-    writeConfig({
-      logDir: 'dist',
-      build: {
-        command: 'npm run build',
-        // missing logFile
-        errorPattern: '(error)'
-      },
-      test: {
-        all: {
-          command: 'npm test',
-          logFile: 'dist/test.log',
-          errorPattern: '(FAIL)'
-        },
-        single: {
-          command: 'npm test -- {file}',
-          logFile: 'dist/test-single.log',
-          errorPattern: '(FAIL)'
-        }
-      }
-    });
+    loadConfigFixture('invalid-missing-logfile.json');
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
 
@@ -193,26 +103,7 @@ describe('run-and-fix-tests: load-config.js', () => {
   });
 
   it('generates bash exports', () => {
-    writeConfig({
-      logDir: 'dist',
-      build: {
-        command: 'npm run build',
-        logFile: '{logDir}/build.log',
-        errorPattern: '(error)'
-      },
-      test: {
-        all: {
-          command: 'npm test',
-          logFile: '{logDir}/test.log',
-          errorPattern: '(FAIL)'
-        },
-        single: {
-          command: 'npm test -- {testFile}',
-          logFile: '{logDir}/test-single.log',
-          errorPattern: '(FAIL)'
-        }
-      }
-    });
+    loadConfigFixture('single-build-npm.json');
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
     const env = result.env;
@@ -235,26 +126,7 @@ describe('run-and-fix-tests: load-config.js', () => {
   });
 
   it('handles test single commands with variables', () => {
-    writeConfig({
-      logDir: 'dist',
-      build: {
-        command: 'npm run build',
-        logFile: '{logDir}/build.log',
-        errorPattern: '(error)'
-      },
-      test: {
-        all: {
-          command: 'npm test',
-          logFile: '{logDir}/test.log',
-          errorPattern: '(FAIL)'
-        },
-        single: {
-          command: 'npm test -- {testFile}',
-          logFile: '{logDir}/test-single.log',
-          errorPattern: '(FAIL)'
-        }
-      }
-    });
+    loadConfigFixture('single-build-npm.json');
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
 
@@ -262,26 +134,9 @@ describe('run-and-fix-tests: load-config.js', () => {
   });
 
   it('exports working directory for single build', () => {
-    writeConfig({
-      logDir: 'dist',
-      build: {
-        command: 'npm run build',
-        logFile: '{logDir}/build.log',
-        errorPattern: '(error)',
-        workingDir: 'frontend'
-      },
-      test: {
-        all: {
-          command: 'npm test',
-          logFile: '{logDir}/test.log',
-          errorPattern: '(FAIL)'
-        },
-        single: {
-          command: 'npm test -- {testFile}',
-          logFile: '{logDir}/test-single.log',
-          errorPattern: '(FAIL)'
-        }
-      }
+    loadConfigFixture('single-build-npm.json', (config) => {
+      config.build.workingDir = 'frontend';
+      return config;
     });
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });

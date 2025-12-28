@@ -6,7 +6,8 @@ import {
   setupTestEnv,
   teardownTestEnv,
   execBashScript,
-  getPluginScriptPath
+  getPluginScriptPath,
+  readFixture
 } from '../../helpers.js';
 
 describe('write-git-commit: load-config.sh', () => {
@@ -19,6 +20,19 @@ describe('write-git-commit: load-config.sh', () => {
   afterEach(() => {
     teardownTestEnv(testEnv);
   });
+
+  function loadConfigFixture(sessionId) {
+    const fixtureData = readFixture('configs/write-git-commit-settings.json');
+    let config = JSON.parse(fixtureData);
+    if (sessionId !== undefined) {
+      config.sessionId = sessionId;
+    }
+    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
+    writeFileSync(
+      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
+      JSON.stringify(config)
+    );
+  }
 
   it('auto-detects session ID from project path when no config exists', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
@@ -35,11 +49,7 @@ describe('write-git-commit: load-config.sh', () => {
   });
 
   it('loads SESSION_ID from config file when it exists', () => {
-    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
-    writeFileSync(
-      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
-      JSON.stringify({ sessionId: 'test-session-123' })
-    );
+    loadConfigFixture('test-session-123');
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
@@ -55,11 +65,7 @@ describe('write-git-commit: load-config.sh', () => {
   });
 
   it('sets CONFIG_EXISTS flag based on config presence', () => {
-    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
-    writeFileSync(
-      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
-      JSON.stringify({ sessionId: 'test-session' })
-    );
+    loadConfigFixture('test-session');
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
@@ -129,11 +135,7 @@ describe('write-git-commit: load-config.sh', () => {
   });
 
   it('exports SESSION_ID for use by other scripts', () => {
-    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
-    writeFileSync(
-      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
-      JSON.stringify({ sessionId: 'exported-session' })
-    );
+    loadConfigFixture('exported-session');
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
@@ -149,11 +151,7 @@ describe('write-git-commit: load-config.sh', () => {
   });
 
   it('prefers config file over auto-detection', () => {
-    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
-    writeFileSync(
-      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
-      JSON.stringify({ sessionId: 'configured-session' })
-    );
+    loadConfigFixture('configured-session');
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
@@ -167,4 +165,5 @@ describe('write-git-commit: load-config.sh', () => {
 
     assert.equal(result.exitCode, 0, 'Should load from config');
   });
+
 });

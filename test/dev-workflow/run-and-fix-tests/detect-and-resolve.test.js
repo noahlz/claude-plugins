@@ -1,11 +1,12 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   setupTestEnv,
   teardownTestEnv,
-  PLUGIN_ROOT
+  PLUGIN_ROOT,
+  TESTS_ROOT
 } from '../../helpers.js';
 import { detectTools, loadToolRegistry } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/detect-and-resolve.js';
 
@@ -20,12 +21,13 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
     teardownTestEnv(testEnv);
   });
 
+  function setupProjectTemplate(templateName) {
+    const templatePath = join(TESTS_ROOT, 'dev-workflow', 'fixtures', 'project-templates', templateName);
+    cpSync(templatePath, testEnv.tmpDir, { recursive: true });
+  }
+
   it('detects npm project with package.json', () => {
-    writeFileSync(join(testEnv.tmpDir, 'package.json'), JSON.stringify({
-      name: 'test-project',
-      version: '1.0.0',
-      scripts: { build: 'npm run build', test: 'npm test' }
-    }));
+    setupProjectTemplate('npm-project');
 
     const detected = detectTools({ pluginRoot: PLUGIN_ROOT, rootDir: testEnv.tmpDir });
 
@@ -35,11 +37,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
   });
 
   it('detects maven project with pom.xml', () => {
-    mkdirSync(join(testEnv.tmpDir, 'src', 'main', 'java'), { recursive: true });
-    writeFileSync(join(testEnv.tmpDir, 'pom.xml'), `<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0">
-  <modelVersion>4.0.0</modelVersion>
-</project>`);
+    setupProjectTemplate('maven-project');
 
     const detected = detectTools({ pluginRoot: PLUGIN_ROOT, rootDir: testEnv.tmpDir });
 
@@ -48,9 +46,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
   });
 
   it('detects gradle project with build.gradle', () => {
-    writeFileSync(join(testEnv.tmpDir, 'build.gradle'), `plugins {
-  id 'java'
-}`);
+    setupProjectTemplate('gradle-project');
 
     const detected = detectTools({ pluginRoot: PLUGIN_ROOT, rootDir: testEnv.tmpDir });
 
@@ -59,8 +55,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
   });
 
   it('detects go project with go.mod', () => {
-    writeFileSync(join(testEnv.tmpDir, 'go.mod'), `module github.com/example/test
-go 1.19`);
+    setupProjectTemplate('go-project');
 
     const detected = detectTools({ pluginRoot: PLUGIN_ROOT, rootDir: testEnv.tmpDir });
 
@@ -69,10 +64,7 @@ go 1.19`);
   });
 
   it('detects multiple tools in polyglot project', () => {
-    writeFileSync(join(testEnv.tmpDir, 'package.json'), JSON.stringify({ name: 'frontend' }));
-    mkdirSync(join(testEnv.tmpDir, 'backend', 'src', 'main', 'java'), { recursive: true });
-    writeFileSync(join(testEnv.tmpDir, 'backend', 'pom.xml'), `<?xml version="1.0"?>
-<project></project>`);
+    setupProjectTemplate('polyglot-project');
 
     const detected = detectTools({ pluginRoot: PLUGIN_ROOT, rootDir: testEnv.tmpDir });
 
@@ -94,7 +86,7 @@ go 1.19`);
   });
 
   it('returns detected tools with proper structure', () => {
-    writeFileSync(join(testEnv.tmpDir, 'package.json'), JSON.stringify({ name: 'test' }));
+    setupProjectTemplate('npm-project');
 
     const detected = detectTools({ pluginRoot: PLUGIN_ROOT, rootDir: testEnv.tmpDir });
 
@@ -121,7 +113,7 @@ go 1.19`);
   });
 
   it('normalizes project root location in output', () => {
-    writeFileSync(join(testEnv.tmpDir, 'package.json'), JSON.stringify({ name: 'test' }));
+    setupProjectTemplate('npm-project');
 
     const detected = detectTools({ pluginRoot: PLUGIN_ROOT, rootDir: testEnv.tmpDir });
 

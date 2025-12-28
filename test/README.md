@@ -1,10 +1,10 @@
 # Claude Plugins Test Suite
 
-Comprehensive test coverage for all shell scripts in the claude-plugins repository.
+Comprehensive test coverage for claude-plugins skills and scripts.
 
 ## Overview
 
-Tests are written using [shUnit2](https://github.com/kward/shunit2), an xUnit-style testing framework for shell scripts. The test suite validates that scripts work correctly with mocked external dependencies.
+Tests are written using Node.js built-in `node:test` module. The test suite validates that scripts and JS modules work correctly with fixture data and mocked external dependencies.
 
 ## Running Tests
 
@@ -18,55 +18,49 @@ npm test
 ```
 test/
 ├── helpers.js                   # Common test utilities
-├── lib/
-│   ├── mocks/
-│   │   ├── ccusage              # Mock for Claude Code usage CLI
-│   │   └── git                  # Mock for git VCS commands
+├── lib/mocks/                   # Mock CLI commands for testing
 ├── fixtures/
-│   ├── configs/                 # Sample configuration files
-│   ├── cost-arrays/             # Sample cost array data
-│   ├── metrics/                 # Sample metrics files
-├── dev-workflow/
+│   ├── configs/                 # Configuration test data
+│   ├── project-templates/       # Minimal project structures
+│   ├── cost-arrays/             # Cost data samples
+│   └── metrics/                 # Metrics samples
+├── dev-workflow/                # Plugin test suites
 │   ├── run-and-fix-tests/
-│   │   ├── detect-and-resolve.test.js
-│   │   ├── load-config.test.js
-│   │   └── select-default.test.js
 │   └── write-git-commit/
-│       ├── claude-session-cost.test.js
-│       ├── commit-workflow.test.js
-│       └── load-config.test.js
-├── run-all-tests.js             # Test runner
-└── README.md                    # This file
+└── run-all-tests.js             # Test runner
 ```
 
 ## Test Infrastructure
 
-### shUnit2 Framework
+### Node.js Test Framework
 
-Each test file sources shUnit2 at the end and defines test functions with the `test*` naming convention. For example:
+Tests use Node.js built-in `node:test` module with `node:assert` for assertions:
 
-```bash
-test_loads_default_config() {
-  # Test body
-}
+```javascript
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import { strict as assert } from 'node:assert';
 
-# Source shUnit2 at the end
-. "$TESTS_ROOT/shunit2"
+describe('my-skill: my-script.js', () => {
+  let testEnv;
+
+  beforeEach(() => {
+    testEnv = setupTestEnv();
+  });
+
+  afterEach(() => {
+    teardownTestEnv(testEnv);
+  });
+
+  it('does something', () => {
+    // Test implementation
+    assert.equal(actual, expected);
+  });
+});
 ```
 
-### Test Helpers (test-helpers.sh)
+### Test Helpers
 
-Common utilities for test setup and assertions:
-
-- `setup_test_env()` - Initialize temp directory and PATH
-- `teardown_test_env()` - Clean up temp directory
-- `assert_json_equals()` - Compare JSON objects (order-independent)
-- `assert_json_has_key()` - Check if JSON object has a key
-- `assert_matches()` - Check if string matches regex pattern
-- `assert_file_exists()` / `assert_file_not_exists()` - File assertions
-- `create_fixture()` - Create test fixture files
-- `read_fixture()` - Read fixture files
-- `export_test_env_vars()` - Set required environment variables
+Common utilities in `helpers.js` support test setup, fixture loading, and script execution. See the file for available functions.
 
 ### Mock Scripts
 
@@ -79,181 +73,31 @@ Mocks are placed in `tests/lib/mocks/` and are prepended to PATH during test exe
 
 ### Fixtures
 
-Pre-built test data in `tests/fixtures/`:
+Pre-built test data in `test/dev-workflow/fixtures/`:
 
-- `configs/` - Sample JSON configuration files
-- `cost-arrays/` - Sample cost array data for metrics testing
-- `metrics/` - Sample NDJSON metrics files
-- `projects/` - Sample project structures with build files
+- **`configs/`** - Configuration files for build and commit tests
+- **`project-templates/`** - Minimal project structures for tool detection tests
+- **`cost-arrays/`** - Sample cost data for metrics testing
+- **`metrics/`** - Sample metrics files
+
+Use `readFixture()` to load fixtures in tests. Modify loaded data inline for variations without creating additional fixture files.
 
 ## Writing New Tests
 
-### 1. Create test file in appropriate plugin directory
+1. Create test file in `test/dev-workflow/{plugin-name}/`
+2. Use `describe()` and `it()` from `node:test`
+3. Use `setupTestEnv()` in `beforeEach()` to initialize test directories
+4. Use `readFixture()` to load pre-built test data from `fixtures/`
+5. Modify fixture data inline for test variations without creating additional fixture files
 
-```bash
-# For write-git-commit scripts
-touch tests/write-git-commit/test-your-script.sh
+See existing tests in `test/dev-workflow/` for examples.
 
-# For run-and-fix-tests scripts
-touch tests/run-and-fix-tests/test-your-script.sh
-```
+## Adding New Mocks
 
-### 2. Set up test structure
+To create a new mock command:
 
-```bash
-#!/bin/bash
-# Tests for your-script.sh
+1. Create executable file in `lib/mocks/`
+2. Implement command logic (any language)
+3. Return appropriate exit codes and output
 
-# Setup runs before each test
-setUp() {
-  if [ -z "$TESTS_ROOT" ]; then
-    TESTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-    export TESTS_ROOT
-  fi
-
-  . "$TESTS_ROOT/lib/test-helpers.sh"
-  setup_test_env
-
-  export CLAUDE_PLUGIN_ROOT="/path/to/plugin"
-  cd "$TEST_TMPDIR" || exit 1
-}
-
-# Teardown runs after each test
-tearDown() {
-  teardown_test_env
-}
-
-# Test functions with test* prefix
-test_something() {
-  # Test implementation
-}
-
-# Source shUnit2 at the end
-SHUNIT2_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/shunit2"
-. "$SHUNIT2_PATH"
-```
-
-### 3. Use test helpers for assertions
-
-```bash
-test_example() {
-  # Create temporary config
-  create_fixture "test-config.json" '{"key":"value"}'
-
-  # Run your script
-  bash "$SCRIPT_PATH"
-
-  # Assert file exists
-  assert_file_exists "expected-output.json"
-
-  # Assert JSON structure
-  local result=$(cat expected-output.json)
-  assert_json_has_key "$result" "key"
-}
-```
-
-## Mocking Strategy
-
-### Using Mocks
-
-Mocks are automatically available on PATH during tests. The mock scripts intercept external CLI calls:
-
-```bash
-test_uses_external_command() {
-  # The mock 'git' is called instead of real git
-  git rev-parse HEAD
-
-  # Mock returns: abc123def456ghi789jkl012mno345pqr
-}
-```
-
-### Adding Mocks
-
-To create a new mock:
-
-1. Create file in `tests/lib/mocks/`
-2. Implement command logic
-3. Make it executable: `chmod +x tests/lib/mocks/your-command`
-
-Mock example:
-
-```bash
-#!/bin/bash
-# tests/lib/mocks/your-command
-
-if [ "$1" = "some-arg" ]; then
-  echo "mock response"
-  exit 0
-else
-  echo "Error: Unsupported argument" >&2
-  exit 1
-fi
-```
-
-## Debugging Tests
-
-### Enable verbose output
-
-Run shUnit2 with debug flags:
-
-```bash
-bash -x tests/write-git-commit/test-load-config.sh testLoadsDefaultConfig
-```
-
-### Inspect test environment
-
-```bash
-test_debug() {
-  # Print working directory
-  echo "Working directory: $(pwd)"
-
-  # Print environment
-  echo "TEST_TMPDIR=$TEST_TMPDIR"
-
-  # List test files
-  ls -la "$TEST_TMPDIR"
-}
-```
-
-### Keep temp directories after test
-
-Modify `tearDown` temporarily to prevent cleanup:
-
-```bash
-tearDown() {
-  # Temporarily comment out to debug
-  # teardown_test_env
-  echo "Test directory: $TEST_TMPDIR"
-}
-```
-
-## Troubleshooting
-
-### "command not found" in tests
-
-Make sure mocks are executable and PATH includes `tests/lib/mocks`:
-
-```bash
-chmod +x tests/lib/mocks/*
-export PATH="tests/lib/mocks:$PATH"
-```
-
-### jq: parse error
-
-Ensure JSON fixtures are properly formatted:
-
-```bash
-jq '.' tests/fixtures/configs/*.json
-```
-
-### Temp directory not cleaning up
-
-Check that `tearDown` is called and `TEST_TMPDIR` is set:
-
-```bash
-# In test
-echo "TEST_TMPDIR=$TEST_TMPDIR"
-
-# Manual cleanup
-rm -rf "$TEST_TMPDIR"
-```
+Mocks are automatically available on PATH during test execution.

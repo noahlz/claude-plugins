@@ -1,0 +1,19 @@
+{
+  "logDir": "dist",
+  "build": {
+    "command": "npm run build",
+    "errorPattern": "(error)"
+  },
+  "test": {
+    "all": {
+      "command": "npm test",
+      "logFile": "dist/test.log",
+      "errorPattern": "(FAIL)"
+    },
+    "single": {
+      "command": "npm test -- {file}",
+      "logFile": "dist/test-single.log",
+      "errorPattern": "(FAIL)"
+    }
+  }
+}

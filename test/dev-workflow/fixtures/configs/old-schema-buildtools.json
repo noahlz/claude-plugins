@@ -1,0 +1,17 @@
+{
+  "buildTools": [
+    {
+      "buildCmd": "npm run build",
+      "buildLog": "dist/build.log",
+      "buildErrorPattern": "(error)",
+      "buildWorkingDir": ".",
+      "testCmd": "npm test",
+      "testLog": "dist/test.log",
+      "testErrorPattern": "(FAIL)",
+      "testSingleCmd": "npm test -- {file}",
+      "testSingleLog": "dist/test-single.log",
+      "testSingleErrorPattern": "(FAIL)",
+      "logDir": "dist"
+    }
+  ]
+}

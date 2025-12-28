@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import {
   setupTestEnv,
   teardownTestEnv,
-  PLUGIN_ROOT
+  PLUGIN_ROOT,
+  readFixture
 } from '../../helpers.js';
 import { selectDefault, generatePolyglotConfig } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/select-default.js';
 
@@ -21,30 +22,13 @@ describe('run-and-fix-tests: select-default.js', () => {
   });
 
   function createToolConfig(toolName) {
+    const baseConfig = JSON.parse(readFixture('configs/single-build-npm.json'));
+
     return {
       tool: toolName,
       location: '(project root)',
       configFile: toolName === 'npm' ? 'package.json' : 'pom.xml',
-      config: {
-        logDir: 'dist',
-        build: {
-          command: toolName === 'npm' ? 'npm run build' : 'mvn clean install',
-          logFile: '{logDir}/build.log',
-          errorPattern: '(error)'
-        },
-        test: {
-          all: {
-            command: toolName === 'npm' ? 'npm test' : 'mvn test',
-            logFile: '{logDir}/test.log',
-            errorPattern: '(FAIL|Error)'
-          },
-          single: {
-            command: toolName === 'npm' ? 'npm test -- {testFile}' : 'mvn test -Dtest={testFile}',
-            logFile: '{logDir}/test-single.log',
-            errorPattern: '(FAIL|Error)'
-          }
-        }
-      }
+      config: baseConfig
     };
   }
 
