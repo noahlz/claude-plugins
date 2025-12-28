@@ -65,6 +65,76 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 → Store initial working directory: `INITIAL_PWD=$(pwd)`
 
+## Common Definitions
+
+### BUILD_FIXER_ENV_VARS
+
+Environment variables to provide when delegating to build-fixer agent:
+- `CLAUDE_PLUGIN_ROOT` - actual path (e.g., "/Users/user/.claude/plugins/dev-workflow@noahlz.github.io")
+- `BUILD_CMD` - actual value (e.g., "npm run build")
+- `BUILD_LOG` - actual path (e.g., "dist/npm-build.log")
+- `BUILD_ERROR_PATTERN` - actual pattern (e.g., "(error|Error|ERR!)")
+- `BUILD_WORKING_DIR` - actual path (e.g., ".")
+- `LOG_DIR` - actual path (e.g., "dist/")
+- `INITIAL_PWD` - actual path (e.g., "/current/working/directory")
+
+### TEST_FIXER_ENV_VARS
+
+Environment variables to provide when delegating to test-fixer agent:
+- BUILD_FIXER_ENV_VARS (see above) for compilation checking
+- `TEST_SINGLE_CMD` - actual value (e.g., "npm test --testNamePattern={testName}")
+- `TEST_SINGLE_LOG` - actual path (e.g., "logs/test-single.log")
+
+### EXTRACT_BUILD_ERRORS
+
+Procedure to extract compilation errors from build log:
+
+→ Try to get language diagnostics from editor using available IDE MCP or LSP tools  
+✓ MCP or LSP tool available → Extract errors with precise locations  
+✗ Not available → Parse build log at `$BUILD_LOG` using `$BUILD_ERROR_PATTERN` regex  
+
+→ Extract up to 30 distinct compilation errors with:
+  - File paths
+  - Line numbers and column positions (if available)
+  - Error messages and error codes
+
+→ Display compilation error summary to user
+
+### DELEGATE_TO_BUILD_FIXER
+
+Procedure to delegate to build-fixer agent:
+
+→ Use the `build-fixer` agent to fix compilation errors one-by-one.
+
+→ Provide agent with context in natural language:
+  - Build error list: [bulleted list with file:line:col and error messages]
+  - Example error entry: "src/auth.ts:45:12 - TS2304: Cannot find name 'User'"
+
+→ Provide BUILD_FIXER_ENV_VARS (see above)
+
+→ Agent fixes the errors per its instructions and context provided.
+
+### REBUILD_AND_VERIFY
+
+Procedure to rebuild project and verify compilation:
+
+→ Change to build working directory and rebuild:
+  `cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1 && cd $INITIAL_PWD`
+
+→ Check exit code:
+  - Exit 0 → Build succeeded
+  - Exit non-zero → Build failed, check BUILD_LOG for errors
+
+### RESUME_TEST_FIXER
+
+Procedure to resume test-fixer agent after build-fixer completes:
+
+→ Resume test-fixer agent using Task tool with resume parameter:
+  - `resume: $TEST_FIXER_AGENT_ID`
+  - `prompt: "Compilation errors have been resolved by build-fixer. BUILD_LOG shows clean build. Continue with test fix verification."`
+
+→ Test-fixer continues from where it left off (re-runs verification starting with compilation check)
+
 ## 3. Build Project
 
 → Create log directory: `mkdir -p "$LOG_DIR"`
@@ -87,16 +157,7 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 ## 3a. Extract Build Errors
 
-→ Try to get language diagnostics from editor using available IDE MCP or LSP tools  
-✓ MCP or LSP tool available → Extract errors with precise locations  
-✗ Not available → Parse build log at `$BUILD_LOG` using `$BUILD_ERROR_PATTERN` regex  
-
-→ Extract up to 30 distinct compilation errors with:
-  - File paths
-  - Line numbers and column positions (if available)
-  - Error messages and error codes
-
-→ Display compilation error summary to user
+→ Extract errors (see EXTRACT_BUILD_ERRORS)
 
 → Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
   - "Yes" → Proceed to step 3b
@@ -104,22 +165,7 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 ## 3b. Delegate to Build-Fixer Agent
 
-→ Use the `build-fixer` agent to fix compilation errors one-by-one.
-
-→ Provide agent with context in natural language:
-  - Build error list: [bulleted list with file:line:col and error messages from step 3a]
-  - Example error entry: "src/auth.ts:45:12 - TS2304: Cannot find name 'User'"
-
-→ Provide env variable values to agent:
-  - `CLAUDE_PLUGIN_ROOT` actual path (e.g., "/Users/youruser/.claude/plugins/dev-workflow@noahlz.github.io")
-  - `BUILD_CMD` actual value (e.g., "npm run build")
-  - `BUILD_LOG` actual path (e.g., "dist/npm-build.log")
-  - `BUILD_ERROR_PATTERN` actual pattern (e.g., "(error|Error|ERR!)")
-  - `BUILD_WORKING_DIR` actual path (e.g., ".")
-  - `LOG_DIR` actual path (e.g., "dist/")
-  - `INITIAL_PWD` actual path (e.g., "/current/working/directory")
-
-→ Agent fixes the errors per its instructions and context provided.
+→ Delegate to build-fixer with error list from step 3a (see DELEGATE_TO_BUILD_FIXER)
 
 ✓ Agent completes → Proceed to step 3c
 
@@ -174,7 +220,7 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 ## 7. Delegate to Test-Fixer Agent
 
-→ Use the `test-fixer` agent to fix failing tests one-by-one.
+→ Use the `test-fixer` agent to fix failing tests one-by-one
 
 → Store agent ID for potential resumption: `TEST_FIXER_AGENT_ID=[agent_id]`
 
@@ -182,27 +228,19 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
   - Failed test list: [bulleted list with test names and error excerpts from step 5]
   - Example failed test entry: "TestLoginFlow (test/auth.test.js) - Expected 'logged in', got undefined"
 
-→ Provide env variable values to agent:
-  - `CLAUDE_PLUGIN_ROOT` actual path
-  - `TEST_SINGLE_CMD` actual value (e.g., "npm test --testNamePattern={testName}")
-  - `TEST_SINGLE_LOG` actual path (e.g., "logs/test-single.log")
-  - `BUILD_CMD` actual value (for compilation checking)
-  - `BUILD_LOG` actual path (for compilation checking)
-  - `BUILD_WORKING_DIR` actual path (for compilation checking)
-  - `LOG_DIR` actual path (e.g., "logs/")
-  - `INITIAL_PWD` actual path (e.g., "/current/working/directory")
+→ Provide TEST_FIXER_ENV_VARS (see Common Definitions)
 
-→ Agent fixes the tests per its instructions and context provided.
+→ Agent fixes the tests per its instructions and context provided
 
 ✓ Agent completes without delegation → Proceed to step 7d  
 🔄 Agent exits with COMPILATION_ERROR delegation → Proceed to step 7b  
 
 ## 7b. Handle Compilation Error Delegation
 
-→ Detect delegation signal in test-fixer's final message:
-  - Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
+→ Detect delegation signal in test-fixer's final message:  
+Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
 
-→ Extract build errors from BUILD_LOG (similar to step 3a)
+→ Extract build errors (see EXTRACT_BUILD_ERRORS)
 
 → Use AskUserQuestion:
   - "Test fix introduced compilation errors. Fix them with build-fixer?"
@@ -211,27 +249,15 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 ## 7c. Invoke Build-Fixer and Resume Test-Fixer
 
-→ Invoke build-fixer agent with compilation errors and env variables:
-  - `CLAUDE_PLUGIN_ROOT` actual path
-  - `BUILD_CMD` actual value
-  - `BUILD_LOG` actual path
-  - `BUILD_ERROR_PATTERN` actual pattern
-  - `BUILD_WORKING_DIR` actual path
-  - `LOG_DIR` actual path
-  - `INITIAL_PWD` actual path
+→ Delegate to build-fixer with error list from step 7b (see DELEGATE_TO_BUILD_FIXER)
 
-→ After build-fixer completes: Rebuild to verify
-  - `cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1`
+→ After build-fixer completes: Rebuild to verify (see REBUILD_AND_VERIFY)
   - If build fails: Return to step 7b (more compilation errors)
   - If build succeeds: Continue to resume test-fixer
 
-→ Resume test-fixer agent using Task tool with resume parameter:
-  - resume: $TEST_FIXER_AGENT_ID
-  - prompt: "Compilation errors have been resolved by build-fixer. BUILD_LOG shows clean build. Continue with test fix verification."
+→ Resume test-fixer (see RESUME_TEST_FIXER)
 
-→ Test-fixer continues from where it left off (re-runs verification)
-
-✓ Test-fixer completes → Proceed to step 7d  
+✓ Test-fixer completes → Proceed to step 7d
 🔄 Test-fixer delegates again → Loop back to step 7b (compilation errors reintroduced)  
 
 ## 7d. Ask User to Re-run Tests
