@@ -12,7 +12,7 @@ Guides Claude through automatically building, running and fixing your project te
 
 ## Prerequisites
 
-- `bash` (i.e. MiniGW if on Windows)
+- `node` version 18+
 - `jq`
 
 ## Usage

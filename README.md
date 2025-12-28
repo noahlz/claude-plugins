@@ -16,6 +16,11 @@ Add the marketplace to your Claude Code settings:
 claude plugin marketplace add https://github.com/noahlz/claude-plugins.git
 claude plugin install dev-workflow@noahlz.github.io
 ```
+#### Prerequisites
+
+- Node.js 18+
+- [`ccusage`](https://github.com/ryoppippi/ccusage)
+
 
 #### Skills
 

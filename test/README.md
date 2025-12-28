@@ -8,9 +8,16 @@ Tests are written using Node.js built-in `node:test` module. The test suite vali
 
 ## Running Tests
 
-### Run all tests
+**Run all tests**
+
 ```bash
 npm test
+```
+
+**Run a single test**
+
+```bash
+node --test test/path/to/test.js`
 ```
 
 ## Test Structure
