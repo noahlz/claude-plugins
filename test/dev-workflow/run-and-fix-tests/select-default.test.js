@@ -7,7 +7,7 @@ import {
   teardownTestEnv,
   PLUGIN_ROOT,
   readFixture
-} from '../../helpers.js';
+} from '../../lib/helpers.js';
 import { selectDefault, generatePolyglotConfig } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/select-default.js';
 
 describe('run-and-fix-tests: select-default.js', () => {

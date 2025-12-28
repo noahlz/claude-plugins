@@ -5,7 +5,7 @@ import {
   teardownTestEnv,
   execBashScript,
   getPluginScriptPath
-} from '../../helpers.js';
+} from '../../lib/helpers.js';
 
 describe('write-git-commit: claude-session-cost.sh', () => {
   let testEnv;

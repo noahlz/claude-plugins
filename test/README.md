@@ -50,7 +50,7 @@ describe('my-skill: my-script.js', () => {
 
 ### Test Helpers
 
-Common utilities in `helpers.js` support test setup, fixture loading, and script execution. See the file for available functions.
+Common utilities in `lib/helpers.js` support test setup, fixture loading, and script execution. See the file for available functions.
 
 ### Mock Scripts
 

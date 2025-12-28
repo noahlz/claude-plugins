@@ -8,7 +8,7 @@ import {
   assertFileExists,
   readFixture,
   PLUGIN_ROOT
-} from '../../helpers.js';
+} from '../../lib/helpers.js';
 import { loadConfig, generateEnv, formatJson } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/load-config.js';
 
 describe('run-and-fix-tests: load-config.js', () => {

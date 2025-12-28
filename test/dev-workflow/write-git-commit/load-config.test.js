@@ -8,7 +8,7 @@ import {
   execBashScript,
   getPluginScriptPath,
   readFixture
-} from '../../helpers.js';
+} from '../../lib/helpers.js';
 
 describe('write-git-commit: load-config.sh', () => {
   let testEnv;
