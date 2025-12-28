@@ -134,7 +134,7 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 → Change to test working directory (if different from build dir)  
 → Execute test command silently to log file: `$TEST_CMD > "$TEST_LOG" 2>&1`  
-✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 9 (Success)  
+✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 8 (Completion)  
 ✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 5 (Extract Test Errors)  
 
 ## 5. Extract Test Errors
@@ -143,35 +143,35 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 → Extract error patterns from log using `$TEST_ERROR_PATTERN` regex  
 → Identify failing tests (up to 30 distinct failures)  
 
-✓ 0 failures detected → Proceed to step 9 (Completion)  
-✗ 1-30 failures → Display error summary, proceed to step 7  
-✗ 30+ failures → Display count, proceed to step 7  
+✓ 0 failures detected → Proceed to step 8 (Completion)  
+✗ 1-30 failures → Display error summary, proceed to step 6  
+✗ 30+ failures → Display count, proceed to step 6  
 
 → Display error summary to user with:
   - List of failing test names/paths
   - Error messages and relevant output from test log
   - Stack traces (if available)
 
-## 7. Ask to Fix Tests
+## 6. Ask to Fix Tests
 
 → Check failure count from step 5:
 
 **If 30+ failures:**  
 ⚠️ Display: "30+ tests failed. This is too many for efficient fixing in one chat."  
-→ Use AskUserQuestion:
-  - "Attempt to fix 30+ tests?" (not recommended)
-  - "No, I'll stop and create a plan"
+→ Use AskUserQuestion:  
+  - "Attempt to fix 30+ tests?" (not recommended)  
+  - "No, I'll stop and create a plan"  
 → If "No" → Stop (user exits to create plan)  
-→ If "Yes" → Continue to step 8  
+→ If "Yes" → Continue to step 7  
 
 **If 1-29 failures:**  
 → Use AskUserQuestion:  
   - "Start fixing tests?" (recommended)
   - "No, I'll fix manually"
-→ If "Yes" → Continue to step 8  
+→ If "Yes" → Continue to step 7  
 → If "No" → Stop  
 
-## 8. Delegate to Test-Fixer Agent
+## 7. Delegate to Test-Fixer Agent
 
 → Use the `test-fixer` agent to fix failing tests one-by-one.
 
@@ -187,18 +187,18 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 → Agent fixes the tests per its instructions and context provided.
 
-✓ Agent completes → Proceed to step 8a
+✓ Agent completes → Proceed to step 7a
 
-## 8a. Ask User to Re-run Tests
+## 7a. Ask User to Re-run Tests
 
 → Use AskUserQuestion:
   - "Re-run all tests to verify fixes?"
   - "No, stop for now"
 
-✓ User confirms → Proceed to step 4 (Run Tests)  
-✗ User declines → Proceed to step 9  
+✓ User confirms → Proceed to step 4 (Run Tests)
+✗ User declines → Proceed to step 8
 
-## 9. Completion
+## 8. Completion
 
 → Check if all originally-failing tests were fixed:
   - If yes → Display: "✅ All tests fixed and passed!"
