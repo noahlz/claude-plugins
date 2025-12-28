@@ -28,8 +28,13 @@ claude-plugins/
 - Prefer writing and invoking pre-existing scripts over dynamic code generation or ad-hoc commands.
 - When writing new scripts, keep code DRY with shared scripts under a sibling `lib/` directory i.e. `plugins/dev-workflow/skills/lib`
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
-- Write tests for scripts, placing them under `tests/` in directories named for the corresponding skills and plugins.
+- Write Node.js tests for scripts, placing them under `tests/dev-workflow/` in directories named for the corresponding skills and plugins.
 - This keeps workflows testable, maintainable, and predictable.
+
+**Testing Approach**:
+- Tests are written in Node.js using the built-in `node:test` module
+- Tests validate actual script behavior: JSON output validation, error handling, edge cases
+- Run all tests with: `npm test`
 
 **Agent-Based Error Fixing**:
 - Use agents (in `plugins/dev-workflow/agents/`) to handle iterative fix-verify loops: build-fixer for compilation errors, test-fixer for test failures

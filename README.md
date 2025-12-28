@@ -57,13 +57,15 @@ Related: [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https
 
 ## Testing
 
-These plugins leverage bash scripting extensively. Scripts are infamously fragile and hard to maintain, which is why we have a test suite:
+Scripts used by skills are tested using Node.js with the built-in `node:test` module. Tests validate actual script behavior including JSON output, error handling, and edge cases.
+
+Run tests with this plugins `run-and-fix-tests` skill or:
 
 ```bash
-./tests/run-all-tests.sh
+npm test
 ```
 
-Tests use [shUnit2](https://github.com/kward/shunit2) framework with mocked external commands. See `tests/README.md` for detailed testing documentation.
+Tests are located in `tests/dev-workflow/`. See `tests/README.md` for detailed testing documentation.
 
 ## Author
 
