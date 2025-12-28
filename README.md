@@ -65,7 +65,7 @@ Run tests with this plugins `run-and-fix-tests` skill or:
 npm test
 ```
 
-Tests are located in `tests/dev-workflow/`. See `tests/README.md` for detailed testing documentation.
+Tests are located in `test/dev-workflow/`. See `test/README.md` for detailed testing documentation.
 
 ## Author
 

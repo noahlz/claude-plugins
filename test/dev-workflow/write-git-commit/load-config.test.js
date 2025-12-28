@@ -7,7 +7,7 @@ import {
   teardownTestEnv,
   execBashScript,
   getPluginScriptPath
-} from '../../node/helpers.js';
+} from '../../helpers.js';
 
 describe('write-git-commit: load-config.sh', () => {
   let testEnv;

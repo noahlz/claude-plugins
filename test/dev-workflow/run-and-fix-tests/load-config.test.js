@@ -7,7 +7,7 @@ import {
   teardownTestEnv,
   execBashScript,
   getPluginScriptPath
-} from '../../node/helpers.js';
+} from '../../helpers.js';
 
 describe('run-and-fix-tests: load-config.sh', () => {
   let testEnv;

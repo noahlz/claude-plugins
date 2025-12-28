@@ -10,43 +10,32 @@ Tests are written using [shUnit2](https://github.com/kward/shunit2), an xUnit-st
 
 ### Run all tests
 ```bash
-./tests/run-all-tests.sh
-```
-
-### Run tests for a specific plugin
-```bash
-bash tests/write-git-commit/test-load-config.sh
-bash tests/run-and-fix-tests/test-load-config.sh
-```
-
-### Run a specific test case
-```bash
-bash tests/write-git-commit/test-load-config.sh testLoadsDefaultConfig
+npm test
 ```
 
 ## Test Structure
 
 ```
-tests/
-├── shunit2                      # Testing framework (binary)
+test/
+├── helpers.js                   # Common test utilities
 ├── lib/
-│   ├── test-helpers.sh          # Common test utilities
-│   └── mocks/
-│       ├── ccusage              # Mock for Claude Code usage CLI
-│       └── git                  # Mock for git VCS commands
+│   ├── mocks/
+│   │   ├── ccusage              # Mock for Claude Code usage CLI
+│   │   └── git                  # Mock for git VCS commands
 ├── fixtures/
 │   ├── configs/                 # Sample configuration files
 │   ├── cost-arrays/             # Sample cost array data
 │   ├── metrics/                 # Sample metrics files
-│   └── projects/                # Sample project structures
-├── write-git-commit/
-│   ├── test-load-config.sh      # Tests for load-config.sh
-│   ├── test-claude-session-cost.sh # Tests for claude-session-cost.sh
-│   └── test-commit-workflow.sh  # Tests for commit-workflow.sh
-├── run-and-fix-tests/
-│   ├── test-load-config.sh      # Tests for load-config.sh
-│   └── test-detect-and-resolve.sh # Tests for detect-and-resolve.sh
-├── run-all-tests.sh             # Master test runner
+├── dev-workflow/
+│   ├── run-and-fix-tests/
+│   │   ├── detect-and-resolve.test.js
+│   │   ├── load-config.test.js
+│   │   └── select-default.test.js
+│   └── write-git-commit/
+│       ├── claude-session-cost.test.js
+│       ├── commit-workflow.test.js
+│       └── load-config.test.js
+├── run-all-tests.js             # Test runner
 └── README.md                    # This file
 ```
 

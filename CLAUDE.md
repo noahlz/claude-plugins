@@ -19,7 +19,7 @@ claude-plugins/
 │           │   └── scripts/
 │           └── write-git-commit/
 │               └── scripts/
-└── tests/                      # Test suites for scripts used by plugins
+└── test/                       # Test suites for scripts used by plugins
 ```
 
 ## Development Philosophy
@@ -28,7 +28,7 @@ claude-plugins/
 - Prefer writing and invoking pre-existing scripts over dynamic code generation or ad-hoc commands.
 - When writing new scripts, keep code DRY with shared scripts under a sibling `lib/` directory i.e. `plugins/dev-workflow/skills/lib`
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
-- Write Node.js tests for scripts, placing them under `tests/dev-workflow/` in directories named for the corresponding skills and plugins.
+- Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
 - This keeps workflows testable, maintainable, and predictable.
 
 **Testing Approach**:

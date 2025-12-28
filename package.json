@@ -7,6 +7,6 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "test": "node tests/node/run-all-tests.js"
+    "test": "node test/run-all-tests.js"
   }
 }
