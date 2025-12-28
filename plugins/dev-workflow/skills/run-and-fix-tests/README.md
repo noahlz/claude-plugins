@@ -34,7 +34,7 @@ When you run `/test` for the first time, the plugin automatically:
 2. **Selects** the appropriate default configuration from the `defaults/` directory
 3. **Creates** `.claude/settings.plugins.run-and-fix-tests.json` in your project
 
-See [settings.plugins.run-and-fix-tests.json](./settings.plugins.run-and-fix-tests.json) for out-of-the-box supported tools and files under [defaults/](./defaults) for default configurations. You can also customize your projects tool detection in your project or user-level plugin configuration. The configurations are merged.
+See [settings.plugins.run-and-fix-tests.json](./settings.plugins.run-and-fix-tests.json) (reference file showing all supported build tools) and [defaults/](./defaults) for example default configurations. You can customize tool detection in your project or user-level plugin configuration. Configurations are merged with defaults.
 
 Note: The default `polyglot.json` serves as an example multi-module build (see next section).
 
