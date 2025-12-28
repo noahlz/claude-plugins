@@ -20,17 +20,17 @@ claude-plugins/
 │           └── write-git-commit/
 │               └── scripts/
 └── test/
-    ├── lib/
-    │   └── mocks/
-    ├── fixtures/
-    │   ├── configs/
-    │   ├── cost-arrays/
-    │   ├── metrics/
-    │   └── project-templates/
     ├── dev-workflow/
+    │   ├── fixtures/
+    │   │   ├── configs/
+    │   │   ├── cost-arrays/
+    │   │   ├── metrics/
+    │   │   └── project-templates/
+    │   ├── lib/
+    │   │   └── mocks/
     │   ├── run-and-fix-tests/
     │   └── write-git-commit/
-    └── out/
+    └─ lib/
 ```
 
 ## Development Philosophy
