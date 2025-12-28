@@ -134,7 +134,7 @@ export function createFixture(fixtureName, content, outputPath) {
  * @returns {string} Path to created fixture
  */
 export function createFixtureFromTemplate(templateName, outputPath) {
-  const templatePath = join(TESTS_ROOT, 'fixtures', templateName);
+  const templatePath = join(TESTS_ROOT, 'dev-workflow', 'fixtures', templateName);
   const filePath = outputPath || join(process.cwd(), templateName);
 
   const content = readFileSync(templatePath, 'utf8');
@@ -150,7 +150,7 @@ export function createFixtureFromTemplate(templateName, outputPath) {
  * @returns {string} File contents
  */
 export function readFixture(fixtureName) {
-  const fixturePath = join(TESTS_ROOT, 'fixtures', fixtureName);
+  const fixturePath = join(TESTS_ROOT, 'dev-workflow', 'fixtures', fixtureName);
   return readFileSync(fixturePath, 'utf8');
 }
 
@@ -175,7 +175,7 @@ export function execBashScript(scriptPath, options = {}) {
   const fullEnv = {
     ...process.env,
     ...env,
-    PATH: `${join(TESTS_ROOT, 'lib', 'mocks')}:${process.env.PATH}`
+    PATH: `${join(TESTS_ROOT, 'dev-workflow', 'lib', 'mocks')}:${process.env.PATH}`
   };
 
   try {
@@ -225,7 +225,7 @@ export function sourceBashScript(scriptPath, options = {}) {
   const fullEnv = {
     ...process.env,
     ...env,
-    PATH: `${join(TESTS_ROOT, 'lib', 'mocks')}:${process.env.PATH}`
+    PATH: `${join(TESTS_ROOT, 'dev-workflow', 'lib', 'mocks')}:${process.env.PATH}`
   };
 
   // Source the script and output all env vars
@@ -264,7 +264,7 @@ export function getMockConfig(tmpDir) {
     cwd: tmpDir,
     env: {
       CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
-      PATH: `${join(TESTS_ROOT, 'lib', 'mocks')}:${process.env.PATH}`
+      PATH: `${join(TESTS_ROOT, 'dev-workflow', 'lib', 'mocks')}:${process.env.PATH}`
     }
   };
 }
