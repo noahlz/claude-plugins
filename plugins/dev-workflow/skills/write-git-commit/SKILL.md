@@ -76,28 +76,38 @@ Generate a commit message based on diff changes and the current chat context.
 
 ⚠️ CRITICAL: The user MUST see the commit message before being asked to approve it
 
-→ Output the commit message as TEXT in your response (do NOT use tools):
-  - Add a blank line
-  - Output the complete commit message (subject + body if present)
-  - Add a blank line after
+→ Display the commit message with visual formatting (plain text output, NOT a tool call):
+
+**Format to show user:**
+```
+Proposed commit message:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Subject line]
+
+[Body if present]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+```
 
 **Example:**
 ```
-<blank line>
+Proposed commit message:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Add user authentication feature
 
 - Implement JWT-based auth flow
 - Add login/logout endpoints
-<blank line>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 ```
 
 ⚠️ IMPORTANT:
-  - This MUST be plain text output, NOT a tool call
+  - Output MUST be plain text, NOT a tool call
   - Do NOT batch this with step 1e - display first, THEN ask for approval
-  - The message must be visible to the user before AskUserQuestion is called
+  - Do NOT output internal checkpoint text to the user
 
 ---
-⚠️ CHECKPOINT: Commit message must be displayed above before proceeding to step 1e
+⚠️ CHECKPOINT: Verify message displayed above (this checkpoint text itself should NOT be shown to user)
 ---
 
 ### 1e. Obtain User Approval or Revisions (REQUIRED - DO NOT SKIP)
