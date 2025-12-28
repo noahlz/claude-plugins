@@ -89,16 +89,12 @@ Proposed commit message:
 
 ```
 
-**Example:**
+**Example Subject Line and Body:**
 ```
-Proposed commit message:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Add user authentication feature
 
 - Implement JWT-based auth flow
 - Add login/logout endpoints
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ```
 
 ⚠️ IMPORTANT:
