@@ -24,9 +24,9 @@ export CLAUDE_PLUGIN_ROOT
 
 ## 1. Detect Build Configuration
 
-→ Check if `.claude/settings.plugins.run-and-fix-tests.json` exists
-✓ Config exists → Proceed to step 2
-✗ Config missing → Run detection and auto-config:
+→ Check if `.claude/settings.plugins.run-and-fix-tests.json` exists  
+✓ Config exists → Proceed to step 2  
+✗ Config missing → Run detection and auto-config:  
 
 → Source: `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.sh`
   - Scans project for build tool config files (package.json, pom.xml, build.gradle, etc.)
@@ -40,9 +40,9 @@ export CLAUDE_PLUGIN_ROOT
   - No matching default exists → Use `TEMPLATE.json` placeholder template (user must customize)
   - 0 tools detected → Error: no build tools detected
 
-✓ Config created successfully → Proceed to step 2
-✗ No tools detected → Error, user must create `.claude/settings.plugins.run-and-fix-tests.json` manually
-✗ Using placeholder config → User must edit `.claude/settings.plugins.run-and-fix-tests.json` before step 2
+✓ Config created successfully → Proceed to step 2  
+✗ No tools detected → Error, user must create `.claude/settings.plugins.run-and-fix-tests.json` manually  
+✗ Using placeholder config → User must edit `.claude/settings.plugins.run-and-fix-tests.json` before step 2  
 
 ## 2. Load Configuration
 
@@ -50,7 +50,7 @@ export CLAUDE_PLUGIN_ROOT
 ```bash
 eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "${CLAUDE_PLUGIN_ROOT}")"
 ```
-✗ Script fails → Display error and stop
+✗ Script fails → Display error and stop  
 ✓ Script succeeds → Environment variables set:
   - BUILD_CMD, BUILD_LOG, BUILD_ERROR_PATTERN, BUILD_WORKING_DIR
   - TEST_CMD, TEST_LOG, TEST_ERROR_PATTERN
@@ -58,7 +58,7 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
   - LOG_DIR (tool-specific, e.g., dist/, build/, target/)
   - BUILD_MULTI (true if multi-build, false if single)
 
-→ Check command argument: `TEST_FILE="$1"`
+→ Check command argument: `TEST_FILE="$1"`  
 → Determine mode:
   - `$TEST_FILE` not empty → Single test mode
   - `$TEST_FILE` empty → All tests mode
@@ -70,26 +70,26 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 → Create log directory: `mkdir -p "$LOG_DIR"`
 → Check build type: `$BUILD_MULTI`
 
-**Single Build:**
-→ Change to build working directory: `cd "$BUILD_WORKING_DIR"`
-→ Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
-✓ Exit 0 → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
-✗ Exit non-zero → Return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)
+**Single Build:**  
+→ Change to build working directory: `cd "$BUILD_WORKING_DIR"`  
+→ Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`  
+✓ Exit 0 → Return to INITIAL_PWD, proceed to step 4 (Run Tests)  
+✗ Exit non-zero → Return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)  
 
-**Multi-Build:**
-→ For each build in detected tools:
-  → Change to build working directory
-  → Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
-  → On success: continue to next build
-  → On failure: return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)
+**Multi-Build:**  
+→ For each build in detected tools:  
+  → Change to build working directory  
+  → Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`  
+  → On success: continue to next build  
+  → On failure: return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)  
 
 ✓ All builds succeed → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
 
 ## 3a. Extract Build Errors
 
-→ Try to get language diagnostics from editor using available IDE MCP or LSP tools
-✓ MCP or LSP tool available → Extract errors with precise locations
-✗ Not available → Parse build log at `$BUILD_LOG` using `$BUILD_ERROR_PATTERN` regex
+→ Try to get language diagnostics from editor using available IDE MCP or LSP tools  
+✓ MCP or LSP tool available → Extract errors with precise locations  
+✗ Not available → Parse build log at `$BUILD_LOG` using `$BUILD_ERROR_PATTERN` regex  
 
 → Extract up to 30 distinct compilation errors with:
   - File paths
@@ -132,20 +132,20 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
   - Single test mode: TEST_CMD = `$TEST_SINGLE_CMD` with {testFile} replaced
   - All tests mode: TEST_CMD = `$TEST_CMD`
 
-→ Change to test working directory (if different from build dir)
-→ Execute test command silently to log file: `$TEST_CMD > "$TEST_LOG" 2>&1`
-✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 9 (Success)
-✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 5 (Extract Test Errors)
+→ Change to test working directory (if different from build dir)  
+→ Execute test command silently to log file: `$TEST_CMD > "$TEST_LOG" 2>&1`  
+✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 9 (Success)  
+✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 5 (Extract Test Errors)  
 
 ## 5. Extract Test Errors
 
-→ Parse test log at `$TEST_LOG` to identify failing tests
-→ Extract error patterns from log using `$TEST_ERROR_PATTERN` regex
-→ Identify failing tests (up to 30 distinct failures)
+→ Parse test log at `$TEST_LOG` to identify failing tests  
+→ Extract error patterns from log using `$TEST_ERROR_PATTERN` regex  
+→ Identify failing tests (up to 30 distinct failures)  
 
-✓ 0 failures detected → Proceed to step 9 (Completion)
-✗ 1-30 failures → Display error summary, proceed to step 7
-✗ 30+ failures → Display count, proceed to step 7
+✓ 0 failures detected → Proceed to step 9 (Completion)  
+✗ 1-30 failures → Display error summary, proceed to step 7  
+✗ 30+ failures → Display count, proceed to step 7  
 
 → Display error summary to user with:
   - List of failing test names/paths
@@ -156,20 +156,20 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 → Check failure count from step 5:
 
-**If 30+ failures:**
-⚠️ Display: "30+ tests failed. This is too many for efficient fixing in one chat."
+**If 30+ failures:**  
+⚠️ Display: "30+ tests failed. This is too many for efficient fixing in one chat."  
 → Use AskUserQuestion:
   - "Attempt to fix 30+ tests?" (not recommended)
   - "No, I'll stop and create a plan"
-→ If "No" → Stop (user exits to create plan)
-→ If "Yes" → Continue to step 8
+→ If "No" → Stop (user exits to create plan)  
+→ If "Yes" → Continue to step 8  
 
-**If 1-29 failures:**
-→ Use AskUserQuestion:
+**If 1-29 failures:**  
+→ Use AskUserQuestion:  
   - "Start fixing tests?" (recommended)
   - "No, I'll fix manually"
-→ If "Yes" → Continue to step 8
-→ If "No" → Stop
+→ If "Yes" → Continue to step 8  
+→ If "No" → Stop  
 
 ## 8. Delegate to Test-Fixer Agent
 
@@ -195,8 +195,8 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
   - "Re-run all tests to verify fixes?"
   - "No, stop for now"
 
-✓ User confirms → Proceed to step 4 (Run Tests)
-✗ User declines → Proceed to step 9
+✓ User confirms → Proceed to step 4 (Run Tests)  
+✗ User declines → Proceed to step 9  
 
 ## 9. Completion
 
@@ -209,8 +209,8 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
   - Tests skipped/remaining
   - Root causes addressed
 
-→ Clear todo list with TodoWrite (empty)
-→ Exit
+→ Clear todo list with TodoWrite (empty)  
+→ Exit  
 
 ---
 

@@ -86,7 +86,6 @@ Proposed commit message:
 
 [Body if present]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ```
 
 **Example Subject Line and Body:**
@@ -118,19 +117,19 @@ Add user authentication feature
 → Handle user response:
 
 ✓ If "Accept this message?"
-  → Extract `COMMIT_SUBJECT` (first line)
-  → Extract `COMMIT_BODY` (remaining lines, may be empty)
-  → Proceed to section 2
+  - → Extract `COMMIT_SUBJECT` (first line)
+  - → Extract `COMMIT_BODY` (remaining lines, may be empty)
+  - → Proceed to section 2
 
 ✗ If "Make changes"
-  → Return to step 1c
-  → Regenerate message based on user feedback
-  → Return to step 1e (loop until approved or cancelled)
+  - → Return to step 1c
+  - → Regenerate message based on user feedback
+  - → Return to step 1e (loop until approved or cancelled)
 
 ✗ If "Stop/Cancel commit"
-  → Exit workflow immediately
-  → Do NOT proceed to section 2
-  → Return control to user
+  - → Exit workflow immediately
+  - → Do NOT proceed to section 2
+  - → Return control to user
 
 ---
 ⚠️ CHECKPOINT: Do not proceed past this line without user approval from AskUserQuestion above
@@ -144,13 +143,14 @@ Add user authentication feature
    - If not completed, STOP and return to section 1
 
 → Check if config exists: `bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" check-config`
+
 → Parse JSON output based on status:
 
-✓ If status is "found": Config exists and is valid, proceed to prepare step
-✗ If status is "not_found" or "empty": Config missing, proceed with auto-detection in prepare step
-✗ If status is "invalid": Config file is corrupted, display error and stop
+- ✓ If status is "found": Config exists and is valid, proceed to prepare step 
+- ✗ If status is "not_found" or "empty": Config missing, proceed with auto-detection in prepare step  
+- ✗ If status is "invalid": Config file is corrupted, display error and stop  
 
-→ Run prepare: `bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" prepare`
+→ Run prepare: `bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" prepare`  
 → Parse JSON output based on status:
 
 ✓ If status is "success":
@@ -165,11 +165,14 @@ Add user authentication feature
     - "Yes, use this session ID"
     - "No, let me specify a different ID"
   - If "Yes": Save to config:
+
     ```bash
     mkdir -p .claude
     echo '{"sessionId":"'$detected_id'"}' | jq '.' > .claude/settings.plugins.write-git-commit.json
     ```
+
     Then re-run prepare step
+
   - If "No": Ask user for exact session ID, save to config, re-run prepare
 
 ✗ If status is "error":

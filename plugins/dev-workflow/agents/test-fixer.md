@@ -25,8 +25,8 @@ The skill will provide:
 
 ### 1. Initialize Todo List
 
-→ Use TodoWrite to create todo list with all failed tests:
-  - One item per test: content="Fix [test-name]", activeForm="Fixing [test-name]", status="pending"
+→ Use TodoWrite to create todo list with all failed tests:  
+One item per test: content="Fix [test-name]", activeForm="Fixing [test-name]", status="pending"
 
 ⚠️ **CHECKPOINT:** TodoWrite MUST be called before proceeding to step 2
 
@@ -34,35 +34,31 @@ The skill will provide:
 
 → For each pending test in todo list:
 
-  **2a. Mark in progress**
-  → Update TodoWrite: status = "in_progress"
-  → Initialize RETRY_COUNT = 0
+  **2a. Mark in progress**  
+  → Update TodoWrite: status = "in_progress"  
+  → Initialize RETRY_COUNT = 0  
 
-  **2b. Attempt fix (up to 3 retries)**
-  → Increment RETRY_COUNT
-  → Diagnose failure (in order):
-    1. IDE MCP: `mcp__ide__getDiagnostics` (VSCode) or `mcp__jetbrains__get_file_problems` (IntelliJ)
-    2. If unavailable: Read test file and implementation code
-  → Identify root cause (do not assume simple fixes)
-  → Implement fix (follow Fix Implementation Rules below)
-  → Run test: $TEST_SINGLE_CMD > $TEST_SINGLE_LOG 2>&1
-  → Check exit code
+  **2b. Attempt fix (up to 3 retries)**  
+  - → Increment RETRY_COUNT  
+  - → Diagnose failure by reading test and implementation code  
+  - → Identify root cause (do not assume simple fixes)  
+  - → Implement fix (follow Fix Implementation Rules below)  
+  - → Run test: $TEST_SINGLE_CMD > $TEST_SINGLE_LOG 2>&1  
+  - → Check exit code  
+  - ✓ Test passes (exit 0):  
+    - → Mark TodoWrite: status = "completed"  
+    - → Proceed to 2c  
+  - ✗ Test fails (exit non-zero):  
+    - → If RETRY_COUNT < 3:  
+      - → Display failure reason from TEST_SINGLE_LOG  
+      - → AskUserQuestion: "Attempt to fix again?" → Yes (retry 2b) / No (skip to 2c)  
+    - → If RETRY_COUNT == 3:  
+      - → Display: "Attempted 3 times without success"  
+      - → AskUserQuestion: "Keep trying?" → Yes (retry 2b) / No, skip (skip to 2c) / Stop (go to step 3)  
 
-  ✓ Test passes (exit 0):
-    → Mark TodoWrite: status = "completed"
-    → Proceed to 2c
-
-  ✗ Test fails (exit non-zero):
-    → If RETRY_COUNT < 3:
-      → Display failure reason from TEST_SINGLE_LOG
-      → AskUserQuestion: "Attempt to fix again?" → Yes (retry 2b) / No (skip to 2c)
-    → If RETRY_COUNT == 3:
-      → Display: "Attempted 3 times without success"
-      → AskUserQuestion: "Keep trying?" → Yes (retry 2b) / No, skip (skip to 2c) / Stop (go to step 3)
-
-  **2c. User choice after each test**
-  → If pending tests remain: AskUserQuestion: "Fix next test?" → Yes (loop to 2a) / Stop (go to step 3)
-  → If no pending tests remain: Proceed to step 3
+  **2c. User choice after each test**  
+  → If pending tests remain: AskUserQuestion: "Fix next test?" → Yes (loop to 2a) / Stop (go to step 3)  
+  → If no pending tests remain: Proceed to step 3  
 
 ### 3. Completion
 
@@ -83,8 +79,9 @@ The skill will provide:
 
 **ALWAYS:**
 - Address root causes, not just make tests pass
-- Follow project coding standards and naming conventions
 - Read test assertion + implementation thoroughly before fixing
+- Consider if a failing test is valid (maybe requirements changed or a feature was removed).
+- Follow project coding standards and naming conventions
 - Use AskUserQuestion if requirements/assertions seem wrong or unclear
 - Use AskUserQuestion if backward-compatibility concerns arise
 - Minimize code scope (prefer 1-file fixes over multi-file refactors)
@@ -109,5 +106,5 @@ If unrecoverable error occurs:
 
 ## Communication
 
-Before each edit: one-sentence explanation (root cause + why fix solves it)
-At completion: summary (tests fixed, skipped, root causes identified)
+Before each edit: one-sentence explanation (root cause + why fix solves it)  
+At completion: summary (tests fixed, skipped, root causes identified)  

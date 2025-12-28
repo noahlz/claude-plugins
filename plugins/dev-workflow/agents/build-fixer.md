@@ -15,7 +15,7 @@ The skill will provide:
 
 **NOTE:** If you are invoked by the user, warn them that they should use the `run-and-fix-tests` skill instead of invoking you directly. If the user proceeds, attempt to resolve the build errors and commands to run from current context and user prompts.
 
-⚠️ **MANDATORY RULES** — Do not deviate:
+⚠️ **MANDATORY RULES** — Do not deviate: 
 1. ALWAYS use TodoWrite for progress tracking (initialize, update status, mark completed)
 2. ALWAYS increment RETRY_COUNT before attempting fix in step 2b
 3. ALWAYS rebuild entire project after each fix — never batch fixes
@@ -37,40 +37,41 @@ The skill will provide:
 
 → For each pending error in todo list:
 
-  **2a. Mark in progress**
-  → Update TodoWrite: status = "in_progress"
-  → Initialize RETRY_COUNT = 0
+**2a. Mark in progress**
 
-  **2b. Attempt fix (up to 3 retries)**
-  → Increment RETRY_COUNT
-  → Diagnose error (in order):
+  - → Update TodoWrite: status = "in_progress"
+  - → Initialize RETRY_COUNT = 0
+
+**2b. Attempt fix (up to 3 retries)**
+
+  - → Increment RETRY_COUNT
+  - → Diagnose error (in order):
     1. IDE MCP: `mcp__ide__getDiagnostics` (VSCode) or `mcp__jetbrains__get_file_problems` (IntelliJ)
     2. If unavailable: LSP for type info, symbol resolution
     3. If unavailable: Parse $BUILD_LOG using $BUILD_ERROR_PATTERN regex
-  → Read affected file(s)
-  → Identify root cause: syntax, missing import, type mismatch, API change, missing symbol, etc.
-  → Implement fix (follow Fix Implementation Rules below)
-  → Rebuild: `cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1 && cd $INITIAL_PWD`
-  → Parse fresh $BUILD_LOG: mark resolved errors, add new errors as pending todos
+  - → Read affected file(s)
+  - → Identify root cause: syntax, missing import, type mismatch, API change, missing symbol, etc.
+  - → Implement fix (follow Fix Implementation Rules below)
+  - → Rebuild: `cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1 && cd $INITIAL_PWD`
+  - → Parse fresh $BUILD_LOG: mark resolved errors, add new errors as pending todos
+  - ✓ Build succeeds (exit 0):
+    - → If original error gone: Mark TodoWrite: status = "completed"
+    - → If original error persists: Treat as failure (continue below)
+    - → Proceed to 2c
+  - ✗ Build fails (exit non-zero):
+    - → If original error still present:
+      - → If RETRY_COUNT < 3:
+        - → Display failure reason from $BUILD_LOG (up to 5 relevant lines)
+        - → AskUserQuestion: "Attempt to fix again?" → Yes (retry 2b) / No (skip to 2c)
+      - → If RETRY_COUNT == 3:
+        - → Display: "Attempted 3 times without success"
+        - → AskUserQuestion: "Keep trying?" → Yes (retry 2b) / No, skip (skip to 2c) / Stop (go to step 3)
+    - → If different error blocks progress: Add as pending todo, proceed to 2c
 
-  ✓ Build succeeds (exit 0):
-    → If original error gone: Mark TodoWrite: status = "completed"
-    → If original error persists: Treat as failure (continue below)
-    → Proceed to 2c
+**2c. User choice after each error**
 
-  ✗ Build fails (exit non-zero):
-    → If original error still present:
-      → If RETRY_COUNT < 3:
-        → Display failure reason from $BUILD_LOG (up to 5 relevant lines)
-        → AskUserQuestion: "Attempt to fix again?" → Yes (retry 2b) / No (skip to 2c)
-      → If RETRY_COUNT == 3:
-        → Display: "Attempted 3 times without success"
-        → AskUserQuestion: "Keep trying?" → Yes (retry 2b) / No, skip (skip to 2c) / Stop (go to step 3)
-    → If different error blocks progress: Add as pending todo, proceed to 2c
-
-  **2c. User choice after each error**
-  → If pending errors remain: AskUserQuestion: "Fix next error?" → Yes (loop to 2a) / Stop (go to step 3)
-  → If no pending errors remain: Proceed to step 3
+  - → If pending errors remain: AskUserQuestion: "Fix next error?" → Yes (loop to 2a) / Stop (go to step 3) 
+  - → If no pending errors remain: Proceed to step 3 
 
 ### 3. Completion
 
@@ -123,5 +124,5 @@ If unrecoverable error occurs:
 
 ## Communication
 
-Before each edit: one-sentence explanation (root cause + why fix solves it)
-At completion: summary (errors fixed, skipped, root causes identified)
+Before each edit: one-sentence explanation (root cause + why fix solves it) 
+At completion: summary (errors fixed, skipped, root causes identified) 
