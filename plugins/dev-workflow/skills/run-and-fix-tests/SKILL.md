@@ -111,12 +111,13 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
   - Example error entry: "src/auth.ts:45:12 - TS2304: Cannot find name 'User'"
 
 → Provide env variable values to agent:
-  - BUILD_CMD actual value (e.g., "npm run build")
-  - BUILD_LOG actual path (e.g., "dist/npm-build.log")
-  - BUILD_ERROR_PATTERN actual pattern (e.g., "(error|Error|ERR!)")
-  - BUILD_WORKING_DIR actual path (e.g., ".")
-  - LOG_DIR actual path (e.g., "dist/")
-  - INITIAL_PWD actual path (e.g., "/current/working/directory")
+  - `CLAUDE_PLUGIN_ROOT` actual path (e.g., "/Users/youruser/.claude/plugins/dev-workflow@noahlz.github.io")
+  - `BUILD_CMD` actual value (e.g., "npm run build")
+  - `BUILD_LOG` actual path (e.g., "dist/npm-build.log")
+  - `BUILD_ERROR_PATTERN` actual pattern (e.g., "(error|Error|ERR!)")
+  - `BUILD_WORKING_DIR` actual path (e.g., ".")
+  - `LOG_DIR` actual path (e.g., "dist/")
+  - `INITIAL_PWD` actual path (e.g., "/current/working/directory")
 
 → Agent fixes the errors per its instructions and context provided.
 
@@ -175,28 +176,72 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 
 → Use the `test-fixer` agent to fix failing tests one-by-one.
 
+→ Store agent ID for potential resumption: `TEST_FIXER_AGENT_ID=[agent_id]`
+
 → Provide agent with context in natural language:
   - Failed test list: [bulleted list with test names and error excerpts from step 5]
   - Example failed test entry: "TestLoginFlow (test/auth.test.js) - Expected 'logged in', got undefined"
 
 → Provide env variable values to agent:
-  - TEST_SINGLE_CMD actual value (e.g., "npm test --testNamePattern={testName}")
-  - TEST_SINGLE_LOG actual path (e.g., "logs/test-single.log")
-  - LOG_DIR actual path (e.g., "logs/")
-  - INITIAL_PWD actual path (e.g., "/current/working/directory")
+  - `CLAUDE_PLUGIN_ROOT` actual path
+  - `TEST_SINGLE_CMD` actual value (e.g., "npm test --testNamePattern={testName}")
+  - `TEST_SINGLE_LOG` actual path (e.g., "logs/test-single.log")
+  - `BUILD_CMD` actual value (for compilation checking)
+  - `BUILD_LOG` actual path (for compilation checking)
+  - `BUILD_WORKING_DIR` actual path (for compilation checking)
+  - `LOG_DIR` actual path (e.g., "logs/")
+  - `INITIAL_PWD` actual path (e.g., "/current/working/directory")
 
 → Agent fixes the tests per its instructions and context provided.
 
-✓ Agent completes → Proceed to step 7a
+✓ Agent completes without delegation → Proceed to step 7d  
+🔄 Agent exits with COMPILATION_ERROR delegation → Proceed to step 7b  
 
-## 7a. Ask User to Re-run Tests
+## 7b. Handle Compilation Error Delegation
+
+→ Detect delegation signal in test-fixer's final message:
+  - Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
+
+→ Extract build errors from BUILD_LOG (similar to step 3a)
+
+→ Use AskUserQuestion:
+  - "Test fix introduced compilation errors. Fix them with build-fixer?"
+  - "Yes" → Continue to step 7c
+  - "No" → Proceed to step 7d
+
+## 7c. Invoke Build-Fixer and Resume Test-Fixer
+
+→ Invoke build-fixer agent with compilation errors and env variables:
+  - `CLAUDE_PLUGIN_ROOT` actual path
+  - `BUILD_CMD` actual value
+  - `BUILD_LOG` actual path
+  - `BUILD_ERROR_PATTERN` actual pattern
+  - `BUILD_WORKING_DIR` actual path
+  - `LOG_DIR` actual path
+  - `INITIAL_PWD` actual path
+
+→ After build-fixer completes: Rebuild to verify
+  - `cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1`
+  - If build fails: Return to step 7b (more compilation errors)
+  - If build succeeds: Continue to resume test-fixer
+
+→ Resume test-fixer agent using Task tool with resume parameter:
+  - resume: $TEST_FIXER_AGENT_ID
+  - prompt: "Compilation errors have been resolved by build-fixer. BUILD_LOG shows clean build. Continue with test fix verification."
+
+→ Test-fixer continues from where it left off (re-runs verification)
+
+✓ Test-fixer completes → Proceed to step 7d  
+🔄 Test-fixer delegates again → Loop back to step 7b (compilation errors reintroduced)  
+
+## 7d. Ask User to Re-run Tests
 
 → Use AskUserQuestion:
   - "Re-run all tests to verify fixes?"
   - "No, stop for now"
 
-✓ User confirms → Proceed to step 4 (Run Tests)
-✗ User declines → Proceed to step 8
+✓ User confirms → Proceed to step 4 (Run Tests)  
+✗ User declines → Proceed to step 8  
 
 ## 8. Completion
 
