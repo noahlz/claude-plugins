@@ -88,34 +88,43 @@ eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "$
 ## 3a. Extract Build Errors
 
 → Try to get language diagnostics from editor using available IDE MCP or LSP tools
-✓ MCP or LSP tool available → use it to find and resolve:
-  - File paths with errors
-  - Line numbers and column positions
-  - Error messages and severity
-  - Error codes (if available)
-  → Display compilation errors to user with file:line references
-✗ Editor diagnostics not available or empty → Proceed to log parsing
+✓ MCP or LSP tool available → Extract errors with precise locations
+✗ Not available → Parse build log at `$BUILD_LOG` using `$BUILD_ERROR_PATTERN` regex
 
-→ Parse build log at `$BUILD_LOG` using regex from `$BUILD_ERROR_PATTERN`
 → Extract up to 30 distinct compilation errors with:
   - File paths
-  - Line numbers (if present in log)
-  - Error messages
+  - Line numbers and column positions (if available)
+  - Error messages and error codes
+
 → Display compilation error summary to user
 
 → Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
   - "Yes" → Proceed to step 3b
   - "No" → Stop
 
-## 3b. Fix Compilation Errors
+## 3b. Delegate to Build-Fixer Agent
 
-→ For each compilation error identified:
-  → Read the file with the error
-  → Identify the compilation issue (syntax error, type error, missing import, etc.)
-  → Implement fix to the source code
-  → Mark error as addressed
+→ Use the `build-fixer` agent to fix compilation errors one-by-one.
 
-→ When all errors are addressed, return to step 3 (Build Project)
+→ Provide agent with context in natural language:
+  - Build error list: [bulleted list with file:line:col and error messages from step 3a]
+  - Example error entry: "src/auth.ts:45:12 - TS2304: Cannot find name 'User'"
+
+→ Provide env variable values to agent:
+  - BUILD_CMD actual value (e.g., "npm run build")
+  - BUILD_LOG actual path (e.g., "dist/npm-build.log")
+  - BUILD_ERROR_PATTERN actual pattern (e.g., "(error|Error|ERR!)")
+  - BUILD_WORKING_DIR actual path (e.g., ".")
+  - LOG_DIR actual path (e.g., "dist/")
+  - INITIAL_PWD actual path (e.g., "/current/working/directory")
+
+→ Agent fixes the errors per its instructions and context provided.
+
+✓ Agent completes → Proceed to step 3c
+
+## 3c. Rebuild After Fixes
+
+→ Return to step 3 (Build Project) to verify fixes
 
 ## 4. Run Tests
 

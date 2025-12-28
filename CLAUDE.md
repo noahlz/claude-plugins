@@ -24,12 +24,17 @@ claude-plugins/
 
 ## Development Philosophy
 
-**Script-First Approach**: 
+**Script-First Approach**:
 - Prefer writing and invoking pre-existing scripts over dynamic code generation or ad-hoc commands.
 - When writing new scripts, keep code DRY with shared scripts under a sibling `lib/` directory i.e. `plugins/dev-workflow/skills/lib`
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
 - Write tests for scripts, placing them under `tests/` in directories named for the corresponding skills and plugins.
 - This keeps workflows testable, maintainable, and predictable.
+
+**Agent-Based Error Fixing**:
+- Use agents (in `plugins/dev-workflow/agents/`) to handle iterative fix-verify loops: build-fixer for compilation errors, test-fixer for test failures
+- Agents receive error lists and environment context from skills via natural language descriptions
+- Agents implement the TodoWrite pattern for progress tracking and user control (retry loops, skip/continue prompts)
 
 ## NOTE: Reinstall After Changing
 

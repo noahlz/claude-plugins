@@ -5,7 +5,8 @@ Guides Claude through automatically building, running and fixing your project te
 ## What It Does
 
 - Builds and tests your project using the appropriate build tool
-- Fixes failing tests one by one (with your approval)
+- Fixes compilation errors one by one using the `build-fixer` agent (with your approval)
+- Fixes failing tests one by one using the `test-fixer` agent (with your approval)
 - Supports single test execution: `/test MyTest`
 - Supports multi-module projects with different build tools (custom configuration required)
 
@@ -105,6 +106,14 @@ For multi-module projects, use an array for `build`:
 ### Starting Over
 
 To reset and re-detect your build tools, delete `.claude/settings.plugins.run-and-fix-tests.json` and run `/test` again.
+
+## Agents
+
+**build-fixer**: Fixes compilation errors one-by-one with IDE diagnostics and LSP support. Rebuilds after each fix to catch cascading effects.
+
+**test-fixer**: Fixes failing tests one-by-one by running individual tests to verify each fix.
+
+Both agents offer approval prompts after each fix (continue/skip/stop) to maintain your control.
 
 ## Author
 
