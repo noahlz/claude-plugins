@@ -51,7 +51,7 @@ export function loadSkillConfig(skillName, baseDir = '.') {
  * @returns {object|null} - Parsed default config
  */
 export function loadDefaultSkillConfig(skillName, pluginRoot) {
-  const defaultPath = path.join(pluginRoot, `skills/${skillName}/settings.plugins.${skillName}.json`);
+  const defaultPath = path.join(pluginRoot, `skills/${skillName}/defaults/settings.plugins.${skillName}.json`);
   return parseJsonFile(defaultPath);
 }
 

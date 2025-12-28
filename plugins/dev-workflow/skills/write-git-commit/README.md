@@ -7,13 +7,20 @@ Create git commits with Claude Code. Automatically embeds attribution and sessio
 - Analyzes staged changes and creates a descriptive commit message
 - Automatically embeds Claude Code attribution and session cost metrics as [Git trailers](https://git-scm.com/docs/git-interpret-trailers)
 
+## Prerequisites
+
+- `node` version 18+
+- **ccusage** - Claude Code usage CLI ([ryoppippi/ccusage](https://github.com/ryoppippi/ccusage))
+  - Install: https://ccusage.com/guide/installation#quick-start-recommended
+  - The plugin will try `ccusage`, `npx ccusage`, or `bunx ccusage`
+
 ## Usage
 
 ```bash
-/commit              # Create a commit
+/commit
 ```
 
-Or say: "commit", "write commit", "create commit", "git commit"
+Or tell Claude: "commit", "write commit", "create commit", "git commit"
 
 Requires: staged changes (`git add <files>`)
 
@@ -26,10 +33,11 @@ Co-Authored-By: 🤖 Claude Code <noreply@anthropic.com>
 Claude-Cost-Metrics: {"sessionId":"...","cost":[{"model":"...","inputTokens":N,"outputTokens":N,"cost":N.NN}]}
 ```
 
-**Benefits:**
-- Easy to extract from git history: `git log --all --pretty=format:"%b" | grep "Claude-Cost-Metrics:"`
-- All data stored in git - no separate metrics files
-- Includes model-specific input/output tokens and costs
+Example command that extracts cost metrics from git to a jsonl format: 
+
+```bash
+git log --format="{\"sha\":\"%h\", \"cost\":%(trailers:key=Claude-Cost-Metrics,valueonly,separator=%x09)"
+```
 
 ## Configuration
 
@@ -49,13 +57,6 @@ The skill will verify this session exists in your ccusage data and prompt you to
 ```
 
 **Finding your session ID:** Run `ccusage session --json` to see all available sessions.
-
-## Prerequisites
-
-- Git repository with staged changes
-- **ccusage** - Claude Code usage CLI ([ryoppippi/ccusage](https://github.com/ryoppippi/ccusage))
-  - Install: `npm install -g ccusage` or `bun install -g ccusage`
-  - The plugin will try to use `ccusage`, `npx ccusage`, or `bunx ccusage` in that order
 
 ## Author
 

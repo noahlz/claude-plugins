@@ -20,23 +20,6 @@ npm test
 node --test test/path/to/test.js`
 ```
 
-## Test Structure
-
-```
-test/
-├── helpers.js                   # Common test utilities
-├── lib/mocks/                   # Mock CLI commands for testing
-├── fixtures/
-│   ├── configs/                 # Configuration test data
-│   ├── project-templates/       # Minimal project structures
-│   ├── cost-arrays/             # Cost data samples
-│   └── metrics/                 # Metrics samples
-├── dev-workflow/                # Plugin test suites
-│   ├── run-and-fix-tests/
-│   └── write-git-commit/
-└── run-all-tests.js             # Test runner
-```
-
 ## Test Infrastructure
 
 ### Node.js Test Framework

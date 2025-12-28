@@ -7,7 +7,7 @@ color: orange
 
 ## Workflow
 
-**FIRST**: Read the shared workflow template at `$CLAUDE_PLUGIN_ROOT/agents/COMMON.md` to understand the complete error-fixing workflow, delegation protocol, and fix implementation rules.
+**FIRST**: Read the shared workflow template at `$CLAUDE_PLUGIN_ROOT/common/agent-workflow.md` to understand the complete error-fixing workflow, delegation protocol, and fix implementation rules.
 
 **THEN**: Apply the customizations below.
 

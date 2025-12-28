@@ -24,15 +24,7 @@ export CLAUDE_PLUGIN_ROOT
 
 ## 0a. Check Node.js Installation
 
-→ Verify that Node.js is installed and available:
-```bash
-command -v node >/dev/null 2>&1 || { echo "Error: Node.js is required but not installed. Please install Node.js 18 or later." >&2; exit 1; }
-NODE_VERSION=$(node -v)
-echo "✓ Node.js $NODE_VERSION found"
-```
-
-✓ Node.js available → Proceed to section 1 (Generate and Approve Commit Message)  
-✗ Node.js not found → Error: Exit with message asking user to install Node.js  
+Execute the steps in `${CLAUDE_PLUGIN_ROOT}/common/check-node.md` to determin if node 18+ is available.
 
 ---
 

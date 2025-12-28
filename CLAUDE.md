@@ -7,19 +7,30 @@ A collection of Claude Code [plugins](https://code.claude.com/docs/en/plugins).
 ```
 claude-plugins/
 ├── .claude-plugin/
-│   └── marketplace.json        # Plugin marketplace definition
 ├── plugins/
-│   └── dev-workflow/           # Plugin source code
+│   └── dev-workflow/
 │       ├── agents/
 │       ├── commands/
+│       ├── common/
 │       └── skills/
-│           ├── lib/            # Shared utilities for all skill scripts
+│           ├── lib/
 │           ├── run-and-fix-tests/
-│           │   ├── defaults/   # Default configurations for various languages / build systems.
+│           │   ├── defaults/
 │           │   └── scripts/
 │           └── write-git-commit/
 │               └── scripts/
-└── test/                       # Test suites for scripts used by plugins
+└── test/
+    ├── lib/
+    │   └── mocks/
+    ├── fixtures/
+    │   ├── configs/
+    │   ├── cost-arrays/
+    │   ├── metrics/
+    │   └── project-templates/
+    ├── dev-workflow/
+    │   ├── run-and-fix-tests/
+    │   └── write-git-commit/
+    └── out/
 ```
 
 ## Development Philosophy
