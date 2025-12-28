@@ -28,10 +28,10 @@ export CLAUDE_PLUGIN_ROOT
 ✓ Config exists → Proceed to step 2  
 ✗ Config missing → Run detection and auto-config:  
 
-→ Source: `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.sh`
+→ Execute: `node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.js "${CLAUDE_PLUGIN_ROOT}"`
   - Scans project for build tool config files (package.json, pom.xml, build.gradle, etc.)
   - Detects which tools are present
-  - Automatically selects and applies appropriate default configuration
+  - Outputs JSON array of detected tools with configurations
 
 → Auto-selection rules:
   - Exactly 1 tool detected → Use `defaults/{tool}.json`
@@ -48,7 +48,7 @@ export CLAUDE_PLUGIN_ROOT
 
 → Execute load-config script to output configuration as eval-able statements:
 ```bash
-eval "$(${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.sh "${CLAUDE_PLUGIN_ROOT}")"
+eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.js "${CLAUDE_PLUGIN_ROOT}")"
 ```
 ✗ Script fails → Display error and stop  
 ✓ Script succeeds → Environment variables set:
@@ -140,18 +140,25 @@ Procedure to resume test-fixer agent after build-fixer completes:
 → Create log directory: `mkdir -p "$LOG_DIR"`
 → Check build type: `$BUILD_MULTI`
 
-**Single Build:**  
-→ Change to build working directory: `cd "$BUILD_WORKING_DIR"`  
-→ Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`  
-✓ Exit 0 → Return to INITIAL_PWD, proceed to step 4 (Run Tests)  
-✗ Exit non-zero → Return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)  
+**Single Build (BUILD_MULTI=false):**
+→ Change to build working directory: `cd "$BUILD_WORKING_DIR"`
+→ Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
+✓ Exit 0 → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
+✗ Exit non-zero → Return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)
 
-**Multi-Build:**  
-→ For each build in detected tools:  
-  → Change to build working directory  
-  → Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`  
-  → On success: continue to next build  
-  → On failure: return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)  
+**Multi-Build (BUILD_MULTI=true):**
+→ Iterate through BUILD_COUNT (number of builds):
+  → For each index i from 0 to (BUILD_COUNT - 1):
+    - Extract variables: BUILD_${i}_CMD, BUILD_${i}_LOG, BUILD_${i}_WORKING_DIR, BUILD_${i}_ERROR_PATTERN
+    - Change to: `cd "${BUILD_${i}_WORKING_DIR}"`
+    - Execute: `${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
+    - On exit 0: continue to next build
+    - On exit non-zero: return to INITIAL_PWD, proceed to step 3a with ALL failed builds collected
+
+→ When extracting errors from multiple failed builds:
+  - Parse each failed build's log file
+  - Prefix errors with tool name/location for clarity
+  - Aggregate into single error list for step 3a
 
 ✓ All builds succeed → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
 

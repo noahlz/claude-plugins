@@ -1,15 +1,15 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   setupTestEnv,
   teardownTestEnv,
-  execBashScript,
-  getPluginScriptPath
+  PLUGIN_ROOT
 } from '../../helpers.js';
+import { selectDefault, generatePolyglotConfig } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/select-default.js';
 
-describe('run-and-fix-tests: select-default.sh', () => {
+describe('run-and-fix-tests: select-default.js', () => {
   let testEnv;
 
   beforeEach(() => {
@@ -20,147 +20,212 @@ describe('run-and-fix-tests: select-default.sh', () => {
     teardownTestEnv(testEnv);
   });
 
-  it('script exists and is executable', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'run-and-fix-tests', 'select-default.sh');
-
-    const result = execBashScript('test', {
-      args: ['-x', scriptPath]
-    });
-
-    assert.equal(result.exitCode, 0, 'Script should be executable');
-  });
+  function createToolConfig(toolName) {
+    return {
+      tool: toolName,
+      location: '(project root)',
+      configFile: toolName === 'npm' ? 'package.json' : 'pom.xml',
+      config: {
+        logDir: 'dist',
+        build: {
+          command: toolName === 'npm' ? 'npm run build' : 'mvn clean install',
+          logFile: '{logDir}/build.log',
+          errorPattern: '(error)'
+        },
+        test: {
+          all: {
+            command: toolName === 'npm' ? 'npm test' : 'mvn test',
+            logFile: '{logDir}/test.log',
+            errorPattern: '(FAIL|Error)'
+          },
+          single: {
+            command: toolName === 'npm' ? 'npm test -- {testFile}' : 'mvn test -Dtest={testFile}',
+            logFile: '{logDir}/test-single.log',
+            errorPattern: '(FAIL|Error)'
+          }
+        }
+      }
+    };
+  }
 
   it('handles single npm tool', () => {
-    writeFileSync(join(testEnv.tmpDir, 'package.json'), JSON.stringify({ name: 'test' }));
+    const detectedTools = [createToolConfig('npm')];
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'run-and-fix-tests', 'select-default.sh');
-
-    const result = execBashScript(scriptPath, {
-      cwd: testEnv.tmpDir,
-      env: {
-        DETECTED_TOOLS: JSON.stringify([
-          { tool: 'npm', location: '.' }
-        ]),
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
     });
 
-    assert.equal(result.exitCode, 0, 'Should handle single npm tool');
+    assert.equal(result.source, 'npm.json', 'Should copy npm.json');
+    assert.ok(result.configPath.includes('.claude'), 'Should create in .claude directory');
   });
 
   it('handles single maven tool', () => {
-    mkdirSync(join(testEnv.tmpDir, 'src', 'main', 'java'), { recursive: true });
-    writeFileSync(join(testEnv.tmpDir, 'pom.xml'), '<project></project>');
+    const detectedTools = [createToolConfig('maven')];
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'run-and-fix-tests', 'select-default.sh');
-
-    const result = execBashScript(scriptPath, {
-      cwd: testEnv.tmpDir,
-      env: {
-        DETECTED_TOOLS: JSON.stringify([
-          { tool: 'maven', location: '.' }
-        ]),
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
     });
 
-    assert.equal(result.exitCode, 0, 'Should handle single maven tool');
+    assert.equal(result.source, 'maven.json', 'Should copy maven.json');
+    assert.ok(result.configPath.includes('.claude'), 'Should create in .claude directory');
   });
 
   it('handles single go tool', () => {
-    writeFileSync(join(testEnv.tmpDir, 'go.mod'), 'module test');
+    const detectedTools = [{
+      tool: 'go',
+      location: '(project root)',
+      configFile: 'go.mod',
+      config: {}
+    }];
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'run-and-fix-tests', 'select-default.sh');
-
-    const result = execBashScript(scriptPath, {
-      cwd: testEnv.tmpDir,
-      env: {
-        DETECTED_TOOLS: JSON.stringify([
-          { tool: 'go', location: '.' }
-        ]),
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
     });
 
-    assert.equal(result.exitCode, 0, 'Should handle single go tool');
+    assert.ok(result.configPath.includes('.claude'), 'Should create config');
+    // May use template if no go.json default
+    assert.ok(result.source === 'go.json' || result.source === 'TEMPLATE.json', 'Should use go or template');
   });
 
-  it('handles multiple tools for polyglot project', () => {
-    writeFileSync(join(testEnv.tmpDir, 'package.json'), JSON.stringify({ name: 'frontend' }));
-    mkdirSync(join(testEnv.tmpDir, 'backend', 'src', 'main', 'java'), { recursive: true });
-    writeFileSync(join(testEnv.tmpDir, 'backend', 'pom.xml'), '<project></project>');
+  it('generates polyglot config for multiple tools', () => {
+    const detectedTools = [
+      createToolConfig('npm'),
+      createToolConfig('maven')
+    ];
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'run-and-fix-tests', 'select-default.sh');
-
-    const result = execBashScript(scriptPath, {
-      cwd: testEnv.tmpDir,
-      env: {
-        DETECTED_TOOLS: JSON.stringify([
-          { tool: 'npm', location: '.' },
-          { tool: 'maven', location: 'backend' }
-        ]),
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
     });
 
-    assert.equal(result.exitCode, 0, 'Should handle multiple tools');
+    assert.equal(result.source, 'polyglot', 'Should indicate polyglot config');
+    assert.deepEqual(result.tools, ['npm', 'maven'], 'Should list detected tools');
+
+    // Verify config file was created
+    const configFile = readFileSync(result.configPath, 'utf-8');
+    const config = JSON.parse(configFile);
+    assert.ok(Array.isArray(config.build), 'Should have build array');
+    assert.equal(config.build.length, 2, 'Should have 2 build entries');
   });
 
-  it('respects tool location in config', () => {
-    writeFileSync(join(testEnv.tmpDir, 'package.json'), JSON.stringify({ name: 'test' }));
+  it('respects tool location in polyglot config', () => {
+    const detectedTools = [
+      { ...createToolConfig('npm'), location: '(project root)' },
+      { ...createToolConfig('maven'), location: 'backend' }
+    ];
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'run-and-fix-tests', 'select-default.sh');
-
-    const result = execBashScript(scriptPath, {
-      cwd: testEnv.tmpDir,
-      env: {
-        DETECTED_TOOLS: JSON.stringify([
-          { tool: 'npm', location: 'apps/frontend' }
-        ]),
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
     });
 
-    assert.equal(result.exitCode, 0, 'Should respect tool locations');
+    const configFile = readFileSync(result.configPath, 'utf-8');
+    const config = JSON.parse(configFile);
+
+    assert.equal(config.build[0].workingDir, '.', 'Should convert (project root) to .');
+    assert.equal(config.build[1].workingDir, 'backend', 'Should use backend for second tool');
   });
 
   it('creates config file on disk', () => {
-    writeFileSync(join(testEnv.tmpDir, 'package.json'), JSON.stringify({ name: 'test' }));
+    const detectedTools = [createToolConfig('npm')];
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'run-and-fix-tests', 'select-default.sh');
-
-    const result = execBashScript(scriptPath, {
-      cwd: testEnv.tmpDir,
-      env: {
-        DETECTED_TOOLS: JSON.stringify([
-          { tool: 'npm', location: '.' }
-        ]),
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
     });
 
-    assert.equal(result.exitCode, 0, 'Should create config file');
+    const configFile = readFileSync(result.configPath, 'utf-8');
+    assert.ok(configFile, 'Should create config file');
+
+    const config = JSON.parse(configFile);
+    assert.ok(config.build, 'Config should have build property');
+    assert.ok(config.test, 'Config should have test property');
   });
 
-  it('handles empty detected tools', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'run-and-fix-tests', 'select-default.sh');
+  it('handles empty detected tools with template', () => {
+    const detectedTools = [];
 
-    const result = execBashScript(scriptPath, {
-      cwd: testEnv.tmpDir,
-      env: {
-        DETECTED_TOOLS: JSON.stringify([]),
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
     });
 
-    // Should handle gracefully (error or skip)
-    assert.ok(result.exitCode === 0 || result.exitCode !== 0, 'Should handle empty tools');
+    assert.equal(result.source, 'TEMPLATE.json', 'Should use template for empty tools');
+    assert.ok(result.warnings.length > 0, 'Should emit warnings');
+  });
+
+  it('generates valid polyglot config structure', () => {
+    const detectedTools = [
+      createToolConfig('npm'),
+      createToolConfig('maven')
+    ];
+
+    const config = generatePolyglotConfig(detectedTools, PLUGIN_ROOT);
+
+    assert.ok(config.logDir, 'Should have logDir');
+    assert.ok(Array.isArray(config.build), 'Should have build array');
+    assert.ok(config.test, 'Should have test');
+
+    config.build.forEach(build => {
+      assert.ok(build.tool, 'Each build should have tool');
+      assert.ok(build.command, 'Each build should have command');
+      assert.ok(build.workingDir, 'Each build should have workingDir');
+      assert.ok(build.logFile, 'Each build should have logFile');
+      assert.ok(build.errorPattern, 'Each build should have errorPattern');
+    });
+  });
+
+  it('uses first tool test config for polyglot', () => {
+    const detectedTools = [
+      createToolConfig('npm'),
+      createToolConfig('maven')
+    ];
+
+    const config = generatePolyglotConfig(detectedTools, PLUGIN_ROOT);
+
+    // Should use npm test config (first tool)
+    assert.equal(config.test.all.command, 'npm test', 'Should use first tool test command');
+  });
+
+  it('warns when tool has no default config', () => {
+    const detectedTools = [{
+      tool: 'unknown-tool',
+      location: '(project root)',
+      configFile: 'unknown.txt',
+      config: null // No config available
+    }];
+
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
+    });
+
+    // Should handle gracefully, either with template or warnings
+    assert.ok(result.configPath, 'Should create config path');
+  });
+
+  it('creates .claude directory if missing', () => {
+    const detectedTools = [createToolConfig('npm')];
+
+    const result = selectDefault({
+      detectedTools,
+      pluginRoot: PLUGIN_ROOT,
+      targetDir: testEnv.tmpDir
+    });
+
+    const claudeDir = join(testEnv.tmpDir, '.claude');
+    const configExists = readFileSync(result.configPath, 'utf-8');
+    assert.ok(configExists, 'Should create config in .claude directory');
   });
 });
