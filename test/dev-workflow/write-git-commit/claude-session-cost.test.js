@@ -21,7 +21,7 @@ describe('write-git-commit: claude-session-cost.sh', () => {
   it('returns valid JSON array for valid session ID', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       env: {
         SESSION_ID: '-Users-noahlz-projects-claude-plugins',
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -45,7 +45,7 @@ describe('write-git-commit: claude-session-cost.sh', () => {
   it('includes required fields in output', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       env: {
         SESSION_ID: '-Users-noahlz-projects-claude-plugins',
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -67,7 +67,7 @@ describe('write-git-commit: claude-session-cost.sh', () => {
   it('does not include cache token fields', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       env: {
         SESSION_ID: '-Users-noahlz-projects-claude-plugins',
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -86,7 +86,7 @@ describe('write-git-commit: claude-session-cost.sh', () => {
   it('handles multiple models in session', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       env: {
         SESSION_ID: '-Users-noahlz-projects-claude-plugins',
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -103,7 +103,7 @@ describe('write-git-commit: claude-session-cost.sh', () => {
   it('costs are rounded to 2 decimal places', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       env: {
         SESSION_ID: '-Users-noahlz-projects-claude-plugins',
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -123,7 +123,7 @@ describe('write-git-commit: claude-session-cost.sh', () => {
   it('errors when SESSION_ID not set', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       env: {
         SESSION_ID: '',
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -138,7 +138,7 @@ describe('write-git-commit: claude-session-cost.sh', () => {
   it('errors when ccusage not found', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       env: {
         SESSION_ID: '-Users-noahlz-projects-claude-plugins',
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -153,7 +153,7 @@ describe('write-git-commit: claude-session-cost.sh', () => {
   it('errors when session not found', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       env: {
         SESSION_ID: 'nonexistent-session-id',
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,

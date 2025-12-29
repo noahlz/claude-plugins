@@ -37,7 +37,7 @@ describe('run-and-fix-tests: load-config.js', () => {
   }
 
   function loadConfigFixture(fixtureName, modifyFn) {
-    const fixtureData = readFixture(`configs/${fixtureName}`);
+    const fixtureData = readFixture('dev-workflow', `configs/${fixtureName}`);
     let config = JSON.parse(fixtureData);
     if (modifyFn) {
       config = modifyFn(config);

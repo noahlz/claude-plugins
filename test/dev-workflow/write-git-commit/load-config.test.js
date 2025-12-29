@@ -22,7 +22,7 @@ describe('write-git-commit: load-config.sh', () => {
   });
 
   function loadConfigFixture(sessionId) {
-    const fixtureData = readFixture('configs/write-git-commit-settings.json');
+    const fixtureData = readFixture('dev-workflow', 'configs/write-git-commit-settings.json');
     let config = JSON.parse(fixtureData);
     if (sessionId !== undefined) {
       config.sessionId = sessionId;
@@ -37,7 +37,7 @@ describe('write-git-commit: load-config.sh', () => {
   it('auto-detects session ID from project path when no config exists', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -53,7 +53,7 @@ describe('write-git-commit: load-config.sh', () => {
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -69,7 +69,7 @@ describe('write-git-commit: load-config.sh', () => {
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -86,7 +86,7 @@ describe('write-git-commit: load-config.sh', () => {
     // Don't create a config file
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -100,7 +100,7 @@ describe('write-git-commit: load-config.sh', () => {
   it('converts pwd to session ID format', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -121,7 +121,7 @@ describe('write-git-commit: load-config.sh', () => {
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -139,7 +139,7 @@ describe('write-git-commit: load-config.sh', () => {
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -155,7 +155,7 @@ describe('write-git-commit: load-config.sh', () => {
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,

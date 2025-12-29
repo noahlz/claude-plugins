@@ -4,7 +4,6 @@ import { detectPluginRoot } from '../../lib/common.js';
 import { writeJsonFile, parseJsonFile } from '../../lib/config-loader.js';
 import { copyFile, fileExists, ensureClaudeDir } from '../../lib/file-utils.js';
 import path from 'path';
-import fs from 'fs';
 
 /**
  * Select and apply default configuration based on detected tools

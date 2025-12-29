@@ -6,9 +6,9 @@ import { tmpdir } from 'node:os';
 import { strict as assert } from 'node:assert';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename); // test/
+const __dirname = join(dirname(__filename), '..'); // test/
 const TESTS_ROOT = __dirname; // test/
-const PLUGIN_ROOT = dirname(TESTS_ROOT); // project root (claude-plugins/)
+const PLUGIN_ROOT = join(dirname(TESTS_ROOT), 'plugins'); // project root plugins directory
 
 /**
  * Setup test environment
@@ -128,34 +128,18 @@ export function createFixture(fixtureName, content, outputPath) {
 }
 
 /**
- * Create fixture from template
- * @param {string} templateName - Name of template file in tests/fixtures/
- * @param {string} outputPath - Optional output path
- * @returns {string} Path to created fixture
- */
-export function createFixtureFromTemplate(templateName, outputPath) {
-  const templatePath = join(TESTS_ROOT, 'dev-workflow', 'fixtures', templateName);
-  const filePath = outputPath || join(process.cwd(), templateName);
-
-  const content = readFileSync(templatePath, 'utf8');
-  mkdirSync(dirname(filePath), { recursive: true });
-  writeFileSync(filePath, content);
-
-  return filePath;
-}
-
-/**
  * Read fixture file
  * @param {string} fixtureName - Name of fixture file in tests/fixtures/
  * @returns {string} File contents
  */
-export function readFixture(fixtureName) {
-  const fixturePath = join(TESTS_ROOT, 'dev-workflow', 'fixtures', fixtureName);
+export function readFixture(pluginName, fixtureName) {
+  const fixturePath = join(TESTS_ROOT, pluginName, 'fixtures', fixtureName);
   return readFileSync(fixturePath, 'utf8');
 }
 
 /**
  * Execute bash script and capture output/exit code
+ * @param {string} pluginName - Plugin name
  * @param {string} scriptPath - Path to bash script
  * @param {Object} options - Options object
  * @param {string} options.cwd - Working directory
@@ -164,7 +148,7 @@ export function readFixture(fixtureName) {
  * @param {string[]} options.args - Arguments to pass to script
  * @returns {Object} { exitCode, stdout, stderr }
  */
-export function execBashScript(scriptPath, options = {}) {
+export function execBashScript(pluginName, scriptPath, options = {}) {
   const {
     cwd = process.cwd(),
     env = {},
@@ -175,7 +159,7 @@ export function execBashScript(scriptPath, options = {}) {
   const fullEnv = {
     ...process.env,
     ...env,
-    PATH: `${join(TESTS_ROOT, 'dev-workflow', 'lib', 'mocks')}:${process.env.PATH}`
+    PATH: `${join(TESTS_ROOT, pluginName, 'lib', 'mocks')}:${process.env.PATH}`
   };
 
   try {
@@ -211,62 +195,6 @@ export function execBashScript(scriptPath, options = {}) {
  */
 export function getPluginScriptPath(pluginName, skillName, scriptName) {
   return join(PLUGIN_ROOT, 'plugins', pluginName, 'skills', skillName, 'scripts', scriptName);
-}
-
-/**
- * Read a bash script and extract exported variables by sourcing it
- * @param {string} scriptPath - Path to bash script
- * @param {Object} options - Options (cwd, env, etc)
- * @returns {Object} Exported variables
- */
-export function sourceBashScript(scriptPath, options = {}) {
-  const { cwd = process.cwd(), env = {} } = options;
-
-  const fullEnv = {
-    ...process.env,
-    ...env,
-    PATH: `${join(TESTS_ROOT, 'dev-workflow', 'lib', 'mocks')}:${process.env.PATH}`
-  };
-
-  // Source the script and output all env vars
-  const cmd = `source "${scriptPath}" && env`;
-
-  try {
-    const result = spawnSync('bash', ['-c', cmd], {
-      cwd,
-      env: fullEnv,
-      encoding: 'utf8'
-    });
-
-    const envVars = {};
-    if (result.stdout) {
-      result.stdout.split('\n').forEach(line => {
-        const [key, ...valueParts] = line.split('=');
-        if (key) {
-          envVars[key] = valueParts.join('=');
-        }
-      });
-    }
-
-    return envVars;
-  } catch (e) {
-    throw new Error(`Failed to source script ${scriptPath}: ${e.message}`);
-  }
-}
-
-/**
- * Get test environment helper for setting up mocked CLI tools
- * @param {string} tmpDir - Temporary directory from setupTestEnv
- * @returns {Object} Mock configuration object
- */
-export function getMockConfig(tmpDir) {
-  return {
-    cwd: tmpDir,
-    env: {
-      CLAUDE_PLUGIN_ROOT: PLUGIN_ROOT,
-      PATH: `${join(TESTS_ROOT, 'dev-workflow', 'lib', 'mocks')}:${process.env.PATH}`
-    }
-  };
 }
 
 export { TESTS_ROOT, PLUGIN_ROOT };

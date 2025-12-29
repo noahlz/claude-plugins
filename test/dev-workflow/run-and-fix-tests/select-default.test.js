@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   setupTestEnv,
@@ -22,7 +22,7 @@ describe('run-and-fix-tests: select-default.js', () => {
   });
 
   function createToolConfig(toolName) {
-    const baseConfig = JSON.parse(readFixture('configs/single-build-npm.json'));
+    const baseConfig = JSON.parse(readFixture('dev-workflow', 'configs/single-build-npm.json'));
 
     return {
       tool: toolName,
@@ -37,7 +37,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 
@@ -50,7 +50,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 
@@ -68,7 +68,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 
@@ -85,7 +85,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 
@@ -107,7 +107,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 
@@ -123,7 +123,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 
@@ -140,7 +140,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 
@@ -154,7 +154,7 @@ describe('run-and-fix-tests: select-default.js', () => {
       createToolConfig('maven')
     ];
 
-    const config = generatePolyglotConfig(detectedTools, PLUGIN_ROOT);
+    const config = generatePolyglotConfig(detectedTools, join(PLUGIN_ROOT, 'dev-workflow'));
 
     assert.ok(config.logDir, 'Should have logDir');
     assert.ok(Array.isArray(config.build), 'Should have build array');
@@ -175,7 +175,7 @@ describe('run-and-fix-tests: select-default.js', () => {
       createToolConfig('maven')
     ];
 
-    const config = generatePolyglotConfig(detectedTools, PLUGIN_ROOT);
+    const config = generatePolyglotConfig(detectedTools, join(PLUGIN_ROOT, 'dev-workflow'));
 
     // Should use npm test config (first tool)
     assert.equal(config.test.all.command, 'npm test', 'Should use first tool test command');
@@ -191,7 +191,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 
@@ -204,7 +204,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: PLUGIN_ROOT,
+      pluginRoot: join(PLUGIN_ROOT, 'dev-workflow'),
       targetDir: testEnv.tmpDir
     });
 

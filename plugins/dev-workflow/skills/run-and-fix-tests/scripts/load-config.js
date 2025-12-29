@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-import { detectPluginRoot, formatBashExports, resolvePath, ensureClaudeDir } from '../../lib/common.js';
-import { loadSkillConfig, validateConfig, normalizeOldSchema, isOldSchema, loadAndNormalizeConfig } from '../../lib/config-loader.js';
-import path from 'path';
+import { formatBashExports, resolvePath } from '../../lib/common.js';
+import { loadSkillConfig, validateConfig, normalizeOldSchema, isOldSchema } from '../../lib/config-loader.js';
 
 /**
  * Load and process configuration

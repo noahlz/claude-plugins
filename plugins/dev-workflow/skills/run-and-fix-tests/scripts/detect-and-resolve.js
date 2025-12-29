@@ -4,7 +4,6 @@ import { detectPluginRoot } from '../../lib/common.js';
 import { parseJsonFile, loadDefaultSkillConfig } from '../../lib/config-loader.js';
 import { findFiles, fileExists, getNormalizedDir } from '../../lib/file-utils.js';
 import path from 'path';
-import fs from 'fs';
 
 /**
  * Load tool registry from plugin default config

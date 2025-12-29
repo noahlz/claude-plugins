@@ -46,7 +46,7 @@ describe('write-git-commit: commit-workflow.sh', () => {
   it('executes prepare action', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       args: ['prepare'],
       cwd: testEnv.tmpDir,
       env: {
@@ -67,7 +67,7 @@ describe('write-git-commit: commit-workflow.sh', () => {
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       args: ['commit', 'Test commit message'],
       cwd: testEnv.tmpDir,
       env: {
@@ -88,7 +88,7 @@ describe('write-git-commit: commit-workflow.sh', () => {
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       args: ['commit', 'Test commit', 'Detailed commit body'],
       cwd: testEnv.tmpDir,
       env: {
@@ -103,7 +103,7 @@ describe('write-git-commit: commit-workflow.sh', () => {
   it('executes create-commit action', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       args: ['create-commit', 'Commit message'],
       cwd: testEnv.tmpDir,
       env: {
@@ -119,7 +119,7 @@ describe('write-git-commit: commit-workflow.sh', () => {
   it('handles unknown action gracefully', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
 
-    const result = execBashScript(scriptPath, {
+    const result = execBashScript('dev-workflow', scriptPath, {
       args: ['unknown-action'],
       cwd: testEnv.tmpDir,
       env: {
@@ -134,7 +134,7 @@ describe('write-git-commit: commit-workflow.sh', () => {
 
   it('script exists and is executable', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
-    const stat = execBashScript('test', {
+    const stat = execBashScript('dev-workflow', 'test', {
       args: ['-x', scriptPath]
     });
 
