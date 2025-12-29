@@ -17,7 +17,21 @@ npm test
 **Run a single test**
 
 ```bash
-node --test test/path/to/test.js`
+npm test -- test/path/to/test.js
+```
+
+**Run tests matching a pattern**
+
+```bash
+npm test -- test/dev-workflow/lib/*.test.js
+```
+
+**Alternative: Run tests directly with Node.js**
+
+You can bypass the test runner and run tests directly, but you'll lose dual output (TAP file generation) and summary reordering:
+
+```bash
+node --test test/path/to/test.js
 ```
 
 ## Test Infrastructure

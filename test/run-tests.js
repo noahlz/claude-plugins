@@ -11,6 +11,12 @@ const tapLogFile = join(distDir, 'test-results.tap');
 
 mkdirSync(distDir, { recursive: true });
 
+// Get test files from command line args or default to all tests
+const args = process.argv.slice(2);
+const testFiles = args.length > 0
+  ? args
+  : [join(__dirname, 'dev-workflow/**/*.test.js')];
+
 const result = spawnSync(
   'node',
   [
@@ -19,7 +25,7 @@ const result = spawnSync(
     '--test-reporter=tap',
     '--test-reporter-destination=stdout',
     `--test-reporter-destination=${tapLogFile}`,
-    join(__dirname, 'dev-workflow/**/*.test.js')
+    ...testFiles
   ],
   {
     stdio: ['inherit', 'pipe', 'pipe'],
