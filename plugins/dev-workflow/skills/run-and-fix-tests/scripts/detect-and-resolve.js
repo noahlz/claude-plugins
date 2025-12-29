@@ -11,7 +11,7 @@ import path from 'path';
  * @returns {object|null} - Tools registry
  */
 export function loadToolRegistry(pluginRoot) {
-  const registry = loadDefaultSkillConfig('run-and-fix-tests', pluginRoot);
+  const registry = loadDefaultSkillConfig('dev-workflow', 'run-and-fix-tests', pluginRoot);
   return registry && registry.tools ? registry.tools : null;
 }
 

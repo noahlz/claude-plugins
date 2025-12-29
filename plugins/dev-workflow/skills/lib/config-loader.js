@@ -50,8 +50,8 @@ export function loadSkillConfig(skillName, baseDir = '.') {
  * @param {string} pluginRoot - Plugin root directory
  * @returns {object|null} - Parsed default config
  */
-export function loadDefaultSkillConfig(skillName, pluginRoot) {
-  const defaultPath = path.join(pluginRoot, `skills/${skillName}/defaults/settings.plugins.${skillName}.json`);
+export function loadDefaultSkillConfig(pluginName, skillName, pluginRoot) {
+  const defaultPath = path.join(pluginRoot, `${pluginName}/skills/${skillName}/defaults/settings.plugins.${skillName}.json`);
   return parseJsonFile(defaultPath);
 }
 
@@ -210,7 +210,7 @@ export function loadAndNormalizeConfig(options) {
   const warnings = [];
 
   // Load default and project configs
-  const defaultConfig = loadDefaultSkillConfig(skillName, pluginRoot);
+  const defaultConfig = loadDefaultSkillConfig('dev-workflow', skillName, pluginRoot);
   const projectConfig = loadSkillConfig(skillName, baseDir);
 
   // Merge if both exist
