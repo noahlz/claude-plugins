@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 
 import { detectPluginRoot } from '../../lib/common.js';
-import { parseJsonFile, loadDefaultSkillConfig } from '../../lib/config-loader.js';
+import { parseJsonFile } from '../../lib/config-loader.js';
 import { findFiles, fileExists, getNormalizedDir } from '../../lib/file-utils.js';
 import path from 'path';
 
 /**
  * Load tool registry from plugin default config
- * @param {string} pluginRoot - Plugin root directory
+ * @param {string} pluginRoot - Plugin root directory (specific plugin, e.g., /path/to/plugins/dev-workflow)
  * @returns {object|null} - Tools registry
  */
 export function loadToolRegistry(pluginRoot) {
-  const registry = loadDefaultSkillConfig('dev-workflow', 'run-and-fix-tests', pluginRoot);
+  const registryPath = path.join(pluginRoot, 'skills/run-and-fix-tests/defaults/settings.plugins.run-and-fix-tests.json');
+  const registry = parseJsonFile(registryPath);
   return registry && registry.tools ? registry.tools : null;
 }
 
@@ -80,7 +81,7 @@ export function detectTools(options = {}) {
 
       detected.push({
         tool: toolName,
-        location: getNormalizedDir(foundPath),
+        location: getNormalizedDir(foundPath, rootDir),
         configFile: path.basename(foundPath),
         config: toolConfig
       });

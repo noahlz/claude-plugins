@@ -100,13 +100,17 @@ export function dirExists(dirPath) {
 
 /**
  * Get directory name from file path, normalized
- * Returns "(project root)" for "." paths
+ * Returns "(project root)" for "." paths or when file is in rootDir
  * @param {string} filePath - File path
+ * @param {string} rootDir - Root directory to compare against (defaults to '.')
  * @returns {string}
  */
-export function getNormalizedDir(filePath) {
+export function getNormalizedDir(filePath, rootDir = '.') {
   const dir = path.dirname(filePath);
-  if (dir === '.' || dir === '') {
+  const resolvedDir = path.resolve(dir);
+  const resolvedRoot = path.resolve(rootDir);
+
+  if (dir === '.' || dir === '' || resolvedDir === resolvedRoot) {
     return '(project root)';
   }
   return dir;

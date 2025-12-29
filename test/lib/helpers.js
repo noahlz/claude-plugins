@@ -1,4 +1,4 @@
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -195,6 +195,15 @@ export function execBashScript(pluginName, scriptPath, options = {}) {
  */
 export function getPluginScriptPath(pluginName, skillName, scriptName) {
   return join(PLUGIN_ROOT, 'plugins', pluginName, 'skills', skillName, 'scripts', scriptName);
+}
+
+/**
+ * Get specific plugin root directory
+ * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
+ * @returns {string} - Path to plugin root
+ */
+export function getPluginRoot(pluginName) {
+  return join(PLUGIN_ROOT, pluginName);
 }
 
 export { TESTS_ROOT, PLUGIN_ROOT };
