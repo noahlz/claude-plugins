@@ -108,14 +108,17 @@ export function generatePolyglotConfig(detectedTools, pluginRoot) {
 
   // Build array from detected tools
   const buildArray = detectedTools
-    .filter(tool => tool.config && tool.config.build) // Skip tools without build config
-    .map(tool => ({
-      tool: tool.tool,
-      workingDir: tool.location === '(project root)' ? '.' : tool.location,
-      command: tool.config.build.command,
-      logFile: `{logDir}/${tool.tool}-build.log`,
-      errorPattern: tool.config.build.errorPattern
-    }));
+    .filter(tool => tool.config && tool.config.build && Array.isArray(tool.config.build) && tool.config.build.length > 0)
+    .map(tool => {
+      const build = tool.config.build[0]; // Get first build step
+      return {
+        tool: tool.tool,
+        workingDir: build.workingDir || (tool.location === '(project root)' ? '.' : tool.location),
+        command: build.command,
+        logFile: `{logDir}/${tool.tool}-build.log`,
+        errorPattern: build.errorPattern
+      };
+    });
 
   // Use first tool's test config (could be made configurable)
   let testConfig = template.test || {

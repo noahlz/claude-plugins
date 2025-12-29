@@ -1,10 +1,12 @@
 {
   "logDir": "target",
-  "build": {
-    "command": "cargo build",
-    "logFile": "{logDir}/rust.log",
-    "errorPattern": "error\\[|error:"
-  },
+  "build": [
+    {
+      "command": "cargo build",
+      "logFile": "{logDir}/rust.log",
+      "errorPattern": "error\\[|error:"
+    }
+  ],
   "test": {
     "all": {
       "command": "cargo test",

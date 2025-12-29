@@ -52,8 +52,8 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     assert.equal(result.errors.length, 0, 'Should have no errors');
     assert.ok(result.config, 'Should load config');
-    assert.equal(result.env.BUILD_MULTI, 'false', 'Should indicate single-build mode');
-    assert.equal(result.env.BUILD_CMD, 'npm run build', 'Should set BUILD_CMD');
+    assert.equal(result.env.BUILD_COUNT, '1', 'Should indicate single build');
+    assert.equal(result.env.BUILD_0_CMD, 'npm run build', 'Should set BUILD_0_CMD');
   });
 
   it('resolves {logDir} variable in paths', () => {
@@ -64,7 +64,7 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
 
-    assert.equal(result.env.BUILD_LOG, 'build-logs/build.log', 'Should resolve {logDir}');
+    assert.equal(result.env.BUILD_0_LOG, 'build-logs/build.log', 'Should resolve {logDir}');
     assert.equal(result.env.TEST_LOG, 'build-logs/test.log', 'Should resolve {logDir} for test');
   });
 
@@ -74,23 +74,11 @@ describe('run-and-fix-tests: load-config.js', () => {
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
 
     assert.equal(result.errors.length, 0, 'Should handle multi-build config');
-    assert.equal(result.env.BUILD_MULTI, 'true', 'Should indicate multi-build mode');
     assert.equal(result.env.BUILD_COUNT, '2', 'Should set BUILD_COUNT');
     assert.equal(result.env.BUILD_0_CMD, 'npm run build', 'Should set BUILD_0_CMD');
     assert.equal(result.env.BUILD_1_CMD, 'mvn clean install', 'Should set BUILD_1_CMD');
     assert.equal(result.env.BUILD_0_WORKING_DIR, 'frontend', 'Should set BUILD_0_WORKING_DIR');
     assert.equal(result.env.BUILD_1_WORKING_DIR, 'backend', 'Should set BUILD_1_WORKING_DIR');
-  });
-
-  it('normalizes old schema (buildTools array)', () => {
-    loadConfigFixture('old-schema-buildtools.json');
-
-    const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
-
-    assert.equal(result.errors.length, 0, 'Should load old schema');
-    assert.ok(result.warnings.length > 0, 'Should emit deprecation warning');
-    assert.match(result.warnings[0], /deprecated/, 'Warning should mention deprecation');
-    assert.equal(result.env.BUILD_CMD, 'npm run build', 'Should normalize BUILD_CMD');
   });
 
   it('validates required fields', () => {
@@ -109,13 +97,13 @@ describe('run-and-fix-tests: load-config.js', () => {
     const env = result.env;
 
     // All env vars should be strings
-    assert.equal(typeof env.BUILD_CMD, 'string');
-    assert.equal(typeof env.BUILD_MULTI, 'string');
+    assert.equal(typeof env.BUILD_0_CMD, 'string');
+    assert.equal(typeof env.BUILD_COUNT, 'string');
     assert.equal(typeof env.LOG_DIR, 'string');
 
     // formatBashExports should produce valid bash
     const bashExports = JSON.stringify(env).replace(/export /g, 'export ');
-    assert.ok(bashExports.includes('BUILD_CMD'), 'Should include BUILD_CMD in exports');
+    assert.ok(bashExports.includes('BUILD_0_CMD'), 'Should include BUILD_0_CMD in exports');
   });
 
   it('errors when config file missing', () => {
@@ -135,19 +123,19 @@ describe('run-and-fix-tests: load-config.js', () => {
 
   it('exports working directory for single build', () => {
     loadConfigFixture('single-build-npm.json', (config) => {
-      config.build.workingDir = 'frontend';
+      config.build[0].workingDir = 'frontend';
       return config;
     });
 
     const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
 
-    assert.equal(result.env.BUILD_WORKING_DIR, 'frontend', 'Should export working directory');
+    assert.equal(result.env.BUILD_0_WORKING_DIR, 'frontend', 'Should export working directory');
   });
 
   it('auto-detects skip when build command equals test command', () => {
     loadConfigFixture('single-build-npm.json', (config) => {
       // Make build and test commands identical (like test-only projects)
-      config.build.command = 'npm test';
+      config.build[0].command = 'npm test';
       config.test.all.command = 'npm test';
       return config;
     });
@@ -161,7 +149,7 @@ describe('run-and-fix-tests: load-config.js', () => {
   it('respects explicit skipBuild=true flag', () => {
     loadConfigFixture('single-build-npm.json', (config) => {
       config.skipBuild = true;
-      // Can omit build command when skipBuild is true
+      // Can omit build array when skipBuild is true
       config.build = null;
       return config;
     });
@@ -177,7 +165,7 @@ describe('run-and-fix-tests: load-config.js', () => {
       // Set skipBuild explicitly to false to override auto-detection
       config.skipBuild = false;
       // Commands are still identical, but should not skip
-      config.build.command = 'npm test';
+      config.build[0].command = 'npm test';
       config.test.all.command = 'npm test';
       return config;
     });
@@ -190,7 +178,7 @@ describe('run-and-fix-tests: load-config.js', () => {
 
   it('does not auto-skip for multi-build configs', () => {
     loadConfigFixture('multi-build-polyglot.json', (config) => {
-      // Multi-build should never auto-skip even if commands somehow match
+      // Multi-build (BUILD_COUNT > 1) should never auto-skip
       return config;
     });
 

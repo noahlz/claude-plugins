@@ -1,11 +1,12 @@
 {
   "logDir": "target/logs",
-  "build": {
-    "tool": "sbt",
-    "command": "sbt clean compile",
-    "logFile": "{logDir}/sbt.log",
-    "errorPattern": "\\[error\\]|error:"
-  },
+  "build": [
+    {
+      "command": "sbt clean compile",
+      "logFile": "{logDir}/sbt.log",
+      "errorPattern": "\\[error\\]|error:"
+    }
+  ],
   "test": {
     "all": {
       "command": "sbt test",

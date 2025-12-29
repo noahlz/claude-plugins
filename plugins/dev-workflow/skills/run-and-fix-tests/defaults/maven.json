@@ -1,11 +1,12 @@
 {
   "logDir": "target/logs",
-  "build": {
-    "tool": "maven",
-    "command": "mvn clean install --quiet --log-file {logFile}",
-    "logFile": "{logDir}/build.log",
-    "errorPattern": "\\[ERROR\\]"
-  },
+  "build": [
+    {
+      "command": "mvn clean install --quiet --log-file {logFile}",
+      "logFile": "{logDir}/build.log",
+      "errorPattern": "\\[ERROR\\]"
+    }
+  ],
   "test": {
     "all": {
       "command": "mvn test --quiet --log-file {logFile}",

@@ -1,5 +1,6 @@
 {
   "logDir": "dist",
+  "skipBuild": true,
   "test": {
     "all": {
       "command": "./tests/run-all-tests.sh",

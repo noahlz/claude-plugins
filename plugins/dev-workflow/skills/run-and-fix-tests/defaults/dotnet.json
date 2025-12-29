@@ -1,10 +1,12 @@
 {
   "logDir": "bin",
-  "build": {
-    "command": "dotnet build",
-    "logFile": "{logDir}/dotnet.log",
-    "errorPattern": "error CS|FAILED"
-  },
+  "build": [
+    {
+      "command": "dotnet build",
+      "logFile": "{logDir}/dotnet.log",
+      "errorPattern": "error CS|FAILED"
+    }
+  ],
   "test": {
     "all": {
       "command": "dotnet test",

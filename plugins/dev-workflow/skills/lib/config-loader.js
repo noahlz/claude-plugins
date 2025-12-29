@@ -83,81 +83,26 @@ export function mergeConfigs(defaultObj, projectObj) {
 }
 
 /**
- * Check if config uses old schema (buildTools array)
- * @param {object} config - Config object
- * @returns {boolean}
- */
-export function isOldSchema(config) {
-  return config && Array.isArray(config.buildTools);
-}
-
-/**
- * Normalize old schema to new schema
- * Old schema: { buildTools: [{ buildCmd, buildLog, buildErrorPattern, ... }] }
- * New schema: { build: { command, logFile, errorPattern, ... } }
- * @param {object} config - Config object with old schema
- * @returns {object} - Normalized config with new schema
- */
-export function normalizeOldSchema(config) {
-  if (!isOldSchema(config)) {
-    return config;
-  }
-
-  const tool = config.buildTools[0];
-  const normalized = {
-    logDir: tool.logDir || 'dist',
-    build: {
-      command: tool.buildCmd,
-      logFile: tool.buildLog,
-      errorPattern: tool.buildErrorPattern
-    },
-    test: {
-      all: {
-        command: tool.testCmd,
-        logFile: tool.testLog,
-        errorPattern: tool.testErrorPattern
-      },
-      single: {
-        command: tool.testSingleCmd,
-        logFile: tool.testSingleLog,
-        errorPattern: tool.testSingleErrorPattern
-      }
-    }
-  };
-
-  // Preserve any other top-level properties
-  for (const key in config) {
-    if (key !== 'buildTools' && !normalized.hasOwnProperty(key)) {
-      normalized[key] = config[key];
-    }
-  }
-
-  return normalized;
-}
-
-/**
- * Validate build configuration
- * @param {object|array} buildConfig - Build configuration (single or multi)
+ * Validate build configuration (array format)
+ * @param {array} buildConfig - Build configuration array
  * @param {array} errors - Errors array to append to
  */
 function validateBuildConfig(buildConfig, errors) {
-  // For single-build (build is object)
   if (!Array.isArray(buildConfig)) {
-    if (!buildConfig.command) errors.push('build.command is required');
-    if (!buildConfig.logFile) errors.push('build.logFile is required');
-    if (!buildConfig.errorPattern) errors.push('build.errorPattern is required');
-  } else {
-    // For multi-build (build is array)
-    if (buildConfig.length === 0) {
-      errors.push('build array cannot be empty');
-    }
-
-    buildConfig.forEach((build, idx) => {
-      if (!build.command) errors.push(`build[${idx}].command is required`);
-      if (!build.logFile) errors.push(`build[${idx}].logFile is required`);
-      if (!build.errorPattern) errors.push(`build[${idx}].errorPattern is required`);
-    });
+    errors.push('build must be an array');
+    return;
   }
+
+  if (buildConfig.length === 0) {
+    errors.push('build array cannot be empty');
+    return;
+  }
+
+  buildConfig.forEach((build, idx) => {
+    if (!build.command) errors.push(`build[${idx}].command is required`);
+    if (!build.logFile) errors.push(`build[${idx}].logFile is required`);
+    if (!build.errorPattern) errors.push(`build[${idx}].errorPattern is required`);
+  });
 }
 
 /**
@@ -177,7 +122,6 @@ export function validateConfig(config) {
   if (config.skipBuild === true) {
     // When skipBuild is explicitly true, build config is optional
     if (config.build) {
-      // If build is provided, validate it
       validateBuildConfig(config.build, errors);
     }
   } else {
@@ -216,7 +160,7 @@ export function validateConfig(config) {
 }
 
 /**
- * Load and normalize config from various sources
+ * Load config from various sources
  * @param {object} options - Options
  * @param {string} options.skillName - Skill name
  * @param {string} options.pluginRoot - Plugin root directory
@@ -234,11 +178,5 @@ export function loadAndNormalizeConfig(options) {
   // Merge if both exist
   const merged = mergeConfigs(defaultConfig, projectConfig || {});
 
-  // Normalize old schema
-  if (isOldSchema(merged)) {
-    warnings.push('Using deprecated buildTools schema. Please update to new build/test schema.');
-  }
-  const normalized = normalizeOldSchema(merged);
-
-  return { config: normalized, warnings };
+  return { config: merged, warnings };
 }

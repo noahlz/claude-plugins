@@ -56,18 +56,19 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 ```
 ✗ Script fails → Display error and stop  
 ✓ Script succeeds → Environment variables set:
-  - BUILD_CMD, BUILD_LOG, BUILD_ERROR_PATTERN, BUILD_WORKING_DIR
+  - BUILD_COUNT, BUILD_{i}_CMD, BUILD_{i}_LOG, BUILD_{i}_ERROR_PATTERN, BUILD_{i}_WORKING_DIR (for each build step)
   - TEST_CMD, TEST_LOG, TEST_ERROR_PATTERN
   - TEST_SINGLE_CMD, TEST_SINGLE_LOG, TEST_SINGLE_ERROR_PATTERN
   - LOG_DIR (tool-specific, e.g., dist/, build/, target/)
-  - BUILD_MULTI (true if multi-build, false if single)
 
-→ Check command argument: `TEST_FILE="$1"`  
+→ Check command argument: `TEST_FILE="$1"`
 → Determine mode:
   - `$TEST_FILE` not empty → Single test mode
   - `$TEST_FILE` empty → All tests mode
 
 → Store initial working directory: `INITIAL_PWD=$(pwd)`
+
+→ Determine build count: `BUILD_COUNT=$BUILD_COUNT` (number of indexed build steps)
 
 ## Common Definitions
 
@@ -75,10 +76,11 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 
 Environment variables to provide when delegating to build-fixer agent:
 - `CLAUDE_PLUGIN_ROOT` - actual path (e.g., "/Users/user/.claude/plugins/dev-workflow@noahlz.github.io")
-- `BUILD_CMD` - actual value (e.g., "npm run build")
-- `BUILD_LOG` - actual path (e.g., "dist/npm-build.log")
-- `BUILD_ERROR_PATTERN` - actual pattern (e.g., "(error|Error|ERR!)")
-- `BUILD_WORKING_DIR` - actual path (e.g., ".")
+- `BUILD_COUNT` - number of build steps (e.g., "1" or "2")
+- `BUILD_{i}_CMD` - actual command for step i (e.g., "npm run build")
+- `BUILD_{i}_LOG` - actual log path for step i (e.g., "dist/npm-build.log")
+- `BUILD_{i}_ERROR_PATTERN` - actual pattern for step i (e.g., "(error|Error|ERR!)")
+- `BUILD_{i}_WORKING_DIR` - actual path for step i (e.g., ".")
 - `LOG_DIR` - actual path (e.g., "dist/")
 - `INITIAL_PWD` - actual path (e.g., "/current/working/directory")
 - `SKIP_BUILD` - "true" or "false" (whether build step was skipped)
@@ -123,12 +125,13 @@ Procedure to delegate to build-fixer agent:
 
 Procedure to rebuild project and verify compilation:
 
-→ Change to build working directory and rebuild:
-  `cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1 && cd $INITIAL_PWD`
+→ Iterate through all builds by index (0 to BUILD_COUNT-1):
+  - For each i: `cd "${BUILD_${i}_WORKING_DIR}" && ${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
+  - Track exit codes for each build step
 
-→ Check exit code:
-  - Exit 0 → Build succeeded
-  - Exit non-zero → Build failed, check BUILD_LOG for errors
+→ After all builds complete:
+  - Exit 0 (all succeeded) → Return to INITIAL_PWD, build succeeded
+  - Exit non-zero (any failed) → Return to INITIAL_PWD, check logs for errors
 
 ### RESUME_TEST_FIXER
 
@@ -150,27 +153,19 @@ Procedure to resume test-fixer agent after build-fixer completes:
 
 **Run Build (SKIP_BUILD=false):**
 → Create log directory: `mkdir -p "$LOG_DIR"`
-→ Check build type: `$BUILD_MULTI`
-
-**Single Build (BUILD_MULTI=false):**
-→ Change to build working directory: `cd "$BUILD_WORKING_DIR"`
-→ Execute build command silently to log file: `$BUILD_CMD > "$BUILD_LOG" 2>&1`
-✓ Exit 0 → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
-✗ Exit non-zero → Return to INITIAL_PWD, proceed to step 3a (Extract Build Errors)
-
-**Multi-Build (BUILD_MULTI=true):**
-→ Iterate through BUILD_COUNT (number of builds):
+→ Iterate through all builds by index:
   → For each index i from 0 to (BUILD_COUNT - 1):
     - Extract variables: BUILD_${i}_CMD, BUILD_${i}_LOG, BUILD_${i}_WORKING_DIR, BUILD_${i}_ERROR_PATTERN
-    - Change to: `cd "${BUILD_${i}_WORKING_DIR}"`
-    - Execute: `${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
-    - On exit 0: continue to next build
-    - On exit non-zero: return to INITIAL_PWD, proceed to step 3a with ALL failed builds collected
+    - Change to working directory: `cd "${BUILD_${i}_WORKING_DIR}"`
+    - Execute build command: `${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
+    - Check exit code:
+      - Exit 0: continue to next build
+      - Exit non-zero: record failure, continue collecting all errors
 
-→ When extracting errors from multiple failed builds:
-  - Parse each failed build's log file
-  - Prefix errors with tool name/location for clarity
-  - Aggregate into single error list for step 3a
+→ When builds fail:
+  - Collect error logs from all failed builds
+  - Parse each log using its specific BUILD_${i}_ERROR_PATTERN
+  - Return to INITIAL_PWD, proceed to step 3a with aggregated error list
 
 ✓ All builds succeed → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
 

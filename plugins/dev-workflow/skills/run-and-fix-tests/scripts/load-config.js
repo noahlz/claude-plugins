@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { formatBashExports, resolvePath } from '../../lib/common.js';
-import { loadSkillConfig, validateConfig, normalizeOldSchema, isOldSchema } from '../../lib/config-loader.js';
+import { loadSkillConfig, validateConfig } from '../../lib/config-loader.js';
 
 /**
  * Load and process configuration
@@ -22,11 +22,7 @@ export function loadConfig(options = {}) {
     return { config: null, env: {}, errors, warnings };
   }
 
-  // Check for old schema and normalize
-  if (isOldSchema(projectConfig)) {
-    warnings.push('Using deprecated buildTools schema. Please update to new build/test schema.');
-  }
-  const config = normalizeOldSchema(projectConfig);
+  const config = projectConfig;
 
   // Validate config
   const validationErrors = validateConfig(config);
@@ -50,20 +46,8 @@ export function generateEnv(config, baseDir = '.') {
   const env = {};
   const logDir = config.logDir || 'dist';
 
-  // Determine single vs multi-build mode
-  const isSingleBuild = !Array.isArray(config.build);
-
-  env.BUILD_MULTI = isSingleBuild ? 'false' : 'true';
-
-  if (isSingleBuild && config.build) {
-    // Single-build mode (only if build config exists)
-    const build = config.build;
-    env.BUILD_CMD = build.command;
-    env.BUILD_LOG = resolvePath(build.logFile, { logDir });
-    env.BUILD_ERROR_PATTERN = build.errorPattern;
-    env.BUILD_WORKING_DIR = build.workingDir || '.';
-  } else if (Array.isArray(config.build)) {
-    // Multi-build mode
+  // Build configuration (always array format)
+  if (config.build && Array.isArray(config.build)) {
     env.BUILD_COUNT = config.build.length.toString();
     config.build.forEach((build, idx) => {
       env[`BUILD_${idx}_CMD`] = build.command;
@@ -90,8 +74,8 @@ export function generateEnv(config, baseDir = '.') {
   // Check explicit flag first (allows override)
   if (config.skipBuild !== undefined) {
     skipBuild = config.skipBuild;
-  } else if (isSingleBuild && env.BUILD_CMD === env.TEST_CMD) {
-    // Auto-detect: build and test are identical
+  } else if (config.build && config.build.length === 1 && env.BUILD_0_CMD === env.TEST_CMD) {
+    // Auto-detect: single build command matches test command
     skipBuild = true;
   }
 

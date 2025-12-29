@@ -1,10 +1,12 @@
 {
   "logDir": "dist",
-  "build": {
-    "command": "npm run build",
-    "logFile": "{logDir}/build.log",
-    "errorPattern": "(error|Error|ERR!)"
-  },
+  "build": [
+    {
+      "command": "npm run build",
+      "logFile": "{logDir}/build.log",
+      "errorPattern": "(error|Error|ERR!)"
+    }
+  ],
   "test": {
     "all": {
       "command": "npm test",

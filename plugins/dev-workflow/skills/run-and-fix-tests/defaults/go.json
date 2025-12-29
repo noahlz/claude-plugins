@@ -1,11 +1,12 @@
 {
   "logDir": "build-logs",
-  "build": {
-    "tool": "go",
-    "command": "go build ./...",
-    "logFile": "{logDir}/go.log",
-    "errorPattern": "(error|cannot find|undefined)"
-  },
+  "build": [
+    {
+      "command": "go build ./...",
+      "logFile": "{logDir}/go.log",
+      "errorPattern": "(error|cannot find|undefined)"
+    }
+  ],
   "test": {
     "all": {
       "command": "go test ./...",

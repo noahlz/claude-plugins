@@ -1,9 +1,11 @@
 {
   "logDir": "dist",
-  "build": {
-    "command": "npm run build",
-    "errorPattern": "(error)"
-  },
+  "build": [
+    {
+      "command": "npm run build",
+      "errorPattern": "(error)"
+    }
+  ],
   "test": {
     "all": {
       "command": "npm test",

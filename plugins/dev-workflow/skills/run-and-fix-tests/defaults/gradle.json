@@ -2,14 +2,12 @@
   "logDir": "build/logs",
   "build": [
     {
-      "tool": "gradle",
       "command": "./gradlew :api:build --quiet",
       "workingDir": ".",
       "logFile": "{logDir}/gradle-api.log",
       "errorPattern": "FAILURE|error:"
     },
     {
-      "tool": "gradle",
       "command": "./gradlew :web:build --quiet",
       "workingDir": ".",
       "logFile": "{logDir}/gradle-web.log",

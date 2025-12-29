@@ -1,10 +1,12 @@
 {
   "logDir": "target",
-  "build": {
-    "command": "cargo build --release",
-    "logFile": "{logDir}/cargo.log",
-    "errorPattern": "error\\["
-  },
+  "build": [
+    {
+      "command": "cargo build --release",
+      "logFile": "{logDir}/cargo.log",
+      "errorPattern": "error\\["
+    }
+  ],
   "test": {
     "all": {
       "command": "cargo test",
