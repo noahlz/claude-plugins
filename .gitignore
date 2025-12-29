@@ -1,9 +1,8 @@
-# test outputs
-out/
+# build outputs
+dist/
 
 # Logs
 *.log
-.logs/
 
 # IDE
 .vscode/
