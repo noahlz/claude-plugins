@@ -81,11 +81,12 @@ Environment variables to provide when delegating to build-fixer agent:
 - `BUILD_WORKING_DIR` - actual path (e.g., ".")
 - `LOG_DIR` - actual path (e.g., "dist/")
 - `INITIAL_PWD` - actual path (e.g., "/current/working/directory")
+- `SKIP_BUILD` - "true" or "false" (whether build step was skipped)
 
 ### TEST_FIXER_ENV_VARS
 
 Environment variables to provide when delegating to test-fixer agent:
-- BUILD_FIXER_ENV_VARS (see above) for compilation checking
+- BUILD_FIXER_ENV_VARS (see above) for compilation checking, including `SKIP_BUILD`
 - `TEST_SINGLE_CMD` - actual value (e.g., "npm test --testNamePattern={testName}")
 - `TEST_SINGLE_LOG` - actual path (e.g., "logs/test-single.log")
 
@@ -141,6 +142,13 @@ Procedure to resume test-fixer agent after build-fixer completes:
 
 ## 3. Build Project
 
+→ Check if build should be skipped: `$SKIP_BUILD`
+
+**Skip Build (SKIP_BUILD=true):**
+→ Display: "Build step skipped (build command identical to test command)"
+→ Proceed directly to step 4 (Run Tests)
+
+**Run Build (SKIP_BUILD=false):**
 → Create log directory: `mkdir -p "$LOG_DIR"`
 → Check build type: `$BUILD_MULTI`
 

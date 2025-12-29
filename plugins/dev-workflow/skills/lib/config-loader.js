@@ -136,6 +136,31 @@ export function normalizeOldSchema(config) {
 }
 
 /**
+ * Validate build configuration
+ * @param {object|array} buildConfig - Build configuration (single or multi)
+ * @param {array} errors - Errors array to append to
+ */
+function validateBuildConfig(buildConfig, errors) {
+  // For single-build (build is object)
+  if (!Array.isArray(buildConfig)) {
+    if (!buildConfig.command) errors.push('build.command is required');
+    if (!buildConfig.logFile) errors.push('build.logFile is required');
+    if (!buildConfig.errorPattern) errors.push('build.errorPattern is required');
+  } else {
+    // For multi-build (build is array)
+    if (buildConfig.length === 0) {
+      errors.push('build array cannot be empty');
+    }
+
+    buildConfig.forEach((build, idx) => {
+      if (!build.command) errors.push(`build[${idx}].command is required`);
+      if (!build.logFile) errors.push(`build[${idx}].logFile is required`);
+      if (!build.errorPattern) errors.push(`build[${idx}].errorPattern is required`);
+    });
+  }
+}
+
+/**
  * Validate config has required fields
  * @param {object} config - Config object
  * @returns {array} - Array of error messages (empty if valid)
@@ -148,28 +173,21 @@ export function validateConfig(config) {
     return errors;
   }
 
-  // Check for build config
-  if (!config.build) {
-    errors.push('Config must have "build" property');
-    return errors;
-  }
-
-  // For single-build (build is object)
-  if (!Array.isArray(config.build)) {
-    if (!config.build.command) errors.push('build.command is required');
-    if (!config.build.logFile) errors.push('build.logFile is required');
-    if (!config.build.errorPattern) errors.push('build.errorPattern is required');
+  // Check for build config (optional if skipBuild is true)
+  if (config.skipBuild === true) {
+    // When skipBuild is explicitly true, build config is optional
+    if (config.build) {
+      // If build is provided, validate it
+      validateBuildConfig(config.build, errors);
+    }
   } else {
-    // For multi-build (build is array)
-    if (config.build.length === 0) {
-      errors.push('build array cannot be empty');
+    // Build is required unless skipBuild is true
+    if (!config.build) {
+      errors.push('Config must have "build" property (or set skipBuild: true)');
+      return errors;
     }
 
-    config.build.forEach((build, idx) => {
-      if (!build.command) errors.push(`build[${idx}].command is required`);
-      if (!build.logFile) errors.push(`build[${idx}].logFile is required`);
-      if (!build.errorPattern) errors.push(`build[${idx}].errorPattern is required`);
-    });
+    validateBuildConfig(config.build, errors);
   }
 
   // Check for test config

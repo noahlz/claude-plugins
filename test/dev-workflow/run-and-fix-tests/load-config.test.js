@@ -143,4 +143,69 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     assert.equal(result.env.BUILD_WORKING_DIR, 'frontend', 'Should export working directory');
   });
+
+  it('auto-detects skip when build command equals test command', () => {
+    loadConfigFixture('single-build-npm.json', (config) => {
+      // Make build and test commands identical (like test-only projects)
+      config.build.command = 'npm test';
+      config.test.all.command = 'npm test';
+      return config;
+    });
+
+    const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
+
+    assert.equal(result.errors.length, 0, 'Should have no errors');
+    assert.equal(result.env.SKIP_BUILD, 'true', 'Should auto-detect SKIP_BUILD=true when commands match');
+  });
+
+  it('respects explicit skipBuild=true flag', () => {
+    loadConfigFixture('single-build-npm.json', (config) => {
+      config.skipBuild = true;
+      // Can omit build command when skipBuild is true
+      config.build = null;
+      return config;
+    });
+
+    const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
+
+    assert.equal(result.errors.length, 0, 'Should allow null build when skipBuild=true');
+    assert.equal(result.env.SKIP_BUILD, 'true', 'Should respect explicit skipBuild=true');
+  });
+
+  it('respects explicit skipBuild=false flag (no auto-skip)', () => {
+    loadConfigFixture('single-build-npm.json', (config) => {
+      // Set skipBuild explicitly to false to override auto-detection
+      config.skipBuild = false;
+      // Commands are still identical, but should not skip
+      config.build.command = 'npm test';
+      config.test.all.command = 'npm test';
+      return config;
+    });
+
+    const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
+
+    assert.equal(result.errors.length, 0, 'Should have no errors');
+    assert.equal(result.env.SKIP_BUILD, 'false', 'Should respect explicit skipBuild=false');
+  });
+
+  it('does not auto-skip for multi-build configs', () => {
+    loadConfigFixture('multi-build-polyglot.json', (config) => {
+      // Multi-build should never auto-skip even if commands somehow match
+      return config;
+    });
+
+    const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
+
+    assert.equal(result.errors.length, 0, 'Should have no errors');
+    assert.equal(result.env.SKIP_BUILD, 'false', 'Should not auto-skip for multi-build');
+  });
+
+  it('sets SKIP_BUILD=false by default for single-build with different commands', () => {
+    loadConfigFixture('single-build-npm.json');
+
+    const result = loadConfig({ pluginRoot: PLUGIN_ROOT, baseDir: testEnv.tmpDir });
+
+    assert.equal(result.errors.length, 0, 'Should have no errors');
+    assert.equal(result.env.SKIP_BUILD, 'false', 'Should default to false when commands differ');
+  });
 });

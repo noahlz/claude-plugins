@@ -28,6 +28,7 @@ Receives:
 - `BUILD_CMD`
 - `BUILD_LOG`
 - `BUILD_WORKING_DIR` (for compilation checking)
+- `SKIP_BUILD` - "true" if build step was skipped (no compilation check needed)
 
 **NOTE:** If invoked by user directly, warn them to use `run-and-fix-tests` skill instead.
 
@@ -40,11 +41,19 @@ Receives:
 ⚠️ **Two-phase verification**: Check compilation first, then run test
 
 **Phase 1 - Compilation check**:
+
+→ Check if compilation check should be skipped: `$SKIP_BUILD`
+
+**Skip Compilation Check (SKIP_BUILD=true):**
+→ Display: "Skipping compilation check (no separate build step)"
+→ Proceed directly to Phase 2
+
+**Run Compilation Check (SKIP_BUILD=false):**
 ```bash
 cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1 && cd $INITIAL_PWD
 ```
 
-**Phase 2 - Test execution** (only if compilation succeeds):
+**Phase 2 - Test execution** (only if compilation succeeds OR was skipped):
 ```bash
 $TEST_SINGLE_CMD > $TEST_SINGLE_LOG 2>&1
 ```
@@ -88,7 +97,7 @@ When compilation check (Phase 1) fails:
 ### Test-Specific Rules
 
 **ALWAYS**:
-- Check compilation before running test — never skip compilation check
+- Check compilation before running test (unless SKIP_BUILD=true) — only skip when explicitly indicated
 - Run single test after each fix — never batch fixes
 - Consider if a failing test is valid (maybe requirements changed or feature removed)
 - Delegate to build-fixer when compilation fails (never try to fix compilation yourself)
@@ -96,5 +105,5 @@ When compilation check (Phase 1) fails:
 **NEVER**:
 - Modify tests without AskUserQuestion confirmation
 - Delete / comment out / annotate tests to be skipped just to make tests pass (unless requested by user)
-- Skip compilation check to "just run the test"
+- Skip compilation check except when SKIP_BUILD=true
 - Try to fix compilation errors yourself — always delegate to build-fixer

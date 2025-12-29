@@ -55,16 +55,16 @@ export function generateEnv(config, baseDir = '.') {
 
   env.BUILD_MULTI = isSingleBuild ? 'false' : 'true';
 
-  if (isSingleBuild) {
-    // Single-build mode
+  if (isSingleBuild && config.build) {
+    // Single-build mode (only if build config exists)
     const build = config.build;
     env.BUILD_CMD = build.command;
     env.BUILD_LOG = resolvePath(build.logFile, { logDir });
     env.BUILD_ERROR_PATTERN = build.errorPattern;
     env.BUILD_WORKING_DIR = build.workingDir || '.';
-  } else {
+  } else if (Array.isArray(config.build)) {
     // Multi-build mode
-    env.BUILD_COUNT = config.build.length;
+    env.BUILD_COUNT = config.build.length.toString();
     config.build.forEach((build, idx) => {
       env[`BUILD_${idx}_CMD`] = build.command;
       env[`BUILD_${idx}_LOG`] = resolvePath(build.logFile, { logDir });
@@ -83,6 +83,19 @@ export function generateEnv(config, baseDir = '.') {
   env.TEST_SINGLE_ERROR_PATTERN = config.test.single.errorPattern;
 
   env.LOG_DIR = logDir;
+
+  // Auto-detect if build should be skipped
+  let skipBuild = false;
+
+  // Check explicit flag first (allows override)
+  if (config.skipBuild !== undefined) {
+    skipBuild = config.skipBuild;
+  } else if (isSingleBuild && env.BUILD_CMD === env.TEST_CMD) {
+    // Auto-detect: build and test are identical
+    skipBuild = true;
+  }
+
+  env.SKIP_BUILD = skipBuild ? 'true' : 'false';
 
   return env;
 }
