@@ -3,10 +3,9 @@ import { strict as assert } from 'node:assert';
 import { writeFileSync, mkdirSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  setupTestEnv,
+  setupPluginTestEnv,
   teardownTestEnv,
-  getPluginRoot,
-  TESTS_ROOT
+  setupProjectTemplate
 } from '../../lib/helpers.js';
 import { detectTools, loadToolRegistry } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/detect-and-resolve.js';
 
@@ -14,22 +13,17 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
   let testEnv;
 
   beforeEach(() => {
-    testEnv = setupTestEnv();
+    testEnv = setupPluginTestEnv('dev-workflow');
   });
 
   afterEach(() => {
     teardownTestEnv(testEnv);
   });
 
-  function setupProjectTemplate(templateName) {
-    const templatePath = join(TESTS_ROOT, 'dev-workflow', 'fixtures', 'project-templates', templateName);
-    cpSync(templatePath, testEnv.tmpDir, { recursive: true });
-  }
-
   it('detects npm project with package.json', () => {
-    setupProjectTemplate('npm-project');
+    setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
 
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     assert.ok(detected.length > 0, 'Should detect tools');
     const npmTool = detected.find(t => t.tool === 'npm');
@@ -37,36 +31,36 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
   });
 
   it('detects maven project with pom.xml', () => {
-    setupProjectTemplate('maven-project');
+    setupProjectTemplate(testEnv, 'dev-workflow', 'maven-project');
 
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     const mavenTool = detected.find(t => t.tool === 'maven');
     assert.ok(mavenTool, 'Should detect maven');
   });
 
   it('detects gradle project with build.gradle', () => {
-    setupProjectTemplate('gradle-project');
+    setupProjectTemplate(testEnv, 'dev-workflow', 'gradle-project');
 
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     const gradleTool = detected.find(t => t.tool === 'gradle');
     assert.ok(gradleTool, 'Should detect gradle');
   });
 
   it('detects go project with go.mod', () => {
-    setupProjectTemplate('go-project');
+    setupProjectTemplate(testEnv, 'dev-workflow', 'go-project');
 
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     const goTool = detected.find(t => t.tool === 'go');
     assert.ok(goTool, 'Should detect go');
   });
 
   it('detects multiple tools in polyglot project', () => {
-    setupProjectTemplate('polyglot-project');
+    setupProjectTemplate(testEnv, 'dev-workflow', 'polyglot-project');
 
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     assert.ok(detected.length >= 2, 'Should detect multiple tools');
     const hasNpm = detected.some(t => t.tool === 'npm');
@@ -79,16 +73,16 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
     mkdirSync(join(testEnv.tmpDir, 'apps', 'frontend'), { recursive: true });
     writeFileSync(join(testEnv.tmpDir, 'apps', 'frontend', 'package.json'), JSON.stringify({ name: 'frontend' }));
 
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     const npmTool = detected.find(t => t.tool === 'npm');
     assert.ok(npmTool, 'Should find npm in subdirectory');
   });
 
   it('returns detected tools with proper structure', () => {
-    setupProjectTemplate('npm-project');
+    setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
 
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     assert.ok(detected.length > 0, 'Should detect tools');
     const tool = detected[0];
@@ -103,7 +97,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
     // detectTools returns empty array when nothing found
 
     try {
-      const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+      const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
       // If it returns empty array, that's valid
       assert.equal(detected.length, 0, 'Should return empty array for empty project');
     } catch (error) {
@@ -113,16 +107,16 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
   });
 
   it('normalizes project root location in output', () => {
-    setupProjectTemplate('npm-project');
+    setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
 
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     const npmTool = detected.find(t => t.tool === 'npm');
     assert.equal(npmTool.location, '(project root)', 'Should normalize root directory as (project root)');
   });
 
   it('loads tool registry', () => {
-    const registry = loadToolRegistry(getPluginRoot('dev-workflow'));
+    const registry = loadToolRegistry(testEnv.pluginRoot);
 
     assert.ok(registry, 'Should load tool registry');
     assert.ok(registry.npm, 'Should have npm in registry');
@@ -131,7 +125,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
 
   it('returns empty array when registry loads but no tools found', () => {
     // This is a normal case - project exists but has no recognized build tools
-    const detected = detectTools({ pluginRoot: getPluginRoot('dev-workflow'), rootDir: testEnv.tmpDir });
+    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
     assert.ok(Array.isArray(detected), 'Should return array');
     // No assertions on length - could be 0 or throw

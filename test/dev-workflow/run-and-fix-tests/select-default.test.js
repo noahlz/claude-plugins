@@ -1,12 +1,12 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { readFileSync } from 'node:fs';
+import { readFileSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  setupTestEnv,
+  setupPluginTestEnv,
   teardownTestEnv,
-  getPluginRoot,
-  readFixture
+  createToolConfig,
+  readJsonFile
 } from '../../lib/helpers.js';
 import { selectDefault, generatePolyglotConfig } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/select-default.js';
 
@@ -14,30 +14,19 @@ describe('run-and-fix-tests: select-default.js', () => {
   let testEnv;
 
   beforeEach(() => {
-    testEnv = setupTestEnv();
+    testEnv = setupPluginTestEnv('dev-workflow');
   });
 
   afterEach(() => {
     teardownTestEnv(testEnv);
   });
 
-  function createToolConfig(toolName) {
-    const baseConfig = JSON.parse(readFixture('dev-workflow', 'configs/single-build-npm.json'));
-
-    return {
-      tool: toolName,
-      location: '(project root)',
-      configFile: toolName === 'npm' ? 'package.json' : 'pom.xml',
-      config: baseConfig
-    };
-  }
-
   it('handles single npm tool', () => {
     const detectedTools = [createToolConfig('npm')];
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
@@ -50,7 +39,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
@@ -68,7 +57,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
@@ -85,7 +74,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
@@ -93,8 +82,7 @@ describe('run-and-fix-tests: select-default.js', () => {
     assert.deepEqual(result.tools, ['npm', 'maven'], 'Should list detected tools');
 
     // Verify config file was created
-    const configFile = readFileSync(result.configPath, 'utf-8');
-    const config = JSON.parse(configFile);
+    const config = readJsonFile(result.configPath);
     assert.ok(Array.isArray(config.build), 'Should have build array');
     assert.equal(config.build.length, 2, 'Should have 2 build entries');
   });
@@ -107,12 +95,11 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
-    const configFile = readFileSync(result.configPath, 'utf-8');
-    const config = JSON.parse(configFile);
+    const config = readJsonFile(result.configPath);
 
     assert.equal(config.build[0].workingDir, '.', 'Should convert (project root) to .');
     assert.equal(config.build[1].workingDir, 'backend', 'Should use backend for second tool');
@@ -123,14 +110,12 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
-    const configFile = readFileSync(result.configPath, 'utf-8');
-    assert.ok(configFile, 'Should create config file');
-
-    const config = JSON.parse(configFile);
+    const config = readJsonFile(result.configPath);
+    assert.ok(config, 'Should create config file');
     assert.ok(config.build, 'Config should have build property');
     assert.ok(config.test, 'Config should have test property');
   });
@@ -140,7 +125,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
@@ -154,7 +139,7 @@ describe('run-and-fix-tests: select-default.js', () => {
       createToolConfig('maven')
     ];
 
-    const config = generatePolyglotConfig(detectedTools, getPluginRoot('dev-workflow'));
+    const config = generatePolyglotConfig(detectedTools, testEnv.pluginRoot);
 
     assert.ok(config.logDir, 'Should have logDir');
     assert.ok(Array.isArray(config.build), 'Should have build array');
@@ -175,7 +160,7 @@ describe('run-and-fix-tests: select-default.js', () => {
       createToolConfig('maven')
     ];
 
-    const config = generatePolyglotConfig(detectedTools, getPluginRoot('dev-workflow'));
+    const config = generatePolyglotConfig(detectedTools, testEnv.pluginRoot);
 
     // Should use npm test config (first tool)
     assert.equal(config.test.all.command, 'npm test', 'Should use first tool test command');
@@ -191,7 +176,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
@@ -204,12 +189,12 @@ describe('run-and-fix-tests: select-default.js', () => {
 
     const result = selectDefault({
       detectedTools,
-      pluginRoot: getPluginRoot('dev-workflow'),
+      pluginRoot: testEnv.pluginRoot,
       targetDir: testEnv.tmpDir
     });
 
     const claudeDir = join(testEnv.tmpDir, '.claude');
-    const configExists = readFileSync(result.configPath, 'utf-8');
-    assert.ok(configExists, 'Should create config in .claude directory');
+    const config = readJsonFile(result.configPath);
+    assert.ok(config, 'Should create config in .claude directory');
   });
 });
