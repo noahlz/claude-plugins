@@ -13,13 +13,13 @@ Efficient workflows for common development tasks.
 **Quick Install:**
 
 ```bash
-curl https://raw.githubusercontent.com/noahlz/claude-plugins/main/plugins/dev-workflow/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/noahlz/claude-plugins/refs/heads/main/plugins/dev-workflow/install.sh | sh
 ```
 
 Or manually add the marketplace to your Claude Code settings:
 
 ```bash
-claude plugin marketplace add https://github.com/noahlz/claude-plugins.git
+claude plugin marketplace add noahlz/claude-plugins
 claude plugin install dev-workflow@noahlz.github.io
 ```
 

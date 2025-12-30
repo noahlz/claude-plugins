@@ -12,9 +12,7 @@ CACHE_PATH="$HOME/.claude/plugins/cache/noahlz-github-io/dev-workflow/$VERSION"
 
 echo "Removing cached plugin at: $CACHE_PATH"
 rm -rf "$CACHE_PATH"
+echo ""
 
 # Reinstall
-claude plugin marketplace add ./
-claude plugin install dev-workflow@noahlz.github.io
-
-echo "Done, restart Claude Code."
+./plugins/dev-workflow/install.sh $PWD
