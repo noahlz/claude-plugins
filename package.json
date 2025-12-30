@@ -9,5 +9,8 @@
   "scripts": {
     "test": "node test/run-tests.js",
     "coverage": "node --experimental-test-coverage --test test/**/*.test.js"
+  },
+  "devDependencies": {
+    "glob": "^10.4.5"
   }
 }
