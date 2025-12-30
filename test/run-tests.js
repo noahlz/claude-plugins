@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { globSync } from 'glob';
+import { globSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = join(dirname(__dirname), 'dist');

@@ -35,7 +35,7 @@ export CLAUDE_PLUGIN_ROOT
 
 ## 0a. Check Node.js Installation
 
-Execute the steps in `${CLAUDE_PLUGIN_ROOT}/common/check-node.md` to determine if node 18+ is available.
+Execute the steps in `${CLAUDE_PLUGIN_ROOT}/common/check-node.md` to determine if node 22+ is available.
 
 ---
 

@@ -12,7 +12,7 @@ Guides Claude through automatically building, running and fixing your project te
 
 ## Prerequisites
 
-- `node` version 18+
+- `node` version 22+
 
 ## Usage
 

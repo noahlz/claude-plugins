@@ -9,7 +9,7 @@ Create git commits with Claude Code. Automatically embeds attribution and sessio
 
 ## Prerequisites
 
-- `node` version 18+
+- `node` version 22+
 
 ## Dependencies
 

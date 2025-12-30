@@ -10,13 +10,13 @@ echo "Checking plugin dependencies..."
 # Check Node.js version
 if ! command -v node &> /dev/null; then
   echo "*** Error: Node.js is required but not installed."
-  echo "*** Please install Node.js 18+ (https://nodejs.org/)"
+  echo "*** Please install Node.js 22+ (https://nodejs.org/)"
   exit 1
 fi
 
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 18 ]; then
-  echo "*** Error: Node.js 18 or higher required (found: $(node -v))"
+if [ "$NODE_VERSION" -lt 22 ]; then
+  echo "*** Error: Node.js 22 or higher required (found: $(node -v))"
   echo "*** Please upgrade to use this plugin."
   exit 1
 fi

@@ -4,13 +4,10 @@
   "type": "module",
   "description": "A collection of Claude Code plugins",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "test": "node test/run-tests.js",
     "coverage": "node --experimental-test-coverage --test test/**/*.test.js"
-  },
-  "devDependencies": {
-    "glob": "^10.4.5"
   }
 }

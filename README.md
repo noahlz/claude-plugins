@@ -27,7 +27,7 @@ claude plugin install dev-workflow@noahlz.github.io
 
 #### Prerequisites
 
-- Node.js 18+ (checked by install script)
+- Node.js 22+ (checked by install script)
 
 
 #### Skills
