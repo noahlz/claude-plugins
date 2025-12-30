@@ -4,6 +4,8 @@ Productivity plugins for Claude Code.
 
 See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-marketplaces)
 
+[![Node.js CI](https://github.com/noahlz/claude-plugins/actions/workflows/node.js.yml/badge.svg)](https://github.com/noahlz/claude-plugins/actions/workflows/node.js.yml)
+
 ## Available Plugins
 
 ### Dev Workflow
