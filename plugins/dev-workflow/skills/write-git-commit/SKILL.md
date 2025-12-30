@@ -175,80 +175,123 @@ Add user authentication feature
 
 → Parse JSON output based on status:
 
-- ✓ If status is "found": Config exists and is valid, proceed to prepare step
-- ✗ If status is "not_found" or "empty": Config missing, proceed with auto-detection in prepare step
+- ✓ If status is "found": Config exists and is valid
+- ✗ If status is "not_found" or "empty": Config missing, proceed with session selection (2a)
 - ✗ If status is "invalid": Config file is corrupted, display error and stop
 
-→ Run prepare: `node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare`  
-→ Parse JSON output based on status:
+---
 
-✓ If status is "success":
-  - Extract `SESSION_ID` from `data.session_id`
-  - Extract `CURRENT_COST` from `data.current_cost` (JSON array)
-  - Continue to section 3
+### 2a. Session Resolution (Load from config or select)
 
-⚠ If status is "confirm_session":
-  - Extract `detected_id` from `data.detected_id`
-  - Display: "Auto-detected session ID: '{detected_id}'"
-  - Use AskUserQuestion:
-    - "Yes, use this session ID"
-    - "No, let me specify a different ID"
-  - If "Yes": Save to config:
+✓ If config was found:
+  - Extract `SESSION_ID` from `data.config.sessionId`
+  - → Proceed to section 2b (Try Library Approach)
 
+✗ If config not found:
+  - → Session selection needed, proceed to 2a-select
+
+**2a-select: Select Session ID**
+
+→ Display: "No session configuration found. Which session would you like to use?"
+
+→ List available sessions by running:
+```bash
+ccusage session --json
+```
+
+→ Build AskUserQuestion options from available sessions:
+  - For each session (limit to first 4-5 options): Create option with session ID as label
+  - Recommend the session matching current working directory:
+    - Compute recommended ID: `/path/to/pwd` → `"-path-to-pwd"`
+    - If recommended matches a session: Append " (Recommended)" to that option label
+  - Add final option: "Other (enter manually)" for manual session ID entry
+
+→ Handle user selection:
+
+- If user selects a session option (not "Other"):
+  - Extract `SESSION_ID` from the selected option
+  - Save to config:
     ```bash
     mkdir -p .claude
-    echo '{"sessionId":"'$detected_id'"}' | jq '.' > .claude/settings.plugins.write-git-commit.json
+    echo '{"sessionId":"'$SESSION_ID'"}' > .claude/settings.plugins.write-git-commit.json
     ```
+  - Proceed to section 2b
 
-    Then re-run prepare step
+- If user selects "Other (enter manually)":
+  - Ask user to enter session ID manually
+  - Validate format (must start with `-` and contain hyphens)
+  - Save to config with the manually entered SESSION_ID
+  - Proceed to section 2b
 
-  - If "No": Ask user for exact session ID, save to config, re-run prepare
+---
 
-⚠ If status is "select_session":
-  - Extract `sessions` array from `data.sessions`
-  - Extract `recommended_id` from `data.recommended_id` (may be null)
-  - Build AskUserQuestion options from first 4-5 sessions:
-    - For each session: Create option with session ID as label
-    - If session ID matches `recommended_id`: Append " (Recommended)" to label
-    - Add final option: "Other (enter manually)" for manual session ID entry
-  - If user selects a session option (not "Other"):
-    - Extract selected `session_id` from the selected option
-    - Save to config:
+### 2b. Try Library Approach
 
+→ Verify session exists via library:
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/verify-session-library.js" "$SESSION_ID"
+```
+
+→ Parse JSON output:
+
+✓ If status is "success" and `exists` is true:
+  - → Fetch costs via library:
     ```bash
-    mkdir -p .claude
-    echo '{"sessionId":"'$session_id'"}' | jq '.' > .claude/settings.plugins.write-git-commit.json
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/get-session-costs-library.js" "$SESSION_ID"
     ```
+  - → Parse JSON output:
+    - If status is "success": Extract `CURRENT_COST` from `data`, proceed to section 3
+    - If status is "error": Proceed to 2c (CLI Fallback)
 
-    Then re-run prepare step
+✗ If status is "error" OR `exists` is false:
+  - → Proceed to section 2c (CLI Fallback)
 
-  - If user selects "Other (enter manually)":
-    - Ask user to enter session ID manually
-    - Validate format (must contain hyphens)
-    - Save to config with the manually entered session ID
-    - Re-run prepare step
+---
 
-✗ If status is "error":
-  - Display error message and stop
-  - Suggest: Run `ccusage session --json` to see available sessions
+### 2c. Try CLI Fallback
 
-⚠ If status is "metrics_invalid":
-  - Display error: "Cost metrics validation failed"
-  - Show attempted_costs from data
-  - Use AskUserQuestion:
-    - "Stop and investigate" (Recommended)
-    - "Commit without metrics"
-    - "Retry fetching metrics"
-  - If "Stop and investigate":
-    - Run `git reset HEAD` to unstage changes
-    - Display: "Changes unstaged. Please investigate ccusage data."
-    - Stop workflow
-  - If "Commit without metrics":
-    - Warn: "Commit will proceed WITHOUT cost metrics"
-    - Save sessionId to config
-    - Continue to section 3 (proceed with commit)
-  - If "Retry fetching metrics":
-    - Re-run prepare step
+→ Verify session exists via CLI:
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/verify-session-cli.js" "$SESSION_ID"
+```
+
+→ Parse JSON output:
+
+✓ If status is "success" and `exists` is true:
+  - → Fetch costs via CLI:
+    ```bash
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/get-session-costs-cli.js" "$SESSION_ID"
+    ```
+  - → Parse JSON output:
+    - If status is "success": Extract `CURRENT_COST` from `data`, proceed to section 3
+    - If status is "error": Proceed to 2d (Handle Error)
+
+✗ If status is "error" OR `exists` is false:
+  - → Proceed to section 2d (Handle Error)
+
+---
+
+### 2d. Handle Cost Resolution Failure
+
+⚠️ CRITICAL: MUST use AskUserQuestion with these exact options:
+  - "Stop and investigate" (Recommended)
+  - "Commit without metrics"
+  - "Retry cost fetching"
+
+→ If "Stop and investigate":
+  - Run `git reset HEAD` to unstage changes
+  - Display: "Changes unstaged. Please check ccusage installation and session data."
+  - Display: `ccusage session --json` to show available sessions
+  - Exit workflow
+
+→ If "Commit without metrics":
+  - Warn: "Proceeding WITHOUT cost metrics in commit footer"
+  - Set `CURRENT_COST=[]` (empty array as placeholder)
+  - Proceed to section 3
+
+→ If "Retry cost fetching":
+  - Return to section 2a-select to allow session re-selection
+  - Or offer to continue with current session: Ask "Retry with same session or select different?"
 
 ## 3. Create Commit
 

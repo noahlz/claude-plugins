@@ -1,56 +1,5 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process';
-
-/**
- * Load all session data via ccusage CLI
- * Fallback for when library import fails
- * @returns {Promise<Array>} - Array of session objects
- * @throws {Error} - If CLI fails or ccusage not available
- */
-export async function loadSessionDataCli() {
-  try {
-    const output = execSync('ccusage session --json', { encoding: 'utf-8' });
-    let sessions = JSON.parse(output);
-
-    // Handle both direct array and wrapped { sessions: [...] } format
-    if (sessions.sessions && Array.isArray(sessions.sessions)) {
-      sessions = sessions.sessions;
-    }
-
-    if (!Array.isArray(sessions)) {
-      throw new Error('Expected array of sessions from ccusage CLI');
-    }
-
-    return sessions;
-  } catch (error) {
-    // Check for various "command not found" error patterns
-    const errorMsg = error.message || '';
-    if (error.code === 'ENOENT' ||
-        errorMsg.includes('not found') ||
-        errorMsg.includes('ENOENT') ||
-        errorMsg.includes('command not found')) {
-      throw new Error('ccusage CLI not found - install with: npm install -g ccusage');
-    }
-    throw new Error(`Failed to load sessions via CLI: ${error.message}`);
-  }
-}
-
-/**
- * Load a specific session by ID via CLI
- * @param {string} sessionId - Session ID to load
- * @returns {Promise<Object|null>} - Session object or null if not found
- */
-export async function loadSessionByIdCli(sessionId) {
-  try {
-    const sessions = await loadSessionDataCli();
-    const session = sessions.find(s => s.sessionId === sessionId);
-    return session || null;
-  } catch (error) {
-    throw new Error(`Failed to load session ${sessionId} via CLI: ${error.message}`);
-  }
-}
-
 /**
  * Extract cost metrics from a session object
  * Transforms modelBreakdowns to standard cost format

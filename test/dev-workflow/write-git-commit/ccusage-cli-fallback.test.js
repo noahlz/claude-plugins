@@ -2,9 +2,9 @@ import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 // Import functions to test
+// Note: loadSessionDataCli and loadSessionByIdCli were removed in refactor
+// These are now single-purpose scripts (verify-session-cli.js, get-session-costs-cli.js)
 import {
-  loadSessionDataCli,
-  loadSessionByIdCli,
   extractCostMetrics,
   validateCostMetrics
 } from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/ccusage-cli-fallback.js';
@@ -270,87 +270,6 @@ describe('write-git-commit: ccusage-cli-fallback.js', () => {
     });
   });
 
-  // Test loadSessionDataCli and loadSessionByIdCli
-  describe('CLI integration', () => {
-    it('loadSessionDataCli returns array when ccusage available', async function() {
-      try {
-        const sessions = await loadSessionDataCli();
-        assert.ok(Array.isArray(sessions), 'Should return an array');
-        // Mock should return 2 sessions
-        if (sessions.length > 0) {
-          assert.ok(sessions[0].sessionId, 'Sessions should have sessionId');
-        }
-      } catch (error) {
-        // If ccusage CLI not available in test environment, that's acceptable
-        assert.ok(error.message.includes('ccusage'), 'Error should mention ccusage');
-      }
-    });
-
-    it('loadSessionByIdCli returns null for non-existent session', async function() {
-      try {
-        const session = await loadSessionByIdCli('nonexistent-fake-session-id-12345');
-        // If ccusage CLI is working, session should be null for non-existent ID
-        assert.equal(session, null, 'Should return null for non-existent session');
-      } catch (error) {
-        // CLI loading errors are acceptable for this test
-        // (ccusage might not be available in all test environments)
-        if (error.message.includes('Expected array') ||
-            error.code === 'ENOENT' ||
-            error.message.includes('ccusage CLI not found')) {
-          this.skip();
-        } else {
-          throw error;
-        }
-      }
-    });
-
-    it('loadSessionByIdCli finds existing session from mock data', async function() {
-      try {
-        // This session ID exists in the mock data
-        const session = await loadSessionByIdCli('-Users-noahlz-projects-claude-plugins');
-        // If we got here, ccusage is working properly
-        assert.ok(session, 'Should find session with existing ID');
-        assert.equal(session.sessionId, '-Users-noahlz-projects-claude-plugins');
-        assert.ok(session.modelBreakdowns, 'Session should have modelBreakdowns');
-      } catch (error) {
-        // CLI loading errors are acceptable for this test
-        if (error.message.includes('Expected array') ||
-            error.code === 'ENOENT' ||
-            error.message.includes('ccusage CLI not found')) {
-          this.skip();
-        } else {
-          throw error;
-        }
-      }
-    });
-
-    it('throws error when ccusage CLI not found', async function() {
-      // Test error handling when ccusage CLI is not in PATH
-      const originalPath = process.env.PATH;
-
-      try {
-        // Set PATH to nonexistent directories so ccusage cannot be found
-        process.env.PATH = '/nonexistent:/also/nonexistent';
-
-        try {
-          await loadSessionDataCli();
-          assert.fail('Should throw error when ccusage not found');
-        } catch (error) {
-          assert.ok(
-            error.message.includes('ccusage CLI not found') ||
-            error.message.includes('ccusage: command not found') ||
-            error.code === 'ENOENT' ||
-            error.message.includes('ENOENT'),
-            `Error should indicate ccusage is missing, got: ${error.message}`
-          );
-        } finally {
-          process.env.PATH = originalPath;
-        }
-      } catch (error) {
-        // Test failed - restore PATH and re-throw
-        process.env.PATH = originalPath;
-        throw error;
-      }
-    });
-  });
+  // CLI integration tests removed - now in verify-session-cli.js and get-session-costs-cli.js
+  // which are tested in new-scripts.test.js
 });

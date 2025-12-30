@@ -4,12 +4,13 @@ Shared workflow template for dev-workflow plugin agents.
 
 ## Mandatory Rules
 
-1. ALWAYS use TodoWrite for progress tracking
-2. ALWAYS increment RETRY_COUNT before attempting fix in step 2b
-3. ALWAYS run verification command after each fix — never batch fixes
-4. ALWAYS use AskUserQuestion for retry/continue decisions
-5. NEVER skip IDE diagnostics if available
-6. NEVER use hacks: hard-coded values, null guards just to pass, mocked shortcuts
+1. ALWAYS Explain what you are doing step by step.
+2. ALWAYS use TodoWrite for progress tracking
+3. ALWAYS increment RETRY_COUNT before attempting fix in step 2b
+4. ALWAYS run verification command after each fix — never batch fixes
+5. ALWAYS use AskUserQuestion for retry/continue decisions
+6. NEVER skip IDE diagnostics if available
+7. NEVER use hacks: hard-coded values, null guards just to pass, mocked shortcuts
 
 ## Workflow
 

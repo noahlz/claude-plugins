@@ -24,14 +24,25 @@ case "$1" in
     fi
     ;;
   "commit")
-    # Extract message from -m flag
-    shift  # Remove "commit"
-    shift  # Remove "-m"
-    local message="$1"
-
+    # Handle both "git commit -m" and "git commit -F -" (stdin)
+    # Check if MOCK_GIT_COMMIT_FAIL is set to force a failure
+    if [ "$MOCK_GIT_COMMIT_FAIL" = "true" ]; then
+      echo "On branch main" >&2
+      echo "nothing to commit, working tree clean" >&2
+      exit 1
+    fi
     # Simulate successful commit by returning exit code 0
-    # In real tests, this can be controlled by environment variables
     exit 0
+    ;;
+  "diff")
+    # Handle "git diff --cached --name-only"
+    if [ "$2" = "--cached" ] && [ "$3" = "--name-only" ]; then
+      # Return empty (no staged changes after commit)
+      exit 0
+    else
+      echo "Error: Unsupported diff command" >&2
+      exit 1
+    fi
     ;;
   "status")
     # Return simple status output

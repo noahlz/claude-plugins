@@ -6,8 +6,6 @@ import { execSync } from 'child_process';
 import { detectPluginRoot } from '../../lib/common.js';
 import { parseJsonFile } from '../../lib/config-loader.js';
 import { loadSessionConfig } from './load-config.js';
-import { verifySession } from './verify-session.js';
-import { getSessionCosts } from './claude-session-cost.js';
 import { ensureCcusageInstalled } from './ccusage-utils.js';
 
 /**
@@ -54,7 +52,8 @@ function checkConfig(baseDir = '.') {
 }
 
 /**
- * Prepare for commit: load config, verify session, get costs
+ * Prepare for commit: ensure setup is complete, load config if exists
+ * Note: Session verification and cost fetching are now handled by skill orchestration
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
  * @param {string} options.pluginRoot - Plugin root
@@ -78,77 +77,22 @@ async function prepare(options = {}) {
       };
     }
 
-    const sessionId = config.sessionId;
-
-    // Verify session exists
-    const verification = await verifySession(sessionId, pluginRoot);
-
-    if (verification.status !== 'verified') {
-      return {
-        status: 'error',
-        data: {},
-        message: `Session ID not found: ${sessionId}. Check ccusage session --json for available sessions.`
-      };
-    }
-
-    // If config exists and session was not auto-detected, get costs and return success
-    if (config.configExists && !config.autoDetected) {
-      // Get current session costs
-      const costs = await getSessionCosts(sessionId, pluginRoot);
-
+    // Return success with session ID if config was loaded
+    if (config.configExists) {
       return {
         status: 'success',
         data: {
-          session_id: sessionId,
-          current_cost: costs
+          session_id: config.sessionId
         },
-        message: 'Session verified and costs fetched'
+        message: 'Session config loaded'
       };
     }
 
-    // No config exists or only auto-detected - load available sessions and present list
-    // Try library first, fall back to CLI if needed
-    let allSessions;
-    try {
-      const { loadSessionData } = await import('ccusage/data-loader');
-      allSessions = await loadSessionData();
-    } catch (importError) {
-      const { loadSessionDataCli } = await import('./ccusage-cli-fallback.js');
-      allSessions = await loadSessionDataCli();
-    }
-
-    if (!allSessions || allSessions.length === 0) {
-      return {
-        status: 'error',
-        data: {},
-        message: 'No sessions found in ccusage data'
-      };
-    }
-
-    // Get session IDs
-    const sessionIds = allSessions.map(s => s.sessionId);
-
-    // Compute recommended session from the directory where Claude Code was invoked
-    const { pwdToSessionId } = await import('./ccusage-utils.js');
-    const recommendedId = pwdToSessionId(process.cwd());
-
-    // Check if recommended matches any available session
-    const hasRecommended = sessionIds.includes(recommendedId);
-
-    // Sort sessions with recommended first
-    let sortedIds = sessionIds;
-    if (hasRecommended) {
-      sortedIds = [recommendedId, ...sessionIds.filter(id => id !== recommendedId)];
-    }
-
+    // Config doesn't exist - skill will handle session selection
     return {
-      status: 'select_session',
-      data: {
-        sessions: sortedIds,
-        recommended_index: hasRecommended ? 0 : null,
-        recommended_id: hasRecommended ? recommendedId : null
-      },
-      message: 'Select a session to use'
+      status: 'no_config',
+      data: {},
+      message: 'No session config found - skill will handle session selection'
     };
   } catch (error) {
     return {
@@ -190,6 +134,7 @@ async function readCommitMessage() {
 
 /**
  * Create a git commit with cost metrics footer
+ * Note: SESSION_ID and CURRENT_COST are expected to be provided by skill orchestration
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
  * @param {string} options.pluginRoot - Plugin root
@@ -213,10 +158,11 @@ async function commit(options = {}) {
     // Ensure ccusage is installed
     await ensureCcusageInstalled(pluginRoot);
 
-    // Load session config
+    // Load session config and environment
     let sessionId = process.env.SESSION_ID;
     let currentCost = process.env.CURRENT_COST;
 
+    // If SESSION_ID not in env, try to load from config
     if (!sessionId) {
       const config = loadSessionConfig({ baseDir });
       if (config.errors.length > 0) {
@@ -229,27 +175,21 @@ async function commit(options = {}) {
       sessionId = config.sessionId;
     }
 
+    // CURRENT_COST must be provided by skill orchestration via env var
     if (!currentCost) {
-      // Verify session and fetch costs
-      const verification = await verifySession(sessionId, pluginRoot);
-      if (verification.status !== 'verified') {
-        return {
-          status: 'error',
-          data: {},
-          message: `Session verification failed: ${verification.message}`
-        };
-      }
+      return {
+        status: 'error',
+        data: {},
+        message: 'CURRENT_COST not provided by skill orchestration. This indicates a workflow issue.'
+      };
+    }
 
-      const costs = await getSessionCosts(sessionId, pluginRoot);
-      currentCost = costs;
-    } else {
-      // Parse if it's a string
-      if (typeof currentCost === 'string') {
-        try {
-          currentCost = JSON.parse(currentCost);
-        } catch {
-          currentCost = JSON.parse(currentCost);
-        }
+    // Parse if it's a string
+    if (typeof currentCost === 'string') {
+      try {
+        currentCost = JSON.parse(currentCost);
+      } catch {
+        currentCost = JSON.parse(currentCost);
       }
     }
 

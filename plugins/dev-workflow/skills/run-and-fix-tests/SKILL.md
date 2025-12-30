@@ -6,7 +6,10 @@ description: Build the project, run tests and systematically fix any failures. A
 This skill streamlines running and fixing unit tests in a project. It:
 - resolves the project build/test commands from project-specific configuration, generating it for future use (with user input), if needed.
 - strives for minimal token / context usage by redirecting build/test output to files
-- Uses specialized sub-agents to preserve main task context when fixing compilation and test breaks.
+
+The skill delegates to sub-agents when appropriate:
+  - 'build-fixer' to fix compilation errors
+  - 'test-fixer' to fix test failures
 
 Activate this skill proactively after making code changes to verify they work (suggest first: "Should I run the test suite to verify these changes?").
 
@@ -124,7 +127,7 @@ Procedure to extract compilation errors from build log:
 
 Procedure to delegate to build-fixer agent:
 
-→ Use the `build-fixer` agent to fix compilation errors one-by-one.
+→ Delegate to the `build-fixer` agent to fix compilation errors one-by-one.
 
 → Provide agent with context in natural language:
   - Build error list: [bulleted list with file:line:col and error messages]
@@ -148,9 +151,9 @@ Procedure to rebuild project and verify compilation:
 
 ### RESUME_TEST_FIXER
 
-Procedure to resume test-fixer agent after build-fixer completes:
+Procedure to delegate back to the test-fixer agent after build-fixer completes:
 
-→ Resume test-fixer agent using Task tool with resume parameter:
+→ Delegate back to the test-fixer agent using Task tool with resume parameter:
   - `resume: $TEST_FIXER_AGENT_ID`
   - `prompt: "Compilation errors have been resolved by build-fixer. BUILD_LOG shows clean build. Continue with test fix verification."`
 
@@ -247,7 +250,7 @@ Procedure to resume test-fixer agent after build-fixer completes:
 
 ## 7. Delegate to Test-Fixer Agent
 
-→ Use the `test-fixer` agent to fix failing tests one-by-one
+→ Delegate to the `test-fixer` agent to fix failing tests one-by-one
 
 → Store agent ID for potential resumption: `TEST_FIXER_AGENT_ID=[agent_id]`
 

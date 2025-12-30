@@ -96,7 +96,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.equal(data.status, 'found', 'Should return found when config exists');
   });
 
-  it('prepare action returns valid status', () => {
+  it('prepare action returns no_config when config does not exist', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
@@ -111,19 +111,25 @@ describe('write-git-commit: commit-workflow.js', () => {
     const data = extractJsonFromOutput(result.stdout);
     assert.ok(data, `Output should contain valid JSON`);
 
-    // Status may be 'success', 'select_session', or 'error' depending on ccusage
-    assert.ok(['success', 'select_session', 'error'].includes(data.status), 'Should return valid status');
+    // Status should be no_config when no config file exists
+    assert.equal(data.status, 'no_config', 'Should return no_config when no config exists');
     assert.ok(typeof data.data === 'object', 'Should have data field');
     assert.ok(typeof data.message === 'string', 'Should have message field');
   });
 
-  it('commit action fails gracefully without session ID or config', () => {
+  it('prepare action returns success when config exists', () => {
+    // Create config file
+    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
+    writeFileSync(
+      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
+      JSON.stringify({ sessionId: '-test-session-id' })
+    );
+
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['commit'],
+      args: ['prepare'],
       cwd: testEnv.tmpDir,
-      input: 'Test commit message',
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
@@ -133,8 +139,39 @@ describe('write-git-commit: commit-workflow.js', () => {
     const data = extractJsonFromOutput(result.stdout);
     assert.ok(data, `Output should contain valid JSON`);
 
-    // Should be error status when no session is configured
-    assert.ok(['error'].includes(data.status), 'Status should be error without session');
+    // Status should be success when config is found
+    assert.equal(data.status, 'success', 'Should return success when config exists');
+    assert.equal(data.data.session_id, '-test-session-id', 'Should extract session ID from config');
+  });
+
+  it('commit action fails when CURRENT_COST is not provided', () => {
+    // Create config with session ID but don't provide CURRENT_COST
+    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
+    writeFileSync(
+      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
+      JSON.stringify({ sessionId: 'test-session-id' })
+    );
+
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+
+    const result = execNodeScript('dev-workflow', scriptPath, {
+      args: ['commit'],
+      cwd: testEnv.tmpDir,
+      input: 'Test commit message',
+      env: {
+        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
+        SESSION_ID: 'test-session-id',
+        // CURRENT_COST is NOT provided
+        PATH: testEnv.mockPath
+      }
+    });
+
+    const data = extractJsonFromOutput(result.stdout);
+    assert.ok(data, `Output should contain valid JSON`);
+
+    // Should be error status when CURRENT_COST is not provided
+    assert.equal(data.status, 'error', 'Status should be error when CURRENT_COST not provided');
+    assert.ok(data.message.includes('CURRENT_COST'), 'Error message should mention CURRENT_COST');
   });
 
   it('handles unknown action with error', () => {
@@ -270,6 +307,7 @@ describe('write-git-commit: commit-workflow.js', () => {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         SESSION_ID: 'test-session-id',
         CURRENT_COST: validMetrics,
+        MOCK_GIT_COMMIT_FAIL: 'true',
         PATH: testEnv.mockPath
       }
     });
@@ -279,17 +317,41 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.equal(data.status, 'git_error', 'Status should be git_error when nothing is staged');
   });
 
-  it('prepare falls back to CLI when library import fails', function() {
-    // This test verifies the fallback behavior works
-    // We create an environment where library import would fail
-    // by checking prepare returns valid status (either from library or CLI)
+  it('commit with valid session ID and metrics succeeds', () => {
+    // Create config with valid session ID
+    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
+    writeFileSync(
+      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
+      JSON.stringify({ sessionId: 'test-session-id' })
+    );
+
+    // Create a test file to stage
+    writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
+    execBashScript('git', {
+      args: ['add', 'test.txt'],
+      cwd: testEnv.tmpDir
+    });
+
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
+    // Pass valid metrics via CURRENT_COST env var
+    const validMetrics = JSON.stringify([
+      {
+        model: 'test-model',
+        inputTokens: 100,
+        outputTokens: 50,
+        cost: 0.05
+      }
+    ]);
+
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare'],
+      args: ['commit'],
       cwd: testEnv.tmpDir,
+      input: 'Test commit message',
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
+        SESSION_ID: 'test-session-id',
+        CURRENT_COST: validMetrics,
         PATH: testEnv.mockPath
       }
     });
@@ -297,12 +359,8 @@ describe('write-git-commit: commit-workflow.js', () => {
     const data = extractJsonFromOutput(result.stdout);
     assert.ok(data, `Output should contain valid JSON`);
 
-    // The status should be one of the valid responses
-    // Whether using library or CLI fallback
-    const validStatuses = ['success', 'select_session', 'error', 'confirm_session'];
-    assert.ok(
-      validStatuses.includes(data.status),
-      `Status should be valid, got: ${data.status}`
-    );
+    // Should succeed with valid metrics and staged changes
+    assert.equal(data.status, 'success', 'Status should be success with valid metrics and staged changes');
+    assert.ok(data.data.commit_sha, 'Should return commit SHA');
   });
 });

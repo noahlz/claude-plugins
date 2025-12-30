@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
 import { detectPluginRoot } from '../../lib/common.js';
-import { ensureCcusageInstalled, fetchSessionCosts } from './ccusage-utils.js';
+import { ensureCcusageInstalled } from './ccusage-utils.js';
 
 /**
  * Get current session costs
+ * Note: This is a compatibility wrapper. Use the new scripts instead:
+ * - get-session-costs-library.js (library-based)
+ * - get-session-costs-cli.js (CLI-based)
  * @param {string} sessionId - Session ID
  * @param {string} pluginRoot - Plugin root directory
  * @returns {Promise<Array>} - Array of cost breakdowns
@@ -18,14 +21,19 @@ export async function getSessionCosts(sessionId, pluginRoot) {
     // Ensure ccusage is installed
     await ensureCcusageInstalled(pluginRoot);
 
-    // Fetch costs for the session
-    const costs = await fetchSessionCosts(sessionId);
+    // Use the new get-session-costs-cli.js script
+    const { execSync } = await import('child_process');
+    const getSessionCostsScript = `${pluginRoot}/skills/write-git-commit/scripts/get-session-costs-cli.js`;
 
-    if (!costs || costs.length === 0) {
-      throw new Error(`Session '${sessionId}' not found in ccusage data`);
+    const result = JSON.parse(
+      execSync(`node "${getSessionCostsScript}" "${sessionId}"`, { encoding: 'utf-8' })
+    );
+
+    if (result.status !== 'success' || !result.data || result.data.length === 0) {
+      throw new Error(result.message || `Session '${sessionId}' not found in ccusage data`);
     }
 
-    return costs;
+    return result.data;
   } catch (error) {
     throw error;
   }
