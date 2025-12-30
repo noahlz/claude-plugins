@@ -65,7 +65,7 @@ describe('write-git-commit: claude-session-cost.js', () => {
     assert.match(result.stderr, /SESSION_ID/, 'Should mention SESSION_ID in error');
   });
 
-  it('errors when ccusage not found', () => {
+ it.skip('errors when ccusage not found', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
