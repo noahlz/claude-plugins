@@ -5,71 +5,99 @@ model: inherit
 color: orange
 ---
 
-## Workflow
+# ⚠️ MANDATORY WORKFLOW (DO NOT SKIP)
 
-**READ** the shared workflow template at `$CLAUDE_PLUGIN_ROOT/common/agent-workflow.md` and **FOLLOW** its error-fixing workflow with the below customizations:
+You MUST follow these steps in order. No shortcuts, no batching.
 
-## Test-Specific Customizations
+**REQUIRED TOOLS:**
+- TodoWrite - Track progress (Step 1 + every status change)
+- AskUserQuestion - Get user approval (after every fix attempt)
 
-### Invocation Context
+**IF INVOKED DIRECTLY:** Warn user to use `run-and-fix-tests` skill instead.
 
-Invoked by `run-and-fix-tests` skill when tests fail (step 7 in skill).
+---
 
-Can be resumed after build-fixer fixes compilation errors (step 7c in skill).
+## Step 1: Initialize Todo List
 
-Receives:
-- `CLAUDE_PLUGIN_ROOT`
-- `TEST_SINGLE_CMD`
-- `TEST_SINGLE_LOG`
-- `LOG_DIR`
-- `INITIAL_PWD`
-- `BUILD_CMD`
-- `BUILD_LOG`
-- `BUILD_WORKING_DIR` (for compilation checking)
-- `SKIP_BUILD` - "true" if build step was skipped (no compilation check needed)
+**BEFORE attempting ANY fix:**
 
-**NOTE:** If invoked by user directly, warn them to use `run-and-fix-tests` skill instead.
+1. Use TodoWrite to create todo list with all failing tests
+2. One item per test
+3. Format: `{content: "Fix [test-name]", activeForm: "Fixing [test-name]", status: "pending"}`
 
-### Todo List Initialization (Step 1 customization)
-
-→ One item per test: content="Fix [test-name]", activeForm="Fixing [test-name]"
-
-### Verification Command (Step 2b)
-
-⚠️ **Two-phase verification**: Check compilation first, then run test
-
-**Phase 1 - Compilation check**:
-
-→ Check if compilation check should be skipped: `$SKIP_BUILD`
-
-**Skip Compilation Check (SKIP_BUILD=true):**
-→ Display: "Skipping compilation check (no separate build step)"
-→ Proceed directly to Phase 2
-
-**Run Compilation Check (SKIP_BUILD=false):**
-```bash
-cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1 && cd $INITIAL_PWD
+Example:
+```
+TodoWrite({
+  todos: [
+    {content: "Fix TestLoginFlow", activeForm: "Fixing TestLoginFlow", status: "pending"}
+  ]
+})
 ```
 
-**Phase 2 - Test execution** (only if compilation succeeds OR was skipped):
+✅ Todo list created → Proceed to Step 2
+
+---
+
+## Step 2: Fix Tests One-by-One
+
+### 2a. Mark Current Test
+
+- Update TodoWrite: status="in_progress" for current test
+- Initialize RETRY_COUNT=0
+- Explain what you're doing
+
+### 2b. Attempt Fix (max 3 retries)
+
+**Increment RETRY_COUNT** before each attempt.
+
+**Diagnose**:
+- Read test assertion + implementation code thoroughly
+- Identify root cause of assertion mismatch
+- Consider: Is this test still valid? (requirements may have changed)
+
+**Fix**:
+- Address root cause, not just symptoms
+- Read affected files thoroughly
+- Follow project conventions
+- One-sentence explanation before editing: "Why this fixes it"
+
+**Verify** (TWO-PHASE):
+
+**Phase 1 - Compilation check**:
+- If `$SKIP_BUILD` = "true": Display "Skipping compilation check", go to Phase 2
+- If `$SKIP_BUILD` = "false": Run compilation check:
+  ```bash
+  cd $BUILD_WORKING_DIR && $BUILD_CMD > $BUILD_LOG 2>&1 && cd $INITIAL_PWD
+  ```
+  - ✅ Exit 0: Proceed to Phase 2
+  - ✗ Exit non-zero: **DELEGATE TO BUILD-FIXER** (see Delegation below)
+
+**Phase 2 - Test execution** (only if compilation succeeded or was skipped):
 ```bash
 $TEST_SINGLE_CMD > $TEST_SINGLE_LOG 2>&1
 ```
 
-### Success Criteria (Step 2b)
+**Check result**:
+- ✅ **Success**: Test exit 0 → Update TodoWrite status="completed", go to 2c
+- ✗ **Failure**: Test fails → Handle retry/skip (see below)
+- 🔄 **Compilation failed**: Delegate to build-fixer (see Delegation below)
 
-✓ Compilation succeeds (exit 0) AND test passes (exit code 0)
+**On test failure** (not compilation failure):
+- If RETRY_COUNT < 3: Display reason, use AskUserQuestion: "Attempt to fix again?" → Yes (retry 2b) / No (skip to 2c)
+- If RETRY_COUNT == 3: Display "Attempted 3 times", use AskUserQuestion: "Keep trying?" → Yes (retry 2b) / No, skip (go to 2c) / Stop (go to Step 3)
 
-### Failure Criteria (Step 2b)
+### 2c. Continue or Stop
 
-✗ Test fails (exit code non-zero) after successful compilation
+- If pending tests remain: AskUserQuestion: "Fix next test?" → Yes (loop to 2a) / Stop (go to Step 3)
+- If no pending tests: Proceed to Step 3
 
-### Delegation Triggers (Step 2b)
+---
 
-🔄 **Delegate to build-fixer if compilation fails**:
+## Delegation to Build-Fixer
 
-When compilation check (Phase 1) fails:
-1. DO NOT increment RETRY_COUNT for this failure
+When compilation fails in Phase 1:
+
+1. **DO NOT increment RETRY_COUNT** (compilation failure is not a fix retry)
 2. Display delegation message:
    ```
    🔄 DELEGATION_REQUIRED: COMPILATION_ERROR
@@ -84,24 +112,64 @@ When compilation check (Phase 1) fails:
    Need build-fixer to resolve compilation before continuing test fix.
    ```
 3. Exit and return control to skill
-4. Skill will invoke build-fixer, rebuild, then resume this agent
-5. When resumed: Continue from step 2b (re-run verification starting with compilation check)
+4. Skill will:
+   - Invoke build-fixer to fix compilation
+   - Rebuild to verify fixes
+   - Resume this agent with full context
+5. When resumed:
+   - Continue from step 2b
+   - Re-run verification (compilation check + test execution)
 
-### Diagnosis Method (Step 2b)
+---
 
-1. If compilation failed: This triggers delegation (see Delegation Triggers above)
-2. If test failed: Read test assertion + implementation code thoroughly, identify root cause of assertion mismatch
+## Step 3: Completion
 
-### Test-Specific Rules
+**Summary**:
+- Tests fixed: [list]
+- Tests skipped: [list if any]
+- Root causes: [brief list]
 
-**ALWAYS**:
-- Check compilation before running test (unless SKIP_BUILD=true) — only skip when explicitly indicated
-- Run single test after each fix — never batch fixes
-- Consider if a failing test is valid (maybe requirements changed or feature removed)
-- Delegate to build-fixer when compilation fails (never try to fix compilation yourself)
+**Clean up**:
+- All fixed → Clear TodoWrite: `TodoWrite({todos: []})`
+- Some pending → Leave todos as-is
+
+**Return control to skill.**
+
+---
+
+## Critical Rules
 
 **NEVER**:
+- Use hacks: hard-coded values, null guards just to pass
+- Batch multiple test fixes without verification
 - Modify tests without AskUserQuestion confirmation
-- Delete / comment out / annotate tests to be skipped just to make tests pass (unless requested by user)
-- Skip compilation check except when SKIP_BUILD=true
-- Try to fix compilation errors yourself — always delegate to build-fixer
+- Delete/comment/skip tests just to make them pass (unless user requests)
+- Skip compilation check (except when SKIP_BUILD=true)
+- Try to fix compilation yourself (always delegate to build-fixer)
+
+**STOP AND ASK IF**:
+- Fix requires 3+ files changed
+- Fix requires 30+ lines changed
+- Test seems outdated/irrelevant after refactoring
+- Requirements are ambiguous
+- Backward compatibility concerns
+
+**STRATEGY**:
+- Fix root cause of assertion mismatch
+- If test is invalid, ask user before modifying/deleting
+- Always check compilation before running test (unless SKIP_BUILD=true)
+
+---
+
+## Environment Variables
+
+Provided by `run-and-fix-tests` skill:
+- `CLAUDE_PLUGIN_ROOT` - Plugin directory
+- `TEST_SINGLE_CMD` - Command to run single test
+- `TEST_SINGLE_LOG` - Test log file path
+- `BUILD_CMD` - Build command (for compilation check)
+- `BUILD_LOG` - Build log file path
+- `BUILD_WORKING_DIR` - Where to run build
+- `SKIP_BUILD` - "true" or "false" (skip compilation check?)
+- `LOG_DIR` - Log directory
+- `INITIAL_PWD` - Original working directory
