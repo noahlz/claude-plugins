@@ -17,6 +17,14 @@ const testFiles = args.length > 0
   ? args
   : [join(__dirname, 'dev-workflow/**/*.test.js')];
 
+// Include mock binaries in PATH for all Node.js test processes
+const mockPath = join(__dirname, 'dev-workflow', 'lib', 'mocks');
+const testEnv = {
+  ...process.env,
+  FORCE_COLOR: '1',
+  PATH: `${mockPath}:${process.env.PATH}`
+};
+
 const result = spawnSync(
   'node',
   [
@@ -31,7 +39,7 @@ const result = spawnSync(
     stdio: ['inherit', 'pipe', 'pipe'],
     cwd: dirname(__dirname),
     encoding: 'utf-8',
-    env: { ...process.env, FORCE_COLOR: '1' }
+    env: testEnv
   }
 );
 

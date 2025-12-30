@@ -3,6 +3,13 @@ name: run-and-fix-tests
 description: Build the project, run tests and systematically fix any failures. Activate when user says phrases such as "run tests", "test", "build and test" or "fix tests".
 ---
 
+This skill streamlines running and fixing unit tests in a project. It:
+- resolves the project build/test commands from project-specific configuration, generating it for future use (with user input), if needed.
+- strives for minimal token / context usage by redirecting build/test output to files
+- Uses specialized sub-agents to preserve main task context when fixing compilation and test breaks.
+
+Activate this skill when the user asks to "run and fix tests" (or similar), or when you realize you should run tests as your next development task.
+
 ## 0. Resolve Plugin Root
 
 → Resolve plugin root environment (check local project first, then user home):

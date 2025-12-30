@@ -107,8 +107,15 @@ async function prepare(options = {}) {
     }
 
     // No config exists or only auto-detected - load available sessions and present list
-    const { loadSessionData } = await import('ccusage/data-loader');
-    const allSessions = await loadSessionData();
+    // Try library first, fall back to CLI if needed
+    let allSessions;
+    try {
+      const { loadSessionData } = await import('ccusage/data-loader');
+      allSessions = await loadSessionData();
+    } catch (importError) {
+      const { loadSessionDataCli } = await import('./ccusage-cli-fallback.js');
+      allSessions = await loadSessionDataCli();
+    }
 
     if (!allSessions || allSessions.length === 0) {
       return {
@@ -246,6 +253,18 @@ async function commit(options = {}) {
       }
     }
 
+    // Validate metrics before commit
+    const { validateCostMetrics } = await import('./ccusage-cli-fallback.js');
+    const costsArray = Array.isArray(currentCost) ? currentCost : [currentCost];
+
+    if (!validateCostMetrics(costsArray)) {
+      return {
+        status: 'metrics_invalid',
+        data: { session_id: sessionId, attempted_costs: costsArray },
+        message: 'Cost metrics validation failed'
+      };
+    }
+
     // Build cost footer JSON (single line, no pretty-print)
     const costFooter = JSON.stringify({
       sessionId,
@@ -260,35 +279,39 @@ async function commit(options = {}) {
       fullMessage = `${subject}\n\nCo-Authored-By: 🤖 Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${costFooter}`;
     }
 
-    // Execute git commit
-    try {
-      execSync(`git commit -m "${fullMessage.replace(/"/g, '\\"')}"`, {
-        stdio: 'pipe',
-        cwd: baseDir
-      });
-    } catch (error) {
-      return {
-        status: 'error',
-        data: {},
-        message: 'Failed to create git commit'
-      };
-    }
-
-    // Get commit SHA
+    // Execute git commit with better error handling
     let commitSha;
     try {
+      // Use git commit -F - to pass message via stdin (better escaping)
+      execSync('git commit -F -', {
+        input: fullMessage,
+        cwd: baseDir,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      // Verify commit succeeded
       commitSha = execSync('git rev-parse HEAD', { cwd: baseDir, encoding: 'utf-8' }).trim();
-    } catch {
+
+      // Check if changes are still staged (indicates failure)
+      const statusOutput = execSync('git diff --cached --name-only', { cwd: baseDir, encoding: 'utf-8' });
+      if (statusOutput.trim()) {
+        return {
+          status: 'git_error',
+          data: { staged_changes: statusOutput },
+          message: 'Git commit execution failed - changes still staged'
+        };
+      }
+    } catch (error) {
       return {
-        status: 'error',
-        data: {},
-        message: 'Failed to retrieve commit SHA'
+        status: 'git_error',
+        data: { error_message: error.message },
+        message: 'Failed to create git commit'
       };
     }
 
     if (!commitSha) {
       return {
-        status: 'error',
+        status: 'git_error',
         data: {},
         message: 'Failed to retrieve commit SHA'
       };

@@ -1,0 +1,5 @@
+#!/bin/bash
+# Mock ccusage command that simulates CLI failure
+
+echo "Error: ccusage database not found or corrupted" >&2
+exit 1

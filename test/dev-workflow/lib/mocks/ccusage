@@ -2,41 +2,39 @@
 # Mock ccusage command for testing
 
 MOCK_DATA=$(cat <<'EOF'
-{
-  "sessions": [
-    {
-      "sessionId": "-Users-noahlz-projects-claude-plugins",
-      "modelBreakdowns": [
-        {
-          "modelName": "claude-haiku-4-5-20251001",
-          "inputTokens": 1000,
-          "outputTokens": 500,
-          "cacheCreationTokens": 0,
-          "cost": 0.45
-        },
-        {
-          "modelName": "claude-sonnet-4-5-20250929",
-          "inputTokens": 100,
-          "outputTokens": 50,
-          "cacheCreationTokens": 10,
-          "cost": 1.25
-        }
-      ]
-    },
-    {
-      "sessionId": "-Users-noahlz-projects-ligeon",
-      "modelBreakdowns": [
-        {
-          "modelName": "claude-haiku-4-5-20251001",
-          "inputTokens": 2000,
-          "outputTokens": 1000,
-          "cacheCreationTokens": 100,
-          "cost": 0.95
-        }
-      ]
-    }
-  ]
-}
+[
+  {
+    "sessionId": "-Users-noahlz-projects-claude-plugins",
+    "modelBreakdowns": [
+      {
+        "model": "claude-haiku-4-5-20251001",
+        "inputTokens": 1000,
+        "outputTokens": 500,
+        "cacheCreationTokens": 0,
+        "cost": 0.45
+      },
+      {
+        "model": "claude-sonnet-4-5-20250929",
+        "inputTokens": 100,
+        "outputTokens": 50,
+        "cacheCreationTokens": 10,
+        "cost": 1.25
+      }
+    ]
+  },
+  {
+    "sessionId": "-Users-noahlz-projects-ligeon",
+    "modelBreakdowns": [
+      {
+        "model": "claude-haiku-4-5-20251001",
+        "inputTokens": 2000,
+        "outputTokens": 1000,
+        "cacheCreationTokens": 100,
+        "cost": 0.95
+      }
+    ]
+  }
+]
 EOF
 )
 

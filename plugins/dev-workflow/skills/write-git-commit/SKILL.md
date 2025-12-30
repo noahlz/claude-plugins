@@ -3,6 +3,10 @@ name: write-git-commit
 description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user wants to commit changes or mentions commit, git commit, or create commit.
 ---
 
+This skill creates a git commit with a summary and optional body consisting for terse bullet points and git trailers for attribution and cost metrics.
+
+Activate when the user explicitly requests that you create a git commit i.e. "commit these changes," or when your next task is to commit changes.
+
 ## 0. Resolve CLAUDE_PLUGIN_ROOT
 
 → Resolve plugin root environment (check local project first, then user home):
@@ -221,6 +225,24 @@ Add user authentication feature
   - Display error message and stop
   - Suggest: Run `ccusage session --json` to see available sessions
 
+⚠ If status is "metrics_invalid":
+  - Display error: "Cost metrics validation failed"
+  - Show attempted_costs from data
+  - Use AskUserQuestion:
+    - "Stop and investigate" (Recommended)
+    - "Commit without metrics"
+    - "Retry fetching metrics"
+  - If "Stop and investigate":
+    - Run `git reset HEAD` to unstage changes
+    - Display: "Changes unstaged. Please investigate ccusage data."
+    - Stop workflow
+  - If "Commit without metrics":
+    - Warn: "Commit will proceed WITHOUT cost metrics"
+    - Save sessionId to config
+    - Continue to section 3 (proceed with commit)
+  - If "Retry fetching metrics":
+    - Re-run prepare step
+
 ## 3. Create Commit
 
 ⚠️ PREREQUISITE: Sections 1e and 2 MUST be completed
@@ -247,10 +269,45 @@ EOF
   - `SESSION_ID` and `CURRENT_COST` are auto-fetched by the commit action
   - Optional: Override `SESSION_ID` with inline env var: `SESSION_ID="..." bash ...`
 
+→ Validate cost metrics before sending commit:
+  - Check COMMIT_COST is array with at least one entry
+  - Check at least one model has cost > 0
+  - If invalid: Return to section 2 to re-fetch metrics
+
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 
 ✓ If status is "success" → Continue to section 4
 ✗ If status is "error" → Display error, return to section 2
+
+⚠ If status is "metrics_invalid":
+  - Display error: "Cost metrics validation failed"
+  - Show attempted_costs from data
+  - Use AskUserQuestion:
+    - "Stop and investigate" (Recommended)
+    - "Commit without metrics"
+    - "Retry fetching metrics"
+  - If "Stop and investigate":
+    - Run `git reset HEAD` to unstage changes
+    - Display: "Changes unstaged. Please investigate ccusage data."
+    - Stop workflow
+  - If "Commit without metrics":
+    - Warn: "Commit will proceed WITHOUT cost metrics"
+    - Return to section 3 and re-run commit without validating metrics
+  - If "Retry fetching metrics":
+    - Return to section 2
+
+⚠ If status is "git_error":
+  - Display error: "Failed to create git commit"
+  - Show error_message and/or staged_changes from data
+  - Use AskUserQuestion:
+    - "View git status"
+    - "Unstage and stop"
+  - If "View git status":
+    - Run `git status` and display output
+    - Ask user to resolve manually
+  - If "Unstage and stop":
+    - Run `git reset HEAD` to unstage changes
+    - Stop workflow
 
 ## 4. Success
 
