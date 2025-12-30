@@ -171,44 +171,55 @@ Add user authentication feature
    - User MUST have selected "Accept this message?"
    - If not completed, STOP and return to section 1
 
-→ Check if config exists: `node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" check-config`
+→ Check if config exists:
+```bash
+CHECK_CONFIG_RESULT=$(node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" check-config)
+CONFIG_STATUS=$(echo "$CHECK_CONFIG_RESULT" | jq -r '.status')
+```
 
-→ Parse JSON output based on status:
+→ Parse result based on status:
 
-- ✓ If status is "found": Config exists and is valid
-- ✗ If status is "not_found" or "empty": Config missing, proceed with session selection (2a)
-- ✗ If status is "invalid": Config file is corrupted, display error and stop
+- ✓ If `CONFIG_STATUS` is "found": Extract `SESSION_ID` from `CHECK_CONFIG_RESULT | jq -r '.data.config.sessionId'` → Jump to section 2b
+- ✗ If `CONFIG_STATUS` is "not_found" or "empty": No config exists → Jump to section 2a-select
+- ✗ If `CONFIG_STATUS` is "invalid": Config file is corrupted, display error: "Configuration file is corrupted. Please delete `.claude/settings.plugins.write-git-commit.json` and try again." → Stop workflow
 
 ---
 
-### 2a. Session Resolution (Load from config or select)
+### 2a. Session Resolution (No Config Case)
 
-✓ If config was found:
-  - Extract `SESSION_ID` from `data.config.sessionId`
-  - → Proceed to section 2b (Try Library Approach)
+⚠️ NOTE: Only execute this section if config was NOT found in section 2 check
 
-✗ If config not found:
-  - → Session selection needed, proceed to 2a-select
+**2a-detect: Detect Recommended Session**
+
+→ Compute recommended session ID from current working directory:
+```bash
+PWD_SESSION_ID=$(echo "$PWD" | sed 's/\//\-/g' | sed 's/^-//')
+```
+
+**2a-list: List Available Sessions**
+
+→ List available sessions via library-first, CLI-fallback:
+```bash
+SESSIONS_RESULT=$(node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" list-sessions)
+SESSIONS=$(echo "$SESSIONS_RESULT" | jq -r '.data // []')
+```
+
+→ Parse session list:
+  - If no sessions available: Display "No sessions found in ccusage library or CLI. Install ccusage: npm install -g ccusage" → Stop workflow
+  - If sessions available: Proceed to 2a-select
 
 **2a-select: Select Session ID**
 
-→ Display: "No session configuration found. Which session would you like to use?"
-
-→ List available sessions by running:
-```bash
-ccusage session --json
-```
-
-→ Build AskUserQuestion options from available sessions:
-  - For each session (limit to first 4-5 options): Create option with session ID as label
-  - Recommend the session matching current working directory:
-    - Compute recommended ID: `/path/to/pwd` → `"-path-to-pwd"`
-    - If recommended matches a session: Append " (Recommended)" to that option label
+→ Build AskUserQuestion with dynamic options from available sessions:
+  - For each session in SESSIONS (limit to first 4-5 options):
+    - Extract `sessionId` from session object
+    - Create option with sessionId as label
+    - If sessionId matches `PWD_SESSION_ID`: Append " (Recommended)" to label
   - Add final option: "Other (enter manually)" for manual session ID entry
 
 → Handle user selection:
 
-- If user selects a session option (not "Other"):
+**Case 1: User selects a session option (not "Other")**
   - Extract `SESSION_ID` from the selected option
   - Save to config:
     ```bash
@@ -217,81 +228,60 @@ ccusage session --json
     ```
   - Proceed to section 2b
 
-- If user selects "Other (enter manually)":
-  - Ask user to enter session ID manually
-  - Validate format (must start with `-` and contain hyphens)
-  - Save to config with the manually entered SESSION_ID
+**Case 2: User selects "Other (enter manually)"**
+  - Ask user: "Enter your session ID (format: -path-to-project)"
+  - Validate format: Must start with `-` and contain hyphens
+  - If invalid format: Re-prompt user to enter valid format
+  - Save to config with the manually entered SESSION_ID:
+    ```bash
+    mkdir -p .claude
+    echo '{"sessionId":"'$SESSION_ID'"}' > .claude/settings.plugins.write-git-commit.json
+    ```
   - Proceed to section 2b
 
 ---
 
-### 2b. Try Library Approach
+### 2b. Fetch Costs with prepare() Action
 
-→ Verify session exists via library:
+→ Call prepare() with resolved SESSION_ID to fetch costs via library-first, CLI-fallback:
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/verify-session-library.js" "$SESSION_ID"
+PREPARE_RESULT=$(node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$SESSION_ID")
+PREPARE_STATUS=$(echo "$PREPARE_RESULT" | jq -r '.status')
 ```
 
-→ Parse JSON output:
+→ Parse result based on status:
 
-✓ If status is "success" and `exists` is true:
-  - → Fetch costs via library:
-    ```bash
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/get-session-costs-library.js" "$SESSION_ID"
-    ```
-  - → Parse JSON output:
-    - If status is "success": Extract `CURRENT_COST` from `data`, proceed to section 3
-    - If status is "error": Proceed to 2c (CLI Fallback)
+**✓ If `PREPARE_STATUS` is "success":**
+  - Extract `CURRENT_COST` from `PREPARE_RESULT | jq -r '.data.current_cost'`
+  - Extract `METHOD` from `PREPARE_RESULT | jq -r '.data.method'` (library or cli)
+  - Proceed to section 3 (Create Commit)
 
-✗ If status is "error" OR `exists` is false:
-  - → Proceed to section 2c (CLI Fallback)
-
----
-
-### 2c. Try CLI Fallback
-
-→ Verify session exists via CLI:
-```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/verify-session-cli.js" "$SESSION_ID"
-```
-
-→ Parse JSON output:
-
-✓ If status is "success" and `exists` is true:
-  - → Fetch costs via CLI:
-    ```bash
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/get-session-costs-cli.js" "$SESSION_ID"
-    ```
-  - → Parse JSON output:
-    - If status is "success": Extract `CURRENT_COST` from `data`, proceed to section 3
-    - If status is "error": Proceed to 2d (Handle Error)
-
-✗ If status is "error" OR `exists` is false:
-  - → Proceed to section 2d (Handle Error)
+**✗ If `PREPARE_STATUS` is "error":**
+  - Extract error message from `PREPARE_RESULT | jq -r '.message'`
+  - Proceed to section 2d (Handle Error)
 
 ---
 
 ### 2d. Handle Cost Resolution Failure
 
-⚠️ CRITICAL: MUST use AskUserQuestion with these exact options:
+⚠️ CRITICAL: Cost resolution failed. AskUserQuestion with options:
   - "Stop and investigate" (Recommended)
   - "Commit without metrics"
-  - "Retry cost fetching"
+  - "Retry with different session"
 
-→ If "Stop and investigate":
+→ **If "Stop and investigate":**
   - Run `git reset HEAD` to unstage changes
   - Display: "Changes unstaged. Please check ccusage installation and session data."
-  - Display: `ccusage session --json` to show available sessions
+  - Run and display: `ccusage session --json` to show available sessions
   - Exit workflow
 
-→ If "Commit without metrics":
-  - Warn: "Proceeding WITHOUT cost metrics in commit footer"
-  - Set `CURRENT_COST=[]` (empty array as placeholder)
-  - Proceed to section 3
+→ **If "Commit without metrics":**
+  - Warn: "⚠️  Proceeding WITHOUT cost metrics in commit footer"
+  - Set `CURRENT_COST='[]'` (empty array as placeholder)
+  - Proceed to section 3 (Create Commit)
 
-→ If "Retry cost fetching":
-  - Return to section 2a-select to allow session re-selection
-  - Or offer to continue with current session: Ask "Retry with same session or select different?"
+→ **If "Retry with different session":**
+  - Jump back to section 2a-select to allow session re-selection
 
 ## 3. Create Commit
 

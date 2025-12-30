@@ -7,6 +7,275 @@ import { detectPluginRoot } from '../../lib/common.js';
 import { parseJsonFile } from '../../lib/config-loader.js';
 import { loadSessionConfig } from './load-config.js';
 import { ensureCcusageInstalled } from './ccusage-utils.js';
+import { extractCostMetrics } from './ccusage-cli-fallback.js';
+
+/**
+ * Verify session exists via ccusage library
+ * @param {string} sessionId - Session ID to verify
+ * @returns {Promise<object>} - { success, exists, error? }
+ */
+async function verifySessionViaLibrary(sessionId) {
+  try {
+    const { loadSessionData } = await import('ccusage/data-loader');
+    const sessions = await loadSessionData();
+    const session = sessions.find(s => s.sessionId === sessionId);
+
+    return {
+      success: true,
+      exists: session !== undefined
+    };
+  } catch (error) {
+    return {
+      success: false,
+      exists: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Get session costs via ccusage library
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<object>} - { success, costs, error? }
+ */
+async function getSessionCostsViaLibrary(sessionId) {
+  try {
+    const { loadSessionData } = await import('ccusage/data-loader');
+    const sessions = await loadSessionData();
+    const session = sessions.find(s => s.sessionId === sessionId);
+
+    if (!session) {
+      return {
+        success: false,
+        costs: [],
+        error: `Session '${sessionId}' not found`
+      };
+    }
+
+    const costs = extractCostMetrics(session);
+    if (costs.length === 0) {
+      return {
+        success: false,
+        costs: [],
+        error: `No model breakdowns found for session '${sessionId}'`
+      };
+    }
+
+    return {
+      success: true,
+      costs
+    };
+  } catch (error) {
+    return {
+      success: false,
+      costs: [],
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Verify session exists via ccusage CLI
+ * @param {string} sessionId - Session ID to verify
+ * @returns {object} - { success, exists, error? }
+ */
+function verifySessionViaCLI(sessionId) {
+  try {
+    const output = execSync('ccusage session --json', { encoding: 'utf-8' });
+    let sessions = JSON.parse(output);
+
+    // Handle both direct array and wrapped { sessions: [...] } format
+    if (sessions.sessions && Array.isArray(sessions.sessions)) {
+      sessions = sessions.sessions;
+    }
+
+    if (!Array.isArray(sessions)) {
+      return {
+        success: false,
+        exists: false,
+        error: 'Invalid format from ccusage CLI'
+      };
+    }
+
+    const session = sessions.find(s => s.sessionId === sessionId);
+    return {
+      success: true,
+      exists: session !== undefined
+    };
+  } catch (error) {
+    const errorMsg = error.message || '';
+    const isNotFound = error.code === 'ENOENT' ||
+                       errorMsg.includes('not found') ||
+                       errorMsg.includes('ENOENT') ||
+                       errorMsg.includes('command not found');
+
+    return {
+      success: false,
+      exists: false,
+      error: isNotFound
+        ? 'ccusage CLI not found - install with: npm install -g ccusage'
+        : `Failed to verify session via CLI: ${errorMsg}`
+    };
+  }
+}
+
+/**
+ * Get session costs via ccusage CLI
+ * @param {string} sessionId - Session ID
+ * @returns {object} - { success, costs, error? }
+ */
+function getSessionCostsViaCLI(sessionId) {
+  try {
+    const output = execSync('ccusage session --json', { encoding: 'utf-8' });
+    let sessions = JSON.parse(output);
+
+    // Handle both direct array and wrapped { sessions: [...] } format
+    if (sessions.sessions && Array.isArray(sessions.sessions)) {
+      sessions = sessions.sessions;
+    }
+
+    if (!Array.isArray(sessions)) {
+      return {
+        success: false,
+        costs: [],
+        error: 'Invalid format from ccusage CLI'
+      };
+    }
+
+    const session = sessions.find(s => s.sessionId === sessionId);
+
+    if (!session) {
+      return {
+        success: false,
+        costs: [],
+        error: `Session '${sessionId}' not found`
+      };
+    }
+
+    const costs = extractCostMetrics(session);
+    if (costs.length === 0) {
+      return {
+        success: false,
+        costs: [],
+        error: `No model breakdowns found for session '${sessionId}'`
+      };
+    }
+
+    return {
+      success: true,
+      costs
+    };
+  } catch (error) {
+    const errorMsg = error.message || '';
+    const isNotFound = error.code === 'ENOENT' ||
+                       errorMsg.includes('not found') ||
+                       errorMsg.includes('ENOENT') ||
+                       errorMsg.includes('command not found');
+
+    return {
+      success: false,
+      costs: [],
+      error: isNotFound
+        ? 'ccusage CLI not found - install with: npm install -g ccusage'
+        : `Failed to fetch costs via CLI: ${errorMsg}`
+    };
+  }
+}
+
+/**
+ * Resolve session costs using library-first, CLI-fallback strategy
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<object>} - { success, costs, method, error? }
+ */
+async function resolveSessionCosts(sessionId) {
+  // Try library first
+  const libVerify = await verifySessionViaLibrary(sessionId);
+
+  if (libVerify.success && libVerify.exists) {
+    const libCosts = await getSessionCostsViaLibrary(sessionId);
+
+    if (libCosts.success) {
+      return {
+        success: true,
+        costs: libCosts.costs,
+        method: 'library'
+      };
+    }
+    // Library exists but fetch failed, fall through to CLI
+  }
+
+  // Fall back to CLI
+  const cliVerify = verifySessionViaCLI(sessionId);
+
+  if (cliVerify.success && cliVerify.exists) {
+    const cliCosts = getSessionCostsViaCLI(sessionId);
+
+    if (cliCosts.success) {
+      return {
+        success: true,
+        costs: cliCosts.costs,
+        method: 'cli'
+      };
+    }
+
+    return {
+      success: false,
+      error: cliCosts.error
+    };
+  }
+
+  // Session not found in either source
+  return {
+    success: false,
+    error: `Session '${sessionId}' not found in library or CLI`
+  };
+}
+
+/**
+ * List available sessions from library or CLI
+ * @returns {Promise<object>} - { status, data, method, error? }
+ */
+async function listSessions() {
+  try {
+    // Try library first
+    const { loadSessionData } = await import('ccusage/data-loader');
+    const sessions = await loadSessionData();
+
+    return {
+      status: 'success',
+      data: sessions.map(s => ({
+        sessionId: s.sessionId,
+        cost: s.cost || 0
+      })),
+      method: 'library'
+    };
+  } catch (error) {
+    // Fall back to CLI
+    try {
+      const output = execSync('ccusage session --json', { encoding: 'utf-8' });
+      let sessions = JSON.parse(output);
+
+      if (sessions.sessions && Array.isArray(sessions.sessions)) {
+        sessions = sessions.sessions;
+      }
+
+      return {
+        status: 'success',
+        data: sessions.map(s => ({
+          sessionId: s.sessionId,
+          cost: s.cost || 0
+        })),
+        method: 'cli'
+      };
+    } catch (cliError) {
+      return {
+        status: 'error',
+        data: [],
+        error: 'Failed to list sessions via library or CLI'
+      };
+    }
+  }
+}
 
 /**
  * Check if config file exists and is valid
@@ -52,47 +321,50 @@ function checkConfig(baseDir = '.') {
 }
 
 /**
- * Prepare for commit: ensure setup is complete, load config if exists
- * Note: Session verification and cost fetching are now handled by skill orchestration
+ * Prepare for commit: check config, resolve costs from library or CLI
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
  * @param {string} options.pluginRoot - Plugin root
+ * @param {string} options.sessionId - Optional session ID to fetch costs for
  * @returns {Promise<object>} - { status, data, message }
  */
 async function prepare(options = {}) {
-  const { baseDir = '.', pluginRoot } = options;
+  const { baseDir = '.', pluginRoot, sessionId: providedSessionId } = options;
 
   try {
-    // Ensure ccusage is installed
-    await ensureCcusageInstalled(pluginRoot);
+    // Determine sessionId (from parameter or config)
+    let sessionId = providedSessionId;
+    if (!sessionId) {
+      const config = loadSessionConfig({ baseDir });
+      if (!config.configExists) {
+        return {
+          status: 'no_config',
+          data: {},
+          message: 'No session config found - skill will handle session selection'
+        };
+      }
+      sessionId = config.sessionId;
+    }
 
-    // Load session config
-    const config = loadSessionConfig({ baseDir });
+    // Resolve costs using library-first, CLI-fallback
+    const costResult = await resolveSessionCosts(sessionId);
 
-    if (config.errors.length > 0) {
+    if (!costResult.success) {
       return {
         status: 'error',
-        data: {},
-        message: config.errors.join('; ')
+        data: { session_id: sessionId },
+        message: costResult.error
       };
     }
 
-    // Return success with session ID if config was loaded
-    if (config.configExists) {
-      return {
-        status: 'success',
-        data: {
-          session_id: config.sessionId
-        },
-        message: 'Session config loaded'
-      };
-    }
-
-    // Config doesn't exist - skill will handle session selection
     return {
-      status: 'no_config',
-      data: {},
-      message: 'No session config found - skill will handle session selection'
+      status: 'success',
+      data: {
+        session_id: sessionId,
+        current_cost: costResult.costs,
+        method: costResult.method
+      },
+      message: `Session costs resolved via ${costResult.method}`
     };
   } catch (error) {
     return {
@@ -286,9 +558,16 @@ async function main() {
         result = checkConfig();
         break;
 
-      case 'prepare':
-        result = await prepare({ baseDir: '.', pluginRoot });
+      case 'list-sessions': {
+        result = await listSessions();
         break;
+      }
+
+      case 'prepare': {
+        const sessionId = process.argv[3] || null;
+        result = await prepare({ baseDir: '.', pluginRoot, sessionId });
+        break;
+      }
 
       case 'commit':
         result = await commit({ baseDir: '.', pluginRoot });
