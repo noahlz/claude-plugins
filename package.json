@@ -7,6 +7,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "test": "node test/run-tests.js"
+    "test": "node test/run-tests.js",
+    "coverage": "node --experimental-test-coverage --test test/**/*.test.js"
   }
 }

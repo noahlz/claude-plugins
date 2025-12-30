@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';

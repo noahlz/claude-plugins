@@ -46,6 +46,7 @@ claude-plugins/
 - Tests are written in Node.js using the built-in `node:test` module
 - Tests validate actual script behavior: JSON output validation, error handling, edge cases
 - Run all tests with: `npm test`
+- Inspect code coverage with the command `node --experimental-test-coverage --test test/**/*.test.js`
 
 **Agent-Based Error Fixing**:
 - Use agents (in `plugins/dev-workflow/agents/`) to handle iterative fix-verify loops: build-fixer for compilation errors, test-fixer for test failures

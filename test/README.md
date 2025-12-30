@@ -34,6 +34,14 @@ You can bypass the test runner and run tests directly, but you'll lose dual outp
 node --test test/path/to/test.js
 ```
 
+## Coverage
+
+Using the built-in node code-coverage tool:
+
+```bash
+npm run coverage
+```
+
 ## Test Infrastructure
 
 ### Node.js Test Framework
