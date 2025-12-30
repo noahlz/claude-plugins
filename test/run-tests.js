@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { globSync } from 'glob';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = join(dirname(__dirname), 'dist');
@@ -13,7 +14,7 @@ mkdirSync(distDir, { recursive: true });
 const args = process.argv.slice(2);
 const testFiles = args.length > 0
   ? args
-  : [join(__dirname, 'dev-workflow/**/*.test.js')];
+  : globSync('**/*.test.js', { cwd: __dirname }).map(file => join(__dirname, file));
 
 // Include mock binaries in PATH for all Node.js test processes
 const mockPath = join(__dirname, 'dev-workflow', 'lib', 'mocks');
