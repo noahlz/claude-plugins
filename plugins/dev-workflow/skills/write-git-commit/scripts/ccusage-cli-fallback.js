@@ -24,7 +24,12 @@ export async function loadSessionDataCli() {
 
     return sessions;
   } catch (error) {
-    if (error.code === 'ENOENT') {
+    // Check for various "command not found" error patterns
+    const errorMsg = error.message || '';
+    if (error.code === 'ENOENT' ||
+        errorMsg.includes('not found') ||
+        errorMsg.includes('ENOENT') ||
+        errorMsg.includes('command not found')) {
       throw new Error('ccusage CLI not found - install with: npm install -g ccusage');
     }
     throw new Error(`Failed to load sessions via CLI: ${error.message}`);
