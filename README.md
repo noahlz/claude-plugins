@@ -70,7 +70,7 @@ Related: [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https
 
 ## Testing
 
-Scripts used by skills are tested using Node.js with the built-in `node:test` module. Tests validate actual script behavior including JSON output, error handling, and edge cases.
+Scripts used by skills are tested using Node.js with the native `node:test` module.
 
 Run tests with this plugin's `run-and-fix-tests` skill ("eat your own dogfood") or:
 
@@ -78,7 +78,7 @@ Run tests with this plugin's `run-and-fix-tests` skill ("eat your own dogfood") 
 npm test
 ```
 
-Tests are located in `test/dev-workflow/`. See `test/README.md` for detailed testing documentation.
+See `test/README.md` for detailed testing documentation.
 
 ## Author
 

@@ -58,7 +58,7 @@ fi
 if [ -d "$PLUGIN_DIR" ]; then
   echo "Found plugin at: $PLUGIN_DIR"
   echo "Running npm install..."
-  (pushd "$PLUGIN_DIR" > /dev/null && npm install && popd > /dev/null)
+  (pushd "$PLUGIN_DIR" > /dev/null && npm install && npm ls && popd > /dev/null)
   echo "✓ Plugin dependencies installed"
 else
   echo "*** Could not locate plugin directory automatically."
