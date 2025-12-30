@@ -5,11 +5,13 @@ import { join } from 'node:path';
 import {
   setupTestEnv,
   teardownTestEnv,
+  execNodeScript,
   execBashScript,
-  getPluginScriptPath
+  getPluginScriptPath,
+  extractJsonFromOutput
 } from '../../lib/helpers.js';
 
-describe('write-git-commit: commit-workflow.sh', () => {
+describe('write-git-commit: commit-workflow.js', () => {
   let testEnv;
 
   beforeEach(() => {
@@ -43,10 +45,61 @@ describe('write-git-commit: commit-workflow.sh', () => {
     teardownTestEnv(testEnv);
   });
 
-  it('executes prepare action', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
+  it('check-config returns not_found when no config exists', () => {
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
+      args: ['check-config'],
+      cwd: testEnv.tmpDir,
+      env: {
+        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
+        PATH: testEnv.mockPath
+      }
+    });
+
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
+
+    assert.equal(data.status, 'not_found', 'Should return not_found when no config exists');
+  });
+
+  it('check-config returns found when config exists', () => {
+    // Create config file
+    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
+    writeFileSync(
+      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
+      JSON.stringify({ sessionId: 'test-session-id' })
+    );
+
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+
+    const result = execNodeScript('dev-workflow', scriptPath, {
+      args: ['check-config'],
+      cwd: testEnv.tmpDir,
+      env: {
+        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
+        PATH: testEnv.mockPath
+      }
+    });
+
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
+
+    assert.equal(data.status, 'found', 'Should return found when config exists');
+  });
+
+  it('prepare action returns valid status', () => {
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+
+    const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['prepare'],
       cwd: testEnv.tmpDir,
       env: {
@@ -55,71 +108,39 @@ describe('write-git-commit: commit-workflow.sh', () => {
       }
     });
 
-    assert.equal(result.exitCode, 0, 'Should execute prepare action successfully');
+    const data = extractJsonFromOutput(result.stdout);
+    assert.ok(data, `Output should contain valid JSON`);
+
+    // Status may be 'success', 'select_session', or 'error' depending on ccusage
+    assert.ok(['success', 'select_session', 'error'].includes(data.status), 'Should return valid status');
+    assert.ok(typeof data.data === 'object', 'Should have data field');
+    assert.ok(typeof data.message === 'string', 'Should have message field');
   });
 
-  it('executes commit action without body', () => {
-    writeFileSync(join(testEnv.tmpDir, 'changed.txt'), 'changed');
-    execBashScript('git', {
-      args: ['add', 'changed.txt'],
-      cwd: testEnv.tmpDir
-    });
+  it('commit action fails gracefully without session ID or config', () => {
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
-
-    const result = execBashScript('dev-workflow', scriptPath, {
-      args: ['commit', 'Test commit message'],
+    const result = execNodeScript('dev-workflow', scriptPath, {
+      args: ['commit'],
       cwd: testEnv.tmpDir,
+      input: 'Test commit message',
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
 
-    assert.equal(result.exitCode, 0, 'Should commit successfully');
+    const data = extractJsonFromOutput(result.stdout);
+    assert.ok(data, `Output should contain valid JSON`);
+
+    // Should be error status when no session is configured
+    assert.ok(['error'].includes(data.status), 'Status should be error without session');
   });
 
-  it('executes commit action with body', () => {
-    writeFileSync(join(testEnv.tmpDir, 'changed.txt'), 'changed');
-    execBashScript('git', {
-      args: ['add', 'changed.txt'],
-      cwd: testEnv.tmpDir
-    });
+  it('handles unknown action with error', () => {
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
-
-    const result = execBashScript('dev-workflow', scriptPath, {
-      args: ['commit', 'Test commit', 'Detailed commit body'],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    assert.equal(result.exitCode, 0, 'Should commit with body successfully');
-  });
-
-  it('executes create-commit action', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
-
-    const result = execBashScript('dev-workflow', scriptPath, {
-      args: ['create-commit', 'Commit message'],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    // Should handle gracefully (may not have staged changes)
-    assert.ok(result.exitCode === 0 || result.stderr.includes('nothing to commit'), 'Should handle create-commit action');
-  });
-
-  it('handles unknown action gracefully', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
-
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['unknown-action'],
       cwd: testEnv.tmpDir,
       env: {
@@ -128,16 +149,16 @@ describe('write-git-commit: commit-workflow.sh', () => {
       }
     });
 
-    // Should fail or show usage
-    assert.ok(result.exitCode !== 0 || result.stdout.includes('Usage'), 'Should reject unknown action');
-  });
+    assert.notEqual(result.exitCode, 0, 'Should fail with unknown action');
 
-  it('script exists and is executable', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.sh');
-    const stat = execBashScript('dev-workflow', 'test', {
-      args: ['-x', scriptPath]
-    });
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
 
-    assert.equal(stat.exitCode, 0, 'Script should be executable');
+    assert.equal(data.status, 'error', 'Status should be error');
+    assert.ok(data.message.includes('Unknown action'), 'Should mention unknown action');
   });
 });

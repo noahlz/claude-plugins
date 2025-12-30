@@ -60,7 +60,29 @@ The skill will verify this session exists in your ccusage data and prompt you to
 }
 ```
 
-**Finding your session ID:** [Install ccusage CLI](https://ccusage.com/guide/installation) and run `ccusage session --json` to see all available sessions.
+### Finding Your Session ID
+
+On first use, the skill will list all available Claude Code sessions and let you select one. The session matching your current working directory is automatically recommended.
+
+**Session IDs** are stored in `~/.claude/projects/`. List them with:
+```bash
+ls ~/.claude/projects
+```
+
+**Alternative:** Install [ccusage CLI](https://ccusage.com/guide/installation) and run:
+```bash
+ccusage session --json
+```
+
+### Session Selection Flow
+
+The skill automatically:
+1. Lists all available sessions from ccusage data
+2. Recommends the session matching your current directory
+3. Lets you select from the list or enter manually
+4. Saves your selection to `.claude/settings.plugins.write-git-commit.json`
+
+Once configured, the skill will use the saved session for all future commits in this project.
 
 ## Author
 

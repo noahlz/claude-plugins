@@ -5,12 +5,12 @@ import { join } from 'node:path';
 import {
   setupTestEnv,
   teardownTestEnv,
-  execBashScript,
+  execNodeScript,
   getPluginScriptPath,
   readFixture
 } from '../../lib/helpers.js';
 
-describe('write-git-commit: load-config.sh', () => {
+describe('write-git-commit: load-config.js', () => {
   let testEnv;
 
   beforeEach(() => {
@@ -35,9 +35,9 @@ describe('write-git-commit: load-config.sh', () => {
   }
 
   it('auto-detects session ID from project path when no config exists', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.js');
 
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -46,14 +46,25 @@ describe('write-git-commit: load-config.sh', () => {
     });
 
     assert.equal(result.exitCode, 0, 'Should succeed with auto-detected session');
+
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
+
+    assert.equal(data.status, 'success', 'Status should be success');
+    assert.ok(data.data.sessionId, 'Should have session ID');
+    assert.equal(data.data.autoDetected, true, 'Should be auto-detected');
   });
 
-  it('loads SESSION_ID from config file when it exists', () => {
+  it('loads sessionId from config file when it exists', () => {
     loadConfigFixture('test-session-123');
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.js');
 
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -62,14 +73,26 @@ describe('write-git-commit: load-config.sh', () => {
     });
 
     assert.equal(result.exitCode, 0, 'Should succeed loading from config');
+
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
+
+    assert.equal(data.status, 'success', 'Status should be success');
+    assert.equal(data.data.sessionId, 'test-session-123', 'Should load correct session ID');
+    assert.equal(data.data.configExists, true, 'Config should be marked as existing');
+    assert.equal(data.data.autoDetected, false, 'Should not be auto-detected');
   });
 
-  it('sets CONFIG_EXISTS flag based on config presence', () => {
+  it('indicates config exists when file is present', () => {
     loadConfigFixture('test-session');
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.js');
 
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -78,15 +101,21 @@ describe('write-git-commit: load-config.sh', () => {
     });
 
     assert.equal(result.exitCode, 0, 'Should succeed');
-    // When config exists, CONFIG_EXISTS should be true
-    assert.match(result.stdout, /true|false|CONFIG/, 'Script should export config status');
+
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
+
+    assert.equal(data.data.configExists, true, 'Config should exist');
   });
 
-  it('sets SESSION_AUTO_DETECTED flag when using auto-detection', () => {
-    // Don't create a config file
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
+  it('indicates auto-detection when no config file exists', () => {
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.js');
 
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -95,12 +124,21 @@ describe('write-git-commit: load-config.sh', () => {
     });
 
     assert.equal(result.exitCode, 0, 'Should succeed with auto-detection');
+
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
+
+    assert.equal(data.data.autoDetected, true, 'Should indicate auto-detection');
   });
 
-  it('converts pwd to session ID format', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
+  it('returns converted session ID in auto-detect mode', () => {
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.js');
 
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -109,19 +147,28 @@ describe('write-git-commit: load-config.sh', () => {
     });
 
     assert.equal(result.exitCode, 0, 'Should succeed');
+
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
+
     // Auto-detected session ID should use dash format (/ -> -)
+    assert.ok(data.data.sessionId.includes('-'), 'Session ID should contain dashes from path conversion');
   });
 
-  it('errors when SESSION_ID cannot be determined', () => {
+  it('errors when config file is missing sessionId field', () => {
     mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
     writeFileSync(
       join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
       JSON.stringify({}) // No sessionId field
     );
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.js');
 
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -129,33 +176,25 @@ describe('write-git-commit: load-config.sh', () => {
       }
     });
 
-    // When config has no sessionId and we can't auto-detect, should error
-    assert.notEqual(result.exitCode, 0, 'Should fail without SESSION_ID');
-    assert.match(result.stderr, /session|SESSION/, 'Should mention session in error');
-  });
+    assert.notEqual(result.exitCode, 0, 'Should fail without sessionId in config');
 
-  it('exports SESSION_ID for use by other scripts', () => {
-    loadConfigFixture('exported-session');
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
-
-    const result = execBashScript('dev-workflow', scriptPath, {
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    assert.equal(result.exitCode, 0, 'Should export SESSION_ID');
+    assert.equal(data.status, 'error', 'Status should be error');
+    assert.ok(data.message.includes('sessionId'), 'Should mention sessionId in error');
   });
 
   it('prefers config file over auto-detection', () => {
     loadConfigFixture('configured-session');
 
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.sh');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'load-config.js');
 
-    const result = execBashScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -164,6 +203,16 @@ describe('write-git-commit: load-config.sh', () => {
     });
 
     assert.equal(result.exitCode, 0, 'Should load from config');
+
+    let data;
+    try {
+      data = JSON.parse(result.stdout);
+    } catch (e) {
+      assert.fail(`Output should be valid JSON: ${result.stdout}`);
+    }
+
+    assert.equal(data.data.sessionId, 'configured-session', 'Should use configured session ID');
+    assert.equal(data.data.configExists, true, 'Config should exist');
   });
 
 });

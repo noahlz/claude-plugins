@@ -193,6 +193,30 @@ Add user authentication feature
 
   - If "No": Ask user for exact session ID, save to config, re-run prepare
 
+⚠ If status is "select_session":
+  - Extract `sessions` array from `data.sessions`
+  - Extract `recommended_id` from `data.recommended_id` (may be null)
+  - Build AskUserQuestion options from first 4-5 sessions:
+    - For each session: Create option with session ID as label
+    - If session ID matches `recommended_id`: Append " (Recommended)" to label
+    - Add final option: "Other (enter manually)" for manual session ID entry
+  - If user selects a session option (not "Other"):
+    - Extract selected `session_id` from the selected option
+    - Save to config:
+
+    ```bash
+    mkdir -p .claude
+    echo '{"sessionId":"'$session_id'"}' | jq '.' > .claude/settings.plugins.write-git-commit.json
+    ```
+
+    Then re-run prepare step
+
+  - If user selects "Other (enter manually)":
+    - Ask user to enter session ID manually
+    - Validate format (must contain hyphens)
+    - Save to config with the manually entered session ID
+    - Re-run prepare step
+
 ✗ If status is "error":
   - Display error message and stop
   - Suggest: Run `ccusage session --json` to see available sessions

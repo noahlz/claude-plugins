@@ -239,7 +239,28 @@ export function execNodeScript(pluginName, scriptPath, options = {}) {
  * @returns {string} Full path to script
  */
 export function getPluginScriptPath(pluginName, skillName, scriptName) {
-  return join(PLUGIN_ROOT, 'plugins', pluginName, 'skills', skillName, 'scripts', scriptName);
+  return join(PLUGIN_ROOT, pluginName, 'skills', skillName, 'scripts', scriptName);
+}
+
+/**
+ * Extract JSON from output that may have npm audit or other non-JSON text before it
+ * @param {string} output - Output string that may contain JSON
+ * @returns {Object|null} Parsed JSON object or null if no JSON found
+ */
+export function extractJsonFromOutput(output) {
+  // Find the first { character which marks the start of JSON
+  const jsonStart = output.indexOf('{');
+  if (jsonStart === -1) {
+    return null;
+  }
+
+  // Try to parse from that point onward
+  const jsonPart = output.substring(jsonStart);
+  try {
+    return JSON.parse(jsonPart);
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
