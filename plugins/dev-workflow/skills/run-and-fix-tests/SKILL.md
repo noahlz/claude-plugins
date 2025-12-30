@@ -1,6 +1,6 @@
 ---
 name: run-and-fix-tests
-description: Build the project, run tests and systematically fix any failures. Activate when user says: "run tests", "run the tests", "test this/it/the changes", "execute tests", "build and test", "fix tests", "make sure tests pass", "verify with tests", "check if tests work", or when tests are the logical next development step.
+description: Build the project, run tests and systematically fix any failures. Activate when user says: "run tests", "run the tests", "test this/it/the changes", "execute tests", "build and test", "fix tests", "make sure tests pass", "verify with tests", "check if tests work/pass", "verify the fix/changes", "see if this/it works", "check that/if it works", OR when user mentions "failing/failed tests", "test failures", "CI failing", "GitHub Actions failing", "tests not passing", OR after making code changes to verify they work, OR when tests are the logical next development step.
 ---
 
 This skill streamlines running and fixing unit tests in a project. It:
@@ -15,9 +15,17 @@ Activate this skill when the user requests testing using phrases like:
 - "build and test"
 - "fix tests" / "fix failing tests"
 - "make sure tests pass" / "ensure tests work"
-- "verify with tests" / "check if tests pass"
+- "verify with tests" / "check if tests pass/work"
+- "verify the fix/changes" / "see if this/it works"
+- "check that it works" / "check if it works"
 
-Also activate proactively when you've made code changes and recognize running tests would be appropriate (but suggest it first: "Should I run the test suite to verify these changes?").
+Also activate when user mentions test failures or CI issues:
+- "failing tests" / "failed tests" / "test failures"
+- "tests not passing" / "tests are broken"
+- "CI failing" / "GitHub Actions failing"
+- "tests failing in CI" / "CI/CD failures"
+
+Also activate proactively after making code changes to verify they work (suggest first: "Should I run the test suite to verify these changes?").
 
 ## 0. Resolve Plugin Root
 
