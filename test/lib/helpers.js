@@ -187,10 +187,55 @@ export function execBashScript(pluginName, scriptPath, options = {}) {
 }
 
 /**
+ * Execute a Node.js script with given options
+ * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
+ * @param {string} scriptPath - Path to Node.js script
+ * @param {object} options - Options { cwd, env, input, args }
+ * @returns {object} Result object { exitCode, stdout, stderr, output }
+ */
+export function execNodeScript(pluginName, scriptPath, options = {}) {
+  const {
+    cwd = process.cwd(),
+    env = {},
+    input = '',
+    args = []
+  } = options;
+
+  const fullEnv = {
+    ...process.env,
+    ...env,
+    PATH: `${join(TESTS_ROOT, pluginName, 'lib', 'mocks')}:${process.env.PATH}`
+  };
+
+  try {
+    const result = spawnSync('node', [scriptPath, ...args], {
+      cwd,
+      env: fullEnv,
+      input,
+      encoding: 'utf8'
+    });
+
+    return {
+      exitCode: result.status || 0,
+      stdout: result.stdout || '',
+      stderr: result.stderr || '',
+      output: result.stdout || ''
+    };
+  } catch (e) {
+    return {
+      exitCode: 1,
+      stdout: '',
+      stderr: e.message,
+      error: e
+    };
+  }
+}
+
+/**
  * Get the path to a plugin script
  * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
  * @param {string} skillName - Skill name (e.g., 'write-git-commit')
- * @param {string} scriptName - Script name (e.g., 'load-config.sh')
+ * @param {string} scriptName - Script name (e.g., 'load-config.sh' or 'load-config.js')
  * @returns {string} Full path to script
  */
 export function getPluginScriptPath(pluginName, skillName, scriptName) {

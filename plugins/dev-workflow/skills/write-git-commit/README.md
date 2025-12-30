@@ -10,9 +10,13 @@ Create git commits with Claude Code. Automatically embeds attribution and sessio
 ## Prerequisites
 
 - `node` version 18+
-- **ccusage** - Claude Code usage CLI ([ryoppippi/ccusage](https://github.com/ryoppippi/ccusage))
-  - Install: https://ccusage.com/guide/installation#quick-start-recommended
-  - The plugin will try `ccusage`, `npx ccusage`, or `bunx ccusage`
+
+## Dependencies
+
+The plugin automatically installs required dependencies on first use:
+- **ccusage** - Claude Code usage library ([ryoppippi/ccusage](https://github.com/ryoppippi/ccusage))
+  - Auto-installed to the plugin's `node_modules` directory
+  - No manual installation needed
 
 ## Usage
 
@@ -56,7 +60,7 @@ The skill will verify this session exists in your ccusage data and prompt you to
 }
 ```
 
-**Finding your session ID:** Run `ccusage session --json` to see all available sessions.
+**Finding your session ID:** [Install ccusage CLI](https://ccusage.com/guide/installation) and run `ccusage session --json` to see all available sessions.
 
 ## Author
 

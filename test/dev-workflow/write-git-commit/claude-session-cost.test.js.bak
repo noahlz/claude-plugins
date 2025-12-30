@@ -43,7 +43,7 @@ describe('write-git-commit: claude-session-cost.js', () => {
   });
 
   it('includes required fields in output', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.js');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       env: {
@@ -65,7 +65,7 @@ describe('write-git-commit: claude-session-cost.js', () => {
   });
 
   it('does not include cache token fields', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.js');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       env: {
@@ -84,7 +84,7 @@ describe('write-git-commit: claude-session-cost.js', () => {
   });
 
   it('handles multiple models in session', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.js');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       env: {
@@ -101,7 +101,7 @@ describe('write-git-commit: claude-session-cost.js', () => {
   });
 
   it('costs are rounded to 2 decimal places', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.js');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       env: {
@@ -121,7 +121,7 @@ describe('write-git-commit: claude-session-cost.js', () => {
   });
 
   it('errors when SESSION_ID not set', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.js');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       env: {
@@ -136,7 +136,7 @@ describe('write-git-commit: claude-session-cost.js', () => {
   });
 
   it('errors when ccusage not found', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.js');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       env: {
@@ -151,7 +151,7 @@ describe('write-git-commit: claude-session-cost.js', () => {
   });
 
   it('errors when session not found', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.js');
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'claude-session-cost.sh');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       env: {

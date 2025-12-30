@@ -10,16 +10,22 @@ See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-m
 
 Efficient workflows for common development tasks.
 
-Add the marketplace to your Claude Code settings:
+**Quick Install:**
+
+```bash
+curl https://raw.githubusercontent.com/noahlz/claude-plugins/main/plugins/dev-workflow/install.sh | sh
+```
+
+Or manually add the marketplace to your Claude Code settings:
 
 ```bash
 claude plugin marketplace add https://github.com/noahlz/claude-plugins.git
 claude plugin install dev-workflow@noahlz.github.io
 ```
+
 #### Prerequisites
 
-- Node.js 18+
-- [`ccusage`](https://github.com/ryoppippi/ccusage)
+- Node.js 18+ (checked by install script)
 
 
 #### Skills
@@ -27,7 +33,7 @@ claude plugin install dev-workflow@noahlz.github.io
 | Skill | Description | Command | Documentation |
 |-------|-------------|---------|---------------|
 | [`run-and-fix-tests`](./plugins/dev-workflow/skills/run-and-fix-tests/SKILL.md) | Run tests with clean output and fix any failures using the `test-fixer` agent. | `/dev-workflow:test` (or `/test`) | [README.md](./plugins/dev-workflow/skills/run-and-fix-tests/README.md) |
-| [`write-git-commit`](./plugins/dev-workflow/skills/write-git-commit/SKILL.md) | Create git commits with Claude Code cost metrics embedded in commit footers. Requires [`ccusage`](https://github.com/ryoppippi/ccusage). | `/dev-workflow:commit` (or `/commit`) | [README.md](./plugins/dev-workflow/skills/write-git-commit/README.md) |
+| [`write-git-commit`](./plugins/dev-workflow/skills/write-git-commit/SKILL.md) | Create git commits with Claude Code cost metrics embedded in commit footers. | `/dev-workflow:commit` (or `/commit`) | [README.md](./plugins/dev-workflow/skills/write-git-commit/README.md) |
 
 #### Agents
 

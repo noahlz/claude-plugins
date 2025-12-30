@@ -1,0 +1,8 @@
+{
+  "name": "dev-workflow-plugin",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ccusage": "^17.0.0"
+  }
+}

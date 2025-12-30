@@ -160,15 +160,15 @@ Add user authentication feature
    - User MUST have selected "Accept this message?"
    - If not completed, STOP and return to section 1
 
-→ Check if config exists: `bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" check-config`
+→ Check if config exists: `node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" check-config`
 
 → Parse JSON output based on status:
 
-- ✓ If status is "found": Config exists and is valid, proceed to prepare step 
-- ✗ If status is "not_found" or "empty": Config missing, proceed with auto-detection in prepare step  
-- ✗ If status is "invalid": Config file is corrupted, display error and stop  
+- ✓ If status is "found": Config exists and is valid, proceed to prepare step
+- ✗ If status is "not_found" or "empty": Config missing, proceed with auto-detection in prepare step
+- ✗ If status is "invalid": Config file is corrupted, display error and stop
 
-→ Run prepare: `bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" prepare`  
+→ Run prepare: `node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare`  
 → Parse JSON output based on status:
 
 ✓ If status is "success":
@@ -206,7 +206,7 @@ Add user authentication feature
 
 → Run commit action with commit message via stdin:
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.sh" commit <<'EOF'
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" commit <<'EOF'
 COMMIT_SUBJECT
 [blank line]
 COMMIT_BODY (if present)
