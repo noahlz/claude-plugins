@@ -1,11 +1,18 @@
 ---
 name: write-git-commit
-description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user wants to commit changes or mentions commit, git commit, or create commit.
+description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user mentions: "commit", "create a commit", "make a commit", "commit these/my/the changes", "commit this/it", "save to git", "check in", or when your next task is to commit completed work.
 ---
 
 This skill creates a git commit with a summary and optional body consisting for terse bullet points and git trailers for attribution and cost metrics.
 
-Activate when the user explicitly requests that you create a git commit i.e. "commit these changes," or when your next task is to commit changes.
+Activate when the user explicitly requests a git commit using phrases like:
+- "commit these/my/the changes"
+- "create/make a commit"
+- "commit this/it"
+- "save to git" / "check this in"
+- "git commit"
+
+Also activate proactively when you've completed a significant task and recognize committing would be the natural next step (but ASK first via the skill's approval workflow).
 
 ## 0. Resolve CLAUDE_PLUGIN_ROOT
 
