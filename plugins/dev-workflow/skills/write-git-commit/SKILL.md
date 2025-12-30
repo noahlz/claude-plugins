@@ -43,8 +43,8 @@ Execute the steps in `${CLAUDE_PLUGIN_ROOT}/common/check-node.md` to determine i
 
 These rules apply to all sections below. Violations break the workflow:
 
-- **No improvisation**: The `commit-workflow.sh` script handles all commit creation logic (message assembly, metrics embedding, git execution). Do not duplicate or bypass this logic.
-- **Metrics are automatic**: The `commit` action auto-fetches `SESSION_ID` and `CURRENT_COST` if not in env. You only need to provide the commit message (subject + body) via stdin.
+- **No improvisation**: The `commit-workflow.js` script handles all commit creation logic (message assembly, metrics embedding, git execution). Do not duplicate or bypass this logic.
+- **Environment variables required**: The script requires `SESSION_ID` and `CURRENT_COST` to be passed as environment variables (obtained from section 2). The script will load SESSION_ID from config if not in env, but CURRENT_COST must always be explicitly provided.
 - **User approval is mandatory**: Section 1e MUST execute AskUserQuestion before any commit is created. Never skip to section 2 without explicit user approval. This is a hard requirement.
 
 ---
@@ -302,7 +302,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/verify-session-cli.j
 
 → Run commit action with commit message via stdin:
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" commit <<'EOF'
+SESSION_ID="$SESSION_ID" CURRENT_COST="$CURRENT_COST" node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" commit <<'EOF'
 COMMIT_SUBJECT
 [blank line]
 COMMIT_BODY (if present)
@@ -316,8 +316,8 @@ EOF
 ⚠ IMPORTANT:
   - This bash command should NOT trigger permission prompts - user already approved message in section 1e and session in section 2
   - Commit message is passed via stdin (heredoc)
-  - `SESSION_ID` and `CURRENT_COST` are auto-fetched by the commit action
-  - Optional: Override `SESSION_ID` with inline env var: `SESSION_ID="..." bash ...`
+  - `SESSION_ID` and `CURRENT_COST` MUST be passed as environment variables (extracted from section 2)
+  - Both variables must be set from the values resolved in section 2 before invoking this command
 
 → Validate cost metrics before sending commit:
   - Check COMMIT_COST is array with at least one entry
