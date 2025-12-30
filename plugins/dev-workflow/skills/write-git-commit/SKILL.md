@@ -35,7 +35,7 @@ export CLAUDE_PLUGIN_ROOT
 
 ## 0a. Check Node.js Installation
 
-Execute the steps in `${CLAUDE_PLUGIN_ROOT}/common/check-node.md` to determin if node 18+ is available.
+Execute the steps in `${CLAUDE_PLUGIN_ROOT}/common/check-node.md` to determine if node 18+ is available.
 
 ---
 
@@ -283,8 +283,8 @@ EOF
 
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 
-✓ If status is "success" → Continue to section 4
-✗ If status is "error" → Display error, return to section 2
+✓ If status is "success" → Continue to section 4  
+✗ If status is "error" → Display error, return to section 2  
 
 ⚠ If status is "metrics_invalid":
   - Display error: "Cost metrics validation failed"

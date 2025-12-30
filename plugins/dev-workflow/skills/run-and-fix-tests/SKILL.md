@@ -8,24 +8,13 @@ This skill streamlines running and fixing unit tests in a project. It:
 - strives for minimal token / context usage by redirecting build/test output to files
 - Uses specialized sub-agents to preserve main task context when fixing compilation and test breaks.
 
-Activate this skill when the user requests testing using phrases like:
-- "run tests" / "run the tests"
-- "test this" / "test it" / "test the changes" / "test my code"
-- "execute tests" / "run test suite"
+Activate this skill proactively after making code changes to verify they work (suggest first: "Should I run the test suite to verify these changes?").
+
+Also activate this skill when the user requests testing using phrases like:
+- "run tests"
+- "test the changes"
 - "build and test"
-- "fix tests" / "fix failing tests"
-- "make sure tests pass" / "ensure tests work"
-- "verify with tests" / "check if tests pass/work"
-- "verify the fix/changes" / "see if this/it works"
-- "check that it works" / "check if it works"
-
-Also activate when user mentions test failures or CI issues:
-- "failing tests" / "failed tests" / "test failures"
-- "tests not passing" / "tests are broken"
-- "CI failing" / "GitHub Actions failing"
-- "tests failing in CI" / "CI/CD failures"
-
-Also activate proactively after making code changes to verify they work (suggest first: "Should I run the test suite to verify these changes?").
+- "fix failing tests"
 
 ## 0. Resolve Plugin Root
 
