@@ -309,7 +309,7 @@ async function listSessions() {
       status: 'success',
       data: sessions.map(s => ({
         sessionId: s.sessionId,
-        cost: s.cost || 0
+        lastActivity: s.lastActivity || ''
       })),
       method: 'library'
     };
@@ -327,7 +327,7 @@ async function listSessions() {
         status: 'success',
         data: sessions.map(s => ({
           sessionId: s.sessionId,
-          cost: s.cost || 0
+          lastActivity: s.lastActivity || ''
         })),
         method: 'cli'
       };
@@ -783,7 +783,21 @@ async function main() {
 
     // Output result
     let output;
-    if (exportVars) {
+
+    // Special handling for list-sessions: output raw session IDs sorted by lastActivity descending
+    if (action === 'list-sessions' && result.status === 'success') {
+      const sessionIds = result.data
+        .sort((a, b) => {
+          // Sort by lastActivity descending (most recent first)
+          // Handles dates in YYYY-MM-DD format and empty strings
+          const dateA = a.lastActivity || '';
+          const dateB = b.lastActivity || '';
+          return dateB.localeCompare(dateA);
+        })
+        .map(s => s.sessionId)
+        .join('\n');
+      output = sessionIds;
+    } else if (exportVars) {
       output = exportAsShellVars(result);
     } else {
       output = JSON.stringify(result, null, 2);

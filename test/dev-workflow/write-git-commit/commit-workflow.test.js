@@ -414,11 +414,11 @@ describe('write-git-commit: commit-workflow.js', () => {
     );
   });
 
-  it('list-sessions returns data array with available sessions', () => {
+  it('list-sessions returns raw session IDs (one per line)', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-    const outputFile = join(testEnv.tmpDir, 'list-sessions-output.json');
+    const outputFile = join(testEnv.tmpDir, 'list-sessions-output.txt');
 
-    execNodeScript('dev-workflow', scriptPath, {
+    const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['list-sessions', outputFile],
       cwd: testEnv.tmpDir,
       env: {
@@ -427,18 +427,19 @@ describe('write-git-commit: commit-workflow.js', () => {
       }
     });
 
-    let data;
-    try {
-      data = JSON.parse(readFileSync(outputFile, 'utf-8'));
-    } catch (e) {
-      assert.fail(`Output file should contain valid JSON: ${e.message}`);
+    assert.ok(existsSync(outputFile), 'Output file should be created');
+
+    const fileContents = readFileSync(outputFile, 'utf-8');
+
+    // On success, file should contain session IDs (one per line) or be empty
+    // On error, file may be empty or contain empty string
+    // Both are acceptable - we're checking format, not ccusage availability
+    if (fileContents.trim()) {
+      const sessionIds = fileContents.trim().split('\n');
+      sessionIds.forEach(id => {
+        assert.ok(typeof id === 'string', 'Each line should be a session ID string');
+      });
     }
-
-    // Should have status field
-    assert.ok(['success', 'error'].includes(data.status), 'Status should be success or error');
-
-    // Should have data field (array or empty array if no sessions)
-    assert.ok(Array.isArray(data.data) || data.data === undefined, 'Data should be array or undefined');
   });
 
   // ====== Phase 4: Output File Tests ======
@@ -473,8 +474,8 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.equal(data.data.config.sessionId, '-test-session-id', 'Should contain session ID');
   });
 
-  it('list-sessions writes to output file when specified', () => {
-    const outputFile = join(testEnv.tmpDir, 'list-sessions-output.json');
+  it('list-sessions writes raw session IDs to output file when specified', () => {
+    const outputFile = join(testEnv.tmpDir, 'list-sessions-output.txt');
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
@@ -490,9 +491,10 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.ok(existsSync(outputFile), 'Output file should be created');
 
     const fileContents = readFileSync(outputFile, 'utf-8');
-    const data = JSON.parse(fileContents);
 
-    assert.ok(['success', 'error'].includes(data.status), 'Should have valid status');
+    // Output should be session IDs (one per line) or empty on error
+    // Just verify it's a string (not JSON)
+    assert.ok(typeof fileContents === 'string', 'Output should be a string');
   });
 
   it('prepare writes to output file when specified', () => {

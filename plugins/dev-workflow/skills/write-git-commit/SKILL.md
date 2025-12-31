@@ -295,27 +295,46 @@ source "$TMP_RESOLVE"
     ```
   - Proceed to Section 2d (Fetch Costs)
 
-**Case 2: "Show available sessions and pick one"**  
-FIXME:  This case has problem  
-FIXME:   - The list sessions function writes json to a file  
-FIXME:   - use a jq one liner to extract the sessionId values raw and sorted, present them to the user.  
-FIXME:   -  --export-vars does not seem to have a point anymore. If so, remove it.  
+**Case 2: "Show available sessions and pick one"**
 
-  - Call list-sessions to get all sessions:
-    ```bash
-    TMP_SESSIONS="/tmp/write-git-commit-sessions-$$.sh"
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" list-sessions "$TMP_SESSIONS" --export-vars
-    source "$TMP_SESSIONS"
-    ```
-  - Parse SESSIONS JSON array (should contain array of {sessionId, cost} objects)
-  - Extract session IDs from SESSIONS
+→ Get available sessions (one per line, sorted by last activity descending):
+```bash
+TMP_SESSIONS="/tmp/write-git-commit-sessions-$$.txt"
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" list-sessions "$TMP_SESSIONS"
+
+# Read session IDs into array
+SESSION_IDS=()
+while IFS= read -r line; do
+  SESSION_IDS+=("$line")
+done < "$TMP_SESSIONS"
+
+# Check if we got any sessions
+if [ ${#SESSION_IDS[@]} -eq 0 ]; then
+  echo "No sessions found."
+  exit 1
+fi
+
+# Display for LLM to capture
+echo "Available sessions (most recent activity first):"
+for session_id in "${SESSION_IDS[@]}"; do
+  echo "  $session_id"
+done
+```
+
+→ Handle result based on exit code:
+
+**✓ Exit 0 - Sessions found:**
   - Build AskUserQuestion with dynamic options:
-    - For each sessionId in first 4 sessions: Create option with label = sessionId
-    - If CALCULATED_SESSION_ID is in the list: Mark it as "(Recommended)"
+    - For each sessionId in first 4 sessions from SESSION_IDS array: Create option with label = sessionId
+    - If CALCULATED_SESSION_ID (from Section 2b) is in the list: Mark it as "(Recommended)"
     - Add final option: "Other (enter manually)"
   - Handle user selection:
     - If user picks a session: Set SESSION_ID, save config, proceed to Section 2d
     - If user picks "Other": Return to Case 1 (manual entry)
+
+**✗ Exit 1 - No sessions:**
+  - Display error message from bash output
+  - Fall back to Case 1 (manual entry)
 
 **Case 3: "Cancel commit"**
   - Run `git reset HEAD` to unstage changes
