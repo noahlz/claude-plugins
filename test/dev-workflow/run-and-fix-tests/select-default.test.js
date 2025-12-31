@@ -5,9 +5,9 @@ import { join } from 'node:path';
 import {
   setupPluginTestEnv,
   teardownTestEnv,
-  createToolConfig,
-  readJsonFile
-} from '../../lib/helpers.js';
+  createToolConfig
+} from './helpers.js';
+import { readJsonFile } from '../../lib/helpers.js';
 import { selectDefault, generatePolyglotConfig } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/select-default.js';
 
 describe('run-and-fix-tests: select-default.js', () => {

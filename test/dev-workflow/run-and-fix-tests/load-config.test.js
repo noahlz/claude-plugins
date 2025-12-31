@@ -5,9 +5,8 @@ import { join } from 'node:path';
 import {
   setupPluginTestEnv,
   teardownTestEnv,
-  assertFileExists,
   loadConfigFixture
-} from '../../lib/helpers.js';
+} from './helpers.js';
 import { loadConfig, generateEnv, formatJson } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/load-config.js';
 
 describe('run-and-fix-tests: load-config.js', () => {

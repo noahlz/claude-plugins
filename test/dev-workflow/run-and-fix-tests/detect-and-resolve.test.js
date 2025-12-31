@@ -6,7 +6,7 @@ import {
   setupPluginTestEnv,
   teardownTestEnv,
   setupProjectTemplate
-} from '../../lib/helpers.js';
+} from './helpers.js';
 import { detectTools, loadToolRegistry } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/detect-and-resolve.js';
 
 describe('run-and-fix-tests: detect-and-resolve.js', () => {
