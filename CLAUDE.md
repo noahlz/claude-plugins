@@ -35,29 +35,29 @@ claude-plugins/
 
 ## Development Philosophy
 
-**Script-First Approach**:
+### Move Fast and Break Things
+
+*This plugin is in early stages!* You do **NOT* have to worry about backwards compatability when adding enhancements or refactoring.
+
+### Script-First Approach
+
 - Prefer writing and invoking pre-existing scripts over dynamic code generation or ad-hoc commands.
 - When writing new scripts, keep code DRY with shared scripts under a sibling `lib/` directory i.e. `plugins/dev-workflow/skills/lib`
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
 - Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
 - This keeps workflows testable, maintainable, and predictable.
 
-**Testing Approach**:
-- Tests are written in Node.js using the built-in `node:test` module
-- Tests validate actual script behavior: JSON output validation, error handling, edge cases
-- Run all tests with: `npm test`
-- Inspect code coverage with the command `node --experimental-test-coverage --test test/**/*.test.js`
+### Testing Approach
 
-**Dependencies**:
-- `ccusage` - Usage analysis library for Claude Code sessions, installed as devDependency for testing
+Use this project's own plugin `dev-workflow:run-and-fix-tests` for regression testing changes and fixing bugs.
+
+### Dependencies
+
+`ccusage` - Usage analysis library for Claude Code sessions, installed as devDependency for testing
+
   - Provides programmatic access to session data, token costs, and usage metrics
   - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
   - Documentation: https://ccusage.com/guide/library-usage
-
-**Agent-Based Error Fixing**:
-- Use agents (in `plugins/dev-workflow/agents/`) to handle iterative fix-verify loops: build-fixer for compilation errors, test-fixer for test failures
-- Agents receive error lists and environment context from skills via natural language descriptions
-- Agents implement the TodoWrite pattern for progress tracking and user control (retry loops, skip/continue prompts)
 
 ## NOTE: Reinstall After Changing
 
@@ -73,20 +73,3 @@ Changes do not take effect immediately. The user needs to exit the session, run 
 - [Anthropic Agent Skills Spec](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview#skill-structure)
 - [Claude Code Plugins Reference](https://code.claude.com/docs/en/plugins-reference)
 - [Claude Code Marketplaces Reference](https://code.claude.com/docs/en/plugin-marketplaces#plugin-marketplaces)
-
-## APPENDIX: Adding a New Plugin
-
-Place new plugins under the `plugins/` directory:
-
-```bash
-plugins/
-├── dev-workflow/          # Existing plugin
-└── my-plugin/             # New plugin
-    ├── agents/
-    ├── commands/
-    └── skills/
-```
-
-Also:
-- Examine the existing plugins for conventions and structure.
-- Add the plugin registration to `.claude-code/markeplace.json`.
