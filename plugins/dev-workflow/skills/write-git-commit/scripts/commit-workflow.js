@@ -6,7 +6,7 @@ import { execSync } from 'child_process';
 import { detectPluginRoot } from '../../lib/common.js';
 import { parseJsonFile } from '../../lib/config-loader.js';
 import { loadSessionConfig } from './load-config.js';
-import { ensureCcusageInstalled } from './ccusage-utils.js';
+import { ensureCcusageInstalled, pwdToSessionId } from './ccusage-utils.js';
 import { extractCostMetrics } from './ccusage-cli-fallback.js';
 
 /**
@@ -45,9 +45,21 @@ function exportAsShellVars(result) {
     }
   }
 
-  if (result.status === 'found' && result.data && result.data.config) {
-    // check-config success case
-    lines.push(`SESSION_ID='${shellEscape(result.data.config.sessionId)}'`);
+  if (result.status === 'found' && result.data) {
+    if (result.data.config) {
+      // check-config success case
+      lines.push(`SESSION_ID='${shellEscape(result.data.config.sessionId)}'`);
+    } else if (result.data.session_id) {
+      // resolve-session success case
+      lines.push(`SESSION_ID='${shellEscape(result.data.session_id)}'`);
+    }
+  }
+
+  if (result.status === 'not_found' && result.data) {
+    // resolve-session not_found case
+    if (result.data.calculated_session_id) {
+      lines.push(`CALCULATED_SESSION_ID='${shellEscape(result.data.calculated_session_id)}'`);
+    }
   }
 
   if (result.status === 'need_selection' && result.data) {
@@ -330,6 +342,63 @@ async function listSessions() {
 }
 
 /**
+ * Resolve session ID from working directory with fast verification
+ * Does NOT fall back to listing all sessions - returns not_found if verification fails
+ * @param {object} options - Options object
+ * @param {string} options.baseDir - Base directory (defaults to current dir)
+ * @returns {Promise<object>} - { status: 'found' | 'not_found', data, message }
+ */
+async function resolveSession(options = {}) {
+  const { baseDir = '.' } = options;
+
+  try {
+    // Step 1: Calculate recommended session ID from baseDir
+    const absolutePath = path.resolve(baseDir);
+    const calculatedSessionId = pwdToSessionId(absolutePath);
+
+    // Step 2: Try to verify it exists via library (fast - single file)
+    const libVerify = await verifySessionViaLibrary(calculatedSessionId);
+
+    if (libVerify.success && libVerify.exists) {
+      // Session found via library!
+      return {
+        status: 'found',
+        data: { session_id: calculatedSessionId },
+        message: `Session resolved: ${calculatedSessionId}`
+      };
+    }
+
+    // Step 3: If library fails, try CLI verification
+    if (!libVerify.success) {
+      const cliVerify = verifySessionViaCLI(calculatedSessionId);
+
+      if (cliVerify.success && cliVerify.exists) {
+        // Session found via CLI!
+        return {
+          status: 'found',
+          data: { session_id: calculatedSessionId },
+          message: `Session resolved via CLI: ${calculatedSessionId}`
+        };
+      }
+    }
+
+    // Step 4: Session not found - return not_found with calculated ID
+    // SKILL.md will handle asking user what to do next
+    return {
+      status: 'not_found',
+      data: { calculated_session_id: calculatedSessionId },
+      message: `Session not found: ${calculatedSessionId}`
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      data: {},
+      message: error.message
+    };
+  }
+}
+
+/**
  * Check if config file exists and is valid
  * @param {object} options - Options object
  * @param {string} options.baseDir - Base directory (defaults to current dir)
@@ -417,62 +486,37 @@ function saveConfig({ baseDir = '.', sessionId } = {}) {
 }
 
 /**
- * Prepare for commit: check config, resolve costs from library or CLI
+ * Prepare for commit: fetch costs for a given session ID
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
  * @param {string} options.pluginRoot - Plugin root
- * @param {string} options.sessionId - Optional session ID to fetch costs for
+ * @param {string} options.sessionId - Session ID to fetch costs for (required if no config)
  * @returns {Promise<object>} - { status, data, message }
  */
 async function prepare(options = {}) {
   const { baseDir = '.', pluginRoot, sessionId: providedSessionId } = options;
 
   try {
-    // Determine sessionId (from parameter or config)
+    // Determine sessionId
     let sessionId = providedSessionId;
+
+    // If no sessionId provided, try to load from config
     if (!sessionId) {
-      // Try to load from config
       const configResult = checkConfig({ baseDir });
 
       if (configResult.status === 'found') {
-        // Config exists - extract session ID
         sessionId = configResult.data.config.sessionId;
-      } else if (configResult.status === 'not_found' || configResult.status === 'empty') {
-        // No config - return need_selection with sessions list
-        const sessionsResult = await listSessions();
-
-        if (sessionsResult.status === 'error' || !sessionsResult.data || sessionsResult.data.length === 0) {
-          return {
-            status: 'no_sessions',
-            data: {},
-            message: 'No sessions found. Install ccusage: npm install -g ccusage'
-          };
-        }
-
-        // Compute recommended session from current working directory
-        const cwd = process.cwd();
-        const recommendedSessionId = cwd.replace(/\//g, '-').replace(/^-/, '');
-
-        return {
-          status: 'need_selection',
-          data: {
-            sessions: sessionsResult.data,
-            recommended: recommendedSessionId
-          },
-          message: 'Session selection required'
-        };
-      } else if (configResult.status === 'invalid') {
-        // Config corrupted
+      } else {
+        // No config and no sessionId provided - this is an error
         return {
           status: 'error',
           data: {},
-          message: 'Configuration file is corrupted. Delete .claude/settings.plugins.write-git-commit.json'
+          message: 'No session ID provided and no config found. Use resolve-session to find session ID first.'
         };
       }
     }
 
-    // Have sessionId - proceed with existing cost fetch logic
-    // Resolve costs using library-first, CLI-fallback
+    // Fetch costs for the session
     const costResult = await resolveSessionCosts(sessionId);
 
     if (!costResult.success) {
@@ -693,6 +737,12 @@ async function main() {
       case 'check-config': {
         outputFile = args[0];
         result = checkConfig();
+        break;
+      }
+
+      case 'resolve-session': {
+        outputFile = args[0];
+        result = await resolveSession({ baseDir: '.' });
         break;
       }
 

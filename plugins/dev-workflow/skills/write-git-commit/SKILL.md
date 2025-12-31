@@ -171,10 +171,114 @@ Add user authentication feature
    - User MUST have selected "Accept this message?"
    - If not completed, STOP and return to section 1
 
-→ Call prepare to auto-detect config and fetch costs:
+### 2a. Check for Existing Config
+
+→ Check if config exists:
+```bash
+TMP_CONFIG_CHECK="/tmp/write-git-commit-config-check-$$.sh"
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" check-config "$TMP_CONFIG_CHECK" --export-vars
+source "$TMP_CONFIG_CHECK"
+```
+
+→ Handle result based on RESULT_STATUS:
+
+**✓ If RESULT_STATUS is "found":**
+  - Config exists with session ID
+  - SESSION_ID variable is set
+  - Skip to Section 2d (Fetch Costs)
+
+**✗ If RESULT_STATUS is "not_found" or "empty":**
+  - No config exists
+  - Proceed to Section 2b (Resolve Session)
+
+---
+
+### 2b. Resolve Session ID
+
+→ Attempt to resolve session ID from current directory:
+```bash
+TMP_RESOLVE="/tmp/write-git-commit-resolve-$$.sh"
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" resolve-session "$TMP_RESOLVE" --export-vars
+source "$TMP_RESOLVE"
+```
+
+→ Handle result based on RESULT_STATUS:
+
+**✓ If RESULT_STATUS is "found":**
+  - Session ID resolved successfully
+  - SESSION_ID variable is set
+  - Save to config and proceed to Section 2d:
+    ```bash
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$SESSION_ID"
+    ```
+  - Skip to Section 2d (Fetch Costs)
+
+**✗ If RESULT_STATUS is "not_found":**
+  - Calculated session ID doesn't exist
+  - CALCULATED_SESSION_ID variable is set (the ID that was tried)
+  - Proceed to Section 2c (User Choice)
+
+**✗ If RESULT_STATUS is "error":**
+  - Display error message: $RESULT_MESSAGE
+  - Exit workflow
+
+---
+
+### 2c. Handle Session Not Found
+
+⚠️ NOTE: Only execute this section if RESULT_STATUS from Section 2b is "not_found"
+
+→ Use AskUserQuestion to ask user what to do:
+  - Option 1: "Enter session ID manually"
+  - Option 2: "Show available sessions and pick one" (Recommended)
+  - Option 3: "Cancel commit"
+
+→ Handle user response:
+
+**Case 1: "Enter session ID manually"**
+  - Ask user: "Enter your session ID (format: -path-to-project)"
+  - Example: `-Users-username-projects-myproject`
+  - Validate format: Must start with `-` and contain hyphens
+  - If invalid: Re-prompt for valid format
+  - Save to config and proceed:
+    ```bash
+    SESSION_ID="$MANUAL_SESSION_ID"
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$SESSION_ID"
+    ```
+  - Proceed to Section 2d (Fetch Costs)
+
+**Case 2: "Show available sessions and pick one"**
+  - Call list-sessions to get all sessions:
+    ```bash
+    TMP_SESSIONS="/tmp/write-git-commit-sessions-$$.sh"
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" list-sessions "$TMP_SESSIONS" --export-vars
+    source "$TMP_SESSIONS"
+    ```
+  - Parse SESSIONS JSON array (should contain array of {sessionId, cost} objects)
+  - Extract session IDs from SESSIONS
+  - Build AskUserQuestion with dynamic options:
+    - For each sessionId in first 4 sessions: Create option with label = sessionId
+    - If CALCULATED_SESSION_ID is in the list: Mark it as "(Recommended)"
+    - Add final option: "Other (enter manually)"
+  - Handle user selection:
+    - If user picks a session: Set SESSION_ID, save config, proceed to Section 2d
+    - If user picks "Other": Return to Case 1 (manual entry)
+
+**Case 3: "Cancel commit"**
+  - Run `git reset HEAD` to unstage changes
+  - Display: "Commit cancelled"
+  - Exit workflow
+
+---
+
+### 2d. Fetch Costs
+
+⚠️ PREREQUISITE: SESSION_ID must be set from Section 2a, 2b, or 2c
+
+→ Call prepare with explicit session ID to fetch costs:
 ```bash
 TMP_PREPARE="/tmp/write-git-commit-prepare-$$.sh"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare '' "$TMP_PREPARE" --export-vars
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$SESSION_ID" "$TMP_PREPARE" --export-vars
 source "$TMP_PREPARE"
 ```
 
@@ -184,96 +288,13 @@ source "$TMP_PREPARE"
   - Variables are set: $SESSION_ID, $CURRENT_COST, $METHOD
   - Proceed to section 3 (Create Commit)
 
-**✗ If RESULT_STATUS is "need_selection":**
-  - No config exists, user must select session
-  - Variables are set: $SESSIONS (JSON array), $RECOMMENDED_SESSION
-  - Proceed to section 2a (Session Selection)
-
-**✗ If RESULT_STATUS is "no_sessions":**
-  - Display: "No sessions found. Install ccusage: npm install -g ccusage"
-  - Exit workflow
-
 **✗ If RESULT_STATUS is "error":**
   - Display error message: $RESULT_MESSAGE
-  - Exit workflow
-
----
-
-### 2a. Session Selection
-
-⚠️ NOTE: Only execute this section if RESULT_STATUS from section 2 is "need_selection"
-
-**2a-parse: Parse Available Sessions**
-
-→ Extract session IDs from SESSIONS JSON:
-```bash
-SESSION_LIST=$(echo "$SESSIONS" | jq -r '.[] | .sessionId')
-```
-
-**2a-select: Ask User to Select Session**
-
-→ Build AskUserQuestion with dynamic options:
-  - For each sessionId in SESSION_LIST (limit to first 4):
-    - If sessionId matches $RECOMMENDED_SESSION: Label = "{sessionId} (Recommended)"
-    - Otherwise: Label = "{sessionId}"
-  - Add final option: "Other (enter manually)"
-
-→ Present to user via AskUserQuestion
-
-→ Handle user response:
-
-**Case 1: User selects a session (not "Other")**
-  - Extract SELECTED_SESSION_ID from chosen option
-  - Save to config and retry prepare:
-    ```bash
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$SELECTED_SESSION_ID"
-
-    # Retry prepare with explicit session
-    TMP_PREPARE_RETRY="/tmp/write-git-commit-prepare-retry-$$.sh"
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$SELECTED_SESSION_ID" "$TMP_PREPARE_RETRY" --export-vars
-    source "$TMP_PREPARE_RETRY"
-    ```
-  - Should now have RESULT_STATUS="success" with $SESSION_ID and $CURRENT_COST set
-  - Proceed to section 3
-
-**Case 2: User selects "Other (enter manually)"**
-  - Ask user: "Enter your session ID (format: -path-to-project)"
-  - Validate format: Must start with `-` and contain hyphens
-  - If invalid: Re-prompt for valid format
-  - Save and retry:
-    ```bash
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$MANUAL_SESSION_ID"
-
-    TMP_PREPARE_RETRY="/tmp/write-git-commit-prepare-retry-$$.sh"
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$MANUAL_SESSION_ID" "$TMP_PREPARE_RETRY" --export-vars
-    source "$TMP_PREPARE_RETRY"
-    ```
-  - Proceed to section 3
-
----
-
-### 2b. Handle Cost Fetch Failure (Optional)
-
-If retry prepare in 2a returns error status:
-
-→ Use AskUserQuestion with options:
-  - "Stop and investigate" (Recommended)
-  - "Commit without metrics"
-  - "Retry with different session"
-
-→ **If "Stop and investigate":**
-  - Run `git reset HEAD` to unstage changes
-  - Display: "Changes unstaged. Please check ccusage installation and session data."
-  - Display: Run `ccusage session --json` to show available sessions
-  - Exit workflow
-
-→ **If "Commit without metrics":**
-  - Warn: "⚠️ Proceeding WITHOUT cost metrics in commit footer"
-  - Set `CURRENT_COST='[]'` (empty array)
-  - Proceed to section 3
-
-→ **If "Retry with different session":**
-  - Jump back to section 2a-select
+  - Use AskUserQuestion:
+    - "Stop and investigate" (Recommended)
+    - "Commit without metrics"
+    - "Try different session"
+  - Handle as per Section 2c (Return to Case 1 for manual entry or Case 2 for session list)
 
 ## 3. Create Commit
 

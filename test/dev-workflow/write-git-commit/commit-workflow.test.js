@@ -98,7 +98,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.equal(data.status, 'found', 'Should return found when config exists');
   });
 
-  it('prepare action returns need_selection when config does not exist', () => {
+  it('prepare action returns error when config does not exist', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
     const outputFile = join(testEnv.tmpDir, 'prepare-output.json');
 
@@ -118,10 +118,9 @@ describe('write-git-commit: commit-workflow.js', () => {
       assert.fail(`Output file should contain valid JSON: ${e.message}`);
     }
 
-    // Status should be need_selection when no config file exists (Phase 2: merged check-config into prepare)
-    assert.equal(data.status, 'need_selection', 'Should return need_selection when no config exists');
-    assert.ok(Array.isArray(data.data.sessions), 'Should have sessions array in data');
-    assert.ok(typeof data.data.recommended === 'string', 'Should have recommended session in data');
+    // Status should be error when no config exists and no sessionId provided
+    assert.equal(data.status, 'error', 'Should return error when no config exists and no sessionId provided');
+    assert.ok(data.message.includes('resolve-session'), 'Error message should mention resolve-session');
     assert.ok(typeof data.message === 'string', 'Should have message field');
   });
 
@@ -566,7 +565,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     });
 
     // May succeed or fail depending on ccusage, but should output shell vars
-    assert.match(result.stdout, /RESULT_STATUS='(success|error|need_selection)'/,
+    assert.match(result.stdout, /RESULT_STATUS='(success|error)'/,
       'Should export RESULT_STATUS');
 
     // If success, should have SESSION_ID and CURRENT_COST
@@ -576,8 +575,8 @@ describe('write-git-commit: commit-workflow.js', () => {
     }
   });
 
-  it('prepare with --export-vars outputs sessions list on need_selection', () => {
-    // No config file - should trigger need_selection
+  it('prepare with --export-vars outputs error when no config and no sessionId', () => {
+    // No config file and no sessionId - should return error
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
@@ -589,14 +588,10 @@ describe('write-git-commit: commit-workflow.js', () => {
       }
     });
 
-    // Should either need_selection or no_sessions depending on ccusage availability
-    assert.match(result.stdout, /RESULT_STATUS='(need_selection|no_sessions)'/,
-      'Should export appropriate status');
-
-    if (result.stdout.includes("RESULT_STATUS='need_selection'")) {
-      assert.match(result.stdout, /SESSIONS=/, 'Should export SESSIONS');
-      assert.match(result.stdout, /RECOMMENDED_SESSION=/, 'Should export RECOMMENDED_SESSION');
-    }
+    // Should return error status (not need_selection)
+    assert.match(result.stdout, /RESULT_STATUS='error'/,
+      'Should export error status when no config');
+    assert.match(result.stdout, /RESULT_MESSAGE=/, 'Should export error message');
   });
 
   it('shell variable escaping handles special characters', () => {
@@ -652,7 +647,7 @@ describe('write-git-commit: commit-workflow.js', () => {
       'Should not return need_selection when config exists');
   });
 
-  it('prepare without sessionId and no config returns need_selection', () => {
+  it('prepare without sessionId and no config returns error', () => {
     // No config file
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
@@ -667,22 +662,18 @@ describe('write-git-commit: commit-workflow.js', () => {
 
     const data = extractJsonFromOutput(result.stdout);
 
-    // Should return need_selection or no_sessions
-    assert.ok(['need_selection', 'no_sessions'].includes(data.status),
-      'Should return need_selection or no_sessions when no config');
-
-    if (data.status === 'need_selection') {
-      assert.ok(data.data.sessions, 'Should include sessions list');
-      assert.ok(data.data.recommended, 'Should include recommended session');
-    }
+    // Should return error when no config and no sessionId provided
+    assert.equal(data.status, 'error',
+      'Should return error when no config and no sessionId provided');
+    assert.ok(data.message.includes('resolve-session'), 'Error message should mention resolve-session');
   });
 
-  it('prepare computes recommended session from current working directory', () => {
-    // No config
+  it('resolve-session computes session ID from current working directory', () => {
+    // resolve-session should compute session ID from cwd
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare'],
+      args: ['resolve-session'],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -692,13 +683,70 @@ describe('write-git-commit: commit-workflow.js', () => {
 
     const data = extractJsonFromOutput(result.stdout);
 
-    if (data.status === 'need_selection') {
-      // Recommended should be computed from cwd and contain dashes (no slashes)
-      assert.ok(data.data.recommended, 'Should have recommended session');
-      assert.ok(typeof data.data.recommended === 'string', 'Recommended should be string');
-      assert.ok(!data.data.recommended.includes('/'), 'Recommended should not contain slashes');
-      // Should be derived from path, so contains multiple dashes
-      assert.ok(data.data.recommended.includes('-'), 'Recommended should be path-derived (contains dashes)');
+    // Should have either found or not_found status (not error)
+    assert.ok(['found', 'not_found'].includes(data.status),
+      'Should return found or not_found status');
+
+    // If not_found, should contain calculated session ID
+    if (data.status === 'not_found') {
+      assert.ok(data.data.calculated_session_id, 'Should have calculated_session_id');
+      assert.ok(typeof data.data.calculated_session_id === 'string', 'Session ID should be string');
+      assert.ok(!data.data.calculated_session_id.includes('/'), 'Session ID should not contain slashes');
+      assert.ok(data.data.calculated_session_id.startsWith('-'), 'Session ID should start with dash');
+    }
+  });
+
+  it('resolve-session returns not_found when session does not exist', () => {
+    // resolve-session should return not_found if calculated session doesn't exist
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+
+    const result = execNodeScript('dev-workflow', scriptPath, {
+      args: ['resolve-session'],
+      cwd: testEnv.tmpDir,
+      env: {
+        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
+        PATH: testEnv.mockPath
+      }
+    });
+
+    const data = extractJsonFromOutput(result.stdout);
+
+    // In test environment without actual ccusage sessions, resolve-session should return not_found
+    // (unless by chance the tmpDir path matches an actual session)
+    assert.ok(['found', 'not_found', 'error'].includes(data.status),
+      'Should return valid status');
+
+    if (data.status === 'not_found') {
+      assert.ok(data.data.calculated_session_id, 'Should have calculated_session_id');
+      assert.ok(data.message.includes('not found'), 'Message should indicate not found');
+    }
+  });
+
+  it('resolve-session with --export-vars outputs shell variables', () => {
+    // resolve-session should export shell variables
+    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+
+    const result = execNodeScript('dev-workflow', scriptPath, {
+      args: ['resolve-session', '--export-vars'],
+      cwd: testEnv.tmpDir,
+      env: {
+        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
+        PATH: testEnv.mockPath
+      }
+    });
+
+    // Should export RESULT_STATUS
+    assert.match(result.stdout, /RESULT_STATUS='(found|not_found|error)'/,
+      'Should export RESULT_STATUS');
+
+    // If found, should export SESSION_ID
+    if (result.stdout.includes("RESULT_STATUS='found'")) {
+      assert.match(result.stdout, /SESSION_ID=/, 'Should export SESSION_ID on found');
+    }
+
+    // If not_found, should export CALCULATED_SESSION_ID
+    if (result.stdout.includes("RESULT_STATUS='not_found'")) {
+      assert.match(result.stdout, /CALCULATED_SESSION_ID=/, 'Should export CALCULATED_SESSION_ID on not_found');
     }
   });
 
