@@ -14,19 +14,46 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 Also activate proactively when you've completed a significant task and recognize committing would be the natural next step (but ASK first via the skill's approval workflow).
 
+---
+
+**⚠️ CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
+
+When you see inline bash code blocks (```bash), you MUST:
+- Execute them using the Bash tool
+- NEVER narrate execution without actually running the command
+- NEVER fabricate outputs
+
+When instructed to "Execute from [file.md]" or "Execute instructions from [file.md]":
+1. Read the markdown file using Read tool
+2. Find the relevant bash code blocks
+3. Execute those code blocks using Bash tool
+4. Handle results as described in the file
+
+**Failure to execute commands results in workflow corruption and invalid commits.**
+
+---
+
 ## 0. Prerequisites
 
 **Step description**: "Checking prerequisites"
 
-Set SKILL_NAME then execute check (see ${CLAUDE_PLUGIN_ROOT}/common/check-prerequisites.md):
+→ Set SKILL_NAME environment variable using Bash tool:
 ```bash
 SKILL_NAME="write-git-commit"
 ```
 
-→ Execute prerequisite check from `${CLAUDE_PLUGIN_ROOT}/common/check-prerequisites.md`
+→ Execute prerequisite check using Bash tool:
+1. Read `${CLAUDE_PLUGIN_ROOT}/common/check-prerequisites.md`
+2. Find the bash code block under "Fast Path Check" section
+3. Execute that bash code using Bash tool
+4. Export CLAUDE_PLUGIN_ROOT variable if check passes
+
+⚠️ CHECKPOINT: Verify you actually executed Bash tool above
+- If you narrated without running Bash: STOP and run the commands now
+- Check exit code to determine next step
 
 **Result handling:**
-✓ Exit 0 → All prerequisites met, proceed to section 1
+✓ Exit 0 → All prerequisites met, CLAUDE_PLUGIN_ROOT exported, proceed to section 1
 ✗ Exit 1 → Prerequisites missing, proceed to section 0a
 
 ## 0a. Setup Prerequisites (First Run Only)
@@ -58,15 +85,23 @@ These rules apply to all sections below. Violations break the workflow:
 
 **Step description**: "Staging all uncommitted changes"
 
-→ Stage all uncommitted changes
-  - Run `git add -A`
+→ Stage all uncommitted changes using Bash tool:
+```bash
+git add -A
+```
 
 ### 1b. Analyze staged changes
 
 **Step description**: "Analyzing staged changes"
 
-→ Examine staged changes
-  - Run `git diff --cached`
+→ Examine staged changes using Bash tool:
+```bash
+git diff --cached
+```
+
+⚠️ CHECKPOINT: Verify git commands actually executed
+- If you narrated without running Bash tool: STOP and run the commands now
+- Review the actual diff output to understand what's being committed
 
 ### 1c. Generate a Commit Message
 
