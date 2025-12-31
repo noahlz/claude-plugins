@@ -31,6 +31,7 @@ const testEnv = {
 const result = spawnSync(
   'node',
   [
+    '--experimental-test-module-mocks',
     '--test',
     '--test-reporter=spec',
     '--test-reporter=tap',

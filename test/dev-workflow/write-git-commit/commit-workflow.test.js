@@ -827,3 +827,144 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.ok(existsSync(configPath), 'Config file should be created');
   });
 });
+
+// Unit tests with Node.js built-in mock.module() API
+describe('write-git-commit: commit-workflow.js (mocked ccusage)', () => {
+  let testEnv;
+
+  beforeEach(() => {
+    testEnv = setupTestEnv();
+  });
+
+  afterEach(() => {
+    teardownTestEnv(testEnv);
+  });
+
+  it('prepare with valid session ID fetches costs via mocked library', async (t) => {
+    const mockSessions = [
+      {
+        sessionId: '-Users-noahlz-projects-claude-plugins',
+        lastActivity: '2025-01-15',
+        modelBreakdowns: [
+          {
+            model: 'claude-haiku-4-5-20251001',
+            inputTokens: 1000,
+            outputTokens: 500,
+            cacheCreationTokens: 0,
+            cost: 0.45
+          },
+          {
+            model: 'claude-sonnet-4-5-20250929',
+            inputTokens: 100,
+            outputTokens: 50,
+            cacheCreationTokens: 10,
+            cost: 1.25
+          }
+        ]
+      }
+    ];
+
+    // Mock ccusage using TEST CONTEXT (t.mock.module)
+    t.mock.module('ccusage/data-loader', {
+      namedExports: {
+        loadSessionUsageById: async (sessionId) => {
+          return mockSessions.find(s => s.sessionId === sessionId) || null;
+        },
+        loadSessionData: async () => {
+          return mockSessions;
+        }
+      }
+    });
+
+    // CRITICAL: Dynamic import AFTER mocking
+    const { prepare } = await import('../../../plugins/dev-workflow/skills/write-git-commit/scripts/commit-workflow.js');
+
+    const result = await prepare({
+      baseDir: testEnv.tmpDir,
+      sessionId: '-Users-noahlz-projects-claude-plugins'
+    });
+
+    assert.equal(result.status, 'success', 'Should succeed with valid session ID');
+    assert.ok(result.data.current_cost, 'Should have current_cost');
+    assert.ok(Array.isArray(result.data.current_cost), 'current_cost should be an array');
+    assert.equal(result.data.current_cost.length, 2, 'Should have 2 model breakdowns');
+    assert.equal(result.data.method, 'library', 'Should have used library method');
+  });
+
+  it('prepare with nonexistent session returns error via mocked library', async (t) => {
+    const mockSessions = [];
+
+    t.mock.module('ccusage/data-loader', {
+      namedExports: {
+        loadSessionUsageById: async (sessionId) => {
+          return mockSessions.find(s => s.sessionId === sessionId) || null;
+        },
+        loadSessionData: async () => {
+          return mockSessions;
+        }
+      }
+    });
+
+    const { prepare } = await import('../../../plugins/dev-workflow/skills/write-git-commit/scripts/commit-workflow.js');
+
+    const result = await prepare({
+      baseDir: testEnv.tmpDir,
+      sessionId: '-nonexistent-session-xyz'
+    });
+
+    assert.equal(result.status, 'error', 'Should return error for nonexistent session');
+    assert.ok(result.message, 'Should have error message');
+  });
+
+  it('list-sessions returns all sessions via mocked library', async (t) => {
+    const mockSessions = [
+      {
+        sessionId: '-Users-noahlz-projects-claude-plugins',
+        lastActivity: '2025-01-15',
+        modelBreakdowns: [
+          {
+            model: 'claude-haiku-4-5-20251001',
+            inputTokens: 1000,
+            outputTokens: 500,
+            cacheCreationTokens: 0,
+            cost: 0.45
+          }
+        ]
+      },
+      {
+        sessionId: '-Users-noahlz-projects-ligeon',
+        lastActivity: '2025-01-14',
+        modelBreakdowns: [
+          {
+            model: 'claude-haiku-4-5-20251001',
+            inputTokens: 2000,
+            outputTokens: 1000,
+            cacheCreationTokens: 100,
+            cost: 0.95
+          }
+        ]
+      }
+    ];
+
+    t.mock.module('ccusage/data-loader', {
+      namedExports: {
+        loadSessionUsageById: async (sessionId) => {
+          return mockSessions.find(s => s.sessionId === sessionId) || null;
+        },
+        loadSessionData: async () => {
+          return mockSessions;
+        }
+      }
+    });
+
+    const { listSessions } = await import('../../../plugins/dev-workflow/skills/write-git-commit/scripts/commit-workflow.js');
+
+    const result = await listSessions();
+
+    assert.equal(result.status, 'success', 'Should succeed');
+    assert.ok(Array.isArray(result.data), 'Should return array of sessions');
+    assert.equal(result.data.length, 2, 'Should have 2 sessions');
+    assert.ok(result.data[0].sessionId, 'Sessions should have sessionId');
+    assert.equal(result.method, 'library', 'Should have used library method');
+  });
+});

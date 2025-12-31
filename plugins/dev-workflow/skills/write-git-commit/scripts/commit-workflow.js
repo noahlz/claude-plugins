@@ -838,6 +838,9 @@ async function main() {
   }
 }
 
+// Export functions for testing
+export { checkConfig, resolveSession, listSessions, prepare, saveConfig, commit };
+
 // CLI entry guard
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(err => {
