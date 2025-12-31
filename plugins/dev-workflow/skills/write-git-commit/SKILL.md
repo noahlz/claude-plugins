@@ -39,58 +39,43 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 
 → Execute prerequisite check using Bash tool:
 ```bash
-SKILL_NAME="write-git-commit"
-
-# 1. Check Node.js version
-if ! command -v node >/dev/null 2>&1; then
-  echo "⚠️ Node.js 22+ required"
-  echo "Install from https://nodejs.org/"
-  exit 1
-fi
-NODE_MAJOR=$(node -v | cut -d'.' -f1 | sed 's/v//')
-if [ "$NODE_MAJOR" -lt 22 ]; then
-  echo "⚠️ Node.js $(node -v) found, but 22+ required"
-  echo "Install from https://nodejs.org/"
-  exit 1
-fi
-
-# 2. Check for resolver script (look in ./.claude first, then $HOME/.claude)
+# 1. Check for resolver script (look in ./.claude first, then $HOME/.claude)
 RESOLVER=""
-if [ -x "./.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="./.claude/resolve_plugin_root.sh"
-elif [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
+if [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
   RESOLVER="$HOME/.claude/resolve_plugin_root.sh"
+elif [ -x "./.claude/resolve_plugin_root.sh" ]; then
+  RESOLVER="./.claude/resolve_plugin_root.sh"
 else
   echo "⚠️ Missing plugin resolver script"
   echo ""
   echo "Run the setup skill to create it:"
-  echo "  Use the dev-workflow:setup skill"
+  echo ""
+  echo "  dev-workflow:setup"
   echo ""
   exit 1
 fi
 
-# 3. Resolve plugin root
+# 2. Resolve plugin root
 CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || {
-  echo "⚠️ Failed to resolve plugin root"
-  echo "Try running the setup skill again:"
-  echo "  Use the dev-workflow:setup skill"
+  echo "⚠️ Failed to resolve plugin root?!?"
   exit 1
 }
 
-# 4. Output for LLM to capture
+# 3. Output for LLM to capture
 echo "CLAUDE_PLUGIN_ROOT=$CLAUDE_PLUGIN_ROOT"
-echo "✓ Ready (Node $(node -v))"
+echo "SKILL_NAME=write-git-comit
 ```
 
 ⚠️ CHECKPOINT: Verify you actually executed Bash tool above
 - If you narrated without running Bash: STOP and run the commands now
 - Check exit code to determine next step
 
-**Result handling:**
-✓ Exit 0 → Prerequisites met, **LLM captures CLAUDE_PLUGIN_ROOT from output**, proceed to section 1
-✗ Exit 1 → Prerequisites missing, display error and **STOP** (no fallback)
+**Result handling:**  
+✓ Exit 0 → Prerequisites met, **LLM captures CLAUDE_PLUGIN_ROOT from output**, proceed to section 1  
+✗ Exit 1 → Prerequisites missing, display error and **STOP** (no fallback)  
 
-**⚠️ CRITICAL**: After Section 0 succeeds, you MUST capture the `CLAUDE_PLUGIN_ROOT=<path>` value from the bash output above. Use this captured value in all subsequent bash commands that reference plugin scripts (don't use `${CLAUDE_PLUGIN_ROOT}` in bash, substitute the actual path directly). This is necessary because environment variables don't persist between separate Bash tool invocations.
+
+**⚠️ CRITICAL**: Use the `CLAUDE_PLUGIN_ROOT` value output in subsequent commands in this skill. Either interpolate the literal value or prefix each bash command with the value i.e. `CLAUDE_PLUGIN_ROOT=(literal value) (bash command)`
 
 ---
 
@@ -310,7 +295,12 @@ source "$TMP_RESOLVE"
     ```
   - Proceed to Section 2d (Fetch Costs)
 
-**Case 2: "Show available sessions and pick one"**
+**Case 2: "Show available sessions and pick one"**  
+FIXME:  This case has problem  
+FIXME:   - The list sessions function writes json to a file  
+FIXME:   - use a jq one liner to extract the sessionId values raw and sorted, present them to the user.  
+FIXME:   -  --export-vars does not seem to have a point anymore. If so, remove it.  
+
   - Call list-sessions to get all sessions:
     ```bash
     TMP_SESSIONS="/tmp/write-git-commit-sessions-$$.sh"
@@ -440,13 +430,3 @@ EOF
 ```
 
 ✓ Done - Return to user
-
----
-
-🔧 Configuration: `.claude/settings.plugins.write-git-commit.json` (created on first run)
-  - `sessionId`: Exact session ID (e.g., "-Users-noahlz-projects-claude-plugins")
-  - Auto-detected from project path on first run
-
-📁 Use scripts under `$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/`
-
-📝 Cost metrics are stored in git commit footers using the `Claude-Cost-Metrics:` git trailer format

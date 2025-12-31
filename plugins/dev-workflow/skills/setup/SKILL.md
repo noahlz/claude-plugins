@@ -1,20 +1,48 @@
 ---
 name: setup
-description: Set up plugin resolver script for dev-workflow skills. Creates resolve_plugin_root.sh that is required by all dev-workflow skills to resolve plugin paths.
+description: Set up requirements and plugin resolver script for dev-workflow skills. Creates resolve_plugin_root.sh that is required by all dev-workflow skills to resolve plugin paths.
 ---
 
-This skill sets up the `resolve_plugin_root.sh` script that is required by all dev-workflow skills.
+This skill checks baseline requirements and sets up the `resolve_plugin_root.sh` script that is required by all dev-workflow skills.
 
-**When to use:**
-Run this skill once after installing the dev-workflow plugin. All other dev-workflow skills will then use the script it creates.
+**When to use:**  
+Run this skill once after installing the dev-workflow plugin. 
+
+All other dev-workflow skills will then have basline requirements and be able to use the "plugin root resolver" script it creates.
 
 ---
 
 ## Installation
 
+# 1. Check Node.js version
+
+→ Execute using Bash tool to check Node version:
+```bash
+if ! command -v node >/dev/null 2>&1; then
+  echo "⚠️ Node.js 22+ required"
+  echo "Install from https://nodejs.org/"
+  exit 1
+fi
+NODE_MAJOR=$(node -v | cut -d'.' -f1 | sed 's/v//')
+if [ "$NODE_MAJOR" -lt 22 ]; then
+  echo "⚠️ Node.js $(node -v) found, but 22+ required"
+  echo "Install from https://nodejs.org/"
+  exit 1
+fi
+```
+
+⚠️ CHECKPOINT: Verify you actually executed Bash tool above
+- If you narrated without running Bash: STOP and run the command now
+- Check exit code to determine next step
+
+**Result handling:**  
+✓ Exit 0 → node minimal version is installed, proceed to step 2  
+✗ Exit 1 → node minimal version not found, user must install it first  
+
+
 **Step description**: "Setting up plugin resolver script"
 
-### 1. Check jq Installation
+### 2. Check jq Installation
 
 → Execute using Bash tool to check for jq:
 ```bash
@@ -36,11 +64,11 @@ echo "✓ jq found: $(jq --version)"
 - If you narrated without running Bash: STOP and run the command now
 - Check exit code to determine next step
 
-**Result handling:**
-✓ Exit 0 → jq is installed, proceed to step 2
-✗ Exit 1 → jq not found, user must install it first
+**Result handling:**  
+✓ Exit 0 → jq is installed, proceed to step 3  
+✗ Exit 1 → jq not found, user must install it first  
 
-### 2. Choose Installation Location
+### 3. Choose Installation Location
 
 → Use AskUserQuestion to ask where to install the script:
   - "Install in $HOME/.claude (recommended - available to all projects)"
@@ -50,14 +78,22 @@ echo "✓ jq found: $(jq --version)"
   - If $HOME/.claude: `INSTALL_PATH="$HOME/.claude/resolve_plugin_root.sh"`
   - If ./.claude: `INSTALL_PATH="./.claude/resolve_plugin_root.sh"`
 
-### 3. Create Directory
+
+**IMPORTANT** In the following steps, when using the Bash tool, use the literal value of INSTALL_PATH, prefixing any bash commands with the variable setting i.e. `INSTALL_PATH=(path) (bash command)
+
+→ Capture the install path:
+```bash
+echo INSTALL_PATH=$INSTALL_PATH
+```
+
+### 4. Create Directory
 
 → Execute using Bash tool to create the directory if needed:
 ```bash
 mkdir -p "$(dirname "$INSTALL_PATH")"
 ```
 
-### 4. Write resolve_plugin_root.sh Script to File
+### 5. Write resolve_plugin_root.sh Script to File
 
 → Write resolve_plugin_root.sh to file using Bash tool with heredoc:
 ```bash
@@ -124,7 +160,7 @@ echo "$PLUGIN_ROOT"
 EOF
 ```
 
-### 5. Make Script Executable
+### 6. Make Script Executable
 
 → Execute using Bash tool to make script executable:
 ```bash
@@ -132,13 +168,13 @@ chmod +x "$INSTALL_PATH"
 ls -la "$INSTALL_PATH"
 ```
 
-### 6. Success
+### 7. Success
 
 → Display success message:
 ```
-✅ Plugin resolver script created!
+✅ Node v22+ available
+✅ jq command available
+✅ CLAUDE_PLUGIN_ROOT resolver script created: $INSTALL_PATH
 
-Location: $INSTALL_PATH
-
-All `dev-workflow` skills can now resolve the plugin path correctly.
+You may now use `dev-workflow` skills
 ```

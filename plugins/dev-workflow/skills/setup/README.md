@@ -41,11 +41,3 @@ The skill will guide you through the installation process.
 
 - `$HOME/.claude` (Recommended)
 - `./.claude` (Project-specific)
-
-## After Setup
-
-Once setup completes, you can use all other dev-workflow skills:
-- `dev-workflow:run-and-fix-tests` - Run and fix tests
-- `dev-workflow:write-git-commit` - Create git commits with cost metrics
-
-Both skills will automatically find and use the resolver script.

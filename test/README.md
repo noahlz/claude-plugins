@@ -89,8 +89,6 @@ Pre-built test data in `test/dev-workflow/fixtures/`:
 
 - **`configs/`** - Configuration files for build and commit tests
 - **`project-templates/`** - Minimal project structures for tool detection tests
-- **`cost-arrays/`** - Sample cost data for metrics testing
-- **`metrics/`** - Sample metrics files
 
 Use `readFixture()` to load fixtures in tests. Modify loaded data inline for variations without creating additional fixture files.
 
