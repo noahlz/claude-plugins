@@ -75,7 +75,34 @@ echo "SKILL_NAME=write-git-commit"
 ✗ Exit 1 → Prerequisites missing, display error and **STOP** (no fallback)  
 
 
-**⚠️ CRITICAL**: Use the `CLAUDE_PLUGIN_ROOT` value output in subsequent commands in this skill. Either interpolate the literal value or prefix each bash command with the value i.e. `CLAUDE_PLUGIN_ROOT=(literal value) (bash command)`
+**⚠️ CRITICAL - ENVIRONMENT VARIABLE SCOPING**
+
+Each Bash tool invocation runs in a separate shell process. Variables do NOT persist between calls.
+
+The `commit-workflow.js` script requires `CLAUDE_PLUGIN_ROOT` as an **environment variable**
+(not just a shell variable). You MUST prefix each node command with:
+
+```bash
+CLAUDE_PLUGIN_ROOT=<literal-value-from-section-0> \
+node "$CLAUDE_PLUGIN_ROOT/skills/..."
+```
+
+**Why this pattern is required:**
+- `CLAUDE_PLUGIN_ROOT=value` on a previous line → Creates shell variable (NOT exported to child process) ✗
+- `CLAUDE_PLUGIN_ROOT=value command` → Exports variable ONLY for that command's environment ✓
+
+**Example:**
+```bash
+# ✗ WRONG - Variable not in node's environment
+CLAUDE_PLUGIN_ROOT="/path/to/plugin"
+node "$CLAUDE_PLUGIN_ROOT/skills/..."
+
+# ✓ CORRECT - Variable exported to node's environment
+CLAUDE_PLUGIN_ROOT="/path/to/plugin" \
+node "$CLAUDE_PLUGIN_ROOT/skills/..."
+```
+
+Capture the literal path from Section 0 output and use it throughout this skill.
 
 ---
 
@@ -225,10 +252,13 @@ Add user authentication feature
 
 ### 2a. Check for Existing Config
 
-→ Execute using Bash tool:
+→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> with literal path from Section 0):
 ```bash
+# Set CLAUDE_PLUGIN_ROOT as environment variable for this command
+# (Required: Node.js script checks process.env.CLAUDE_PLUGIN_ROOT)
 TMP_CONFIG_CHECK="/tmp/write-git-commit-config-check-$$.sh"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" check-config "$(pwd)" "$TMP_CONFIG_CHECK" --export-vars
+CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" check-config "$(pwd)" "$TMP_CONFIG_CHECK" --export-vars
 source "$TMP_CONFIG_CHECK"
 echo "RESULT_STATUS=$RESULT_STATUS"
 if [ "$RESULT_STATUS" = "found" ]; then
@@ -254,10 +284,11 @@ fi
 
 ### 2b. Resolve Session ID
 
-→ Execute using Bash tool:
+→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> with literal path from Section 0):
 ```bash
 TMP_RESOLVE="/tmp/write-git-commit-resolve-$$.sh"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" resolve-session "$(pwd)" "$TMP_RESOLVE" --export-vars
+CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" resolve-session "$(pwd)" "$TMP_RESOLVE" --export-vars
 source "$TMP_RESOLVE"
 echo "RESULT_STATUS=$RESULT_STATUS"
 if [ "$RESULT_STATUS" = "found" ]; then
@@ -282,9 +313,10 @@ fi
   - SESSION_ID captured from echo output
   - Save to config and proceed to Section 2d using captured SESSION_ID literal value:
     ```
-    → Execute using Bash tool (replace <SESSION_ID> with captured value):
+    → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SESSION_ID> with literal values):
     ```bash
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<SESSION_ID>"
+    CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<SESSION_ID>"
     ```
     ```
   - Skip to Section 2d (Fetch Costs)
@@ -318,19 +350,21 @@ fi
   - If invalid: Re-prompt for valid format
   - Save to config using captured session ID literal value and proceed:
     ```
-    → Execute using Bash tool (replace <USER_SESSION_ID> with the session ID provided by user):
+    → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <USER_SESSION_ID> with literal values):
     ```bash
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<USER_SESSION_ID>"
+    CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<USER_SESSION_ID>"
     ```
     ```
   - Proceed to Section 2d (Fetch Costs)
 
 **Case 2: "Show available sessions and pick one"**
 
-→ Execute using Bash tool:
+→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> with literal path from Section 0):
 ```bash
 TMP_SESSIONS="/tmp/write-git-commit-sessions-$$.txt"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" list-sessions "$TMP_SESSIONS"
+CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" list-sessions "$TMP_SESSIONS"
 
 # Read session IDs into array
 SESSION_IDS=()
@@ -363,9 +397,10 @@ done
       - Capture the selected session ID literal value from the user's selection
       - Save config using the captured literal:
         ```
-        → Execute using Bash tool (replace <SELECTED_SESSION_ID> with the session ID selected by user):
+        → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SELECTED_SESSION_ID> with literal values):
         ```bash
-        node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<SELECTED_SESSION_ID>"
+        CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+        node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<SELECTED_SESSION_ID>"
         ```
         ```
       - Proceed to Section 2d using captured literal value
@@ -386,10 +421,11 @@ done
 
 ⚠️ PREREQUISITE: SESSION_ID must be captured from Section 2a, 2b, or 2c
 
-→ Execute using Bash tool (replace <SESSION_ID> with the literal SESSION_ID value captured from Section 2a, 2b, or 2c):
+→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SESSION_ID> with literal values):
 ```bash
 TMP_PREPARE="/tmp/write-git-commit-prepare-$$.sh"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "<SESSION_ID>" "$TMP_PREPARE" --export-vars
+CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "<SESSION_ID>" "$TMP_PREPARE" --export-vars
 source "$TMP_PREPARE"
 echo "RESULT_STATUS=$RESULT_STATUS"
 if [ "$RESULT_STATUS" = "success" ]; then
@@ -429,9 +465,12 @@ fi
    - SESSION_ID and CURRENT_COST literals captured from section 2d
    - If not completed, STOP
 
-→ Execute using Bash tool (replace <SESSION_ID>, <CURRENT_COST>, <COMMIT_SUBJECT>, and <COMMIT_BODY> with captured/approved values):
+→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT>, <SESSION_ID>, <CURRENT_COST>, <COMMIT_SUBJECT>, and <COMMIT_BODY> with captured/approved values):
 ```bash
-SESSION_ID="<SESSION_ID>" CURRENT_COST="<CURRENT_COST>" node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" commit <<'EOF'
+CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+SESSION_ID="<SESSION_ID>" \
+CURRENT_COST="<CURRENT_COST>" \
+node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" commit <<'EOF'
 <COMMIT_SUBJECT>
 
 <COMMIT_BODY if present>
