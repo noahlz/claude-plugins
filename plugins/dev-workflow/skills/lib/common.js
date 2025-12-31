@@ -33,20 +33,3 @@ export function resolvePath(pathStr, context = {}) {
   });
 }
 
-/**
- * Format an object as bash export statements
- * @param {object} env - Object to export
- * @returns {string} - Bash export statements
- */
-export function formatBashExports(env) {
-  const lines = [];
-  for (const [key, value] of Object.entries(env)) {
-    if (value === null || value === undefined) continue;
-    // Use printf %q for proper shell escaping
-    // Simulate shell escaping for values that need it
-    const escaped = String(value).replace(/'/g, "'\\''");
-    lines.push(`export ${key}='${escaped}'`);
-  }
-  return lines.join('\n');
-}
-

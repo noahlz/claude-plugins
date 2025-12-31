@@ -45,23 +45,12 @@ export function loadSkillConfig(skillName, baseDir = '.') {
 }
 
 /**
- * Load default skill config from plugin
- * @param {string} skillName - Skill name
- * @param {string} pluginRoot - Plugin root directory
- * @returns {object|null} - Parsed default config
- */
-export function loadDefaultSkillConfig(pluginName, skillName, pluginRoot) {
-  const defaultPath = path.join(pluginRoot, `${pluginName}/skills/${skillName}/defaults/settings.plugins.${skillName}.json`);
-  return parseJsonFile(defaultPath);
-}
-
-/**
  * Deep merge two objects (second overwrites first)
  * @param {object} defaultObj - Default config
  * @param {object} projectObj - Project config (overrides)
  * @returns {object} - Merged config
  */
-export function mergeConfigs(defaultObj, projectObj) {
+function mergeConfigs(defaultObj, projectObj) {
   if (!defaultObj) return projectObj;
   if (!projectObj) return defaultObj;
 

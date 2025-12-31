@@ -150,7 +150,7 @@ export function generatePolyglotConfig(detectedTools, pluginRoot) {
  * @param {string|array} detectedJson - JSON string or array
  * @returns {array} - Parsed detected tools
  */
-export function parseDetectedTools(detectedJson) {
+function parseDetectedTools(detectedJson) {
   if (typeof detectedJson === 'string') {
     return JSON.parse(detectedJson);
   }

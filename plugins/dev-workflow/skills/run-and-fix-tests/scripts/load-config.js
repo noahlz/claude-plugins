@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { formatBashExports, resolvePath } from '../../lib/common.js';
+import { resolvePath } from '../../lib/common.js';
 import { loadSkillConfig, validateConfig } from '../../lib/config-loader.js';
 
 /**
