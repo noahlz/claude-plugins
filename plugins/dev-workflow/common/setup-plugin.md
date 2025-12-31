@@ -63,7 +63,6 @@ fi
 
 - 0: Node + plugin root ready, CLAUDE_PLUGIN_ROOT exported (config may be missing)
 - 1: Node.js missing or too old
-- 2: Plugin resolver failed (unexpected)
 
 ## Error Messages
 

@@ -90,7 +90,7 @@ echo "✓ Ready (Node $(node -v))"
 
 Execute ONLY if section 0 returned exit 1.
 
-→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-plugin.md` (via check-prerequisites.md)
+→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-plugin.md`
 
 **Result handling:**
 ✓ Exit 0 → Setup complete, CLAUDE_PLUGIN_ROOT exported, proceed to section 1
@@ -121,7 +121,7 @@ fi
 
 Execute ONLY if section 1 returned exit 1.
 
-→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-config.md`
+→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/setup-config.md`
 
 **Result handling:**
 ✓ Exit 0 → Config created, proceed to Section 2
@@ -179,7 +179,7 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 
 ## 3a. Extract Build Errors
 
-→ Extract build errors (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#extract-build-errors)
+→ Extract build errors (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
 
 → Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
   - "Yes" → Proceed to step 3b
@@ -187,15 +187,15 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 
 ## 3b. Delegate to Build-Fixer Agent
 
-→ Delegate to build-fixer (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#delegate-to-build-fixer)
+→ Delegate to build-fixer (see ${CLAUDE_PLUGIN_ROOT}/run-and-fix-tests/agent-delegation.md)
   - Provide error list from step 3a
-  - Provide BUILD_FIXER_ENV_VARS (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#build-fixer-env-vars)
+  - Provide BUILD_FIXER_ENV_VARS (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/agent-delegation.md#build-fixer-env-vars)
 
 ✓ Agent completes → Proceed to step 3c
 
 ## 3c. Rebuild After Fixes
 
-→ Rebuild and verify (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#rebuild-and-verify)
+→ Rebuild and verify (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
 ✓ Build succeeds → Proceed to Section 4 (Run Tests)
 ✗ Build fails → Return to Section 3a (more errors)
 
@@ -213,7 +213,7 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 
 ## 5. Extract Test Errors
 
-→ Extract test errors (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#extract-test-errors)
+→ Extract test errors (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
 
 ✓ 0 failures detected → Proceed to step 8 (Completion)
 ✗ 1-30 failures → Display error summary, proceed to step 6
@@ -248,7 +248,7 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
   - Failed test list: [bulleted list with test names and error excerpts from step 5]
   - Example failed test entry: "TestLoginFlow (test/auth.test.js) - Expected 'logged in', got undefined"
 
-→ Provide TEST_FIXER_ENV_VARS (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#test-fixer-env-vars)
+→ Provide TEST_FIXER_ENV_VARS (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/agent-delegation.md#test-fixer-env-vars)
 
 → Agent fixes the tests per its instructions and context provided
 
@@ -260,7 +260,7 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 → Detect delegation signal in test-fixer's final message:  
 Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
 
-→ Extract build errors (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#extract-build-errors)
+→ Extract build errors (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
 
 → Use AskUserQuestion:
   - "Test fix introduced compilation errors. Fix them with build-fixer?"
@@ -269,13 +269,13 @@ Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
 
 ## 7c. Invoke Build-Fixer and Resume Test-Fixer
 
-→ Delegate to build-fixer (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#delegate-to-build-fixer)
+→ Delegate to build-fixer (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/agent-delegation.md#delegate-to-build-fixer)
 
-→ Rebuild and verify (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#rebuild-and-verify)
+→ Rebuild and verify (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
   - If build fails: Return to step 7b (more compilation errors)
   - If build succeeds: Continue to resume test-fixer
 
-→ Resume test-fixer (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#resume-test-fixer)
+→ Resume test-fixer (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/agent-delegation.md)
 
 ✓ Test-fixer completes → Proceed to step 7d
 🔄 Test-fixer delegates again → Loop back to step 7b (compilation errors reintroduced)  

@@ -1,18 +1,9 @@
 ---
 name: setup
-description: Set up plugin resolver script for dev-workflow skills. Creates resolve_plugin_root.sh that is required by all dev-workflow skills to resolve plugin paths. Workaround for Claude Code issue #9354.
+description: Set up plugin resolver script for dev-workflow skills. Creates resolve_plugin_root.sh that is required by all dev-workflow skills to resolve plugin paths.
 ---
 
 This skill sets up the `resolve_plugin_root.sh` script that is required by all dev-workflow skills.
-
-**Why is this needed?**
-Due to Claude Code issue #9354, the `${CLAUDE_PLUGIN_ROOT}` variable doesn't expand properly in skill markdown files. This skill creates a helper script that all dev-workflow skills use to resolve the plugin path at runtime.
-
-**What does it do?**
-- Checks for jq installation (required dependency)
-- Prompts you to choose install location ($HOME/.claude or ./.claude)
-- Creates the resolve_plugin_root.sh script
-- Makes it executable
 
 **When to use:**
 Run this skill once after installing the dev-workflow plugin. All other dev-workflow skills will then use the script it creates.
@@ -149,11 +140,5 @@ ls -la "$INSTALL_PATH"
 
 Location: $INSTALL_PATH
 
-All dev-workflow skills can now resolve plugin paths correctly.
-You can now use: dev-workflow:run-and-fix-tests and dev-workflow:write-git-commit
+All `dev-workflow` skills can now resolve the plugin path correctly.
 ```
-
----
-
-**Background:**
-See GitHub issue #9354 for technical details: https://github.com/anthropics/claude-code/issues/9354

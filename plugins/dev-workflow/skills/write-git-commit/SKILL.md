@@ -85,7 +85,7 @@ echo "✓ Ready (Node $(node -v))"
 
 Execute ONLY if section 0 returned exit 1.
 
-→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-plugin.md` (via check-prerequisites.md)
+→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-plugin.md`
 
 **Result handling:**
 ✓ Exit 0 → Setup complete, CLAUDE_PLUGIN_ROOT exported, proceed to section 1

@@ -39,15 +39,8 @@ The skill will guide you through the installation process.
 
 ## Install Locations
 
-### $HOME/.claude (Recommended)
-- Available to all projects on your machine
-- Shared across all Claude Code sessions
-- Best for most users
-
-### ./.claude (Project-specific)
-- Only available in the current project
-- Useful if you need project-specific configuration
-- Creates hidden .claude directory in your project
+- `$HOME/.claude` (Recommended)
+- `./.claude` (Project-specific)
 
 ## After Setup
 
@@ -56,12 +49,3 @@ Once setup completes, you can use all other dev-workflow skills:
 - `dev-workflow:write-git-commit` - Create git commits with cost metrics
 
 Both skills will automatically find and use the resolver script.
-
-## Technical Details
-
-The setup skill creates a bash script that:
-1. Checks the CLAUDE_PLUGIN_ROOT environment variable first
-2. Falls back to reading Claude Code's installed plugins registry
-3. Resolves the correct installation path for any plugin
-
-This workaround is necessary due to [Issue #9354](https://github.com/anthropics/claude-code/issues/9354) which prevents variable expansion in skill markdown files.
