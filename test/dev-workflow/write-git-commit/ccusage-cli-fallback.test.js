@@ -2,8 +2,6 @@ import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 // Import functions to test
-// Note: loadSessionDataCli and loadSessionByIdCli were removed in refactor
-// These are now single-purpose scripts (verify-session-cli.js, get-session-costs-cli.js)
 import {
   extractCostMetrics,
   validateCostMetrics
@@ -269,7 +267,4 @@ describe('write-git-commit: ccusage-cli-fallback.js', () => {
       assert.equal(validateCostMetrics(costs), false);
     });
   });
-
-  // CLI integration tests removed - now in verify-session-cli.js and get-session-costs-cli.js
-  // which are tested in new-scripts.test.js
 });

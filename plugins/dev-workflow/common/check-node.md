@@ -5,6 +5,6 @@ NODE_VERSION=$(node -v)
 echo "✓ Node.js $NODE_VERSION found"
 ```
 
-✓ Node.js available → Proceed to step 1 (Detect Build Configuration)  
+✓ Node.js available → Proceed to step 1 (Detect Skill Configuration)  
 ✗ Node.js not found → Error: Exit with message asking user to install Node.js  
 
