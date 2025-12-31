@@ -35,20 +35,6 @@ export function detectPluginRoot(scriptPath) {
 }
 
 /**
- * Check if a command exists in PATH
- * @param {string} cmd - Command name
- * @returns {boolean} - True if command exists
- */
-export function checkCommand(cmd) {
-  try {
-    execSync(`command -v ${cmd}`, { stdio: 'ignore', shell: '/bin/bash' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Resolve path variables like {logDir}
  * @param {string} pathStr - Path string with variables
  * @param {object} context - Context object with variables

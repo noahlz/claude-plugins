@@ -86,19 +86,6 @@ export function fileExists(filePath) {
 }
 
 /**
- * Check if directory exists
- * @param {string} dirPath - Directory path
- * @returns {boolean}
- */
-export function dirExists(dirPath) {
-  try {
-    return fs.statSync(dirPath).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Get directory name from file path, normalized
  * Returns "(project root)" for "." paths or when file is in rootDir
  * @param {string} filePath - File path

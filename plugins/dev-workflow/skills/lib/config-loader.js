@@ -159,24 +159,3 @@ export function validateConfig(config) {
   return errors;
 }
 
-/**
- * Load config from various sources
- * @param {object} options - Options
- * @param {string} options.skillName - Skill name
- * @param {string} options.pluginRoot - Plugin root directory
- * @param {string} options.baseDir - Base directory for .claude config
- * @returns {object} - { config, warnings }
- */
-export function loadAndNormalizeConfig(options) {
-  const { skillName, pluginRoot, baseDir = '.' } = options;
-  const warnings = [];
-
-  // Load default and project configs
-  const defaultConfig = loadDefaultSkillConfig('dev-workflow', skillName, pluginRoot);
-  const projectConfig = loadSkillConfig(skillName, baseDir);
-
-  // Merge if both exist
-  const merged = mergeConfigs(defaultConfig, projectConfig || {});
-
-  return { config: merged, warnings };
-}
