@@ -1,31 +1,32 @@
 {
-  "logDir": "dist",
+  "outDir": "dist",
+  "logFile": "dist/test.log",
   "build": [
     {
       "tool": "npm",
       "command": "npm run build",
       "workingDir": "frontend",
-      "logFile": "{logDir}/npm.log",
+      "logFile": "{outDir}/npm.log",
       "errorPattern": "(error)"
     },
     {
       "tool": "maven",
       "command": "mvn clean install",
       "workingDir": "backend",
-      "logFile": "{logDir}/maven.log",
+      "logFile": "{outDir}/maven.log",
       "errorPattern": "\\[ERROR\\]"
     }
   ],
   "test": {
     "all": {
       "command": "npm test",
-      "logFile": "{logDir}/test.log",
-      "errorPattern": "(FAIL|Error)"
+      "resultsPath": "{outDir}/test-results.tap",
+      "errorPattern": "(FAIL|Error|not ok)"
     },
     "single": {
       "command": "npm test -- {testFile}",
-      "logFile": "{logDir}/test-single.log",
-      "errorPattern": "(FAIL|Error)"
+      "resultsPath": "{outDir}/test-single-results.tap",
+      "errorPattern": "(FAIL|Error|not ok)"
     }
   }
 }

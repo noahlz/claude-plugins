@@ -1,22 +1,23 @@
 {
-  "logDir": "dist",
+  "outDir": "dist",
+  "logFile": "dist/test.log",
   "build": [
     {
       "command": "npm run build",
-      "logFile": "{logDir}/build.log",
+      "logFile": "{outDir}/build.log",
       "errorPattern": "(error|Error|ERR!)"
     }
   ],
   "test": {
     "all": {
       "command": "npm test",
-      "logFile": "{logDir}/test.log",
-      "errorPattern": "(FAIL|Error)"
+      "resultsPath": "{outDir}/test-results.tap",
+      "errorPattern": "(FAIL|Error|not ok)"
     },
     "single": {
       "command": "npm test -- {testFile}",
-      "logFile": "{logDir}/test-single.log",
-      "errorPattern": "(FAIL|Error)"
+      "resultsPath": "{outDir}/test-single-results.tap",
+      "errorPattern": "(FAIL|Error|not ok)"
     }
   }
 }

@@ -1,15 +1,16 @@
 {
-  "logDir": "dist",
+  "outDir": "dist",
+  "logFile": "{outDir}/test.log",
   "skipBuild": true,
   "test": {
     "all": {
       "command": "./tests/run-all-tests.sh",
-      "logFile": "{logDir}/shunit2-all.log",
+      "resultsPath": "{outDir}/shunit2-all.txt",
       "errorPattern": "FAILED|failures=|Error"
     },
     "single": {
       "command": "bash tests/{testFile}",
-      "logFile": "{logDir}/shunit2-single.log",
+      "resultsPath": "{outDir}/shunit2-single.txt",
       "errorPattern": "FAILED|failures=|Error"
     }
   }

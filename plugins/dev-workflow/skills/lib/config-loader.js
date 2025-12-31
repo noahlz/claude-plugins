@@ -144,7 +144,7 @@ export function validateConfig(config) {
     errors.push('test.all is required');
   } else {
     if (!config.test.all.command) errors.push('test.all.command is required');
-    if (!config.test.all.logFile) errors.push('test.all.logFile is required');
+    if (!config.test.all.resultsPath) errors.push('test.all.resultsPath is required');
     if (!config.test.all.errorPattern) errors.push('test.all.errorPattern is required');
   }
 
@@ -152,7 +152,7 @@ export function validateConfig(config) {
     errors.push('test.single is required');
   } else {
     if (!config.test.single.command) errors.push('test.single.command is required');
-    if (!config.test.single.logFile) errors.push('test.single.logFile is required');
+    if (!config.test.single.resultsPath) errors.push('test.single.resultsPath is required');
     if (!config.test.single.errorPattern) errors.push('test.single.errorPattern is required');
   }
 

@@ -6,13 +6,17 @@ import { globSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distDir = join(dirname(__dirname), 'dist');
-const tapLogFile = join(distDir, 'test-results.tap');
-
-mkdirSync(distDir, { recursive: true });
 
 // Get test files from command line args or default to all tests
 const args = process.argv.slice(2);
-const testFiles = args.length > 0
+const isSingleTestMode = args.length > 0;
+
+// Use different result files for single vs all tests
+const tapLogFile = join(distDir, isSingleTestMode ? 'test-single-results.tap' : 'test-results.tap');
+
+mkdirSync(distDir, { recursive: true });
+
+const testFiles = isSingleTestMode
   ? args
   : globSync('**/*.test.js', { cwd: __dirname }).map(file => join(__dirname, file));
 

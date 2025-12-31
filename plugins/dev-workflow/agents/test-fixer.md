@@ -74,7 +74,7 @@ TodoWrite({
 
 **Phase 2 - Test execution** (only if compilation succeeded or was skipped):
 ```bash
-$TEST_SINGLE_CMD > $TEST_SINGLE_LOG 2>&1
+$TEST_SINGLE_CMD > $TEST_SINGLE_RESULTS_PATH 2>&1
 ```
 
 **Check result**:
@@ -165,11 +165,14 @@ When compilation fails in Phase 1:
 
 Provided by `run-and-fix-tests` skill:
 - `CLAUDE_PLUGIN_ROOT` - Plugin directory
+- `TEST_CMD` - Command to run all tests
+- `TEST_RESULTS_PATH` - Test results file path (programmatic parsing)
 - `TEST_SINGLE_CMD` - Command to run single test
-- `TEST_SINGLE_LOG` - Test log file path
+- `TEST_SINGLE_RESULTS_PATH` - Single test results file path (programmatic parsing)
+- `TEST_LOG` - Optional test log file path (human-readable output)
 - `BUILD_CMD` - Build command (for compilation check)
 - `BUILD_LOG` - Build log file path
 - `BUILD_WORKING_DIR` - Where to run build
 - `SKIP_BUILD` - "true" or "false" (skip compilation check?)
-- `LOG_DIR` - Log directory
+- `OUT_DIR` - Build output directory
 - `INITIAL_PWD` - Original working directory

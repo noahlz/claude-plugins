@@ -1,21 +1,22 @@
 {
-  "logDir": "target",
+  "outDir": "target",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "cargo build",
-      "logFile": "{logDir}/rust.log",
+      "logFile": "{outDir}/rust.log",
       "errorPattern": "error\\[|error:"
     }
   ],
   "test": {
     "all": {
       "command": "cargo test",
-      "logFile": "{logDir}/rust-test.log",
+      "resultsPath": "{outDir}/rust-test.txt",
       "errorPattern": "test result:|failures:|FAILED"
     },
     "single": {
       "command": "cargo test {testFile}",
-      "logFile": "{logDir}/rust-test-single.log",
+      "resultsPath": "{outDir}/rust-test-single.txt",
       "errorPattern": "test result:|failures:|FAILED"
     }
   }

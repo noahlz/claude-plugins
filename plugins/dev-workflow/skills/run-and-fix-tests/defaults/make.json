@@ -1,21 +1,22 @@
 {
-  "logDir": "dist",
+  "outDir": "dist",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "make build",
-      "logFile": "{logDir}/make.log",
+      "logFile": "{outDir}/make.log",
       "errorPattern": "Error|error:"
     }
   ],
   "test": {
     "all": {
       "command": "make test",
-      "logFile": "{logDir}/make-test.log",
+      "resultsPath": "{outDir}/make-test.txt",
       "errorPattern": "FAIL|Error|error:"
     },
     "single": {
       "command": "make test {testFile}",
-      "logFile": "{logDir}/make-test-single.log",
+      "resultsPath": "{outDir}/make-test-single.txt",
       "errorPattern": "FAIL|Error|error:"
     }
   }

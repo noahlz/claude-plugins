@@ -1,21 +1,22 @@
 {
-  "logDir": "bin",
+  "outDir": "bin",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "dotnet build",
-      "logFile": "{logDir}/dotnet.log",
+      "logFile": "{outDir}/dotnet.log",
       "errorPattern": "error CS|FAILED"
     }
   ],
   "test": {
     "all": {
       "command": "dotnet test",
-      "logFile": "{logDir}/dotnet-test.log",
+      "resultsPath": "{outDir}/dotnet-test.txt",
       "errorPattern": "FAILED|Failed:|error CS"
     },
     "single": {
       "command": "dotnet test --filter {testFile}",
-      "logFile": "{logDir}/dotnet-test-single.log",
+      "resultsPath": "{outDir}/dotnet-test-single.txt",
       "errorPattern": "FAILED|Failed:|error CS"
     }
   }

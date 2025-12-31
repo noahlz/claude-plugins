@@ -1,21 +1,22 @@
 {
-  "logDir": "target/logs",
+  "outDir": "target",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "sbt clean compile",
-      "logFile": "{logDir}/sbt.log",
+      "logFile": "{outDir}/sbt.log",
       "errorPattern": "\\[error\\]|error:"
     }
   ],
   "test": {
     "all": {
       "command": "sbt test",
-      "logFile": "{logDir}/test.log",
+      "resultsPath": "{outDir}/sbt-test.txt",
       "errorPattern": "\\[error\\]|FAILED|failed|error:"
     },
     "single": {
       "command": "sbt 'testOnly {testFile}'",
-      "logFile": "{logDir}/test-single.log",
+      "resultsPath": "{outDir}/sbt-test-single.txt",
       "errorPattern": "\\[error\\]|FAILED|failed|error:"
     }
   }

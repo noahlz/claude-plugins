@@ -1,21 +1,22 @@
 {
-  "logDir": "target",
+  "outDir": "target",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "lein compile",
-      "logFile": "{logDir}/lein.log",
+      "logFile": "{outDir}/lein.log",
       "errorPattern": "error|ERROR|Failed|Exception"
     }
   ],
   "test": {
     "all": {
       "command": "lein test",
-      "logFile": "{logDir}/lein-test.log",
+      "resultsPath": "{outDir}/lein-test.txt",
       "errorPattern": "FAIL|ERROR|Exception"
     },
     "single": {
       "command": "lein test {testFile}",
-      "logFile": "{logDir}/lein-test-single.log",
+      "resultsPath": "{outDir}/lein-test-single.txt",
       "errorPattern": "FAIL|ERROR|Exception"
     }
   }

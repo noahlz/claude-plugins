@@ -1,21 +1,22 @@
 {
-  "logDir": "target",
+  "outDir": "target",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "cargo build --release",
-      "logFile": "{logDir}/cargo.log",
+      "logFile": "{outDir}/cargo.log",
       "errorPattern": "error\\["
     }
   ],
   "test": {
     "all": {
       "command": "cargo test",
-      "logFile": "{logDir}/cargo-test.log",
+      "resultsPath": "{outDir}/cargo-test.txt",
       "errorPattern": "test result:|failures:|FAILED"
     },
     "single": {
       "command": "cargo test {testFile}",
-      "logFile": "{logDir}/cargo-test-single.log",
+      "resultsPath": "{outDir}/cargo-test-single.txt",
       "errorPattern": "test result:|failures:|FAILED"
     }
   }

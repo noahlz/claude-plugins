@@ -1,21 +1,22 @@
 {
-  "logDir": "build-logs",
+  "outDir": "build",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "go build ./...",
-      "logFile": "{logDir}/go.log",
+      "logFile": "{outDir}/go.log",
       "errorPattern": "(error|cannot find|undefined)"
     }
   ],
   "test": {
     "all": {
       "command": "go test ./...",
-      "logFile": "{logDir}/test.log",
+      "resultsPath": "{outDir}/test-results.txt",
       "errorPattern": "(FAIL|RUN|--- FAIL|panic)"
     },
     "single": {
       "command": "go test -run {testFile} ./...",
-      "logFile": "{logDir}/test-single.log",
+      "resultsPath": "{outDir}/test-single-results.txt",
       "errorPattern": "(FAIL|RUN|--- FAIL|panic)"
     }
   }

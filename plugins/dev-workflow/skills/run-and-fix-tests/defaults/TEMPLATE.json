@@ -1,24 +1,25 @@
 {
-  "logDir": "__PLACEHOLDER_LOG_DIR__",
+  "outDir": "__PLACEHOLDER_OUT_DIR__",
+  "logFile": "{outDir}/__PLACEHOLDER_LOG_FILE__",
   "build": [
     {
       "command": "__PLACEHOLDER_BUILD_COMMAND__",
-      "logFile": "{logDir}/__PLACEHOLDER_LOG_FILE__",
-      "errorPattern": "__PLACEHOLDER_ERROR_PATTERN__",
+      "logFile": "{outDir}/__PLACEHOLDER_BUILD_LOG__",
+      "errorPattern": "__PLACEHOLDER_BUILD_ERROR_PATTERN__",
       "workingDir": "."
     }
   ],
   "test": {
     "all": {
       "command": "__PLACEHOLDER_TEST_ALL_COMMAND__",
-      "logFile": "{logDir}/__PLACEHOLDER_TEST_LOG__",
+      "resultsPath": "{outDir}/__PLACEHOLDER_TEST_RESULTS_PATH__",
       "errorPattern": "__PLACEHOLDER_TEST_ERROR_PATTERN__"
     },
     "single": {
       "command": "__PLACEHOLDER_TEST_SINGLE_COMMAND__",
-      "logFile": "{logDir}/__PLACEHOLDER_TEST_SINGLE_LOG__",
+      "resultsPath": "{outDir}/__PLACEHOLDER_TEST_SINGLE_RESULTS_PATH__",
       "errorPattern": "__PLACEHOLDER_TEST_ERROR_PATTERN__"
     }
   },
-  "_instructions": "REPLACE ALL __PLACEHOLDER_*__ VALUES WITH YOUR PROJECT'S BUILD/TEST COMMANDS AND ERROR PATTERNS"
+  "_instructions": "REPLACE ALL __PLACEHOLDER_*__ VALUES WITH YOUR PROJECT'S BUILD/TEST COMMANDS AND ERROR PATTERNS. resultsPath must be a file or directory containing structured test results (e.g., TAP, XML, or JSON)."
 }

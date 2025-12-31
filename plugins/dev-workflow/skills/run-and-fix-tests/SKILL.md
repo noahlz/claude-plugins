@@ -73,9 +73,10 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 ✗ Script fails → Display error and stop  
 ✓ Script succeeds → Environment variables set:
   - BUILD_COUNT, BUILD_{i}_CMD, BUILD_{i}_LOG, BUILD_{i}_ERROR_PATTERN, BUILD_{i}_WORKING_DIR (for each build step)
-  - TEST_CMD, TEST_LOG, TEST_ERROR_PATTERN
-  - TEST_SINGLE_CMD, TEST_SINGLE_LOG, TEST_SINGLE_ERROR_PATTERN
-  - LOG_DIR (tool-specific, e.g., dist/, build/, target/)
+  - TEST_CMD, TEST_RESULTS_PATH, TEST_ERROR_PATTERN
+  - TEST_SINGLE_CMD, TEST_SINGLE_RESULTS_PATH, TEST_SINGLE_ERROR_PATTERN
+  - TEST_LOG (optional, for human-readable logs)
+  - OUT_DIR (build output directory, e.g., dist/, build/, target/)
 
 → Check command argument: `TEST_FILE="$1"`
 → Determine mode:
@@ -97,7 +98,7 @@ Environment variables to provide when delegating to build-fixer agent:
 - `BUILD_{i}_LOG` - actual log path for step i (e.g., "dist/npm-build.log")
 - `BUILD_{i}_ERROR_PATTERN` - actual pattern for step i (e.g., "(error|Error|ERR!)")
 - `BUILD_{i}_WORKING_DIR` - actual path for step i (e.g., ".")
-- `LOG_DIR` - actual path (e.g., "dist/")
+- `OUT_DIR` - actual path (e.g., "dist/")
 - `INITIAL_PWD` - actual path (e.g., "/current/working/directory")
 - `SKIP_BUILD` - "true" or "false" (whether build step was skipped)
 
@@ -105,8 +106,11 @@ Environment variables to provide when delegating to build-fixer agent:
 
 Environment variables to provide when delegating to test-fixer agent:
 - BUILD_FIXER_ENV_VARS (see above) for compilation checking, including `SKIP_BUILD`
-- `TEST_SINGLE_CMD` - actual value (e.g., "npm test --testNamePattern={testName}")
-- `TEST_SINGLE_LOG` - actual path (e.g., "logs/test-single.log")
+- `TEST_CMD` - actual value (e.g., "npm test")
+- `TEST_RESULTS_PATH` - actual path to test results file (e.g., "dist/test-results.tap")
+- `TEST_SINGLE_CMD` - actual value (e.g., "npm test -- {testFile}")
+- `TEST_SINGLE_RESULTS_PATH` - actual path to single test results file (e.g., "dist/test-single-results.tap")
+- `TEST_LOG` - optional path to human-readable log file (e.g., "dist/test.log")
 
 ### EXTRACT_BUILD_ERRORS
 
@@ -168,7 +172,7 @@ Procedure to delegate back to the test-fixer agent after build-fixer completes:
 → Proceed directly to step 4 (Run Tests)
 
 **Run Build (SKIP_BUILD=false):**
-→ Create log directory: `mkdir -p "$LOG_DIR"`
+→ Create output directory: `mkdir -p "$OUT_DIR"`
 → Iterate through all builds by index:
   → For each index i from 0 to (BUILD_COUNT - 1):
     - Extract variables: BUILD_${i}_CMD, BUILD_${i}_LOG, BUILD_${i}_WORKING_DIR, BUILD_${i}_ERROR_PATTERN
@@ -206,18 +210,19 @@ Procedure to delegate back to the test-fixer agent after build-fixer completes:
 ## 4. Run Tests
 
 → Determine test command based on mode:
-  - Single test mode: TEST_CMD = `$TEST_SINGLE_CMD` with {testFile} replaced
-  - All tests mode: TEST_CMD = `$TEST_CMD`
+  - Single test mode: use `$TEST_SINGLE_CMD` with {testFile} replaced, results to `$TEST_SINGLE_RESULTS_PATH`
+  - All tests mode: use `$TEST_CMD`, results to `$TEST_RESULTS_PATH`
 
-→ Change to test working directory (if different from build dir)  
-→ Execute test command silently to log file: `$TEST_CMD > "$TEST_LOG" 2>&1`  
+→ Change to test working directory (if different from build dir)
+→ Execute test command with output redirected to results file (tool-specific)
+→ If `$TEST_LOG` is set, also capture human-readable output to that file (optional)  
 ✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 8 (Completion)  
 ✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 5 (Extract Test Errors)  
 
 ## 5. Extract Test Errors
 
-→ Parse test log at `$TEST_LOG` to identify failing tests  
-→ Extract error patterns from log using `$TEST_ERROR_PATTERN` regex  
+→ Parse test results at `$TEST_RESULTS_PATH` to identify failing tests
+→ Extract error patterns from results using `$TEST_ERROR_PATTERN` regex
 → Identify failing tests (up to 30 distinct failures)  
 
 ✓ 0 failures detected → Proceed to step 8 (Completion)  

@@ -1,21 +1,22 @@
 {
-  "logDir": "target/logs",
+  "outDir": "target",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
-      "command": "mvn clean install --quiet --log-file {logFile}",
-      "logFile": "{logDir}/build.log",
+      "command": "mvn clean install --quiet --log-file {outDir}/build.log",
+      "logFile": "{outDir}/build.log",
       "errorPattern": "\\[ERROR\\]"
     }
   ],
   "test": {
     "all": {
-      "command": "mvn test --quiet --log-file {logFile}",
-      "logFile": "{logDir}/test.log",
+      "command": "mvn test --quiet --log-file {outDir}/test.log",
+      "resultsPath": "{outDir}/surefire-reports",
       "errorPattern": "\\[ERROR\\]|Tests run:.*Failures: [1-9]"
     },
     "single": {
-      "command": "mvn test --quiet -Dtest={testFile} --log-file {logFile}",
-      "logFile": "{logDir}/test-single.log",
+      "command": "mvn test --quiet -Dtest={testFile} --log-file {outDir}/test.log",
+      "resultsPath": "{outDir}/surefire-reports",
       "errorPattern": "\\[ERROR\\]"
     }
   }

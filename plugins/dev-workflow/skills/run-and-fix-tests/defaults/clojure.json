@@ -1,21 +1,22 @@
 {
-  "logDir": "target",
+  "outDir": "target",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "clojure -M:build",
-      "logFile": "{logDir}/clojure.log",
+      "logFile": "{outDir}/clojure.log",
       "errorPattern": "error|ERROR|Exception"
     }
   ],
   "test": {
     "all": {
       "command": "clojure -M:test",
-      "logFile": "{logDir}/clojure-test.log",
+      "resultsPath": "{outDir}/clojure-test.txt",
       "errorPattern": "FAIL|ERROR|Exception"
     },
     "single": {
       "command": "clojure -M:test {testFile}",
-      "logFile": "{logDir}/clojure-test-single.log",
+      "resultsPath": "{outDir}/clojure-test-single.txt",
       "errorPattern": "FAIL|ERROR|Exception"
     }
   }

@@ -11,7 +11,7 @@ import { loadSkillConfig, validateConfig } from '../../lib/config-loader.js';
  * @returns {object} - { config, env, errors, warnings }
  */
 export function loadConfig(options = {}) {
-  const { pluginRoot, baseDir = '.' } = options;
+  const { baseDir = '.' } = options;
   const errors = [];
   const warnings = [];
 
@@ -44,14 +44,14 @@ export function loadConfig(options = {}) {
  */
 export function generateEnv(config, baseDir = '.') {
   const env = {};
-  const logDir = config.logDir || 'dist';
+  const outDir = config.outDir || 'dist';
 
   // Build configuration (always array format)
   if (config.build && Array.isArray(config.build)) {
     env.BUILD_COUNT = config.build.length.toString();
     config.build.forEach((build, idx) => {
       env[`BUILD_${idx}_CMD`] = build.command;
-      env[`BUILD_${idx}_LOG`] = resolvePath(build.logFile, { logDir });
+      env[`BUILD_${idx}_LOG`] = resolvePath(build.logFile, { outDir });
       env[`BUILD_${idx}_ERROR_PATTERN`] = build.errorPattern;
       env[`BUILD_${idx}_WORKING_DIR`] = build.workingDir || '.';
     });
@@ -59,14 +59,19 @@ export function generateEnv(config, baseDir = '.') {
 
   // Test configuration (always single)
   env.TEST_CMD = config.test.all.command;
-  env.TEST_LOG = resolvePath(config.test.all.logFile, { logDir });
+  env.TEST_RESULTS_PATH = resolvePath(config.test.all.resultsPath, { outDir });
   env.TEST_ERROR_PATTERN = config.test.all.errorPattern;
 
   env.TEST_SINGLE_CMD = config.test.single.command;
-  env.TEST_SINGLE_LOG = resolvePath(config.test.single.logFile, { logDir });
+  env.TEST_SINGLE_RESULTS_PATH = resolvePath(config.test.single.resultsPath, { outDir });
   env.TEST_SINGLE_ERROR_PATTERN = config.test.single.errorPattern;
 
-  env.LOG_DIR = logDir;
+  // Optional single log file for all test runs (human inspection)
+  if (config.logFile) {
+    env.TEST_LOG = resolvePath(config.logFile, { outDir });
+  }
+
+  env.OUT_DIR = outDir;
 
   // Auto-detect if build should be skipped
   let skipBuild = false;

@@ -1,22 +1,23 @@
 {
-  "logDir": "dist",
+  "outDir": "dist",
+  "logFile": "{outDir}/test.log",
   "build": [
     {
       "command": "npm run build",
-      "logFile": "{logDir}/npm-build.log",
+      "logFile": "{outDir}/npm-build.log",
       "errorPattern": "(error|Error|ERR!|failed)"
     }
   ],
   "test": {
     "all": {
       "command": "npm test",
-      "logFile": "{logDir}/npm-test.log",
-      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+      "resultsPath": "{outDir}/test-results.tap",
+      "errorPattern": "(not ok|Bail out!)"
     },
     "single": {
       "command": "npm test -- {testFile}",
-      "logFile": "{logDir}/npm-test-single.log",
-      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+      "resultsPath": "{outDir}/test-single-results.tap",
+      "errorPattern": "(not ok|Bail out!)"
     }
   }
 }
