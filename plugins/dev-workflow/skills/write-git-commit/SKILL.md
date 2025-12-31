@@ -14,28 +14,31 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 Also activate proactively when you've completed a significant task and recognize committing would be the natural next step (but ASK first via the skill's approval workflow).
 
-## 0. Resolve CLAUDE_PLUGIN_ROOT
+## 0. Prerequisites
 
-→ Resolve plugin root environment (check local project first, then user home):
+**Step description**: "Checking prerequisites"
+
+Set SKILL_NAME then execute check (see ${CLAUDE_PLUGIN_ROOT}/common/check-prerequisites.md):
 ```bash
-RESOLVER=""
-if [ -x "./.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="./.claude/resolve_plugin_root.sh"
-elif [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="$HOME/.claude/resolve_plugin_root.sh"
-else
-  echo "Error: resolve_plugin_root.sh not found in ./.claude/ or $HOME/.claude/" >&2
-  exit 1
-fi
-CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || { echo "Error: Failed to resolve plugin root" >&2; exit 1; }
-export CLAUDE_PLUGIN_ROOT
+SKILL_NAME="write-git-commit"
 ```
 
-✓ Plugin root resolved → Proceed to step 0a (Check Node.js)
+→ Execute prerequisite check from `${CLAUDE_PLUGIN_ROOT}/common/check-prerequisites.md`
 
-## 0a. Check Node.js Installation
+**Result handling:**
+✓ Exit 0 → All prerequisites met, proceed to section 1
+✗ Exit 1 → Prerequisites missing, proceed to section 0a
 
-Execute the steps in `${CLAUDE_PLUGIN_ROOT}/common/check-node.md` to determine if node 22+ is available.
+## 0a. Setup Prerequisites (First Run Only)
+
+Execute ONLY if section 0 returned exit 1.
+
+→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-plugin.md` (via check-prerequisites.md)
+
+**Result handling:**
+✓ Exit 0 → Setup complete, CLAUDE_PLUGIN_ROOT exported, proceed to section 1
+✗ Exit 1 → Display error: "Node.js 22+ required. Install from https://nodejs.org/ and restart."
+✗ Exit 2 → Let natural error occur (plugin resolver issue, unexpected)
 
 ---
 

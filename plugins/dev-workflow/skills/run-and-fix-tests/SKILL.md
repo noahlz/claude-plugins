@@ -19,50 +19,62 @@ Also activate this skill when the user requests testing using phrases like:
 - "build and test"
 - "fix failing tests"
 
-## 0. Resolve Plugin Root
+## 0. Prerequisites
 
-→ Resolve plugin root environment (check local project first, then user home):
+**Step description**: "Checking prerequisites"
+
+Set SKILL_NAME then execute check (see ${CLAUDE_PLUGIN_ROOT}/common/check-prerequisites.md):
 ```bash
-RESOLVER=""
-if [ -x "./.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="./.claude/resolve_plugin_root.sh"
-elif [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="$HOME/.claude/resolve_plugin_root.sh"
-else
-  echo "Error: resolve_plugin_root.sh not found in ./.claude/ or $HOME/.claude/" >&2
-  exit 1
-fi
-CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || { echo "Error: Failed to resolve plugin root" >&2; exit 1; }
-export CLAUDE_PLUGIN_ROOT
+SKILL_NAME="run-and-fix-tests"
 ```
 
-✓ Plugin root resolved → Proceed to step 0a (Check Node.js)
+→ Execute prerequisite check from `${CLAUDE_PLUGIN_ROOT}/common/check-prerequisites.md`
 
-## 0a. Check Node.js Installation
+**Result handling:**
+✓ Exit 0 → All prerequisites met, proceed to section 1
+✗ Exit 1 → Prerequisites missing, proceed to section 0a
 
-Execute the steps in `${CLAUDE_PLUGIN_ROOT}/common/check-node.md` to determin if node 22+ is available.
+## 0a. Setup Prerequisites (First Run Only)
+
+Execute ONLY if section 0 returned exit 1.
+
+→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-plugin.md` (via check-prerequisites.md)
+
+**Result handling:**
+✓ Exit 0 → Setup complete, CLAUDE_PLUGIN_ROOT exported, proceed to section 1
+✗ Exit 1 → Display error: "Node.js 22+ required. Install from https://nodejs.org/ and restart."
+✗ Exit 2 → Let natural error occur (plugin resolver issue, unexpected)
+
+**Note:** Config generation happens in section 1 (detect build tools), so missing config is non-blocking.
 
 ## 1. Detect Build Configuration
 
-→ Check if `.claude/settings.plugins.run-and-fix-tests.json` exists  
-✓ Config exists → Proceed to step 2  
-✗ Config missing → Run detection and auto-config:  
+**Step description**: "Checking build configuration"
 
-→ Execute: `node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.js "${CLAUDE_PLUGIN_ROOT}"`
-  - Scans project for build tool config files (package.json, pom.xml, build.gradle, etc.)
-  - Detects which tools are present
-  - Outputs JSON array of detected tools with configurations
+→ Fast path check (config exists):
+```bash
+if [ -f "./.claude/settings.plugins.run-and-fix-tests.json" ]; then
+  echo "✓ Config found"
+else
+  echo "⚠️ Config setup required"
+  exit 1
+fi
+```
 
-→ Auto-selection rules:
-  - Exactly 1 tool detected → Use `defaults/{tool}.json`
-  - Multiple tools in different locations → Generate polyglot config (🔧 shown to user)
-  - Multiple tools in same location → Generate polyglot config
-  - No matching default exists → Use `TEMPLATE.json` placeholder template (user must customize)
-  - 0 tools detected → Error: no build tools detected
+**Result handling:**
+✓ Exit 0 → Config exists, proceed to Section 2
+✗ Exit 1 → Config missing, proceed to Section 1a
 
-✓ Config created successfully → Proceed to step 2  
-✗ No tools detected → Error, user must create `.claude/settings.plugins.run-and-fix-tests.json` manually  
-✗ Using placeholder config → User must edit `.claude/settings.plugins.run-and-fix-tests.json` before step 2  
+## 1a. Setup Build Configuration (First Run Only)
+
+Execute ONLY if section 1 returned exit 1.
+
+→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-config.md`
+
+**Result handling:**
+✓ Exit 0 → Config created, proceed to Section 2
+✗ Exit 1 → Display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually"
+⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding"
 
 ## 2. Load Configuration
 
@@ -86,82 +98,6 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 → Store initial working directory: `INITIAL_PWD=$(pwd)`
 
 → Determine build count: `BUILD_COUNT=$BUILD_COUNT` (number of indexed build steps)
-
-## Common Definitions
-
-### BUILD_FIXER_ENV_VARS
-
-Environment variables to provide when delegating to build-fixer agent:
-- `CLAUDE_PLUGIN_ROOT` - actual path (e.g., "/Users/user/.claude/plugins/dev-workflow@noahlz.github.io")
-- `BUILD_COUNT` - number of build steps (e.g., "1" or "2")
-- `BUILD_{i}_CMD` - actual command for step i (e.g., "npm run build")
-- `BUILD_{i}_LOG` - actual log path for step i (e.g., "dist/npm-build.log")
-- `BUILD_{i}_ERROR_PATTERN` - actual pattern for step i (e.g., "(error|Error|ERR!)")
-- `BUILD_{i}_WORKING_DIR` - actual path for step i (e.g., ".")
-- `OUT_DIR` - actual path (e.g., "dist/")
-- `INITIAL_PWD` - actual path (e.g., "/current/working/directory")
-- `SKIP_BUILD` - "true" or "false" (whether build step was skipped)
-
-### TEST_FIXER_ENV_VARS
-
-Environment variables to provide when delegating to test-fixer agent:
-- BUILD_FIXER_ENV_VARS (see above) for compilation checking, including `SKIP_BUILD`
-- `TEST_CMD` - actual value (e.g., "npm test")
-- `TEST_RESULTS_PATH` - actual path to test results file (e.g., "dist/test-results.tap")
-- `TEST_SINGLE_CMD` - actual value (e.g., "npm test -- {testFile}")
-- `TEST_SINGLE_RESULTS_PATH` - actual path to single test results file (e.g., "dist/test-single-results.tap")
-- `TEST_LOG` - optional path to human-readable log file (e.g., "dist/test.log")
-
-### EXTRACT_BUILD_ERRORS
-
-Procedure to extract compilation errors from build log:
-
-→ Try to get language diagnostics from editor using available IDE MCP or LSP tools  
-✓ MCP or LSP tool available → Extract errors with precise locations  
-✗ Not available → Parse build log at `$BUILD_LOG` using `$BUILD_ERROR_PATTERN` regex  
-
-→ Extract up to 30 distinct compilation errors with:
-  - File paths
-  - Line numbers and column positions (if available)
-  - Error messages and error codes
-
-→ Display compilation error summary to user
-
-### DELEGATE_TO_BUILD_FIXER
-
-Procedure to delegate to build-fixer agent:
-
-→ Delegate to the `build-fixer` agent to fix compilation errors one-by-one.
-
-→ Provide agent with context in natural language:
-  - Build error list: [bulleted list with file:line:col and error messages]
-  - Example error entry: "src/auth.ts:45:12 - TS2304: Cannot find name 'User'"
-
-→ Provide BUILD_FIXER_ENV_VARS (see above)
-
-→ Agent fixes the errors per its instructions and context provided.
-
-### REBUILD_AND_VERIFY
-
-Procedure to rebuild project and verify compilation:
-
-→ Iterate through all builds by index (0 to BUILD_COUNT-1):
-  - For each i: `cd "${BUILD_${i}_WORKING_DIR}" && ${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
-  - Track exit codes for each build step
-
-→ After all builds complete:
-  - Exit 0 (all succeeded) → Return to INITIAL_PWD, build succeeded
-  - Exit non-zero (any failed) → Return to INITIAL_PWD, check logs for errors
-
-### RESUME_TEST_FIXER
-
-Procedure to delegate back to the test-fixer agent after build-fixer completes:
-
-→ Delegate back to the test-fixer agent using Task tool with resume parameter:
-  - `resume: $TEST_FIXER_AGENT_ID`
-  - `prompt: "Compilation errors have been resolved by build-fixer. BUILD_LOG shows clean build. Continue with test fix verification."`
-
-→ Test-fixer continues from where it left off (re-runs verification starting with compilation check)
 
 ## 3. Build Project
 
@@ -191,7 +127,7 @@ Procedure to delegate back to the test-fixer agent after build-fixer completes:
 
 ## 3a. Extract Build Errors
 
-→ Extract errors (see EXTRACT_BUILD_ERRORS)
+→ Extract build errors (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#extract-build-errors)
 
 → Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
   - "Yes" → Proceed to step 3b
@@ -199,13 +135,17 @@ Procedure to delegate back to the test-fixer agent after build-fixer completes:
 
 ## 3b. Delegate to Build-Fixer Agent
 
-→ Delegate to build-fixer with error list from step 3a (see DELEGATE_TO_BUILD_FIXER)
+→ Delegate to build-fixer (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#delegate-to-build-fixer)
+  - Provide error list from step 3a
+  - Provide BUILD_FIXER_ENV_VARS (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#build-fixer-env-vars)
 
 ✓ Agent completes → Proceed to step 3c
 
 ## 3c. Rebuild After Fixes
 
-→ Return to step 3 (Build Project) to verify fixes
+→ Rebuild and verify (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#rebuild-and-verify)
+✓ Build succeeds → Proceed to Section 4 (Run Tests)
+✗ Build fails → Return to Section 3a (more errors)
 
 ## 4. Run Tests
 
@@ -221,18 +161,11 @@ Procedure to delegate back to the test-fixer agent after build-fixer completes:
 
 ## 5. Extract Test Errors
 
-→ Parse test results at `$TEST_RESULTS_PATH` to identify failing tests
-→ Extract error patterns from results using `$TEST_ERROR_PATTERN` regex
-→ Identify failing tests (up to 30 distinct failures)  
+→ Extract test errors (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#extract-test-errors)
 
-✓ 0 failures detected → Proceed to step 8 (Completion)  
-✗ 1-30 failures → Display error summary, proceed to step 6  
-✗ 30+ failures → Display count, proceed to step 6  
-
-→ Display error summary to user with:
-  - List of failing test names/paths
-  - Error messages and relevant output from test log
-  - Stack traces (if available)
+✓ 0 failures detected → Proceed to step 8 (Completion)
+✗ 1-30 failures → Display error summary, proceed to step 6
+✗ 30+ failures → Display count, proceed to step 6
 
 ## 6. Ask to Fix Tests
 
@@ -263,7 +196,7 @@ Procedure to delegate back to the test-fixer agent after build-fixer completes:
   - Failed test list: [bulleted list with test names and error excerpts from step 5]
   - Example failed test entry: "TestLoginFlow (test/auth.test.js) - Expected 'logged in', got undefined"
 
-→ Provide TEST_FIXER_ENV_VARS (see Common Definitions)
+→ Provide TEST_FIXER_ENV_VARS (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#test-fixer-env-vars)
 
 → Agent fixes the tests per its instructions and context provided
 
@@ -275,7 +208,7 @@ Procedure to delegate back to the test-fixer agent after build-fixer completes:
 → Detect delegation signal in test-fixer's final message:  
 Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
 
-→ Extract build errors (see EXTRACT_BUILD_ERRORS)
+→ Extract build errors (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#extract-build-errors)
 
 → Use AskUserQuestion:
   - "Test fix introduced compilation errors. Fix them with build-fixer?"
@@ -284,13 +217,13 @@ Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
 
 ## 7c. Invoke Build-Fixer and Resume Test-Fixer
 
-→ Delegate to build-fixer with error list from step 7b (see DELEGATE_TO_BUILD_FIXER)
+→ Delegate to build-fixer (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#delegate-to-build-fixer)
 
-→ After build-fixer completes: Rebuild to verify (see REBUILD_AND_VERIFY)
+→ Rebuild and verify (see ${CLAUDE_PLUGIN_ROOT}/common/build-procedures.md#rebuild-and-verify)
   - If build fails: Return to step 7b (more compilation errors)
   - If build succeeds: Continue to resume test-fixer
 
-→ Resume test-fixer (see RESUME_TEST_FIXER)
+→ Resume test-fixer (see ${CLAUDE_PLUGIN_ROOT}/common/agent-delegation.md#resume-test-fixer)
 
 ✓ Test-fixer completes → Proceed to step 7d
 🔄 Test-fixer delegates again → Loop back to step 7b (compilation errors reintroduced)  
