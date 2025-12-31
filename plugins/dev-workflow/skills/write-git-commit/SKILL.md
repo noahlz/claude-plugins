@@ -236,8 +236,8 @@ if [ "$RESULT_STATUS" = "found" ]; then
 fi
 ```
 
-→ Capture from output:
-- **RESULT_STATUS**: Echoed status value
+→ Capture from output:  
+- **RESULT_STATUS**: Echoed status value 
 
 → Handle result based on RESULT_STATUS:
 

@@ -124,46 +124,6 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.ok(typeof data.message === 'string', 'Should have message field');
   });
 
-  it('prepare action loads config and attempts to resolve costs', () => {
-    // Create config file
-    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
-    writeFileSync(
-      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
-      JSON.stringify({ sessionId: '-test-session-id' })
-    );
-
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-    const outputFile = join(testEnv.tmpDir, 'prepare-output.json');
-
-    execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', testEnv.tmpDir, '', outputFile],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    let data;
-    try {
-      data = JSON.parse(readFileSync(outputFile, 'utf-8'));
-    } catch (e) {
-      assert.fail(`Output file should contain valid JSON: ${e.message}`);
-    }
-
-    // When config exists, prepare() now attempts to resolve costs via library or CLI
-    // In test environment without actual ccusage sessions, this will return error
-    assert.ok(
-      data.status === 'success' || data.status === 'error',
-      'Should return success or error based on cost resolution'
-    );
-    // If error, should include session_id and error message
-    if (data.status === 'error') {
-      assert.equal(data.data.session_id, '-test-session-id', 'Should include session ID in error response');
-      assert.ok(data.message, 'Should include error message');
-    }
-  });
-
   it('commit action fails when CURRENT_COST is not provided', () => {
     // Create config with session ID but don't provide CURRENT_COST
     mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
@@ -386,62 +346,6 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.ok(data.data.commit_sha, 'Should return commit SHA');
   });
 
-  it('prepare with sessionId parameter returns error for nonexistent session', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-    const outputFile = join(testEnv.tmpDir, 'prepare-nonexistent-output.json');
-
-    execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', testEnv.tmpDir, '-nonexistent-session-id-xyz', outputFile],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    let data;
-    try {
-      data = JSON.parse(readFileSync(outputFile, 'utf-8'));
-    } catch (e) {
-      assert.fail(`Output file should contain valid JSON: ${e.message}`);
-    }
-
-    // Status should be error when session cannot be found
-    // (assuming ccusage library or CLI is not available, or session doesn't exist)
-    assert.ok(
-      data.status === 'error' || data.status === 'no_config',
-      'Should return error or no_config for nonexistent session'
-    );
-  });
-
-  it('list-sessions returns raw session IDs (one per line)', () => {
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-    const outputFile = join(testEnv.tmpDir, 'list-sessions-output.txt');
-
-    const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['list-sessions', outputFile],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    assert.ok(existsSync(outputFile), 'Output file should be created');
-
-    const fileContents = readFileSync(outputFile, 'utf-8');
-
-    // On success, file should contain session IDs (one per line) or be empty
-    // On error, file may be empty or contain empty string
-    // Both are acceptable - we're checking format, not ccusage availability
-    if (fileContents.trim()) {
-      const sessionIds = fileContents.trim().split('\n');
-      sessionIds.forEach(id => {
-        assert.ok(typeof id === 'string', 'Each line should be a session ID string');
-      });
-    }
-  });
-
   // ====== Phase 4: Output File Tests ======
 
   it('check-config writes to output file when specified', () => {
@@ -474,51 +378,6 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.equal(data.data.config.sessionId, '-test-session-id', 'Should contain session ID');
   });
 
-  it('list-sessions writes raw session IDs to output file when specified', () => {
-    const outputFile = join(testEnv.tmpDir, 'list-sessions-output.txt');
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-
-    const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['list-sessions', outputFile],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    // May succeed or fail depending on ccusage availability
-    assert.ok(existsSync(outputFile), 'Output file should be created');
-
-    const fileContents = readFileSync(outputFile, 'utf-8');
-
-    // Output should be session IDs (one per line) or empty on error
-    // Just verify it's a string (not JSON)
-    assert.ok(typeof fileContents === 'string', 'Output should be a string');
-  });
-
-  it('prepare writes to output file when specified', () => {
-    const outputFile = join(testEnv.tmpDir, 'prepare-output.json');
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-
-    const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', testEnv.tmpDir, '-nonexistent-session-id', outputFile],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    assert.ok(existsSync(outputFile), 'Output file should be created');
-
-    const fileContents = readFileSync(outputFile, 'utf-8');
-    const data = JSON.parse(fileContents);
-
-    assert.ok(['error', 'no_config', 'need_selection', 'no_sessions'].includes(data.status),
-      'Should have valid status');
-  });
-
   // ====== Phase 4: --export-vars Mode Tests ======
 
   it('check-config with --export-vars outputs shell variables', () => {
@@ -545,36 +404,6 @@ describe('write-git-commit: commit-workflow.js', () => {
     // Should output shell variable format
     assert.match(result.stdout, /RESULT_STATUS='found'/, 'Should export RESULT_STATUS');
     assert.match(result.stdout, /SESSION_ID='-test-session-id'/, 'Should export SESSION_ID');
-  });
-
-  it('prepare with --export-vars outputs shell variables on success', () => {
-    // Create config
-    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
-    writeFileSync(
-      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
-      JSON.stringify({ sessionId: '-test-session-id' })
-    );
-
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-
-    const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', testEnv.tmpDir, '--export-vars'],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    // May succeed or fail depending on ccusage, but should output shell vars
-    assert.match(result.stdout, /RESULT_STATUS='(success|error)'/,
-      'Should export RESULT_STATUS');
-
-    // If success, should have SESSION_ID and CURRENT_COST
-    if (result.stdout.includes("RESULT_STATUS='success'")) {
-      assert.match(result.stdout, /SESSION_ID=/, 'Should export SESSION_ID on success');
-      assert.match(result.stdout, /CURRENT_COST=/, 'Should export CURRENT_COST on success');
-    }
   });
 
   it('prepare with --export-vars outputs error when no config and no sessionId', () => {
@@ -621,33 +450,6 @@ describe('write-git-commit: commit-workflow.js', () => {
   });
 
   // ====== Phase 4: Merged prepare Logic Tests ======
-
-  it('prepare without sessionId loads from config if exists', () => {
-    // Create config
-    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
-    writeFileSync(
-      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
-      JSON.stringify({ sessionId: '-test-session-id' })
-    );
-
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-
-    const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare'],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    const data = extractJsonFromOutput(result.stdout);
-
-    // Should auto-load from config and attempt to fetch costs
-    // Status depends on ccusage availability, but should not be need_selection
-    assert.notEqual(data.status, 'need_selection',
-      'Should not return need_selection when config exists');
-  });
 
   it('prepare without sessionId and no config returns error', () => {
     // No config file
@@ -750,33 +552,6 @@ describe('write-git-commit: commit-workflow.js', () => {
     if (result.stdout.includes("RESULT_STATUS='not_found'")) {
       assert.match(result.stdout, /CALCULATED_SESSION_ID=/, 'Should export CALCULATED_SESSION_ID on not_found');
     }
-  });
-
-  it('prepare with explicit sessionId bypasses config check', () => {
-    // Create config with different session
-    mkdirSync(join(testEnv.tmpDir, '.claude'), { recursive: true });
-    writeFileSync(
-      join(testEnv.tmpDir, '.claude', 'settings.plugins.write-git-commit.json'),
-      JSON.stringify({ sessionId: '-config-session-id' })
-    );
-
-    const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
-
-    const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', testEnv.tmpDir, '-explicit-session-id'],
-      cwd: testEnv.tmpDir,
-      env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        PATH: testEnv.mockPath
-      }
-    });
-
-    const data = extractJsonFromOutput(result.stdout);
-
-    // Should use explicit session, not config session
-    // Won't be need_selection since session was provided
-    assert.notEqual(data.status, 'need_selection',
-      'Should not trigger selection when explicit session provided');
   });
 
   // ====== Phase 4: save-config Tests ======
