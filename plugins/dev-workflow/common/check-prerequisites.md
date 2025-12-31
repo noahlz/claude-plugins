@@ -54,7 +54,7 @@ echo "✓ Ready (Node $(node -v))"
 ## Result Handling
 
 **Exit codes:**
-- 0: Either (1) all prerequisites met and CLAUDE_PLUGIN_ROOT exported → proceed to Section 1, OR (2) script not found → user should run curl install command and restart skill
+- 0: Either (1) all prerequisites met and CLAUDE_PLUGIN_ROOT exported → proceed to Section 1, OR (2) resolver script not found → user should run setup skill
 - 1: Prerequisites missing (Node.js wrong version, config missing, or plugin resolver failed) → proceed to Section 0a (setup)
 
 ## Slow Path: Setup Prerequisites (First Run Only)

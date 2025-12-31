@@ -37,16 +37,41 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 
 **Step description**: "Checking prerequisites"
 
-→ Set SKILL_NAME environment variable using Bash tool:
+→ Execute prerequisite check using Bash tool:
 ```bash
 SKILL_NAME="write-git-commit"
-```
 
-→ Execute prerequisite check using Bash tool:
-1. Read `${CLAUDE_PLUGIN_ROOT}/common/check-prerequisites.md`
-2. Find the bash code block under "Fast Path Check" section
-3. Execute that bash code using Bash tool
-4. Export CLAUDE_PLUGIN_ROOT variable if check passes
+# 1. Check Node.js version
+if ! command -v node >/dev/null 2>&1 || [ "$(node -v | cut -d'.' -f1 | sed 's/v//')" -lt 22 ]; then
+  echo "⚠️ Node.js 22+ required"
+  exit 1
+fi
+
+# 2. Check for and use resolve_plugin_root.sh script
+if [ ! -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
+  echo "⚠️ Missing plugin resolver script"
+  echo ""
+  echo "Run the setup skill to create it:"
+  echo "  Use the dev-workflow:setup skill"
+  echo ""
+  exit 1
+fi
+
+# 3. Resolve plugin root
+CLAUDE_PLUGIN_ROOT="$($HOME/.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io")" || {
+  echo "⚠️ Failed to resolve plugin root"
+  exit 1
+}
+
+# 4. Check config file
+if [ ! -f "./.claude/settings.plugins.${SKILL_NAME}.json" ]; then
+  echo "⚠️ Config missing"
+  exit 1
+fi
+
+export CLAUDE_PLUGIN_ROOT
+echo "✓ Ready (Node $(node -v))"
+```
 
 ⚠️ CHECKPOINT: Verify you actually executed Bash tool above
 - If you narrated without running Bash: STOP and run the commands now

@@ -17,6 +17,7 @@ claude-plugins/
 │           ├── run-and-fix-tests/
 │           │   ├── defaults/
 │           │   └── scripts/
+│           ├── setup/
 │           └── write-git-commit/
 │               └── scripts/
 └── test/
