@@ -47,13 +47,25 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 SKILL_NAME="run-and-fix-tests"
 
 # 1. Check Node.js version
-if ! command -v node >/dev/null 2>&1 || [ "$(node -v | cut -d'.' -f1 | sed 's/v//')" -lt 22 ]; then
+if ! command -v node >/dev/null 2>&1; then
   echo "⚠️ Node.js 22+ required"
+  echo "Install from https://nodejs.org/"
+  exit 1
+fi
+NODE_MAJOR=$(node -v | cut -d'.' -f1 | sed 's/v//')
+if [ "$NODE_MAJOR" -lt 22 ]; then
+  echo "⚠️ Node.js $(node -v) found, but 22+ required"
+  echo "Install from https://nodejs.org/"
   exit 1
 fi
 
-# 2. Check for and use resolve_plugin_root.sh script
-if [ ! -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
+# 2. Check for resolver script (look in ./.claude first, then $HOME/.claude)
+RESOLVER=""
+if [ -x "./.claude/resolve_plugin_root.sh" ]; then
+  RESOLVER="./.claude/resolve_plugin_root.sh"
+elif [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
+  RESOLVER="$HOME/.claude/resolve_plugin_root.sh"
+else
   echo "⚠️ Missing plugin resolver script"
   echo ""
   echo "Run the setup skill to create it:"
@@ -63,18 +75,15 @@ if [ ! -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
 fi
 
 # 3. Resolve plugin root
-CLAUDE_PLUGIN_ROOT="$($HOME/.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io")" || {
+CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || {
   echo "⚠️ Failed to resolve plugin root"
+  echo "Try running the setup skill again:"
+  echo "  Use the dev-workflow:setup skill"
   exit 1
 }
 
-# 4. Check config file
-if [ ! -f "./.claude/settings.plugins.${SKILL_NAME}.json" ]; then
-  echo "⚠️ Config missing"
-  exit 1
-fi
-
-export CLAUDE_PLUGIN_ROOT
+# 4. Output for LLM to capture
+echo "CLAUDE_PLUGIN_ROOT=$CLAUDE_PLUGIN_ROOT"
 echo "✓ Ready (Node $(node -v))"
 ```
 
@@ -83,21 +92,10 @@ echo "✓ Ready (Node $(node -v))"
 - Check exit code to determine next step
 
 **Result handling:**
-✓ Exit 0 → All prerequisites met, CLAUDE_PLUGIN_ROOT exported, proceed to section 1
-✗ Exit 1 → Prerequisites missing, proceed to section 0a
+✓ Exit 0 → Prerequisites met, **LLM captures CLAUDE_PLUGIN_ROOT from output**, proceed to section 1
+✗ Exit 1 → Prerequisites missing, display error and **STOP** (no fallback)
 
-## 0a. Setup Prerequisites (First Run Only)
-
-Execute ONLY if section 0 returned exit 1.
-
-→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/common/setup-plugin.md`
-
-**Result handling:**
-✓ Exit 0 → Setup complete, CLAUDE_PLUGIN_ROOT exported, proceed to section 1
-✗ Exit 1 → Display error: "Node.js 22+ required. Install from https://nodejs.org/ and restart."
-✗ Exit 2 → Let natural error occur (plugin resolver issue, unexpected)
-
-**Note:** Config generation happens in section 1 (detect build tools), so missing config is non-blocking.
+**⚠️ CRITICAL**: After Section 0 succeeds, you MUST capture the `CLAUDE_PLUGIN_ROOT=<path>` value from the bash output above. Use this captured value in all subsequent bash commands that reference plugin scripts (don't use `${CLAUDE_PLUGIN_ROOT}` in bash, substitute the actual path directly). This is necessary because environment variables don't persist between separate Bash tool invocations.
 
 ## 1. Detect Build Configuration
 
