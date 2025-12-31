@@ -48,6 +48,8 @@ claude-plugins/
 - Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
 - This keeps workflows testable, maintainable, and predictable.
 
+**IMPORTANT** Remember that environment variables (i.e. set via `export KEY=VALUE`) do not presist between Bash tool invocations. Therefore, Scripts or Bash commands that call scripts **MUST** output values to the console (stdout) i.e. `echo KEY=VALUE` for the skill to use later.  
+
 ### Testing Approach
 
 Use this project's own plugin `dev-workflow:run-and-fix-tests` for regression testing changes and fixing bugs.
