@@ -48,6 +48,12 @@ claude-plugins/
 - Run all tests with: `npm test`
 - Inspect code coverage with the command `node --experimental-test-coverage --test test/**/*.test.js`
 
+**Dependencies**:
+- `ccusage` - Usage analysis library for Claude Code sessions, installed as devDependency for testing
+  - Provides programmatic access to session data, token costs, and usage metrics
+  - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
+  - Documentation: https://ccusage.com/guide/library-usage
+
 **Agent-Based Error Fixing**:
 - Use agents (in `plugins/dev-workflow/agents/`) to handle iterative fix-verify loops: build-fixer for compilation errors, test-fixer for test failures
 - Agents receive error lists and environment context from skills via natural language descriptions

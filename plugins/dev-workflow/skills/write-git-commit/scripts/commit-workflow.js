@@ -70,13 +70,12 @@ function exportAsShellVars(result) {
  */
 async function verifySessionViaLibrary(sessionId) {
   try {
-    const { loadSessionData } = await import('ccusage/data-loader');
-    const sessions = await loadSessionData();
-    const session = sessions.find(s => s.sessionId === sessionId);
+    const { loadSessionUsageById } = await import('ccusage/data-loader');
+    const session = await loadSessionUsageById(sessionId);
 
     return {
       success: true,
-      exists: session !== undefined
+      exists: session !== null
     };
   } catch (error) {
     return {
@@ -94,9 +93,8 @@ async function verifySessionViaLibrary(sessionId) {
  */
 async function getSessionCostsViaLibrary(sessionId) {
   try {
-    const { loadSessionData } = await import('ccusage/data-loader');
-    const sessions = await loadSessionData();
-    const session = sessions.find(s => s.sessionId === sessionId);
+    const { loadSessionUsageById } = await import('ccusage/data-loader');
+    const session = await loadSessionUsageById(sessionId);
 
     if (!session) {
       return {
