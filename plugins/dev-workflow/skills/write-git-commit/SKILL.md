@@ -174,7 +174,7 @@ Add user authentication feature
 → Call prepare to auto-detect config and fetch costs:
 ```bash
 TMP_PREPARE="/tmp/write-git-commit-prepare-$$.sh"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare --export-vars > "$TMP_PREPARE"
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare '' "$TMP_PREPARE" --export-vars
 source "$TMP_PREPARE"
 ```
 
@@ -230,7 +230,7 @@ SESSION_LIST=$(echo "$SESSIONS" | jq -r '.[] | .sessionId')
 
     # Retry prepare with explicit session
     TMP_PREPARE_RETRY="/tmp/write-git-commit-prepare-retry-$$.sh"
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$SELECTED_SESSION_ID" --export-vars > "$TMP_PREPARE_RETRY"
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$SELECTED_SESSION_ID" "$TMP_PREPARE_RETRY" --export-vars
     source "$TMP_PREPARE_RETRY"
     ```
   - Should now have RESULT_STATUS="success" with $SESSION_ID and $CURRENT_COST set
@@ -245,7 +245,7 @@ SESSION_LIST=$(echo "$SESSIONS" | jq -r '.[] | .sessionId')
     node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$MANUAL_SESSION_ID"
 
     TMP_PREPARE_RETRY="/tmp/write-git-commit-prepare-retry-$$.sh"
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$MANUAL_SESSION_ID" --export-vars > "$TMP_PREPARE_RETRY"
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$MANUAL_SESSION_ID" "$TMP_PREPARE_RETRY" --export-vars
     source "$TMP_PREPARE_RETRY"
     ```
   - Proceed to section 3

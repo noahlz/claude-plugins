@@ -690,10 +690,11 @@ async function main() {
 
   try {
     switch (action) {
-      case 'check-config':
+      case 'check-config': {
         outputFile = args[0];
         result = checkConfig();
         break;
+      }
 
       case 'list-sessions': {
         outputFile = args[0];
