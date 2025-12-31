@@ -128,7 +128,10 @@ async function main() {
   if (format === 'json') {
     console.log(formatJson(result.config));
   } else {
-    console.log(formatBashExports(result.env));
+    // Output simple key=value pairs for LLM to capture
+    for (const [key, value] of Object.entries(result.env)) {
+      console.log(`${key}=${value}`);
+    }
   }
 }
 

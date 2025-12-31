@@ -2,7 +2,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { detectPluginRoot } from '../../lib/common.js';
 import { parseJsonFile } from '../../lib/config-loader.js';
 import { pwdToSessionId } from './ccusage-utils.js';
 

@@ -161,7 +161,7 @@ export function parseDetectedTools(detectedJson) {
  * Main entry point
  */
 async function main() {
-  const pluginRoot = process.argv[2] || detectPluginRoot(import.meta.url);
+  const pluginRoot = process.argv[2] || detectPluginRoot();
   const detectedJson = process.argv[3];
   const targetDir = process.argv[4] || '.';
 

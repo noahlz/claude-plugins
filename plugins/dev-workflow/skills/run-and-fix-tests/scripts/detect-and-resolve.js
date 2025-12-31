@@ -95,7 +95,7 @@ export function detectTools(options = {}) {
  * Main entry point
  */
 async function main() {
-  const pluginRoot = process.argv[2] || detectPluginRoot(import.meta.url);
+  const pluginRoot = process.argv[2] || detectPluginRoot();
   const rootDir = process.argv[3] || '.';
 
   try {

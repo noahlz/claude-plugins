@@ -1,37 +1,15 @@
-import fs from 'fs';
-import path from 'path';
 import { execSync } from 'child_process';
 
 /**
- * Detect CLAUDE_PLUGIN_ROOT from script location
- * Falls back to traversing up from script path if env var not set
- * @param {string} scriptPath - The import.meta.url of the calling script
+ * Get CLAUDE_PLUGIN_ROOT from environment variable
  * @returns {string} - Path to plugin root
+ * @throws {Error} If CLAUDE_PLUGIN_ROOT is not set
  */
-export function detectPluginRoot(scriptPath) {
-  // First check environment variable
-  if (process.env.CLAUDE_PLUGIN_ROOT) {
-    return process.env.CLAUDE_PLUGIN_ROOT;
+export function detectPluginRoot() {
+  if (!process.env.CLAUDE_PLUGIN_ROOT) {
+    throw new Error('CLAUDE_PLUGIN_ROOT environment variable not set. Skill prerequisites must execute first.');
   }
-
-  // Parse file:// URL to get file path
-  const filePath = scriptPath.replace('file://', '');
-
-  // Traverse up from skills/run-and-fix-tests/scripts/ -> plugins/dev-workflow/
-  // That's 3 levels up: scripts -> run-and-fix-tests -> skills -> dev-workflow (the root)
-  const pluginRoot = path.resolve(filePath, '../../../..');
-
-  if (fs.existsSync(pluginRoot)) {
-    return pluginRoot;
-  }
-
-  // Fallback: try 4 levels up for lib/common.js
-  const altRoot = path.resolve(filePath, '../../../../..');
-  if (fs.existsSync(altRoot)) {
-    return altRoot;
-  }
-
-  throw new Error(`Could not determine CLAUDE_PLUGIN_ROOT from ${scriptPath}`);
+  return process.env.CLAUDE_PLUGIN_ROOT;
 }
 
 /**

@@ -718,7 +718,7 @@ async function commit(options = {}) {
  */
 async function main() {
   const action = process.argv[2];
-  const pluginRoot = detectPluginRoot(import.meta.url);
+  const pluginRoot = detectPluginRoot();
 
   let result;
   let outputFile;

@@ -77,7 +77,7 @@ CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || {
 
 # 3. Output for LLM to capture
 echo "CLAUDE_PLUGIN_ROOT=$CLAUDE_PLUGIN_ROOT"
-echo "SKILL_NAME=write-git-comit
+echo "SKILL_NAME=run-and-fix-tests"
 ```
 
 **Result handling:**  
@@ -117,51 +117,60 @@ Execute ONLY if section 1 returned exit 1.
 
 ## 2. Load Configuration
 
-→ Execute load-config script to output configuration as eval-able statements:
+→ Execute load-config script to output configuration:
 ```bash
-eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.js "${CLAUDE_PLUGIN_ROOT}")"
+node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.js "${CLAUDE_PLUGIN_ROOT}"
 ```
-✗ Script fails → Display error and stop  
-✓ Script succeeds → Environment variables set:
-  - BUILD_COUNT, BUILD_{i}_CMD, BUILD_{i}_LOG, BUILD_{i}_ERROR_PATTERN, BUILD_{i}_WORKING_DIR (for each build step)
-  - TEST_CMD, TEST_RESULTS_PATH, TEST_ERROR_PATTERN
-  - TEST_SINGLE_CMD, TEST_SINGLE_RESULTS_PATH, TEST_SINGLE_ERROR_PATTERN
-  - TEST_LOG (optional, for human-readable logs)
-  - OUT_DIR (build output directory, e.g., dist/, build/, target/)
 
-→ Check command argument: `TEST_FILE="$1"`
-→ Determine mode:
-  - `$TEST_FILE` not empty → Single test mode
-  - `$TEST_FILE` empty → All tests mode
+**⚠️ CRITICAL - Capture Output Values**
 
-→ Store initial working directory: `INITIAL_PWD=$(pwd)`
+The script outputs key=value pairs. Example:
+```
+TEST_CMD=npm test
+TEST_RESULTS_PATH=dist/test-results.tap
+TEST_ERROR_PATTERN=(not ok|Bail out!)
+TEST_SINGLE_CMD=npm test -- {testFile}
+TEST_SINGLE_RESULTS_PATH=dist/test-single-results.tap
+TEST_SINGLE_ERROR_PATTERN=(not ok|Bail out!)
+TEST_LOG=dist/test.log
+OUT_DIR=dist
+BUILD_COUNT=0
+SKIP_BUILD=true
+```
 
-→ Determine build count: `BUILD_COUNT=$BUILD_COUNT` (number of indexed build steps)
+**Store these values mentally.** You will use the literal values (not shell variables like `$TEST_CMD`) in subsequent bash commands.
+
+✗ Script fails → Display error and stop
+✓ Script succeeds → Values captured, proceed to Section 3
 
 ## 3. Build Project
 
-→ Check if build should be skipped: `$SKIP_BUILD`
+→ Check the SKIP_BUILD value captured from Section 2 (literal value, not shell variable)
 
-**Skip Build (SKIP_BUILD=true):**  
-→ Display: "Build step skipped (build command identical to test command)"  
-→ Proceed directly to step 4 (Run Tests)  
+**If SKIP_BUILD=true:**
+→ Display: "Build step skipped (build command identical to test command)"
+→ Proceed directly to step 4 (Run Tests)
 
-**Run Build (SKIP_BUILD=false):**
-→ Iterate through all builds by index:  
-  → For each index i from 0 to (BUILD_COUNT - 1):  
-  - Extract variables: `BUILD_${i}_CMD`, `BUILD_${i}_LOG`, `BUILD_${i}_WORKING_DIR`, `BUILD_${i}_ERROR_PATTERN`
-  - Change to working directory: `cd "${BUILD_${i}_WORKING_DIR}"`
-  - Execute build command: `${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
-  - Check exit code:
-    - Exit 0: continue to next build
-    - Exit non-zero: record failure, continue collecting all errors
+**If SKIP_BUILD=false:**
 
-→ When builds fail:
+→ Use the BUILD_COUNT value from Section 2. If BUILD_COUNT=0, no build steps exist, proceed to step 4.
+
+→ For each build index from 0 to (BUILD_COUNT - 1), use the captured literal values:
+  - BUILD_0_CMD, BUILD_0_LOG, BUILD_0_WORKING_DIR, BUILD_0_ERROR_PATTERN (if BUILD_COUNT >= 1)
+  - BUILD_1_CMD, BUILD_1_LOG, BUILD_1_WORKING_DIR, BUILD_1_ERROR_PATTERN (if BUILD_COUNT >= 2)
+  - etc.
+
+→ For each build:
+  - Change to working directory using the captured BUILD_i_WORKING_DIR value
+  - Execute the build command using the captured BUILD_i_CMD value, redirect output to captured BUILD_i_LOG
+  - Check exit code: if non-zero, record failure and continue to next build
+
+→ If any builds fail:
   - Collect error logs from all failed builds
-  - Parse each log using its specific BUILD_${i}_ERROR_PATTERN
-  - Return to INITIAL_PWD, proceed to step 3a with aggregated error list
+  - Use the BUILD_i_ERROR_PATTERN regex to parse errors from each log
+  - Proceed to step 3a with aggregated error list
 
-✓ All builds succeed → Return to INITIAL_PWD, proceed to step 4 (Run Tests)
+✓ All builds succeed → Proceed to step 4 (Run Tests)
 
 ## 3a. Extract Build Errors
 
@@ -187,22 +196,36 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 
 ## 4. Run Tests
 
-→ Determine test command based on mode:
-  - Single test mode: use `$TEST_SINGLE_CMD` with {testFile} replaced, results to `$TEST_SINGLE_RESULTS_PATH`
-  - All tests mode: use `$TEST_CMD`, results to `$TEST_RESULTS_PATH`
+→ Use the literal values captured from Section 2 (not shell variables):
 
-→ Change to test working directory (if different from build dir)
-→ Execute test command with output redirected to results file (tool-specific)
-→ If `$TEST_LOG` is set, also capture human-readable output to that file (optional)  
-✓ Exit 0 → Return to INITIAL_PWD, all tests pass, proceed to step 8 (Completion)  
-✗ Exit non-zero → Return to INITIAL_PWD, tests failed, proceed to step 5 (Extract Test Errors)  
+**Single test mode** (if running a specific test):
+  - Use TEST_SINGLE_CMD value with {testFile} replaced
+  - Redirect output to TEST_SINGLE_RESULTS_PATH value
+
+**All tests mode** (normal case):
+  - Use TEST_CMD value (captured literal, e.g., "npm test")
+  - Redirect output to TEST_RESULTS_PATH value (e.g., "dist/test-results.tap")
+  - Optionally capture human-readable output to TEST_LOG value (e.g., "dist/test.log")
+
+Example bash command using literal values:
+```bash
+npm test > dist/test-results.tap 2>&1
+```
+
+→ Execute test command and capture exit code
+✓ Exit 0 → All tests pass, proceed to step 8 (Completion)
+✗ Exit non-zero → Tests failed, proceed to step 5 (Extract Test Errors)  
 
 ## 5. Extract Test Errors
 
-→ Extract test errors (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
+→ Parse test results file using the captured literal values from Section 2:
+  - Read the file at TEST_RESULTS_PATH (e.g., "dist/test-results.tap")
+  - Extract failures using TEST_ERROR_PATTERN regex (e.g., "(not ok|Bail out!)")
 
-✓ 0 failures detected → Proceed to step 8 (Completion)  
-✗ 1-30 failures → Display error summary, proceed to step 6  
+→ For detailed extraction procedure, see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md
+
+✓ 0 failures detected → Proceed to step 8 (Completion)
+✗ 1-30 failures → Display error summary, proceed to step 6
 ✗ 30+ failures → Display count, proceed to step 6  
 
 ## 6. Ask to Fix Tests
