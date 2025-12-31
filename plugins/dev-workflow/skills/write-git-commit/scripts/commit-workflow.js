@@ -10,6 +10,60 @@ import { ensureCcusageInstalled } from './ccusage-utils.js';
 import { extractCostMetrics } from './ccusage-cli-fallback.js';
 
 /**
+ * Escape string for safe use in shell single-quoted strings
+ * Single quote becomes: '\''
+ */
+function shellEscape(str) {
+  return String(str).replace(/'/g, "'\\''");
+}
+
+/**
+ * Convert result object to sourceable shell variable assignments
+ */
+function exportAsShellVars(result) {
+  const lines = [];
+
+  // Always export status
+  lines.push(`RESULT_STATUS='${shellEscape(result.status)}'`);
+
+  // Export message if present
+  if (result.message) {
+    lines.push(`RESULT_MESSAGE='${shellEscape(result.message)}'`);
+  }
+
+  // Export data fields based on status
+  if (result.status === 'success' && result.data) {
+    if (result.data.session_id) {
+      lines.push(`SESSION_ID='${shellEscape(result.data.session_id)}'`);
+    }
+    if (result.data.current_cost) {
+      // Export array as JSON string (bash can't handle complex types)
+      lines.push(`CURRENT_COST='${shellEscape(JSON.stringify(result.data.current_cost))}'`);
+    }
+    if (result.data.method) {
+      lines.push(`METHOD='${shellEscape(result.data.method)}'`);
+    }
+  }
+
+  if (result.status === 'found' && result.data && result.data.config) {
+    // check-config success case
+    lines.push(`SESSION_ID='${shellEscape(result.data.config.sessionId)}'`);
+  }
+
+  if (result.status === 'need_selection' && result.data) {
+    // Export sessions as JSON string
+    if (result.data.sessions) {
+      lines.push(`SESSIONS='${shellEscape(JSON.stringify(result.data.sessions))}'`);
+    }
+    if (result.data.recommended) {
+      lines.push(`RECOMMENDED_SESSION='${shellEscape(result.data.recommended)}'`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Verify session exists via ccusage library
  * @param {string} sessionId - Session ID to verify
  * @returns {Promise<object>} - { success, exists, error? }
@@ -279,10 +333,11 @@ async function listSessions() {
 
 /**
  * Check if config file exists and is valid
- * @param {string} baseDir - Base directory (defaults to current dir)
+ * @param {object} options - Options object
+ * @param {string} options.baseDir - Base directory (defaults to current dir)
  * @returns {object} - { status, data, message }
  */
-function checkConfig(baseDir = '.') {
+function checkConfig({ baseDir = '.' } = {}) {
   const configPath = path.join(baseDir, '.claude/settings.plugins.write-git-commit.json');
 
   // Check if config file exists
@@ -321,6 +376,49 @@ function checkConfig(baseDir = '.') {
 }
 
 /**
+ * Save session configuration
+ * @param {object} options - Options
+ * @param {string} options.baseDir - Base directory (defaults to current dir)
+ * @param {string} options.sessionId - Session ID to save
+ * @returns {object} - { status, data, message }
+ */
+function saveConfig({ baseDir = '.', sessionId } = {}) {
+  if (!sessionId) {
+    return {
+      status: 'error',
+      data: {},
+      message: 'sessionId parameter required'
+    };
+  }
+
+  try {
+    const configPath = path.join(baseDir, '.claude/settings.plugins.write-git-commit.json');
+    const configDir = path.dirname(configPath);
+
+    // Create .claude directory if needed
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true });
+    }
+
+    // Write config
+    const config = { sessionId };
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+
+    return {
+      status: 'success',
+      data: { session_id: sessionId },
+      message: 'Configuration saved'
+    };
+  } catch (error) {
+    return {
+      status: 'error',
+      data: {},
+      message: `Failed to save config: ${error.message}`
+    };
+  }
+}
+
+/**
  * Prepare for commit: check config, resolve costs from library or CLI
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
@@ -335,17 +433,47 @@ async function prepare(options = {}) {
     // Determine sessionId (from parameter or config)
     let sessionId = providedSessionId;
     if (!sessionId) {
-      const config = loadSessionConfig({ baseDir });
-      if (!config.configExists) {
+      // Try to load from config
+      const configResult = checkConfig({ baseDir });
+
+      if (configResult.status === 'found') {
+        // Config exists - extract session ID
+        sessionId = configResult.data.config.sessionId;
+      } else if (configResult.status === 'not_found' || configResult.status === 'empty') {
+        // No config - return need_selection with sessions list
+        const sessionsResult = await listSessions();
+
+        if (sessionsResult.status === 'error' || !sessionsResult.data || sessionsResult.data.length === 0) {
+          return {
+            status: 'no_sessions',
+            data: {},
+            message: 'No sessions found. Install ccusage: npm install -g ccusage'
+          };
+        }
+
+        // Compute recommended session from current working directory
+        const cwd = process.cwd();
+        const recommendedSessionId = cwd.replace(/\//g, '-').replace(/^-/, '');
+
         return {
-          status: 'no_config',
+          status: 'need_selection',
+          data: {
+            sessions: sessionsResult.data,
+            recommended: recommendedSessionId
+          },
+          message: 'Session selection required'
+        };
+      } else if (configResult.status === 'invalid') {
+        // Config corrupted
+        return {
+          status: 'error',
           data: {},
-          message: 'No session config found - skill will handle session selection'
+          message: 'Configuration file is corrupted. Delete .claude/settings.plugins.write-git-commit.json'
         };
       }
-      sessionId = config.sessionId;
     }
 
+    // Have sessionId - proceed with existing cost fetch logic
     // Resolve costs using library-first, CLI-fallback
     const costResult = await resolveSessionCosts(sessionId);
 
@@ -551,29 +679,51 @@ async function main() {
   const pluginRoot = detectPluginRoot(import.meta.url);
 
   let result;
+  let outputFile;
+  let exportVars = false;
+
+  // Check for --export-vars flag in arguments
+  const args = process.argv.slice(3);
+  const exportVarsIndex = args.indexOf('--export-vars');
+  if (exportVarsIndex !== -1) {
+    exportVars = true;
+    args.splice(exportVarsIndex, 1); // Remove flag from args
+  }
 
   try {
     switch (action) {
       case 'check-config':
+        outputFile = args[0];
         result = checkConfig();
         break;
 
       case 'list-sessions': {
+        outputFile = args[0];
         result = await listSessions();
         break;
       }
 
       case 'prepare': {
-        const sessionId = process.argv[3] || null;
+        const sessionId = args[0] || null;
+        outputFile = args[1];
         result = await prepare({ baseDir: '.', pluginRoot, sessionId });
         break;
       }
 
+      case 'save-config': {
+        const sessionId = args[0];
+        outputFile = args[1];
+        result = saveConfig({ baseDir: '.', sessionId });
+        break;
+      }
+
       case 'commit':
+        // commit doesn't need output file (uses stdin for message)
         result = await commit({ baseDir: '.', pluginRoot });
         break;
 
       default:
+        outputFile = args[0];
         result = {
           status: 'error',
           data: {},
@@ -582,14 +732,41 @@ async function main() {
         break;
     }
 
-    console.log(JSON.stringify(result, null, 2));
+    // Output result
+    let output;
+    if (exportVars) {
+      output = exportAsShellVars(result);
+    } else {
+      output = JSON.stringify(result, null, 2);
+    }
+
+    if (outputFile) {
+      fs.writeFileSync(outputFile, output, 'utf-8');
+    } else {
+      console.log(output);
+    }
+
     process.exit(result.status === 'error' ? 1 : 0);
   } catch (error) {
-    console.log(JSON.stringify({
+    const errorResult = {
       status: 'error',
       data: {},
       message: error.message
-    }, null, 2));
+    };
+
+    let output;
+    if (exportVars) {
+      output = exportAsShellVars(errorResult);
+    } else {
+      output = JSON.stringify(errorResult, null, 2);
+    }
+
+    if (outputFile) {
+      fs.writeFileSync(outputFile, output, 'utf-8');
+    } else {
+      console.log(output);
+    }
+
     process.exit(1);
   }
 }
