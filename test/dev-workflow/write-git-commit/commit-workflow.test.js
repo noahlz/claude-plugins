@@ -50,7 +50,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const outputFile = join(testEnv.tmpDir, 'check-config-output.json');
 
     execNodeScript('dev-workflow', scriptPath, {
-      args: ['check-config', outputFile],
+      args: ['check-config', testEnv.tmpDir, outputFile],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -80,7 +80,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const outputFile = join(testEnv.tmpDir, 'check-config-output.json');
 
     execNodeScript('dev-workflow', scriptPath, {
-      args: ['check-config', outputFile],
+      args: ['check-config', testEnv.tmpDir, outputFile],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -103,7 +103,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const outputFile = join(testEnv.tmpDir, 'prepare-output.json');
 
     execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', '', outputFile],  // empty string sessionId, outputFile at argv[4]
+      args: ['prepare', testEnv.tmpDir, '', outputFile],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -136,7 +136,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const outputFile = join(testEnv.tmpDir, 'prepare-output.json');
 
     execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', '', outputFile],
+      args: ['prepare', testEnv.tmpDir, '', outputFile],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -391,7 +391,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const outputFile = join(testEnv.tmpDir, 'prepare-nonexistent-output.json');
 
     execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', '-nonexistent-session-id-xyz', outputFile],
+      args: ['prepare', testEnv.tmpDir, '-nonexistent-session-id-xyz', outputFile],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -456,7 +456,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['check-config', outputFile],
+      args: ['check-config', testEnv.tmpDir, outputFile],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -502,7 +502,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', '-nonexistent-session-id', outputFile],
+      args: ['prepare', testEnv.tmpDir, '-nonexistent-session-id', outputFile],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -532,7 +532,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['check-config', '--export-vars'],
+      args: ['check-config', testEnv.tmpDir, '--export-vars'],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -558,7 +558,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', '--export-vars'],
+      args: ['prepare', testEnv.tmpDir, '--export-vars'],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -582,7 +582,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', '--export-vars'],
+      args: ['prepare', testEnv.tmpDir, '--export-vars'],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -729,7 +729,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['resolve-session', '--export-vars'],
+      args: ['resolve-session', testEnv.tmpDir, '--export-vars'],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -763,7 +763,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['prepare', '-explicit-session-id'],
+      args: ['prepare', testEnv.tmpDir, '-explicit-session-id'],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -785,7 +785,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['save-config', '-test-session-id'],
+      args: ['save-config', testEnv.tmpDir, '-test-session-id'],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
@@ -812,7 +812,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
     const result = execNodeScript('dev-workflow', scriptPath, {
-      args: ['save-config', '-test-session-id'],
+      args: ['save-config', testEnv.tmpDir, '-test-session-id'],
       cwd: testEnv.tmpDir,
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,

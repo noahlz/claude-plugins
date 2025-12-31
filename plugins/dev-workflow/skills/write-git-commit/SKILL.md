@@ -224,7 +224,7 @@ Add user authentication feature
 → Check if config exists:
 ```bash
 TMP_CONFIG_CHECK="/tmp/write-git-commit-config-check-$$.sh"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" check-config "$TMP_CONFIG_CHECK" --export-vars
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" check-config "$(pwd)" "$TMP_CONFIG_CHECK" --export-vars
 source "$TMP_CONFIG_CHECK"
 ```
 
@@ -246,7 +246,7 @@ source "$TMP_CONFIG_CHECK"
 → Attempt to resolve session ID from current directory:
 ```bash
 TMP_RESOLVE="/tmp/write-git-commit-resolve-$$.sh"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" resolve-session "$TMP_RESOLVE" --export-vars
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" resolve-session "$(pwd)" "$TMP_RESOLVE" --export-vars
 source "$TMP_RESOLVE"
 ```
 
@@ -257,7 +257,7 @@ source "$TMP_RESOLVE"
   - SESSION_ID variable is set
   - Save to config and proceed to Section 2d:
     ```bash
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$SESSION_ID"
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "$SESSION_ID"
     ```
   - Skip to Section 2d (Fetch Costs)
 
@@ -291,7 +291,7 @@ source "$TMP_RESOLVE"
   - Save to config and proceed:
     ```bash
     SESSION_ID="$MANUAL_SESSION_ID"
-    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$SESSION_ID"
+    node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "$SESSION_ID"
     ```
   - Proceed to Section 2d (Fetch Costs)
 
@@ -329,7 +329,13 @@ done
     - If CALCULATED_SESSION_ID (from Section 2b) is in the list: Mark it as "(Recommended)"
     - Add final option: "Other (enter manually)"
   - Handle user selection:
-    - If user picks a session: Set SESSION_ID, save config, proceed to Section 2d
+    - If user picks a session:
+      - Set SESSION_ID
+      - Save config:
+        ```bash
+        node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "$SESSION_ID"
+        ```
+      - Proceed to Section 2d
     - If user picks "Other": Return to Case 1 (manual entry)
 
 **✗ Exit 1 - No sessions:**
@@ -350,7 +356,7 @@ done
 → Call prepare with explicit session ID to fetch costs:
 ```bash
 TMP_PREPARE="/tmp/write-git-commit-prepare-$$.sh"
-node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$SESSION_ID" "$TMP_PREPARE" --export-vars
+node "${CLAUDE_PLUGIN_ROOT}/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "$SESSION_ID" "$TMP_PREPARE" --export-vars
 source "$TMP_PREPARE"
 ```
 

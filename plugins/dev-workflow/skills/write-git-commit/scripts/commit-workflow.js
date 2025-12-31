@@ -735,14 +735,16 @@ async function main() {
   try {
     switch (action) {
       case 'check-config': {
-        outputFile = args[0];
-        result = checkConfig();
+        const baseDir = args[0] || '.';
+        outputFile = args[1];
+        result = checkConfig({ baseDir });
         break;
       }
 
       case 'resolve-session': {
-        outputFile = args[0];
-        result = await resolveSession({ baseDir: '.' });
+        const baseDir = args[0] || '.';
+        outputFile = args[1];
+        result = await resolveSession({ baseDir });
         break;
       }
 
@@ -753,16 +755,18 @@ async function main() {
       }
 
       case 'prepare': {
-        const sessionId = args[0] || null;
-        outputFile = args[1];
-        result = await prepare({ baseDir: '.', pluginRoot, sessionId });
+        const baseDir = args[0] || '.';
+        const sessionId = args[1] || null;
+        outputFile = args[2];
+        result = await prepare({ baseDir, pluginRoot, sessionId });
         break;
       }
 
       case 'save-config': {
-        const sessionId = args[0];
-        outputFile = args[1];
-        result = saveConfig({ baseDir: '.', sessionId });
+        const baseDir = args[0] || '.';
+        const sessionId = args[1];
+        outputFile = args[2];
+        result = saveConfig({ baseDir, sessionId });
         break;
       }
 

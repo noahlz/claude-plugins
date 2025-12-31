@@ -147,7 +147,6 @@ eval "$(node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.
 → Proceed directly to step 4 (Run Tests)  
 
 **Run Build (SKIP_BUILD=false):**
-→ Create output directory: `mkdir -p "$OUT_DIR"`  
 → Iterate through all builds by index:  
   → For each index i from 0 to (BUILD_COUNT - 1):  
   - Extract variables: `BUILD_${i}_CMD`, `BUILD_${i}_LOG`, `BUILD_${i}_WORKING_DIR`, `BUILD_${i}_ERROR_PATTERN`
