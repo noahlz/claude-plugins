@@ -4,7 +4,7 @@ Comprehensive test coverage for claude-plugins skills and scripts.
 
 ## Overview
 
-Tests are written using Node.js built-in `node:test` module. The test suite validates that scripts and JS modules work correctly with fixture data and mocked external dependencies.
+Tests are written using Node.js built-in `node:test` module and the [experimental node mocking module](https://nodejs.org/api/test.html#mockmodulespecifier-options). The test suite validates that scripts and JS modules work correctly with fixture data and mocked external dependencies.
 
 ## Running Tests
 
@@ -31,8 +31,10 @@ npm test -- test/dev-workflow/lib/*.test.js
 You can bypass the test runner and run tests directly, but you'll lose dual output (TAP file generation) and summary reordering:
 
 ```bash
-node --test test/path/to/test.js
+node --experimental-test-module-mocks --test test/path/to/test.js
 ```
+
+Note that you must include the flag enabling module mocking.
 
 ## Coverage
 
@@ -102,9 +104,9 @@ Use `readFixture()` to load fixtures in tests. Modify loaded data inline for var
 
 See existing tests in `test/dev-workflow/` for examples.
 
-## Adding New Mocks
+## Adding New Mock Scripts
 
-To create a new mock command:
+To create a new mock command / script:
 
 1. Create executable file in `lib/mocks/`
 2. Implement command logic (any language)
