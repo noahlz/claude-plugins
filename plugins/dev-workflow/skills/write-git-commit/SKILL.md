@@ -1,18 +1,16 @@
 ---
 name: write-git-commit
-description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user mentions: "commit", "create a commit", "make a commit", "commit these/my/the changes", "commit this/it", "save to git", "check in", or when your next task is to commit completed work.
+description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user mentions: "commit", "commit my changes", "commit this", "save to git", "check in".
+
 ---
 
 This skill creates a git commit with a summary and optional body consisting for terse bullet points and git trailers for attribution and cost metrics.
 
 Activate when the user explicitly requests a git commit using phrases like:
-- "commit these/my/the changes"
-- "create/make a commit"
-- "commit this/it"
-- "save to git" / "check this in"
+- "commit my changes"
+- "commit this"
+- "save to git"
 - "git commit"
-
-Also activate proactively when you've completed a significant task and recognize committing would be the natural next step (but ASK first via the skill's approval workflow).
 
 ---
 
@@ -33,6 +31,63 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 
 ---
 
+## Workflow Rules & Guardrails
+
+**FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
+
+### A. Workflow Prerequisites Chain
+
+Do NOT proceed to Section 2 until Section 1e completes with user approval.
+
+Do NOT proceed to Section 3 until Section 2 completes successfully.
+
+Do NOT skip any section.
+
+### B. Core Execution Rules
+
+Do NOT improvise logic - `commit-workflow.js` handles all commit creation logic. Do not duplicate or bypass this logic.
+
+MUST obtain user approval via AskUserQuestion in Section 1e before proceeding to Section 2.
+
+**Environment Variables Do NOT Persist Between Bash Calls:**
+- Each Bash tool invocation runs in a separate shell process
+- Variables set via `source` are lost when that shell exits
+- MUST always capture values as literal strings using `echo` in the SAME bash call where they're sourced
+- In subsequent bash commands, use captured literal values (not shell variables)
+- Example: If Section 2a outputs `SESSION_ID=abc-123`, use the literal string `"abc-123"` in later commands, not `$SESSION_ID`
+
+### C. Display Format Requirements
+
+- MUST display commit message with ASCII box borders (━ characters) - this is mandatory.
+- Output MUST be plain text (direct output, NOT a tool call).
+- Do NOT batch display with approval request - display first, THEN ask for approval in a separate step.
+
+**Template for displaying commit message:**
+```
+Proposed commit message:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Subject line]
+
+[Body if present]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### D. Standard Result Handling Pattern
+
+When executing bash commands that call commit-workflow.js scripts:
+
+1. Execute the bash command and capture the output  
+2. Look for the `RESULT_STATUS` value echoed in output  
+3. Handle the result based on status:
+   - **If status is "success"**: Capture the values (SESSION_ID, CURRENT_COST, etc) from echo output and proceed
+   - **If status is "found"**: Capture SESSION_ID from echo output and proceed
+   - **If status is "not_found"**: Capture CALCULATED_SESSION_ID from echo output and proceed to user choice (Section 2c)
+   - **If status is "error"**: Display error message from RESULT_MESSAGE and stop or retry as instructed in the section
+
+Use this pattern consistently in Sections 2a, 2b, and 2d instead of repeating full handling text.
+
+---
+
 ## 0. Prerequisites
 
 **SKILL_NAME**: write-git-commit
@@ -43,50 +98,7 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 
 If you see "⚠️ Run dev-workflow:setup" above, the resolver script is missing. Stop and run the setup skill.
 
-**⚠️ CRITICAL - ENVIRONMENT VARIABLE SCOPING**
-
-Each Bash tool invocation runs in a separate shell process. Variables do NOT persist between calls.
-
-The `commit-workflow.js` script requires `CLAUDE_PLUGIN_ROOT` as an **environment variable**
-(not just a shell variable). You MUST prefix each node command with:
-
-```bash
-CLAUDE_PLUGIN_ROOT=<literal-value-from-section-0> \
-node "$CLAUDE_PLUGIN_ROOT/skills/..."
-```
-
-**Why this pattern is required:**
-- `CLAUDE_PLUGIN_ROOT=value` on a previous line → Creates shell variable (NOT exported to child process) ✗
-- `CLAUDE_PLUGIN_ROOT=value command` → Exports variable ONLY for that command's environment ✓
-
-**Example:**
-```bash
-# ✗ WRONG - Variable not in node's environment
-CLAUDE_PLUGIN_ROOT="/path/to/plugin"
-node "$CLAUDE_PLUGIN_ROOT/skills/..."
-
-# ✓ CORRECT - Variable exported to node's environment
-CLAUDE_PLUGIN_ROOT="/path/to/plugin" \
-node "$CLAUDE_PLUGIN_ROOT/skills/..."
-```
-
-Capture the literal path from Section 0 output (CLAUDE_PLUGIN_ROOT value shown above) and use it throughout this skill.
-
----
-
-**⚠️ CRITICAL EXECUTION RULES**
-
-These rules apply to all sections below. Violations break the workflow:
-
-- **No improvisation**: The `commit-workflow.js` script handles all commit creation logic (message assembly, metrics embedding, git execution). Do not duplicate or bypass this logic.
-- **Execute all bash blocks**: When you see a bash code block, you MUST execute it using the Bash tool. NEVER narrate or skip execution. Bash blocks are preceded by `→ Execute using Bash tool:`.
-- **Environment variables don't persist**: Each Bash tool call runs in a separate shell process. Variables set via `source` are lost when that shell exits. Therefore:
-  - Always capture variables as literal values using echo in the SAME bash call where they're sourced
-  - Use captured literal values (not shell variables) in subsequent bash commands
-  - Example: If Section 2a outputs `SESSION_ID=abc-123`, use the literal string `"abc-123"` in later commands
-- **User approval is mandatory**: Section 1e MUST execute AskUserQuestion before any commit is created. Never skip to section 2 without explicit user approval. This is a hard requirement.
-
----
+Capture the literal `CLAUDE_PLUGIN_ROOT` path from above and use it throughout this skill. See Workflow Rules section B for environment variable scoping requirements.
 
 ## 1. Generate and Approve Commit Message
 
@@ -108,10 +120,6 @@ git add -A
 git diff --cached
 ```
 
-⚠️ CHECKPOINT: Verify git commands actually executed
-- If you narrated without running Bash tool: STOP and run the commands now
-- Review the actual diff output to understand what's being committed
-
 ### 1c. Generate a Commit Message
 
 **Step description**: "Generating commit message"
@@ -131,7 +139,7 @@ Generate a commit message based on diff changes and the current chat context, bu
     - **When to omit body (summary-only):**
       - Single file edited with cohesive changes
       - Change is straightforward and well-described by subject line
-      - User explicitly requested "commit with just a summary"
+      - User explicitly requested, i.e. "commit with just a summary"
     - **When to add body (bullets):**
       - Multiple files with different types of changes
       - Single file but changes span multiple unrelated areas
@@ -144,42 +152,7 @@ Generate a commit message based on diff changes and the current chat context, bu
 
 ### 1d. Display the Proposed Message (REQUIRED - DO NOT SKIP)
 
-⚠️ CRITICAL: The user MUST see the commit message before being asked to approve it
-
-⚠️ MANDATORY FORMAT REQUIREMENT: You MUST display the commit message with ASCII box borders (━ characters). This is NOT optional.
-
-→ Display the commit message with visual formatting (plain text output, NOT a tool call):
-
-**REQUIRED Format - Use this exact template:**
-```
-Proposed commit message:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[Subject line]
-
-[Body if present]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Example (with actual content):**
-```
-Proposed commit message:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Add user authentication feature
-
-- Implement JWT-based auth flow
-- Add login/logout endpoints
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-⚠️ CRITICAL REQUIREMENTS:
-  - Output MUST be plain text (direct output, NOT a tool call)
-  - Box borders (━ lines) are MANDATORY - do not skip them
-  - Do NOT batch this with step 1e - display first, THEN ask for approval
-  - Do NOT output internal checkpoint text to the user
-
----
-⚠️ CHECKPOINT: Verify message displayed above (this checkpoint text itself should NOT be shown to user)
----
+Display the commit message using the format specified in Workflow Rules section C. Follow those format requirements exactly.
 
 ### 1e. Obtain User Approval or Revisions (REQUIRED - DO NOT SKIP)
 
@@ -207,16 +180,9 @@ Add user authentication feature
   - → Do NOT proceed to section 2
   - → Return control to user
 
----
-⚠️ CHECKPOINT: Do not proceed past this line without user approval from AskUserQuestion above
----
-
 ## 2. Prepare Cost Data
 
-⚠️ PREREQUISITE: Section 1e MUST be completed before entering this section
-   - User MUST have been prompted via AskUserQuestion in step 1e
-   - User MUST have selected "Accept this message?"
-   - If not completed, STOP and return to section 1
+See Workflow Rules section A for prerequisite requirements before entering this section.
 
 ### 2a. Check for Existing Config
 
@@ -387,8 +353,6 @@ done
 
 ### 2d. Fetch Costs
 
-⚠️ PREREQUISITE: SESSION_ID must be captured from Section 2a, 2b, or 2c
-
 → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SESSION_ID> with literal values):
 ```bash
 TMP_PREPARE="/tmp/write-git-commit-prepare-$$.sh"
@@ -427,11 +391,7 @@ fi
 
 ## 3. Create Commit
 
-⚠️ PREREQUISITE: Sections 1e and 2 MUST be completed
-   - User approved commit message in 1e
-   - Cost data prepared successfully in section 2
-   - SESSION_ID and CURRENT_COST literals captured from section 2d
-   - If not completed, STOP
+See Workflow Rules section A for prerequisite requirements before entering this section.
 
 → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT>, <SESSION_ID>, <CURRENT_COST>, <COMMIT_SUBJECT>, and <COMMIT_BODY> with captured/approved values):
 ```bash
@@ -501,8 +461,6 @@ EOF
     - Stop workflow
 
 ## 4. Success
-
-⚠️ PREREQUISITE: Section 3 completed successfully (commit created)
 
 → Display success summary:
 ```
