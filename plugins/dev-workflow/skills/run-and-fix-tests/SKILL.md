@@ -108,7 +108,7 @@ fi
 
 Execute ONLY if section 1 returned exit 1.
 
-→ Execute setup instructions from `${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/setup-config.md`
+→ Execute setup instructions from `./references/setup-config.md`
 
 **Result handling:**  
 ✓ Exit 0 → Config created, proceed to Section 2  
@@ -174,7 +174,7 @@ SKIP_BUILD=true
 
 ## 3a. Extract Build Errors
 
-→ Extract build errors (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
+→ Extract build errors (see ./references/build-procedures.md)
 
 → Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
   - "Yes" → Proceed to step 3b
@@ -182,15 +182,15 @@ SKIP_BUILD=true
 
 ## 3b. Delegate to Build-Fixer Agent
 
-→ Delegate to build-fixer (see ${CLAUDE_PLUGIN_ROOT}/run-and-fix-tests/agent-delegation.md)
+→ Delegate to build-fixer (see ./references/agent-delegation.md)
   - Provide error list from step 3a
-  - Provide BUILD_FIXER_ENV_VARS (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/agent-delegation.md)
+  - Provide BUILD_FIXER_ENV_VARS (see ./references/agent-delegation.md)
 
 ✓ Agent completes → Proceed to step 3c
 
 ## 3c. Rebuild After Fixes
 
-→ Rebuild and verify (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)  
+→ Rebuild and verify (see ./references/build-procedures.md)  
 ✓ Build succeeds → Proceed to Section 4 (Run Tests)  
 ✗ Build fails → Return to Section 3a (more errors)  
 
@@ -222,7 +222,7 @@ npm test > dist/test-results.tap 2>&1
   - Read the file at TEST_RESULTS_PATH (e.g., "dist/test-results.tap")
   - Extract failures using TEST_ERROR_PATTERN regex (e.g., "(not ok|Bail out!)")
 
-→ For detailed extraction procedure, see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md
+→ For detailed extraction procedure, see ./references/build-procedures.md
 
 ✓ 0 failures detected → Proceed to step 8 (Completion)
 ✗ 1-30 failures → Display error summary, proceed to step 6
@@ -259,7 +259,7 @@ npm test > dist/test-results.tap 2>&1
   - Failed test list: [bulleted list with test names and error excerpts from step 5]
   - Example failed test entry: "TestLoginFlow (test/auth.test.js) - Expected 'logged in', got undefined"
 
-→ Provide TEST_FIXER_ENV_VARS (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/agent-delegation.md)
+→ Provide TEST_FIXER_ENV_VARS (see ./references/agent-delegation.md)
 
 → Agent fixes the tests per its instructions and context provided
 
@@ -271,7 +271,7 @@ npm test > dist/test-results.tap 2>&1
 → Detect delegation signal in test-fixer's final message:  
 Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
 
-→ Extract build errors (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
+→ Extract build errors (see ./references/build-procedures.md)
 
 → Use AskUserQuestion:
   - "Test fix introduced compilation errors. Fix them with build-fixer?"
@@ -280,13 +280,13 @@ Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
 
 ## 7c. Invoke Build-Fixer and Resume Test-Fixer
 
-→ Delegate to build-fixer (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/agent-delegation.md)
+→ Delegate to build-fixer (see ./references/agent-delegation.md)
 
-→ Rebuild and verify (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/build-procedures.md)
+→ Rebuild and verify (see ./references/build-procedures.md)
   - If build fails: Return to step 7b (more compilation errors)
   - If build succeeds: Continue to resume test-fixer
 
-→ Resume test-fixer (see ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/agent-delegation.md)
+→ Resume test-fixer (see ./references/agent-delegation.md)
 
 ✓ Test-fixer completes → Proceed to step 7d  
 🔄 Test-fixer delegates again → Loop back to step 7b (compilation errors reintroduced)  

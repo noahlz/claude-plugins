@@ -30,10 +30,10 @@ Or say: "run tests", "test", "build and test", "fix tests", "make test"
 When you run `/test` for the first time, the plugin automatically:
 
 1. **Detects** your project's build tools by scanning for standard config files
-2. **Selects** the appropriate default configuration from the `defaults/` directory
+2. **Selects** the appropriate default configuration from the `assets/defaults/` directory
 3. **Creates** `.claude/settings.plugins.run-and-fix-tests.json` in your project
 
-See [settings.plugins.run-and-fix-tests.json](./defaults/settings.plugins.run-and-fix-tests.json) (reference file showing all supported build tools) and [defaults/](./defaults) for example default configurations. You can customize tool detection in your project or user-level plugin configuration. Configurations are merged with defaults.
+See [settings.plugins.run-and-fix-tests.json](./assets/defaults/settings.plugins.run-and-fix-tests.json) (reference file showing all supported build tools) and [assets/defaults/](./assets/defaults) for example default configurations. You can customize tool detection in your project or user-level plugin configuration. Configurations are merged with defaults.
 
 Note: The default `polyglot.json` serves as an example multi-module build (see next section).
 
@@ -51,7 +51,7 @@ The generated config uses an array structure for `build` to run each tool in ord
 
 If your build tool isn't recognized, the plugin creates a placeholder template.  You must edit the config before using the plugin. Replace the placeholders with your actual commands.
 
-See the [`defaults/TEMPLATE.json`](./defaults/TEMPLATE.json) file for the placeholder template structure.
+See the [`assets/defaults/TEMPLATE.json`](./assets/defaults/TEMPLATE.json) file for the placeholder template structure.
 
 ### Customizing Configuration
 

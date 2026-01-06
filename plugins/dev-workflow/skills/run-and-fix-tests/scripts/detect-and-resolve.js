@@ -11,7 +11,7 @@ import path from 'path';
  * @returns {object|null} - Tools registry
  */
 export function loadToolRegistry(pluginRoot) {
-  const registryPath = path.join(pluginRoot, 'skills/run-and-fix-tests/defaults/settings.plugins.run-and-fix-tests.json');
+  const registryPath = path.join(pluginRoot, 'skills/run-and-fix-tests/assets/defaults/settings.plugins.run-and-fix-tests.json');
   const registry = parseJsonFile(registryPath);
   return registry && registry.tools ? registry.tools : null;
 }
@@ -23,7 +23,7 @@ export function loadToolRegistry(pluginRoot) {
  * @returns {object|null} - Tool default config
  */
 export function loadToolDefaultConfig(toolName, pluginRoot) {
-  const defaultPath = path.join(pluginRoot, `skills/run-and-fix-tests/defaults/${toolName}.json`);
+  const defaultPath = path.join(pluginRoot, `skills/run-and-fix-tests/assets/defaults/${toolName}.json`);
   return parseJsonFile(defaultPath);
 }
 

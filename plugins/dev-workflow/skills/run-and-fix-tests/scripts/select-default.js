@@ -24,7 +24,7 @@ export function selectDefault(options = {}) {
 
   if (detectedTools.length === 0) {
     // No tools detected - use template
-    const templatePath = path.join(pluginRoot, 'skills/run-and-fix-tests/defaults/TEMPLATE.json');
+    const templatePath = path.join(pluginRoot, 'skills/run-and-fix-tests/assets/defaults/TEMPLATE.json');
     if (!fileExists(templatePath)) {
       throw new Error(`Template not found at ${templatePath}`);
     }
@@ -44,7 +44,7 @@ export function selectDefault(options = {}) {
   } else if (detectedTools.length === 1) {
     // Single tool - copy its default
     const tool = detectedTools[0];
-    const defaultPath = path.join(pluginRoot, `skills/run-and-fix-tests/defaults/${tool.tool}.json`);
+    const defaultPath = path.join(pluginRoot, `skills/run-and-fix-tests/assets/defaults/${tool.tool}.json`);
 
     if (fileExists(defaultPath)) {
       copyFile(defaultPath, configPath);
@@ -56,7 +56,7 @@ export function selectDefault(options = {}) {
       };
     } else {
       // No specific default for this tool - use template
-      const templatePath = path.join(pluginRoot, 'skills/run-and-fix-tests/defaults/TEMPLATE.json');
+      const templatePath = path.join(pluginRoot, 'skills/run-and-fix-tests/assets/defaults/TEMPLATE.json');
       if (!fileExists(templatePath)) {
         throw new Error(`Template not found at ${templatePath}`);
       }
@@ -99,7 +99,7 @@ export function selectDefault(options = {}) {
  */
 export function generatePolyglotConfig(detectedTools, pluginRoot) {
   // Load polyglot template
-  const templatePath = path.join(pluginRoot, 'skills/run-and-fix-tests/defaults/polyglot.json');
+  const templatePath = path.join(pluginRoot, 'skills/run-and-fix-tests/assets/defaults/polyglot.json');
   const template = parseJsonFile(templatePath);
 
   if (!template) {

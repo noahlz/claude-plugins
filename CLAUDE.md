@@ -15,7 +15,9 @@ claude-plugins/
 │       └── skills/
 │           ├── lib/
 │           ├── run-and-fix-tests/
-│           │   ├── defaults/
+│           │   ├── assets/
+│           │   │   └── defaults/
+│           │   ├── references/
 │           │   └── scripts/
 │           ├── setup/
 │           └── write-git-commit/

@@ -20,10 +20,10 @@ node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.j
 ## Auto-Selection Rules
 
 → Script applies these rules automatically:
-- **Exactly 1 tool detected** → Use `defaults/{tool}.json`
+- **Exactly 1 tool detected** → Use `assets/defaults/{tool}.json`
 - **Multiple tools in different locations** → Generate polyglot config (🔧 shown to user)
 - **Multiple tools in same location** → Generate polyglot config
-- **No matching default exists** → Use `TEMPLATE.json` placeholder template (user must customize)
+- **No matching default exists** → Use `assets/defaults/TEMPLATE.json` placeholder template (user must customize)
 - **0 tools detected** → Error: no build tools detected
 
 ## Result Handling
