@@ -245,13 +245,11 @@ fi
 **✓ If RESULT_STATUS is "found":**
   - Session ID resolved successfully
   - SESSION_ID captured from echo output
-  - Save to config and proceed to Section 2d using captured SESSION_ID literal value:
-    ```
+  - Save to config and proceed to Section 2d using captured SESSION_ID literal value:  
     → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SESSION_ID> with literal values):
     ```bash
     CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
     node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<SESSION_ID>"
-    ```
     ```
   - Skip to Section 2d (Fetch Costs)
 
@@ -282,13 +280,11 @@ fi
   - Example: `-Users-username-projects-myproject`
   - Validate format: Must start with `-` and contain hyphens
   - If invalid: Re-prompt for valid format
-  - Save to config using captured session ID literal value and proceed:
-    ```
-    → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <USER_SESSION_ID> with literal values):
+  - Save to config using captured session ID literal value and proceed:  
+    → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <USER_SESSION_ID> with literal values):  
     ```bash
     CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
     node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<USER_SESSION_ID>"
-    ```
     ```
   - Proceed to Section 2d (Fetch Costs)
 
@@ -329,13 +325,11 @@ done
   - Handle user selection:
     - If user picks a session:
       - Capture the selected session ID literal value from the user's selection
-      - Save config using the captured literal:
-        ```
+      - Save config using the captured literal:  
         → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SELECTED_SESSION_ID> with literal values):
         ```bash
         CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
         node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<SELECTED_SESSION_ID>"
-        ```
         ```
       - Proceed to Section 2d using captured literal value
     - If user picks "Other": Return to Case 1 (manual entry)

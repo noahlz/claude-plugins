@@ -65,8 +65,8 @@ If you see "⚠️ Run dev-workflow:setup" above, the resolver script is missing
 
 ---
 
-**Result handling:**
-✓ If you see "✓ Config found" above → Config exists, proceed to Section 2
+**Result handling:**  
+✓ If you see "✓ Config found" above → Config exists, proceed to Section 2  
 ✗ If you see "⚠️ Config setup required" above → Config missing, proceed to Section 1a  
 
 ## 1a. Setup Build Configuration (First Run Only)
@@ -103,18 +103,18 @@ BUILD_COUNT=0
 SKIP_BUILD=true
 ```
 
-**Store these values mentally.** You will use the literal values (not shell variables like `$TEST_CMD`) in subsequent bash commands.
+**Remember these values** You will use the literal values (not shell variables like `$TEST_CMD`) in subsequent bash commands.
 
-✗ Script fails → Display error and stop
-✓ Script succeeds → Values captured, proceed to Section 3
+✗ Script fails → Display error and stop  
+✓ Script succeeds → Values captured, proceed to Section 3   
 
 ## 3. Build Project
 
 → Check the SKIP_BUILD value captured from Section 2 (literal value, not shell variable)
 
-**If SKIP_BUILD=true:**
-→ Display: "Build step skipped (build command identical to test command)"
-→ Proceed directly to step 4 (Run Tests)
+**If SKIP_BUILD=true:**  
+→ Display: "Build step skipped (build command identical to test command)"  
+→ Proceed directly to step 4 (Run Tests)  
 
 **If SKIP_BUILD=false:**
 
@@ -172,13 +172,13 @@ SKIP_BUILD=true
   - Redirect output to TEST_RESULTS_PATH value (e.g., "dist/test-results.tap")
   - Optionally capture human-readable output to TEST_LOG value (e.g., "dist/test.log")
 
-Example bash command using literal values:
+Example bash command using literal values:  
 ```bash
 npm test > dist/test-results.tap 2>&1
 ```
 
-→ Execute test command and capture exit code
-✓ Exit 0 → All tests pass, proceed to step 8 (Completion)
+→ Execute test command and capture exit code  
+✓ Exit 0 → All tests pass, proceed to step 8 (Completion)  
 ✗ Exit non-zero → Tests failed, proceed to step 5 (Extract Test Errors)  
 
 ## 5. Extract Test Errors
@@ -189,8 +189,8 @@ npm test > dist/test-results.tap 2>&1
 
 → For detailed extraction procedure, see ./references/build-procedures.md
 
-✓ 0 failures detected → Proceed to step 8 (Completion)
-✗ 1-30 failures → Display error summary, proceed to step 6
+✓ 0 failures detected → Proceed to step 8 (Completion)  
+✗ 1-30 failures → Display error summary, proceed to step 6  
 ✗ 30+ failures → Display count, proceed to step 6  
 
 ## 6. Ask to Fix Tests

@@ -25,8 +25,6 @@ claude-plugins/
     ├── dev-workflow/
     │   ├── fixtures/
     │   │   ├── configs/
-    │   │   ├── cost-arrays/
-    │   │   ├── metrics/
     │   │   └── project-templates/
     │   ├── lib/                 # Test suite library scripts (mocks, helpers, utilities)
     │   │   └── mocks/
