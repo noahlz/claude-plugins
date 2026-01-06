@@ -11,12 +11,11 @@ claude-plugins/
 │   └── dev-workflow/
 │       ├── agents/
 │       ├── commands/
-│       ├── common/
+│       ├── lib/       # Shared scripts
 │       └── skills/
-│           ├── lib/
 │           ├── run-and-fix-tests/
 │           │   ├── assets/
-│           │   │   └── defaults/
+│           │   │   └── defaults/     # Default configs for build tools
 │           │   ├── references/
 │           │   └── scripts/
 │           ├── setup/
@@ -29,11 +28,11 @@ claude-plugins/
     │   │   ├── cost-arrays/
     │   │   ├── metrics/
     │   │   └── project-templates/
-    │   ├── lib/
+    │   ├── lib/                 # Test suite library scripts (mocks, helpers, utilities)
     │   │   └── mocks/
     │   ├── run-and-fix-tests/
     │   └── write-git-commit/
-    └─ lib/
+    └── lib/                     # Cross-module test utilities
 ```
 
 ## Development Philosophy
@@ -45,7 +44,7 @@ claude-plugins/
 ### Script-First Approach
 
 - Prefer writing and invoking pre-existing scripts over dynamic code generation or ad-hoc commands.
-- When writing new scripts, keep code DRY with shared scripts under a sibling `lib/` directory i.e. `plugins/dev-workflow/skills/lib`
+- When writing new scripts, keep code DRY with shared scripts under `plugins/dev-workflow/lib/` for use by all skills and agents
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
 - Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
 - This keeps workflows testable, maintainable, and predictable.

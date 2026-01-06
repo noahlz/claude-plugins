@@ -14,59 +14,23 @@ All other dev-workflow skills will then have basline requirements and be able to
 
 ## Installation
 
-# 1. Check Node.js version
+### 1. Check Node.js version
 
-→ Execute using Bash tool to check Node version:
-```bash
-if ! command -v node >/dev/null 2>&1; then
-  echo "⚠️ Node.js 22+ required"
-  echo "Install from https://nodejs.org/"
-  exit 1
-fi
-NODE_MAJOR=$(node -v | cut -d'.' -f1 | sed 's/v//')
-if [ "$NODE_MAJOR" -lt 22 ]; then
-  echo "⚠️ Node.js $(node -v) found, but 22+ required"
-  echo "Install from https://nodejs.org/"
-  exit 1
-fi
-```
+**Node.js version**: !`command -v node >/dev/null 2>&1 && { NODE_MAJOR=$(node -v | cut -d'.' -f1 | sed 's/v//'); [ "$NODE_MAJOR" -ge 22 ] && node -v || echo "⚠️ Node.js $(node -v) found, but 22+ required - Install from https://nodejs.org/"; } || echo "⚠️ Node.js not found - Install from https://nodejs.org/"`
 
-⚠️ CHECKPOINT: Verify you actually executed Bash tool above
-- If you narrated without running Bash: STOP and run the command now
-- Check exit code to determine next step
+If you see "⚠️" above, Node.js 22+ is required. Stop and ask user to install it.
 
-**Result handling:**  
-✓ Exit 0 → node minimal version is installed, proceed to step 2  
-✗ Exit 1 → node minimal version not found, user must install it first  
-
-
-**Step description**: "Setting up plugin resolver script"
+---
 
 ### 2. Check jq Installation
 
-→ Execute using Bash tool to check for jq:
-```bash
-if ! command -v jq &> /dev/null; then
-  echo "❌ jq not found"
-  echo ""
-  echo "jq is required to use dev-workflow skills."
-  echo ""
-  echo "Install with:"
-  echo "  macOS: brew install jq"
-  echo "  Linux: sudo apt-get install jq"
-  echo "  or visit: https://jqlang.github.io/jq/download/"
-  exit 1
-fi
-echo "✓ jq found: $(jq --version)"
-```
+**jq version**: !`command -v jq >/dev/null 2>&1 && jq --version || echo "⚠️ jq not found - Install with: brew install jq (macOS) or sudo apt-get install jq (Linux)"`
 
-⚠️ CHECKPOINT: Verify you actually executed Bash tool above
-- If you narrated without running Bash: STOP and run the command now
-- Check exit code to determine next step
+If you see "⚠️" above, jq is required. Stop and ask user to install it.
 
-**Result handling:**  
-✓ Exit 0 → jq is installed, proceed to step 3  
-✗ Exit 1 → jq not found, user must install it first  
+---
+
+**Step description**: "Setting up plugin resolver script"  
 
 ### 3. Choose Installation Location
 

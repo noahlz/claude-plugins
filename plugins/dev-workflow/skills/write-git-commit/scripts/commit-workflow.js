@@ -3,8 +3,8 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
-import { detectPluginRoot } from '../../lib/common.js';
-import { parseJsonFile } from '../../lib/config-loader.js';
+import { detectPluginRoot } from '../../../lib/common.js';
+import { parseJsonFile } from '../../../lib/config-loader.js';
 import { loadSessionConfig } from './load-config.js';
 import { ensureCcusageInstalled, pwdToSessionId } from './ccusage-utils.js';
 import { extractCostMetrics } from './ccusage-cli-fallback.js';

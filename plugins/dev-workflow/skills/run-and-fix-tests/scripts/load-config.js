@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { resolvePath } from '../../lib/common.js';
-import { loadSkillConfig, validateConfig } from '../../lib/config-loader.js';
+import { resolvePath } from '../../../lib/common.js';
+import { loadSkillConfig, validateConfig } from '../../../lib/config-loader.js';
 
 /**
  * Load and process configuration

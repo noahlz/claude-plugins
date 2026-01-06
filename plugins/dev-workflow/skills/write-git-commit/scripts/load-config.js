@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { parseJsonFile } from '../../lib/config-loader.js';
+import { parseJsonFile } from '../../../lib/config-loader.js';
 import { pwdToSessionId } from './ccusage-utils.js';
 
 /**

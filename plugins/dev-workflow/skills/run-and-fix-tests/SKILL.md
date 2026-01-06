@@ -49,64 +49,29 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 
 ## 0. Prerequisites
 
-**Step description**: "Checking prerequisites"
+**SKILL_NAME**: run-and-fix-tests
 
-→ Execute prerequisite check using Bash tool:
-```bash
-# 1. Check for resolver script (look in ./.claude first, then $HOME/.claude)
-RESOLVER=""
-if [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="$HOME/.claude/resolve_plugin_root.sh"
-elif [ -x "./.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="./.claude/resolve_plugin_root.sh"
-else
-  echo "⚠️ Missing plugin resolver script"
-  echo ""
-  echo "Run the setup skill to create it:"
-  echo ""
-  echo "  dev-workflow:setup"
-  echo ""
-  exit 1
-fi
+**CLAUDE_PLUGIN_ROOT**: !`if [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then $HOME/.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; elif [ -x "./.claude/resolve_plugin_root.sh" ]; then ./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; else echo "⚠️ Run dev-workflow:setup to install resolver"; fi`
 
-# 2. Resolve plugin root
-CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || {
-  echo "⚠️ Failed to resolve plugin root?!?"
-  exit 1
-}
+---
 
-# 3. Output for LLM to capture
-echo "CLAUDE_PLUGIN_ROOT=$CLAUDE_PLUGIN_ROOT"
-echo "SKILL_NAME=run-and-fix-tests"
-```
+If you see "⚠️ Run dev-workflow:setup" above, the resolver script is missing. Stop and run the setup skill.
 
-**Result handling:**  
-✓ Exit 0 → Prerequisites met, **LLM captures CLAUDE_PLUGIN_ROOT from output**, proceed to section 1  
-✗ Exit 1 → Prerequisites missing, display error and **STOP** (no fallback)  
-
-**⚠️ CRITICAL**: Use the `CLAUDE_PLUGIN_ROOT` value output in subsequent commands in this skill. Either interpolate the literal value or prefix each bash command with the value i.e. `CLAUDE_PLUGIN_ROOT=(literal value) (bash command)`
+**⚠️ CRITICAL**: Use the `CLAUDE_PLUGIN_ROOT` value shown above in subsequent commands in this skill. Either interpolate the literal value or prefix each bash command with the value i.e. `CLAUDE_PLUGIN_ROOT=(literal value) (bash command)`
 
 ## 1. Detect Build Configuration
 
-**Step description**: "Checking build configuration"
+**Build configuration status**: !`[ -f "./.claude/settings.plugins.run-and-fix-tests.json" ] && echo "✓ Config found" || echo "⚠️ Config setup required"`
 
-→ Fast path check (config exists):
-```bash
-if [ -f "./.claude/settings.plugins.run-and-fix-tests.json" ]; then
-  echo "✓ Config found"
-else
-  echo "⚠️ Config setup required"
-  exit 1
-fi
-```
+---
 
-**Result handling:**  
-✓ Exit 0 → Config exists, proceed to Section 2  
-✗ Exit 1 → Config missing, proceed to Section 1a  
+**Result handling:**
+✓ If you see "✓ Config found" above → Config exists, proceed to Section 2
+✗ If you see "⚠️ Config setup required" above → Config missing, proceed to Section 1a  
 
 ## 1a. Setup Build Configuration (First Run Only)
 
-Execute ONLY if section 1 returned exit 1.
+Execute ONLY if Section 1 shows "⚠️ Config setup required".
 
 → Execute setup instructions from `./references/setup-config.md`
 

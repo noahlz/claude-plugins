@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { detectPluginRoot } from '../../lib/common.js';
-import { parseJsonFile } from '../../lib/config-loader.js';
-import { findFiles, fileExists, getNormalizedDir } from '../../lib/file-utils.js';
+import { detectPluginRoot } from '../../../lib/common.js';
+import { parseJsonFile } from '../../../lib/config-loader.js';
+import { findFiles, fileExists, getNormalizedDir } from '../../../lib/file-utils.js';
 import path from 'path';
 
 /**

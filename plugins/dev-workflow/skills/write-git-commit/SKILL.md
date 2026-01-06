@@ -35,45 +35,13 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 
 ## 0. Prerequisites
 
-**Step description**: "Checking prerequisites"
+**SKILL_NAME**: write-git-commit
 
-→ Execute prerequisite check using Bash tool:
-```bash
-# 1. Check for resolver script (look in ./.claude first, then $HOME/.claude)
-RESOLVER=""
-if [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="$HOME/.claude/resolve_plugin_root.sh"
-elif [ -x "./.claude/resolve_plugin_root.sh" ]; then
-  RESOLVER="./.claude/resolve_plugin_root.sh"
-else
-  echo "⚠️ Missing plugin resolver script"
-  echo ""
-  echo "Run the setup skill to create it:"
-  echo ""
-  echo "  dev-workflow:setup"
-  echo ""
-  exit 1
-fi
+**CLAUDE_PLUGIN_ROOT**: !`if [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then $HOME/.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; elif [ -x "./.claude/resolve_plugin_root.sh" ]; then ./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; else echo "⚠️ Run dev-workflow:setup to install resolver"; fi`
 
-# 2. Resolve plugin root
-CLAUDE_PLUGIN_ROOT="$($RESOLVER "dev-workflow@noahlz.github.io")" || {
-  echo "⚠️ Failed to resolve plugin root?!?"
-  exit 1
-}
+---
 
-# 3. Output for LLM to capture
-echo "CLAUDE_PLUGIN_ROOT=$CLAUDE_PLUGIN_ROOT"
-echo "SKILL_NAME=write-git-commit"
-```
-
-⚠️ CHECKPOINT: Verify you actually executed Bash tool above
-- If you narrated without running Bash: STOP and run the commands now
-- Check exit code to determine next step
-
-**Result handling:**  
-✓ Exit 0 → Prerequisites met, **LLM captures CLAUDE_PLUGIN_ROOT from output**, proceed to section 1  
-✗ Exit 1 → Prerequisites missing, display error and **STOP** (no fallback)  
-
+If you see "⚠️ Run dev-workflow:setup" above, the resolver script is missing. Stop and run the setup skill.
 
 **⚠️ CRITICAL - ENVIRONMENT VARIABLE SCOPING**
 
@@ -102,7 +70,7 @@ CLAUDE_PLUGIN_ROOT="/path/to/plugin" \
 node "$CLAUDE_PLUGIN_ROOT/skills/..."
 ```
 
-Capture the literal path from Section 0 output and use it throughout this skill.
+Capture the literal path from Section 0 output (CLAUDE_PLUGIN_ROOT value shown above) and use it throughout this skill.
 
 ---
 
