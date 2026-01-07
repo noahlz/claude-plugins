@@ -305,12 +305,21 @@ async function listSessions() {
     const { loadSessionData } = await import('ccusage/data-loader');
     const sessions = await loadSessionData();
 
-    return {
-      status: 'success',
-      data: sessions.map(s => ({
+    // Sort by lastActivity descending (most recent first)
+    const sortedSessions = sessions
+      .map(s => ({
         sessionId: s.sessionId,
         lastActivity: s.lastActivity || ''
-      })),
+      }))
+      .sort((a, b) => {
+        const dateA = a.lastActivity || '';
+        const dateB = b.lastActivity || '';
+        return dateB.localeCompare(dateA);
+      });
+
+    return {
+      status: 'success',
+      data: { sessions: sortedSessions },
       method: 'library'
     };
   } catch (error) {
@@ -323,18 +332,27 @@ async function listSessions() {
         sessions = sessions.sessions;
       }
 
-      return {
-        status: 'success',
-        data: sessions.map(s => ({
+      // Sort by lastActivity descending (most recent first)
+      const sortedSessions = sessions
+        .map(s => ({
           sessionId: s.sessionId,
           lastActivity: s.lastActivity || ''
-        })),
+        }))
+        .sort((a, b) => {
+          const dateA = a.lastActivity || '';
+          const dateB = b.lastActivity || '';
+          return dateB.localeCompare(dateA);
+        });
+
+      return {
+        status: 'success',
+        data: { sessions: sortedSessions },
         method: 'cli'
       };
     } catch (cliError) {
       return {
         status: 'error',
-        data: [],
+        data: { sessions: [] },
         error: 'Failed to list sessions via library or CLI'
       };
     }
@@ -497,22 +515,27 @@ async function prepare(options = {}) {
   const { baseDir = '.', pluginRoot, sessionId: providedSessionId } = options;
 
   try {
-    // Determine sessionId
+    // Handle "NOT_CONFIGURED" special value from preprocessing
     let sessionId = providedSessionId;
-
-    // If no sessionId provided, try to load from config
-    if (!sessionId) {
+    if (sessionId === 'NOT_CONFIGURED' || !sessionId) {
       const configResult = checkConfig({ baseDir });
 
       if (configResult.status === 'found') {
         sessionId = configResult.data.config.sessionId;
       } else {
-        // No config and no sessionId provided - this is an error
-        return {
-          status: 'error',
-          data: {},
-          message: 'No session ID provided and no config found. Use resolve-session to find session ID first.'
-        };
+        // No config - try to auto-detect from current directory
+        const resolveResult = await resolveSession({ baseDir });
+
+        if (resolveResult.status === 'found') {
+          sessionId = resolveResult.data.session_id;
+        } else {
+          // Could not auto-detect session
+          return {
+            status: 'error',
+            data: {},
+            message: 'Session not found. No config exists and could not auto-detect session from current directory.'
+          };
+        }
       }
     }
 
@@ -583,7 +606,12 @@ async function readCommitMessage() {
  * @returns {Promise<object>} - { status, data, message }
  */
 async function commit(options = {}) {
-  const { baseDir = '.', pluginRoot } = options;
+  const {
+    baseDir = '.',
+    pluginRoot,
+    sessionId: providedSessionId = null,
+    costs: providedCosts = null
+  } = options;
 
   try {
     // Read commit message from stdin
@@ -600,11 +628,11 @@ async function commit(options = {}) {
     // Ensure ccusage is installed
     await ensureCcusageInstalled(pluginRoot);
 
-    // Load session config and environment
-    let sessionId = process.env.SESSION_ID;
-    let currentCost = process.env.CURRENT_COST;
+    // Use provided CLI arguments, falling back to env vars for backward compatibility
+    let sessionId = providedSessionId || process.env.SESSION_ID;
+    let currentCost = providedCosts || process.env.CURRENT_COST;
 
-    // If SESSION_ID not in env, try to load from config
+    // If still not provided, try to load sessionId from config
     if (!sessionId) {
       const config = loadSessionConfig({ baseDir });
       if (config.errors.length > 0) {
@@ -617,12 +645,12 @@ async function commit(options = {}) {
       sessionId = config.sessionId;
     }
 
-    // CURRENT_COST must be provided by skill orchestration via env var
+    // CURRENT_COST must be provided via CLI args or env var
     if (!currentCost) {
       return {
         status: 'error',
         data: {},
-        message: 'CURRENT_COST not provided by skill orchestration. This indicates a workflow issue.'
+        message: 'CURRENT_COST not provided (use --costs argument or env var)'
       };
     }
 
@@ -770,10 +798,22 @@ async function main() {
         break;
       }
 
-      case 'commit':
-        // commit doesn't need output file (uses stdin for message)
-        result = await commit({ baseDir: '.', pluginRoot });
+      case 'commit': {
+        // Parse --session-id and --costs from args
+        const sessionIdIndex = args.indexOf('--session-id');
+        const costsIndex = args.indexOf('--costs');
+
+        const sessionId = sessionIdIndex !== -1 ? args[sessionIdIndex + 1] : null;
+        const costs = costsIndex !== -1 ? args[costsIndex + 1] : null;
+
+        result = await commit({
+          baseDir: '.',
+          pluginRoot,
+          sessionId,
+          costs
+        });
         break;
+      }
 
       default:
         outputFile = args[0];
@@ -788,20 +828,7 @@ async function main() {
     // Output result
     let output;
 
-    // Special handling for list-sessions: output raw session IDs sorted by lastActivity descending
-    if (action === 'list-sessions' && result.status === 'success') {
-      const sessionIds = result.data
-        .sort((a, b) => {
-          // Sort by lastActivity descending (most recent first)
-          // Handles dates in YYYY-MM-DD format and empty strings
-          const dateA = a.lastActivity || '';
-          const dateB = b.lastActivity || '';
-          return dateB.localeCompare(dateA);
-        })
-        .map(s => s.sessionId)
-        .join('\n');
-      output = sessionIds;
-    } else if (exportVars) {
+    if (exportVars) {
       output = exportAsShellVars(result);
     } else {
       output = JSON.stringify(result, null, 2);

@@ -120,7 +120,7 @@ describe('write-git-commit: commit-workflow.js', () => {
 
     // Status should be error when no config exists and no sessionId provided
     assert.equal(data.status, 'error', 'Should return error when no config exists and no sessionId provided');
-    assert.ok(data.message.includes('resolve-session'), 'Error message should mention resolve-session');
+    assert.ok(data.message.includes('Session not found'), 'Error message should mention session not found');
     assert.ok(typeof data.message === 'string', 'Should have message field');
   });
 
@@ -469,7 +469,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     // Should return error when no config and no sessionId provided
     assert.equal(data.status, 'error',
       'Should return error when no config and no sessionId provided');
-    assert.ok(data.message.includes('resolve-session'), 'Error message should mention resolve-session');
+    assert.ok(data.message.includes('Session not found'), 'Error message should mention session not found');
   });
 
   it('resolve-session computes session ID from current working directory', () => {
@@ -737,9 +737,9 @@ describe('write-git-commit: commit-workflow.js (mocked ccusage)', () => {
     const result = await listSessions();
 
     assert.equal(result.status, 'success', 'Should succeed');
-    assert.ok(Array.isArray(result.data), 'Should return array of sessions');
-    assert.equal(result.data.length, 2, 'Should have 2 sessions');
-    assert.ok(result.data[0].sessionId, 'Sessions should have sessionId');
+    assert.ok(Array.isArray(result.data.sessions), 'Should return array of sessions');
+    assert.equal(result.data.sessions.length, 2, 'Should have 2 sessions');
+    assert.ok(result.data.sessions[0].sessionId, 'Sessions should have sessionId');
     assert.equal(result.method, 'library', 'Should have used library method');
   });
 });

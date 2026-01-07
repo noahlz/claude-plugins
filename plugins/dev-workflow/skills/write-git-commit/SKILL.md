@@ -94,18 +94,31 @@ Use this pattern consistently in Sections 2a, 2b, and 2d instead of repeating fu
 
 **CLAUDE_PLUGIN_ROOT**: !`if [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then $HOME/.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; elif [ -x "./.claude/resolve_plugin_root.sh" ]; then ./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; else echo "⚠️ Run dev-workflow:setup to install resolver"; fi`
 
+**SESSION_ID**: !`cat .claude/settings.plugins.write-git-commit.json 2>/dev/null | node -pe 'JSON.parse(require("fs").readFileSync(0, "utf-8")).sessionId' || echo "NOT_CONFIGURED"`
+
 ---
 
 If you see "⚠️ Run dev-workflow:setup" above, the resolver script is missing. Stop and run the setup skill.
 
-**⚠️ CRITICAL - Capture this value for substitution throughout the skill:**
+If you see "NOT_CONFIGURED" above, the session ID will be auto-detected from the current directory path when you run the prepare command.
+
+**⚠️ CRITICAL - Capture these values for substitution throughout the skill:**
 
 The CLAUDE_PLUGIN_ROOT value shown above (after the ! command executes) is the literal plugin path.
 
+The SESSION_ID value shown above is either:
+- The configured session ID from `.claude/settings.plugins.write-git-commit.json`, OR
+- "NOT_CONFIGURED" (will be auto-detected later)
+
 **You MUST:**
-1. Store this literal path value - you will use it to replace **__PLUGIN_ROOT__** in bash commands below
-2. In ALL bash commands throughout this skill, replace **__PLUGIN_ROOT__** with the exact literal path shown above
-3. Example: If you see /Users/username/.claude/plugins/cache/dev-workflow/0.1.0, then replace every **__PLUGIN_ROOT__** → /Users/username/.claude/plugins/cache/dev-workflow/0.1.0
+1. Store the CLAUDE_PLUGIN_ROOT literal path value - you will use it to replace **__PLUGIN_ROOT__** in bash commands below
+2. Store the SESSION_ID literal value - you will use it to replace **__SESSION_ID__** in bash commands below
+3. In ALL bash commands throughout this skill:
+   - Replace **__PLUGIN_ROOT__** with the exact literal path shown above
+   - Replace **__SESSION_ID__** with the exact literal value shown above
+4. Examples:
+   - If CLAUDE_PLUGIN_ROOT shows /Users/username/.claude/plugins/cache/dev-workflow/0.1.0, then replace every **__PLUGIN_ROOT__** → /Users/username/.claude/plugins/cache/dev-workflow/0.1.0
+   - If SESSION_ID shows -Users-noahlz-projects-claude-plugins, then replace every **__SESSION_ID__** → -Users-noahlz-projects-claude-plugins
 
 See Workflow Rules section B for environment variable scoping requirements.
 
@@ -189,218 +202,67 @@ Display the commit message using the format specified in Workflow Rules section 
   - → Do NOT proceed to section 2
   - → Return control to user
 
-## 2. Prepare Cost Data
+## 2. Fetch Cost Data
 
 See Workflow Rules section A for prerequisite requirements before entering this section.
 
-### 2a. Check for Existing Config
-
 → Execute using Bash tool:
 ```bash
-# ⚠️ CRITICAL: Replace __PLUGIN_ROOT__ with literal path from Section 0
-# This is NOT a shell variable - it's a placeholder requiring substitution
-# Example: /Users/username/.claude/plugins/cache/dev-workflow/0.1.0
-
-# Set CLAUDE_PLUGIN_ROOT as environment variable for this command
-# (Required: Node.js script checks process.env.CLAUDE_PLUGIN_ROOT)
-TMP_CONFIG_CHECK="/tmp/write-git-commit-config-check-$$.sh"
+# Replace __PLUGIN_ROOT__ and __SESSION_ID__ with literal values from Section 0
 CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" check-config "$(pwd)" "$TMP_CONFIG_CHECK" --export-vars
-source "$TMP_CONFIG_CHECK"
-echo "RESULT_STATUS=$RESULT_STATUS"
-if [ "$RESULT_STATUS" = "found" ]; then
-  echo "SESSION_ID=$SESSION_ID"
-fi
+node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "__SESSION_ID__"
 ```
 
-→ Capture from output:  
-- **RESULT_STATUS**: Echoed status value 
+→ Parse JSON output to extract cost data:
+- **status**: Result status ("success" or "error")
+- **data.session_id**: Resolved session ID (may differ from input if auto-detected)
+- **data.current_cost**: JSON array of cost objects
+- **data.method**: Detection method ("library" or "cli")
+- **message**: Error message (if status is "error")
 
-→ Handle result based on RESULT_STATUS:
+→ Handle result based on status:
 
-**✓ If RESULT_STATUS is "found":**
-  - Config exists with session ID
-  - SESSION_ID is captured from echo output
-  - Skip to Section 2d (Fetch Costs) with captured SESSION_ID literal value
-
-**✗ If RESULT_STATUS is "not_found" or "empty":**
-  - No config exists
-  - Proceed to Section 2b (Resolve Session)
-
----
-
-### 2b. Resolve Session ID
-
-→ Execute using Bash tool:
-```bash
-# Replace __PLUGIN_ROOT__ with literal path from Section 0
-TMP_RESOLVE="/tmp/write-git-commit-resolve-$$.sh"
-CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" resolve-session "$(pwd)" "$TMP_RESOLVE" --export-vars
-source "$TMP_RESOLVE"
-echo "RESULT_STATUS=$RESULT_STATUS"
-if [ "$RESULT_STATUS" = "found" ]; then
-  echo "SESSION_ID=$SESSION_ID"
-elif [ "$RESULT_STATUS" = "not_found" ]; then
-  echo "CALCULATED_SESSION_ID=$CALCULATED_SESSION_ID"
-elif [ "$RESULT_STATUS" = "error" ]; then
-  echo "RESULT_MESSAGE=$RESULT_MESSAGE"
-fi
-```
-
-→ Capture from output:
-- **RESULT_STATUS**: Echoed status value
-- **SESSION_ID** (if found): Echoed session ID
-- **CALCULATED_SESSION_ID** (if not_found): Echoed calculated session ID
-- **RESULT_MESSAGE** (if error): Echoed error message
-
-→ Handle result based on RESULT_STATUS:
-
-**✓ If RESULT_STATUS is "found":**
-  - Session ID resolved successfully
-  - SESSION_ID captured from echo output
-  - Save to config and proceed to Section 2d using captured SESSION_ID literal value:
-    → Execute using Bash tool:
-    ```bash
-    # Replace __PLUGIN_ROOT__ and __SESSION_ID__ with literal values from echo output
-    CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SESSION_ID__"
-    ```
-  - Skip to Section 2d (Fetch Costs)
-
-**✗ If RESULT_STATUS is "not_found":**
-  - Calculated session ID doesn't exist
-  - CALCULATED_SESSION_ID captured from echo output (the ID that was tried)
-  - Proceed to Section 2c (User Choice), use captured CALCULATED_SESSION_ID for recommendations
-
-**✗ If RESULT_STATUS is "error":**
-  - Display error message from captured RESULT_MESSAGE
-  - Exit workflow
-
----
-
-### 2c. Handle Session Not Found
-
-⚠️ NOTE: Only execute this section if RESULT_STATUS from Section 2b is "not_found"
-
-→ Use AskUserQuestion to ask user what to do:
-  - Option 1: "Enter session ID manually"
-  - Option 2: "Show available sessions and pick one" (Recommended)
-  - Option 3: "Cancel commit"
-
-→ Handle user response:
-
-**Case 1: "Enter session ID manually"**
-  - Ask user: "Enter your session ID (format: -path-to-project)"
-  - Example: `-Users-username-projects-myproject`
-  - Validate format: Must start with `-` and contain hyphens
-  - If invalid: Re-prompt for valid format
-  - Save to config using captured session ID literal value and proceed:
-    → Execute using Bash tool:
-    ```bash
-    # Replace __PLUGIN_ROOT__ and __USER_SESSION_ID__ with literal values
-    CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__USER_SESSION_ID__"
-    ```
-  - Proceed to Section 2d (Fetch Costs)
-
-**Case 2: "Show available sessions and pick one"**
-
-→ Execute using Bash tool:
-```bash
-# Replace __PLUGIN_ROOT__ with literal path from Section 0
-TMP_SESSIONS="/tmp/write-git-commit-sessions-$$.txt"
-CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" list-sessions "$TMP_SESSIONS"
-
-# Read session IDs into array
-SESSION_IDS=()
-while IFS= read -r line; do
-  SESSION_IDS+=("$line")
-done < "$TMP_SESSIONS"
-
-# Check if we got any sessions
-if [ ${#SESSION_IDS[@]} -eq 0 ]; then
-  echo "No sessions found."
-  exit 1
-fi
-
-# Display for LLM to capture
-echo "Available sessions (most recent activity first):"
-for session_id in "${SESSION_IDS[@]}"; do
-  echo "  $session_id"
-done
-```
-
-→ Handle result based on exit code:
-
-**✓ Exit 0 - Sessions found:**
-  - Build AskUserQuestion with dynamic options:
-    - For each sessionId in first 4 sessions from SESSION_IDS array: Create option with label = sessionId
-    - If CALCULATED_SESSION_ID (from Section 2b) is in the list: Mark it as "(Recommended)"
-    - Add final option: "Other (enter manually)"
-  - Handle user selection:
-    - If user picks a session:
-      - Capture the selected session ID literal value from the user's selection
-      - Save config using the captured literal:
-        → Execute using Bash tool:
-        ```bash
-        # Replace __PLUGIN_ROOT__ and __SELECTED_SESSION_ID__ with literal values
-        CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-        node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SELECTED_SESSION_ID__"
-        ```
-      - Proceed to Section 2d using captured literal value
-    - If user picks "Other": Return to Case 1 (manual entry)
-
-**✗ Exit 1 - No sessions:**
-  - Display error message from bash output
-  - Fall back to Case 1 (manual entry)
-
-**Case 3: "Cancel commit"**
-  - Run `git reset HEAD` to unstage changes
-  - Display: "Commit cancelled"
-  - Exit workflow
-
----
-
-### 2d. Fetch Costs
-
-→ Execute using Bash tool:
-```bash
-# Replace __PLUGIN_ROOT__ and __SESSION_ID__ with literal values
-TMP_PREPARE="/tmp/write-git-commit-prepare-$$.sh"
-CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "__SESSION_ID__" "$TMP_PREPARE" --export-vars
-source "$TMP_PREPARE"
-echo "RESULT_STATUS=$RESULT_STATUS"
-if [ "$RESULT_STATUS" = "success" ]; then
-  echo "SESSION_ID=$SESSION_ID"
-  echo "CURRENT_COST=$CURRENT_COST"
-  echo "METHOD=$METHOD"
-elif [ "$RESULT_STATUS" = "error" ]; then
-  echo "RESULT_MESSAGE=$RESULT_MESSAGE"
-fi
-```
-
-→ Capture from output:
-- **RESULT_STATUS**: Echoed status value
-- **SESSION_ID**, **CURRENT_COST**, **METHOD** (if success): Echoed cost data
-- **RESULT_MESSAGE** (if error): Echoed error message
-
-→ Handle result based on RESULT_STATUS:
-
-**✓ If RESULT_STATUS is "success":**
-  - SESSION_ID, CURRENT_COST, and METHOD are captured from echo output
+**✓ If status is "success":**
+  - SESSION_ID, CURRENT_COST, and METHOD are captured from JSON data fields
   - Store these as literal values for use in Section 3
-  - Proceed to section 3 (Create Commit) with captured literals
+  - Proceed to Section 3 (Create Commit) with captured literals
 
-**✗ If RESULT_STATUS is "error":**
-  - Display error message from captured RESULT_MESSAGE
+**✗ If status is "error" and message contains "Session not found":**
+  - Execute using Bash tool to get available sessions:
+    ```bash
+    # Replace __PLUGIN_ROOT__ with literal path from Section 0
+    CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
+    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" list-sessions
+    ```
+  - Parse JSON output to extract sessions array from data.sessions
+  - Build AskUserQuestion with dynamic options:
+    - For each session in first 4 from sessions array: Create option with label = sessionId
+    - Add final option: "Other (cancel commit)"
+  - If user picks a session:
+    - Save to config using save-config command:
+      ```bash
+      # Replace __PLUGIN_ROOT__ and __SELECTED_SESSION_ID__ with literal values
+      CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
+      node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SELECTED_SESSION_ID__"
+      ```
+    - Retry Section 2 with new session ID
+  - If user picks "Other":
+    - Run `git reset HEAD` to unstage changes
+    - Display: "Commit cancelled"
+    - Exit workflow
+
+**✗ If status is "error" (other errors):**
+  - Display error message
   - Use AskUserQuestion:
     - "Stop and investigate" (Recommended)
     - "Commit without metrics"
-    - "Try different session"
-  - Handle as per Section 2c (Return to Case 1 for manual entry or Case 2 for session list)
+  - If "Stop and investigate":
+    - Run `git reset HEAD` to unstage changes
+    - Display: "Changes unstaged. Please investigate."
+    - Exit workflow
+  - If "Commit without metrics":
+    - Set CURRENT_COST to empty array: `[]`
+    - Proceed to Section 3
 
 ## 3. Create Commit
 
@@ -411,9 +273,10 @@ See Workflow Rules section A for prerequisite requirements before entering this 
 # Replace __PLUGIN_ROOT__, __SESSION_ID__, __CURRENT_COST__, __COMMIT_SUBJECT__, and __COMMIT_BODY__
 # with captured/approved literal values from previous sections
 CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-SESSION_ID="__SESSION_ID__" \
-CURRENT_COST="__CURRENT_COST__" \
-node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" commit <<'EOF'
+node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" commit \
+  --session-id "__SESSION_ID__" \
+  --costs "__CURRENT_COST__" \
+  <<'EOF'
 __COMMIT_SUBJECT__
 
 __COMMIT_BODY__
@@ -421,8 +284,8 @@ EOF
 ```
 
 **Value replacements required:**
-- `__SESSION_ID__`: Literal SESSION_ID captured from Section 2d echo output
-- `__CURRENT_COST__`: Literal CURRENT_COST captured from Section 2d echo output (JSON array string, keep quotes)
+- `__SESSION_ID__`: Literal SESSION_ID captured from Section 2 JSON output
+- `__CURRENT_COST__`: Literal CURRENT_COST captured from Section 2 JSON output (JSON array string)
 - `__COMMIT_SUBJECT__`: Subject line approved by user in Section 1e
 - `__COMMIT_BODY__`: Body lines approved by user in Section 1e (omit entire section if body is empty)
 
@@ -432,8 +295,9 @@ EOF
 
 ⚠ IMPORTANT:
   - This bash command should NOT trigger permission prompts - user already approved message in section 1e and session in section 2
+  - Session ID and costs are passed as CLI arguments (not env vars)
   - Commit message is passed via stdin (heredoc)
-  - `SESSION_ID` and `CURRENT_COST` MUST be literal values captured from section 2d (not shell variables)
+  - Ensure __CURRENT_COST__ remains a quoted JSON string
 
 → Validate cost metrics before sending commit:
   - Check COMMIT_COST is array with at least one entry
