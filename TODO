@@ -1,4 +1,3 @@
-- Skills need to use double-underscore placeholders (__CLAUDE_PLUGIN_ROOT__) in bash commands.
 - Revise run-and-fix-test skill to be more concise / less redundant (per commit 227e38b08d)
-- commit-workflow.test.js slowness (~5 seconds)
+- commit-workflow.test.js failing tests and slowness (~5 seconds)
 - Revise sub-agents for fixing build / tests to behave consistently / properly (interative, explaining steps)
