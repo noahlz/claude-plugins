@@ -49,7 +49,7 @@ Do NOT improvise logic - `commit-workflow.js` handles all commit creation logic.
 
 MUST obtain user approval via AskUserQuestion in Section 1e before proceeding to Section 2.
 
-**Environment Variables Do NOT Persist Between Bash Calls:**
+**IMPORTANT: Environment Variables Do NOT Persist Between Bash Calls:**
 - Each Bash tool invocation runs in a separate shell process
 - Variables set via `source` are lost when that shell exits
 - MUST always capture values as literal strings using `echo` in the SAME bash call where they're sourced

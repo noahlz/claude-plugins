@@ -628,29 +628,25 @@ async function commit(options = {}) {
     // Ensure ccusage is installed
     await ensureCcusageInstalled(pluginRoot);
 
-    // Use provided CLI arguments, falling back to env vars for backward compatibility
-    let sessionId = providedSessionId || process.env.SESSION_ID;
-    let currentCost = providedCosts || process.env.CURRENT_COST;
+    // Require CLI arguments (no fallbacks)
+    let sessionId = providedSessionId;
+    let currentCost = providedCosts;
 
-    // If still not provided, try to load sessionId from config
+    // Session ID is required
     if (!sessionId) {
-      const config = loadSessionConfig({ baseDir });
-      if (config.errors.length > 0) {
-        return {
-          status: 'error',
-          data: {},
-          message: `Failed to load config: ${config.errors.join('; ')}`
-        };
-      }
-      sessionId = config.sessionId;
+      return {
+        status: 'error',
+        data: {},
+        message: 'Session ID not provided (use --session-id argument)'
+      };
     }
 
-    // CURRENT_COST must be provided via CLI args or env var
+    // Current cost is required
     if (!currentCost) {
       return {
         status: 'error',
         data: {},
-        message: 'CURRENT_COST not provided (use --costs argument or env var)'
+        message: 'Cost metrics not provided (use --costs argument)'
       };
     }
 
