@@ -10,6 +10,52 @@ const TESTS_ROOT = __dirname; // test/
 const PLUGIN_ROOT = join(dirname(TESTS_ROOT), 'plugins'); // project root plugins directory
 
 /**
+ * Generic command executor
+ * @param {string} command - Command to execute
+ * @param {string[]} args - Command arguments
+ * @param {Object} options - Options object
+ * @param {string} options.cwd - Working directory
+ * @param {Object} options.env - Environment variables (merged with process.env)
+ * @param {string} options.input - stdin input
+ * @returns {Object} { exitCode, stdout, stderr, output }
+ */
+function execCommand(command, args, options = {}) {
+  const {
+    cwd = process.cwd(),
+    env = {},
+    input = ''
+  } = options;
+
+  const fullEnv = {
+    ...process.env,
+    ...env
+  };
+
+  try {
+    const result = spawnSync(command, args, {
+      cwd,
+      env: fullEnv,
+      input,
+      encoding: 'utf8'
+    });
+
+    return {
+      exitCode: result.status || 0,
+      stdout: result.stdout || '',
+      stderr: result.stderr || '',
+      output: result.stdout || ''
+    };
+  } catch (e) {
+    return {
+      exitCode: 1,
+      stdout: '',
+      stderr: e.message,
+      error: e
+    };
+  }
+}
+
+/**
  * Setup test environment
  * @returns {Object} Test environment object with cleanup function
  */
@@ -80,33 +126,11 @@ export function execBashScript(pluginName, scriptPath, options = {}) {
   } = options;
 
   const fullEnv = {
-    ...process.env,
     ...env,
     PATH: `${join(TESTS_ROOT, pluginName, 'lib', 'mocks')}:${process.env.PATH}`
   };
 
-  try {
-    const result = spawnSync('bash', [scriptPath, ...args], {
-      cwd,
-      env: fullEnv,
-      input,
-      encoding: 'utf8'
-    });
-
-    return {
-      exitCode: result.status || 0,
-      stdout: result.stdout || '',
-      stderr: result.stderr || '',
-      output: result.stdout || ''
-    };
-  } catch (e) {
-    return {
-      exitCode: 1,
-      stdout: '',
-      stderr: e.message,
-      error: e
-    };
-  }
+  return execCommand('bash', [scriptPath, ...args], { cwd, env: fullEnv, input });
 }
 
 /**
@@ -125,33 +149,24 @@ export function execNodeScript(pluginName, scriptPath, options = {}) {
   } = options;
 
   const fullEnv = {
-    ...process.env,
     ...env,
     PATH: `${join(TESTS_ROOT, pluginName, 'lib', 'mocks')}:${process.env.PATH}`
   };
 
-  try {
-    const result = spawnSync('node', [scriptPath, ...args], {
-      cwd,
-      env: fullEnv,
-      input,
-      encoding: 'utf8'
-    });
+  return execCommand('node', [scriptPath, ...args], { cwd, env: fullEnv, input });
+}
 
-    return {
-      exitCode: result.status || 0,
-      stdout: result.stdout || '',
-      stderr: result.stderr || '',
-      output: result.stdout || ''
-    };
-  } catch (e) {
-    return {
-      exitCode: 1,
-      stdout: '',
-      stderr: e.message,
-      error: e
-    };
-  }
+/**
+ * Execute a git command and capture output/exit code
+ * @param {string[]} args - Git command arguments (e.g., ['init'] or ['config', 'user.email', 'test@example.com'])
+ * @param {Object} options - Options object
+ * @param {string} options.cwd - Working directory
+ * @param {Object} options.env - Environment variables (merged with process.env)
+ * @returns {Object} { exitCode, stdout, stderr, output }
+ */
+export function execGit(args, options = {}) {
+  const { cwd = process.cwd(), env = {} } = options;
+  return execCommand('git', args, { cwd, env });
 }
 
 /**

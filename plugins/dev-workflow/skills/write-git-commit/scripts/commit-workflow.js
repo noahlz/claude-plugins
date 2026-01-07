@@ -3,6 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import * as git from './git-operations.js';
 import { detectPluginRoot } from '../../../lib/common.js';
 import { parseJsonFile } from '../../../lib/config-loader.js';
 import { ensureCcusageInstalled, pwdToSessionId } from './ccusage-utils.js';
@@ -685,40 +686,32 @@ async function commit(options = {}) {
     }
 
     // Execute git commit with better error handling
-    let commitSha;
-    try {
-      // Use git commit -F - to pass message via stdin (better escaping)
-      execSync('git commit -F -', {
-        input: fullMessage,
-        cwd: baseDir,
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-
-      // Verify commit succeeded
-      commitSha = execSync('git rev-parse HEAD', { cwd: baseDir, encoding: 'utf-8' }).trim();
-
-      // Check if changes are still staged (indicates failure)
-      const statusOutput = execSync('git diff --cached --name-only', { cwd: baseDir, encoding: 'utf-8' });
-      if (statusOutput.trim()) {
-        return {
-          status: 'git_error',
-          data: { staged_changes: statusOutput },
-          message: 'Git commit execution failed - changes still staged'
-        };
-      }
-    } catch (error) {
+    const commitResult = git.commit(fullMessage, { cwd: baseDir });
+    if (commitResult.exitCode !== 0) {
       return {
         status: 'git_error',
-        data: { error_message: error.message },
+        data: { error_message: commitResult.stderr },
         message: 'Failed to create git commit'
       };
     }
 
+    // Verify commit succeeded
+    const commitSha = git.getHeadSha({ cwd: baseDir });
     if (!commitSha) {
       return {
         status: 'git_error',
         data: {},
         message: 'Failed to retrieve commit SHA'
+      };
+    }
+
+    // Check if changes are still staged (indicates failure)
+    const stagedResult = git.execGit(['diff', '--cached', '--name-only'], { cwd: baseDir });
+    if (stagedResult.stdout.trim()) {
+      return {
+        status: 'git_error',
+        data: { staged_changes: stagedResult.stdout },
+        message: 'Git commit execution failed - changes still staged'
       };
     }
 

@@ -6,10 +6,18 @@ import {
   setupTestEnv,
   teardownTestEnv,
   execNodeScript,
-  execBashScript,
+  execGit,
   getPluginScriptPath,
   extractJsonFromOutput
 } from '../../lib/helpers.js';
+
+/**
+ * write-git-commit test suite
+ *
+ * Tests use Node.js module mocking to inject a mock git implementation.
+ * The mock maintains state in .mock-git-commits files within the test's temp directory.
+ * No real git repositories or commits are created during testing.
+ */
 
 describe('write-git-commit: commit-workflow.js', () => {
   let testEnv;
@@ -18,32 +26,14 @@ describe('write-git-commit: commit-workflow.js', () => {
     testEnv = setupTestEnv();
 
     // Initialize git repo for testing
-    execBashScript('git', {
-      args: ['init'],
-      cwd: testEnv.tmpDir
-    });
-
-    execBashScript('git', {
-      args: ['config', 'user.email', 'test@example.com'],
-      cwd: testEnv.tmpDir
-    });
-
-    execBashScript('git', {
-      args: ['config', 'user.name', 'Test User'],
-      cwd: testEnv.tmpDir
-    });
+    execGit(['init'], { cwd: testEnv.tmpDir });
+    execGit(['config', 'user.email', 'test@example.com'], { cwd: testEnv.tmpDir });
+    execGit(['config', 'user.name', 'Test User'], { cwd: testEnv.tmpDir });
 
     // Create initial commit
     writeFileSync(join(testEnv.tmpDir, 'initial.txt'), 'initial');
-    execBashScript('git', {
-      args: ['add', 'initial.txt'],
-      cwd: testEnv.tmpDir
-    });
-
-    execBashScript('git', {
-      args: ['commit', '-m', 'initial commit'],
-      cwd: testEnv.tmpDir
-    });
+    execGit(['add', 'initial.txt'], { cwd: testEnv.tmpDir });
+    execGit(['commit', '-m', 'initial commit'], { cwd: testEnv.tmpDir });
   });
 
   afterEach(() => {
@@ -105,10 +95,7 @@ describe('write-git-commit: commit-workflow.js', () => {
   it('commit action returns metrics_invalid when metrics validation fails', () => {
     // Create a test file to stage
     writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
-    execBashScript('git', {
-      args: ['add', 'test.txt'],
-      cwd: testEnv.tmpDir
-    });
+    execGit(['add', 'test.txt'], { cwd: testEnv.tmpDir });
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
@@ -132,10 +119,7 @@ describe('write-git-commit: commit-workflow.js', () => {
   it('commit action returns metrics_invalid when all metrics are zero', () => {
     // Create a test file to stage
     writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
-    execBashScript('git', {
-      args: ['add', 'test.txt'],
-      cwd: testEnv.tmpDir
-    });
+    execGit(['add', 'test.txt'], { cwd: testEnv.tmpDir });
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
@@ -183,7 +167,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       input: 'Test commit message',
       env: {
         CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
-        MOCK_GIT_COMMIT_FAIL: 'true',
         PATH: testEnv.mockPath
       }
     });
@@ -198,10 +181,7 @@ describe('write-git-commit: commit-workflow.js', () => {
   it('commit with --session-id and --costs CLI arguments succeeds', () => {
     // Create a test file to stage
     writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
-    execBashScript('git', {
-      args: ['add', 'test.txt'],
-      cwd: testEnv.tmpDir
-    });
+    execGit(['add', 'test.txt'], { cwd: testEnv.tmpDir });
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
@@ -233,10 +213,7 @@ describe('write-git-commit: commit-workflow.js', () => {
   it('commit fails when --session-id is missing', () => {
     // Create a test file to stage
     writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
-    execBashScript('git', {
-      args: ['add', 'test.txt'],
-      cwd: testEnv.tmpDir
-    });
+    execGit(['add', 'test.txt'], { cwd: testEnv.tmpDir });
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
@@ -268,10 +245,7 @@ describe('write-git-commit: commit-workflow.js', () => {
   it('commit fails when --costs is missing', () => {
     // Create a test file to stage
     writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
-    execBashScript('git', {
-      args: ['add', 'test.txt'],
-      cwd: testEnv.tmpDir
-    });
+    execGit(['add', 'test.txt'], { cwd: testEnv.tmpDir });
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
@@ -294,10 +268,7 @@ describe('write-git-commit: commit-workflow.js', () => {
   it('commit handles message with subject and body bullets', () => {
     // Create a test file to stage
     writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
-    execBashScript('git', {
-      args: ['add', 'test.txt'],
-      cwd: testEnv.tmpDir
-    });
+    execGit(['add', 'test.txt'], { cwd: testEnv.tmpDir });
 
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
@@ -326,12 +297,8 @@ describe('write-git-commit: commit-workflow.js', () => {
     assert.equal(data.status, 'success', 'Should succeed with multi-line message');
 
     // Verify git log shows proper formatting
-    const gitLogResult = execBashScript('git', {
-      args: ['log', '-1', '--format=%B'],
-      cwd: testEnv.tmpDir
-    });
+    const gitLogResult = execGit(['log', '-1', '--format=%B'], { cwd: testEnv.tmpDir });
 
-    // Currently failing {"exitCode":127,"stdout":"","stderr":"bash: [object Object]: No such file or directory\n","output":""}
     assert.ok(gitLogResult.stdout.includes('Add new feature'), 'Should contain subject');
     assert.ok(gitLogResult.stdout.includes('- Implemented core functionality'), 'Should contain first bullet');
     assert.ok(gitLogResult.stdout.includes('- Added unit tests'), 'Should contain second bullet');
@@ -588,36 +555,18 @@ describe('write-git-commit: commit-workflow.js (mocked ccusage)', () => {
 
     // Create test environment with git repo
     const testDir = testEnv.tmpDir;
-    execBashScript('git', {
-      args: ['init'],
-      cwd: testDir
-    });
-    execBashScript('git', {
-      args: ['config', 'user.email', 'test@example.com'],
-      cwd: testDir
-    });
-    execBashScript('git', {
-      args: ['config', 'user.name', 'Test User'],
-      cwd: testDir
-    });
+    execGit(['init'], { cwd: testDir });
+    execGit(['config', 'user.email', 'test@example.com'], { cwd: testDir });
+    execGit(['config', 'user.name', 'Test User'], { cwd: testDir });
 
     // Create initial commit
     writeFileSync(join(testDir, 'initial.txt'), 'initial');
-    execBashScript('git', {
-      args: ['add', 'initial.txt'],
-      cwd: testDir
-    });
-    execBashScript('git', {
-      args: ['commit', '-m', 'initial commit'],
-      cwd: testDir
-    });
+    execGit(['add', 'initial.txt'], { cwd: testDir });
+    execGit(['commit', '-m', 'initial commit'], { cwd: testDir });
 
     // Stage a change
     writeFileSync(join(testDir, 'test.txt'), 'test content');
-    execBashScript('git', {
-      args: ['add', 'test.txt'],
-      cwd: testDir
-    });
+    execGit(['add', 'test.txt'], { cwd: testDir });
 
     const { commit } = await import('../../../plugins/dev-workflow/skills/write-git-commit/scripts/commit-workflow.js');
 
@@ -637,10 +586,7 @@ describe('write-git-commit: commit-workflow.js (mocked ccusage)', () => {
     assert.ok(result.data.commit_sha, 'Should return commit SHA');
 
     // Verify git log contains all model costs
-    const gitLogOutput = execBashScript('git', {
-      args: ['log', '-1', '--format=%B'],
-      cwd: testDir
-    }).stdout;
+    const gitLogOutput = execGit(['log', '-1', '--format=%B'], { cwd: testDir }).stdout;
 
     assert.ok(gitLogOutput.includes('claude-haiku-4-5-20251001'), 'Should include haiku model');
     assert.ok(gitLogOutput.includes('claude-sonnet-4-5-20250929'), 'Should include sonnet model');
