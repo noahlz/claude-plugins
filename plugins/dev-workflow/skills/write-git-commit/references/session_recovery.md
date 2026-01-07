@@ -14,7 +14,7 @@
       ```bash
       # Replace __PLUGIN_ROOT__ and __SELECTED_SESSION_ID__ with literal values
       CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-      node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SELECTED_SESSION_ID__"
+      node "__PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SELECTED_SESSION_ID__"
       ```
     - Retry Section 2 with new session ID
   - If user picks "Other":

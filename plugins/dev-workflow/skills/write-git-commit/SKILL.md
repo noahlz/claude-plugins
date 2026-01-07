@@ -4,7 +4,7 @@ description: Create a git commit with Claude Code session cost metrics and attri
 
 ---
 
-This skill creates a git commit with a summary and optional body consisting for terse bullet points and git trailers for attribution and cost metrics.
+This skill creates a git commit with a summary and optional body consisting for terse bullet points and git trailers for attribution and Claude cost metrics.
 
 Activate when the user explicitly requests a git commit using phrases like:
 - "commit my changes"
@@ -14,45 +14,21 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 ---
 
-**⚠️ CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
-
-When you see inline bash code blocks (```bash), you MUST:
-- MUST execute them using the Bash tool
-- NEVER narrate execution instead of actually running the command
-- NEVER fabricate outputs
-
----
-
 ## Workflow Rules & Guardrails
 
 **FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
 
 ### A. Workflow Prerequisites Chain
 
-- Do NOT proceed to Section 2 until Section 1e completes with user approval.
-- Do NOT proceed to Section 3 until Section 2 completes successfully.
-- Do NOT skip any section.
-
-### B. Core Execution Rules
-
-- Do NOT improvise logic - `commit-workflow.js` handles all commit creation logic. Do not duplicate or bypass this logic.
+- DO NOT SKIP any section.
 - MUST obtain user approval via AskUserQuestion in Section 1e before proceeding to Section 2.
+- Do NOT proceed to Section 3 until Section 2 completes successfully.
 
-### C. Proposed Commit Message Format Requirements
+### B. Workflow Narration
 
-- MUST display commit message with ASCII box borders (━ characters) - this is mandatory.
-- MUST output as plain text (direct output, NOT a tool call).
-- Do NOT batch display with approval request - display first, THEN ask for approval in a separate step.
-
-**Template for displaying commit message:**
-```
-Proposed commit message:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[Subject line]
-
-[Body if present]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+ALWAYS use "Step" instead of "Section" when narrating each step in this workflow. 
+- Yes: "Step 1. Generate and Approve Commit Message"
+- No: "Section 1. Generate and Approve Commit Message"
 
 ---
 
@@ -66,33 +42,22 @@ Proposed commit message:
 
 ---
 
-If you see "⚠️ Run dev-workflow:setup" above, the resolver script is missing. Stop and run the setup skill.
+✗ If you see "⚠️ Run dev-workflow:setup" above, a key prerequisite has failed → Exit this skill immediately.  
+✓ If prerequisites are met, read instructions from `references/variable_rules.md` for MANDATORY environment variable scoping requirements.
 
-If you see "NOT_CONFIGURED" above, the session ID will be auto-detected from the current directory path when you run the prepare command.
+**NOTE:** If you see "NOT_CONFIGURED" above, the sessionId will be resolved and saved to configuration in a later step.  
 
-**⚠️ CRITICAL - Capture these values for substitution throughout the skill:**
+**⚠️ CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
 
-The CLAUDE_PLUGIN_ROOT value shown above (after the ! command executes) is the literal plugin path.
+When you see inline bash code blocks (```bash), you MUST:
+- MUST FIRST place the skill variables `__PLUGIN_ROOT__` and `__SESSION_ID__` with their literal values.
+- MUST execute the modified code block using the Bash tool
+- NEVER narrate execution. ALWAYS execute the code block command
+- NEVER fabricate outputs (i.e. if the tool / command fails)
+ 
+ ## 1. Generate and Approve Commit Message
 
-The SESSION_ID value shown above is either:
-- The configured session ID from `.claude/settings.plugins.write-git-commit.json`, OR
-- "NOT_CONFIGURED" (will be auto-detected later)
-
-**You MUST:**
-1. Store the `CLAUDE_PLUGIN_ROOT` literal path value - you will use it to replace **`__PLUGIN_ROOT__`** in bash commands below
-2. Store the `SESSION_ID` literal value - you will use it to replace **`__SESSION_ID__`** in bash commands below
-3. In ALL bash commands throughout this skill:
-   - Replace **`__PLUGIN_ROOT__`** with the exact literal path shown above
-   - Replace **`__SESSION_ID__`** with the exact literal value shown above
-4. Examples:
-   - If `CLAUDE_PLUGIN_ROOT` shows `/Users/username/.claude/plugins/cache/dev-workflow/0.1.0`, then replace every **`__PLUGIN_ROOT__`** → `/Users/username/.claude/plugins/cache/dev-workflow/0.1.0`
-   - If `SESSION_ID` shows `-Users-noahlz-projects-claude-plugins`, then replace every **`__SESSION_ID__`** → `-Users-noahlz-projects-claude-plugins`
-
-See Workflow Rules section B for environment variable scoping requirements.
-
-## 1. Generate and Approve Commit Message
-
-### 1a. Stage changes
+✗### 1a. Stage changes
 
 **Step description**: "Staging all uncommitted changes"
 
@@ -116,134 +81,29 @@ git diff --cached
 
 Generate a commit message based on diff changes and the current chat context, but do not display it to the user yet.
 
-→ General Guidelines:
-  - Follow any user direction / customizations from their prompt i.e. "write a git commit summarizing this refactoring."
-  - *DO NOT* Include metrics obtainable from a git diff or CI/CD logs, such as files edited, count or % of lines of code added/removed, or count of passing tests
-  - **Important: Incorporate user feedback** If this is revision of a previously-generated commit body, take into account any user feedback on the previous iteration.
+Read `references/message_guidelines.md` for MANDATORY instructions on crafting a commit message.
 
-→ Subject and Body Guidelines:
-  - **Subject line**: Action verb + brief description (imperative mood, max 72 chars)
-    - Examples: "Add dark mode toggle", "Fix authentication bug", "Refactor user service"
-  - **Body** (if needed):
-    - **Default: No body** - Prefer summary-only commits when possible
-    - **When to omit body (summary-only):**
-      - Change is straightforward and well-described by subject line
-      - User explicitly requested, i.e. "commit with just a summary"
-    - **When to add body (bullets):**
-      - Multiple files with different types of changes
-      - Single file but changes span multiple unrelated areas
-      - Complex change requiring context beyond subject
-    - **Bullet guidelines (when used):**
-      - Minimum: 2 bullets (if fewer, use summary-only instead)
-      - Maximum: 4 bullets
-      - Each bullet: focus on "what changed" and "why" - not "how"
-      - Each bullet should add meaningful context not obvious from subject
+### 1d. Display the Proposed Message
 
-### 1d. Display the Proposed Message (REQUIRED - DO NOT SKIP)
+Read `references/message_display.md` for MANDATORY instructions on displaying the message to the user.
 
-Show the proposed the commit message using the EXACT format specified in Workflow Rules section C. 
-
-### 1e. Obtain User Approval or Revisions (REQUIRED - DO NOT SKIP)
+### 1e. Obtain User Approval or Revisions
 
 ⚠️ CRITICAL DECISION POINT: This step MUST be completed before any further action
 
-→ MUST use AskUserQuestion with these exact options:
-  - "Accept this message?" (Recommended)
-  - "Make changes"
-  - "Stop/Cancel commit"
-
-→ Handle user response:
-
-✓ If "Accept this message?"
-  - → Extract `COMMIT_SUBJECT` (first line)
-  - → Extract `COMMIT_BODY` (remaining lines, may be empty)
-  - → Proceed to section 2
-
-✗ If "Make changes"
-  - → Return to step 1c
-  - → Regenerate message based on user feedback
-  - → Return to step 1e (loop until approved or cancelled)
-
-✗ If "Stop/Cancel commit"
-  - → Exit workflow immediately
-  - → Do NOT proceed to section 2
-  - → Return control to user
+Read `references/user_approval.md` for MANDATORY instructions on obtaining user approval.
 
 ## 2. Fetch Cost Data
 
-See Workflow Rules section A for prerequisite requirements before entering this section.
+Read `references/fetch_cost.md` for MANDATORY instructions on obtaining cost data. 
 
-→ Execute using Bash tool:
-```bash
-# Replace __PLUGIN_ROOT__ and __SESSION_ID__ with literal values from Section 0
-CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node __PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js prepare "$(pwd)" "__SESSION_ID__"
-```
-
-→ Parse JSON output to extract cost data:
-- **status**: Result status ("success" or "error")
-- **data.session_id**: Resolved session ID (may differ from input if auto-detected)
-- **data.current_cost**: JSON array of cost objects
-- **data.method**: Detection method ("library" or "cli")
-- **message**: Error message (if status is "error")
-
-→ Handle result based on status:
-
-**✓ If status is "success":**
-  - `SESSION_ID` and `CURRENT_COST` are captured from JSON data fields
-  - Store these as literal values for use in Section 3
-  - Proceed to Section 3 (Create Commit) with captured literals
-
-**✗ If status is NOT "success":**
-
-Follow the procedures defined in `references/session_recovery.md`
+**⚠️ N️OTE:** Do NOT ever make a commit with missing or contrived/estimated cost metrics. If you are encountering errors with `ccusage`, IMMEDIATELY stop the workflow ask the User for guidance.
 
 ## 3. Create Commit
 
-See Workflow Rules section A for prerequisite requirements before entering this section.
+Read `references/create_commit.md` for MANDATORY instructions on creating the git commit.
 
-→ Execute using Bash tool:
-```bash
-# Replace __PLUGIN_ROOT__, __SESSION_ID__, __CURRENT_COST__, __COMMIT_SUBJECT__, and __COMMIT_BODY__
-# with captured/approved literal values from previous sections
-CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node __PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js commit \
-  --session-id "__SESSION_ID__" \
-  --costs "__CURRENT_COST__" \
-  <<'EOF'
-__COMMIT_SUBJECT__
-
-__COMMIT_BODY__
-EOF
-```
-
-**Value replacements required:**
-- `__SESSION_ID__`: Literal SESSION_ID captured from Section 2 JSON output
-- `__CURRENT_COST__`: Literal CURRENT_COST captured from Section 2 JSON output (JSON array string)
-- `__COMMIT_SUBJECT__`: Subject line approved by user in Section 1e
-- `__COMMIT_BODY__`: Body lines approved by user in Section 1e (omit entire section if body is empty)
-
-**Format rules:**
-  - If body is empty: Only subject (no blank line)
-  - If body exists: Subject, blank line, then body
-
-⚠ IMPORTANT:
-  - This bash command should NOT trigger permission prompts - user already approved message in section 1e and session in section 2
-  - Session ID and costs are passed as CLI arguments (not env vars)
-  - Commit message is passed via stdin (heredoc)
-  - Ensure `__CURRENT_COST__` remains a quoted JSON string
-
-→ Validate cost metrics before sending commit:
-  - Check `COMMIT_COST` is array with at least one entry
-  - Check at least one model has cost > 0
-  - If invalid: Return to section 2 to re-fetch metrics
-
-→ Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
-
-✓ If status is "success" → Continue to section 4  
-✗ If status is not "success" → Follow the procedures defined in `references/commit_recovery.md`
-
-## 4. Success
+## 4. Summary 
 
 → Display success summary:
 ```
