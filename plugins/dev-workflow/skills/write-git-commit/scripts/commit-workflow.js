@@ -3,6 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { Readable } from 'stream';
 import * as git from './git-operations.js';
 import { detectPluginRoot } from '../../../lib/common.js';
 import { parseJsonFile } from '../../../lib/config-loader.js';
@@ -572,9 +573,12 @@ async function prepare(options = {}) {
  * Read stdin for commit message
  * @returns {Promise<{subject: string, body: string}>}
  */
-async function readCommitMessage() {
+async function readCommitMessage(inputStream = null) {
+  // Use provided stream or default to stdin
+  const stream = inputStream || process.stdin;
+
   const chunks = [];
-  for await (const chunk of process.stdin) {
+  for await (const chunk of stream) {
     chunks.push(chunk);
   }
 
@@ -610,12 +614,19 @@ async function commit(options = {}) {
     baseDir = '.',
     pluginRoot,
     sessionId: providedSessionId = null,
-    costs: providedCosts = null
+    costs: providedCosts = null,
+    message: providedMessage = null
   } = options;
 
   try {
-    // Read commit message from stdin
-    const { subject, body } = await readCommitMessage();
+    // Create input stream from provided message or use stdin
+    let inputStream = null;
+    if (providedMessage) {
+      inputStream = Readable.from([Buffer.from(providedMessage)]);
+    }
+
+    // Read commit message from stream or stdin
+    const { subject, body } = await readCommitMessage(inputStream);
 
     if (!subject) {
       return {

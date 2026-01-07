@@ -510,8 +510,7 @@ describe('write-git-commit: commit-workflow.js (mocked ccusage)', () => {
     assert.equal(result.data.sessions[2].sessionId, '-session-oldest', 'Oldest should be last');
   });
 
-  // SKIPPED - this test hangs
-  it.skip('commit with multiple models includes all cost breakdowns in trailers', async (t) => {
+  it('commit with multiple models includes all cost breakdowns in trailers', async (t) => {
     const mockSessions = [
       {
         sessionId: '-Users-noahlz-projects-claude-plugins',
@@ -553,6 +552,19 @@ describe('write-git-commit: commit-workflow.js (mocked ccusage)', () => {
       }
     });
 
+    // Mock ensureCcusageInstalled to skip npm install in test
+    t.mock.module('../../../plugins/dev-workflow/skills/write-git-commit/scripts/ccusage-utils.js', {
+      namedExports: {
+        ensureCcusageInstalled: async () => {
+          // No-op in test
+        },
+        pwdToSessionId: (dirPath) => {
+          const normalized = dirPath.replace(/^\//, '').replace(/\//g, '-');
+          return `-${normalized}`;
+        }
+      }
+    });
+
     // Create test environment with git repo
     const testDir = testEnv.tmpDir;
     execGit(['init'], { cwd: testDir });
@@ -570,16 +582,12 @@ describe('write-git-commit: commit-workflow.js (mocked ccusage)', () => {
 
     const { commit } = await import('../../../plugins/dev-workflow/skills/write-git-commit/scripts/commit-workflow.js');
 
-    // Create mock stdin for commit message
-    // const mockStdin = {
-    //   read: async () => 'Add feature\n\n- Implemented feature'
-    // };
-
     const result = await commit({
       baseDir: testDir,
       pluginRoot: testEnv.pluginRoot,
       sessionId: '-Users-noahlz-projects-claude-plugins',
-      costs: JSON.stringify(mockSessions[0].modelBreakdowns)
+      costs: JSON.stringify(mockSessions[0].modelBreakdowns),
+      message: 'Add feature\n\n- Implemented feature'
     });
 
     assert.equal(result.status, 'success', 'Should succeed with multiple models');
