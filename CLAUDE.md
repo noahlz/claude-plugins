@@ -20,6 +20,7 @@ claude-plugins/
 │           │   └── scripts/
 │           ├── setup/
 │           └── write-git-commit/
+│               ├── references/
 │               └── scripts/
 └── test/
     ├── dev-workflow/
