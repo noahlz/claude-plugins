@@ -177,7 +177,7 @@ See Workflow Rules section A for prerequisite requirements before entering this 
 ```bash
 # Replace __PLUGIN_ROOT__ and __SESSION_ID__ with literal values from Section 0
 CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "__SESSION_ID__"
+node __PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js prepare "$(pwd)" "__SESSION_ID__"
 ```
 
 → Parse JSON output to extract cost data:
@@ -207,7 +207,7 @@ See Workflow Rules section A for prerequisite requirements before entering this 
 # Replace __PLUGIN_ROOT__, __SESSION_ID__, __CURRENT_COST__, __COMMIT_SUBJECT__, and __COMMIT_BODY__
 # with captured/approved literal values from previous sections
 CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" commit \
+node __PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js commit \
   --session-id "__SESSION_ID__" \
   --costs "__CURRENT_COST__" \
   <<'EOF'

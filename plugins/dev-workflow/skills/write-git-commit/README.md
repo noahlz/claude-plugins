@@ -13,10 +13,8 @@ Create git commits with Claude Code. Automatically embeds attribution and sessio
 
 ## Dependencies
 
-The plugin automatically installs required dependencies on first use:
 - **ccusage** - Claude Code usage library ([ryoppippi/ccusage](https://github.com/ryoppippi/ccusage))
-  - Auto-installed to the plugin's `node_modules` directory
-  - No manual installation needed
+  - Installed automatically with the plugin via `package.json`
 
 ## Usage
 

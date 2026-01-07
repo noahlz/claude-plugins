@@ -76,14 +76,26 @@ describe('my-skill: my-script.js', () => {
 
 Common utilities in `lib/helpers.js` support test setup, fixture loading, and script execution. See the file for available functions.
 
-### Mock Scripts
+### Module Mocking
 
-Mock scripts intercept external commands and return predefined responses:
+Tests use Node.js's native [`t.mock.module()`](https://nodejs.org/api/test.html#mockmodulespecifier-options) API to mock ES modules at the module level. This approach:
 
-- **ccusage** - Returns mock Claude Code session data
-- **git** - Returns mock commit SHAs and status
+- Isolates tests from external dependencies
+- Avoids installing heavy dependencies in test environments
+- Allows precise control over mock behavior per test
 
-Mocks are placed in `tests/lib/mocks/` and are prepended to PATH during test execution.
+Example mocking pattern:
+```javascript
+t.mock.module('./path/to/module.js', {
+  namedExports: {
+    functionName: (arg) => { /* mock implementation */ }
+  }
+});
+```
+
+Common modules mocked in tests:
+- **ccusage-operations.js** - Session data and cost metrics functions
+- **git-operations.js** - Git command execution (can use either mocking or separate mock module)
 
 ### Fixtures
 

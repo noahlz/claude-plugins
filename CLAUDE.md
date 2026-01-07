@@ -56,10 +56,15 @@ Use this project's own plugin `dev-workflow:run-and-fix-tests` for regression te
 
 ### Dependencies
 
-`ccusage` - Usage analysis library for Claude Code sessions, installed as devDependency for testing
-
-  - Provides programmatic access to session data, token costs, and usage metrics
+**Runtime**: `ccusage` (in `plugins/dev-workflow/package.json`)
+  - Installed as a regular dependency for the dev-workflow plugin
   - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
+  - Auto-installed when the plugin is deployed
+
+**Testing**: No ccusage dependency
+  - Tests use Node's native `t.mock.module()` to mock `ccusage-operations.js`
+  - Mock implementation in `test/dev-workflow/lib/mocks/ccusage-operations.js` provides all required functions
+  - This keeps tests isolated and fast without requiring ccusage library installation
   - Documentation: https://ccusage.com/guide/library-usage
 
 ## NOTE: Reinstall After Changing

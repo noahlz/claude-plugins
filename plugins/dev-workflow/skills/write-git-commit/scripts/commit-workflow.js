@@ -2,13 +2,11 @@
 
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import { Readable } from 'stream';
 import * as git from './git-operations.js';
 import { detectPluginRoot } from '../../../lib/common.js';
 import { parseJsonFile } from '../../../lib/config-loader.js';
-import { ensureCcusageInstalled, pwdToSessionId } from './ccusage-utils.js';
-import { extractCostMetrics } from './ccusage-cli-fallback.js';
+import * as ccusage from './ccusage-operations.js';
 
 /**
  * Escape string for safe use in shell single-quoted strings
@@ -77,292 +75,25 @@ function exportAsShellVars(result) {
 }
 
 /**
- * Verify session exists via ccusage library
- * @param {string} sessionId - Session ID to verify
- * @returns {Promise<object>} - { success, exists, error? }
- */
-async function verifySessionViaLibrary(sessionId) {
-  try {
-    const { loadSessionUsageById } = await import('ccusage/data-loader');
-    const session = await loadSessionUsageById(sessionId);
-
-    return {
-      success: true,
-      exists: session !== null
-    };
-  } catch (error) {
-    return {
-      success: false,
-      exists: false,
-      error: error.message
-    };
-  }
-}
-
-/**
- * Get session costs via ccusage library
+ * Resolve session costs
  * @param {string} sessionId - Session ID
  * @returns {Promise<object>} - { success, costs, error? }
  */
-async function getSessionCostsViaLibrary(sessionId) {
-  try {
-    const { loadSessionUsageById } = await import('ccusage/data-loader');
-    const session = await loadSessionUsageById(sessionId);
-
-    if (!session) {
-      return {
-        success: false,
-        costs: [],
-        error: `Session '${sessionId}' not found`
-      };
-    }
-
-    const costs = extractCostMetrics(session);
-    if (costs.length === 0) {
-      return {
-        success: false,
-        costs: [],
-        error: `No model breakdowns found for session '${sessionId}'`
-      };
-    }
-
-    return {
-      success: true,
-      costs
-    };
-  } catch (error) {
-    return {
-      success: false,
-      costs: [],
-      error: error.message
-    };
-  }
-}
-
-/**
- * Verify session exists via ccusage CLI
- * @param {string} sessionId - Session ID to verify
- * @returns {object} - { success, exists, error? }
- */
-function verifySessionViaCLI(sessionId) {
-  try {
-    const output = execSync('ccusage session --json', { encoding: 'utf-8' });
-    let sessions = JSON.parse(output);
-
-    // Handle both direct array and wrapped { sessions: [...] } format
-    if (sessions.sessions && Array.isArray(sessions.sessions)) {
-      sessions = sessions.sessions;
-    }
-
-    if (!Array.isArray(sessions)) {
-      return {
-        success: false,
-        exists: false,
-        error: 'Invalid format from ccusage CLI'
-      };
-    }
-
-    const session = sessions.find(s => s.sessionId === sessionId);
-    return {
-      success: true,
-      exists: session !== undefined
-    };
-  } catch (error) {
-    const errorMsg = error.message || '';
-    const isNotFound = error.code === 'ENOENT' ||
-                       errorMsg.includes('not found') ||
-                       errorMsg.includes('ENOENT') ||
-                       errorMsg.includes('command not found');
-
-    return {
-      success: false,
-      exists: false,
-      error: isNotFound
-        ? 'ccusage CLI not found - install with: npm install -g ccusage'
-        : `Failed to verify session via CLI: ${errorMsg}`
-    };
-  }
-}
-
-/**
- * Get session costs via ccusage CLI
- * @param {string} sessionId - Session ID
- * @returns {object} - { success, costs, error? }
- */
-function getSessionCostsViaCLI(sessionId) {
-  try {
-    const output = execSync('ccusage session --json', { encoding: 'utf-8' });
-    let sessions = JSON.parse(output);
-
-    // Handle both direct array and wrapped { sessions: [...] } format
-    if (sessions.sessions && Array.isArray(sessions.sessions)) {
-      sessions = sessions.sessions;
-    }
-
-    if (!Array.isArray(sessions)) {
-      return {
-        success: false,
-        costs: [],
-        error: 'Invalid format from ccusage CLI'
-      };
-    }
-
-    const session = sessions.find(s => s.sessionId === sessionId);
-
-    if (!session) {
-      return {
-        success: false,
-        costs: [],
-        error: `Session '${sessionId}' not found`
-      };
-    }
-
-    const costs = extractCostMetrics(session);
-    if (costs.length === 0) {
-      return {
-        success: false,
-        costs: [],
-        error: `No model breakdowns found for session '${sessionId}'`
-      };
-    }
-
-    return {
-      success: true,
-      costs
-    };
-  } catch (error) {
-    const errorMsg = error.message || '';
-    const isNotFound = error.code === 'ENOENT' ||
-                       errorMsg.includes('not found') ||
-                       errorMsg.includes('ENOENT') ||
-                       errorMsg.includes('command not found');
-
-    return {
-      success: false,
-      costs: [],
-      error: isNotFound
-        ? 'ccusage CLI not found - install with: npm install -g ccusage'
-        : `Failed to fetch costs via CLI: ${errorMsg}`
-    };
-  }
-}
-
-/**
- * Resolve session costs using library-first, CLI-fallback strategy
- * @param {string} sessionId - Session ID
- * @returns {Promise<object>} - { success, costs, method, error? }
- */
 async function resolveSessionCosts(sessionId) {
-  // Try library first
-  const libVerify = await verifySessionViaLibrary(sessionId);
-
-  if (libVerify.success && libVerify.exists) {
-    const libCosts = await getSessionCostsViaLibrary(sessionId);
-
-    if (libCosts.success) {
-      return {
-        success: true,
-        costs: libCosts.costs,
-        method: 'library'
-      };
-    }
-    // Library exists but fetch failed, fall through to CLI
-  }
-
-  // Fall back to CLI
-  const cliVerify = verifySessionViaCLI(sessionId);
-
-  if (cliVerify.success && cliVerify.exists) {
-    const cliCosts = getSessionCostsViaCLI(sessionId);
-
-    if (cliCosts.success) {
-      return {
-        success: true,
-        costs: cliCosts.costs,
-        method: 'cli'
-      };
-    }
-
-    return {
-      success: false,
-      error: cliCosts.error
-    };
-  }
-
-  // Session not found in either source
-  return {
-    success: false,
-    error: `Session '${sessionId}' not found in library or CLI`
-  };
+  return await ccusage.getSessionCosts(sessionId);
 }
 
 /**
- * List available sessions from library or CLI
- * @returns {Promise<object>} - { status, data, method, error? }
+ * List available sessions
+ * @returns {Promise<object>} - { status, data, error? }
  */
 async function listSessions() {
-  try {
-    // Try library first
-    const { loadSessionData } = await import('ccusage/data-loader');
-    const sessions = await loadSessionData();
-
-    // Sort by lastActivity descending (most recent first)
-    const sortedSessions = sessions
-      .map(s => ({
-        sessionId: s.sessionId,
-        lastActivity: s.lastActivity || ''
-      }))
-      .sort((a, b) => {
-        const dateA = a.lastActivity || '';
-        const dateB = b.lastActivity || '';
-        return dateB.localeCompare(dateA);
-      });
-
-    return {
-      status: 'success',
-      data: { sessions: sortedSessions },
-      method: 'library'
-    };
-  } catch (error) {
-    // Fall back to CLI
-    try {
-      const output = execSync('ccusage session --json', { encoding: 'utf-8' });
-      let sessions = JSON.parse(output);
-
-      if (sessions.sessions && Array.isArray(sessions.sessions)) {
-        sessions = sessions.sessions;
-      }
-
-      // Sort by lastActivity descending (most recent first)
-      const sortedSessions = sessions
-        .map(s => ({
-          sessionId: s.sessionId,
-          lastActivity: s.lastActivity || ''
-        }))
-        .sort((a, b) => {
-          const dateA = a.lastActivity || '';
-          const dateB = b.lastActivity || '';
-          return dateB.localeCompare(dateA);
-        });
-
-      return {
-        status: 'success',
-        data: { sessions: sortedSessions },
-        method: 'cli'
-      };
-    } catch (cliError) {
-      return {
-        status: 'error',
-        data: { sessions: [] },
-        error: 'Failed to list sessions via library or CLI'
-      };
-    }
-  }
+  return await ccusage.listSessions();
 }
 
 /**
- * Resolve session ID from working directory with fast verification
- * Does NOT fall back to listing all sessions - returns not_found if verification fails
+ * Resolve session ID from working directory with verification
+ * Returns not_found if verification fails
  * @param {object} options - Options object
  * @param {string} options.baseDir - Base directory (defaults to current dir)
  * @returns {Promise<object>} - { status: 'found' | 'not_found', data, message }
@@ -373,13 +104,13 @@ async function resolveSession(options = {}) {
   try {
     // Step 1: Calculate recommended session ID from baseDir
     const absolutePath = path.resolve(baseDir);
-    const calculatedSessionId = pwdToSessionId(absolutePath);
+    const calculatedSessionId = ccusage.pwdToSessionId(absolutePath);
 
-    // Step 2: Try to verify it exists via library (fast - single file)
-    const libVerify = await verifySessionViaLibrary(calculatedSessionId);
+    // Step 2: Try to verify it exists
+    const verify = await ccusage.verifySession(calculatedSessionId);
 
-    if (libVerify.success && libVerify.exists) {
-      // Session found via library!
+    if (verify.success && verify.exists) {
+      // Session found!
       return {
         status: 'found',
         data: { session_id: calculatedSessionId },
@@ -387,22 +118,7 @@ async function resolveSession(options = {}) {
       };
     }
 
-    // Step 3: If library fails, try CLI verification
-    if (!libVerify.success) {
-      const cliVerify = verifySessionViaCLI(calculatedSessionId);
-
-      if (cliVerify.success && cliVerify.exists) {
-        // Session found via CLI!
-        return {
-          status: 'found',
-          data: { session_id: calculatedSessionId },
-          message: `Session resolved via CLI: ${calculatedSessionId}`
-        };
-      }
-    }
-
-    // Step 4: Session not found - return not_found with calculated ID
-    // SKILL.md will handle asking user what to do next
+    // Step 3: Session not found - return not_found with calculated ID
     return {
       status: 'not_found',
       data: { calculated_session_id: calculatedSessionId },
@@ -555,10 +271,9 @@ async function prepare(options = {}) {
       status: 'success',
       data: {
         session_id: sessionId,
-        current_cost: costResult.costs,
-        method: costResult.method
+        current_cost: costResult.costs
       },
-      message: `Session costs resolved via ${costResult.method}`
+      message: 'Session costs resolved'
     };
   } catch (error) {
     return {
@@ -636,9 +351,6 @@ async function commit(options = {}) {
       };
     }
 
-    // Ensure ccusage is installed
-    await ensureCcusageInstalled(pluginRoot);
-
     // Require CLI arguments (no fallbacks)
     let sessionId = providedSessionId;
     let currentCost = providedCosts;
@@ -671,10 +383,9 @@ async function commit(options = {}) {
     }
 
     // Validate metrics before commit
-    const { validateCostMetrics } = await import('./ccusage-cli-fallback.js');
     const costsArray = Array.isArray(currentCost) ? currentCost : [currentCost];
 
-    if (!validateCostMetrics(costsArray)) {
+    if (!ccusage.validateCostMetrics(costsArray)) {
       return {
         status: 'metrics_invalid',
         data: { session_id: sessionId, attempted_costs: costsArray },

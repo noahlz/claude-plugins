@@ -1,14 +1,64 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
-// Import functions to test
 import {
+  pwdToSessionId,
   extractCostMetrics,
   validateCostMetrics
-} from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/ccusage-cli-fallback.js';
+} from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/ccusage-operations.js';
 
-describe('write-git-commit: ccusage-cli-fallback.js', () => {
-  // Test extractCostMetrics
+describe('write-git-commit: ccusage-operations.js', () => {
+  describe('pwdToSessionId', () => {
+    it('converts absolute path to session ID format', () => {
+      const result = pwdToSessionId('/Users/noahlz/projects/claude-plugins');
+      assert.equal(result, '-Users-noahlz-projects-claude-plugins');
+    });
+
+    it('converts path without leading slash', () => {
+      const result = pwdToSessionId('Users/noahlz/projects/test');
+      assert.equal(result, '-Users-noahlz-projects-test');
+    });
+
+    it('handles paths with trailing slash', () => {
+      const result = pwdToSessionId('/Users/noahlz/projects/test/');
+      assert.equal(result, '-Users-noahlz-projects-test-');
+    });
+
+    it('handles single-level paths', () => {
+      const result = pwdToSessionId('/home');
+      assert.equal(result, '-home');
+    });
+
+    it('handles root path', () => {
+      const result = pwdToSessionId('/');
+      assert.equal(result, '-');
+    });
+
+    it('handles paths with multiple consecutive slashes', () => {
+      const result = pwdToSessionId('/Users//noahlz///projects');
+      assert.equal(result, '-Users--noahlz---projects');
+    });
+
+    it('always prefixes with dash', () => {
+      const testPaths = [
+        '/Users/test',
+        'Users/test',
+        '/home/user/project'
+      ];
+
+      testPaths.forEach(path => {
+        const result = pwdToSessionId(path);
+        assert.ok(result.startsWith('-'), `Result should start with dash: ${result}`);
+      });
+    });
+
+    it('replaces all forward slashes with dashes', () => {
+      const result = pwdToSessionId('/a/b/c/d/e');
+      assert.equal(result, '-a-b-c-d-e');
+      assert.equal((result.match(/-/g) || []).length, 5);
+    });
+  });
+
   describe('extractCostMetrics', () => {
     it('extracts cost metrics from valid session object', () => {
       const session = {
@@ -29,7 +79,7 @@ describe('write-git-commit: ccusage-cli-fallback.js', () => {
       assert.equal(result[0].model, 'claude-opus-4.5');
       assert.equal(result[0].inputTokens, 100);
       assert.equal(result[0].outputTokens, 50);
-      assert.equal(result[0].cost, 0.12); // Rounded to 2 decimals
+      assert.equal(result[0].cost, 0.12);
     });
 
     it('handles multiple model breakdowns', () => {
@@ -127,7 +177,6 @@ describe('write-git-commit: ccusage-cli-fallback.js', () => {
     });
   });
 
-  // Test validateCostMetrics
   describe('validateCostMetrics', () => {
     it('validates valid cost metrics array', () => {
       const costs = [
@@ -257,7 +306,6 @@ describe('write-git-commit: ccusage-cli-fallback.js', () => {
           cost: 0.12
         },
         {
-          // Missing model
           inputTokens: 200,
           outputTokens: 75,
           cost: 0.05
