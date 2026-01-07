@@ -98,7 +98,16 @@ Use this pattern consistently in Sections 2a, 2b, and 2d instead of repeating fu
 
 If you see "⚠️ Run dev-workflow:setup" above, the resolver script is missing. Stop and run the setup skill.
 
-Capture the literal `CLAUDE_PLUGIN_ROOT` path from above and use it throughout this skill. See Workflow Rules section B for environment variable scoping requirements.
+**⚠️ CRITICAL - Capture this value for substitution throughout the skill:**
+
+The CLAUDE_PLUGIN_ROOT value shown above (after the ! command executes) is the literal plugin path.
+
+**You MUST:**
+1. Store this literal path value - you will use it to replace **__PLUGIN_ROOT__** in bash commands below
+2. In ALL bash commands throughout this skill, replace **__PLUGIN_ROOT__** with the exact literal path shown above
+3. Example: If you see /Users/username/.claude/plugins/cache/dev-workflow/0.1.0, then replace every **__PLUGIN_ROOT__** → /Users/username/.claude/plugins/cache/dev-workflow/0.1.0
+
+See Workflow Rules section B for environment variable scoping requirements.
 
 ## 1. Generate and Approve Commit Message
 
@@ -186,12 +195,16 @@ See Workflow Rules section A for prerequisite requirements before entering this 
 
 ### 2a. Check for Existing Config
 
-→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> with literal path from Section 0):
+→ Execute using Bash tool:
 ```bash
+# ⚠️ CRITICAL: Replace __PLUGIN_ROOT__ with literal path from Section 0
+# This is NOT a shell variable - it's a placeholder requiring substitution
+# Example: /Users/username/.claude/plugins/cache/dev-workflow/0.1.0
+
 # Set CLAUDE_PLUGIN_ROOT as environment variable for this command
 # (Required: Node.js script checks process.env.CLAUDE_PLUGIN_ROOT)
 TMP_CONFIG_CHECK="/tmp/write-git-commit-config-check-$$.sh"
-CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
 node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" check-config "$(pwd)" "$TMP_CONFIG_CHECK" --export-vars
 source "$TMP_CONFIG_CHECK"
 echo "RESULT_STATUS=$RESULT_STATUS"
@@ -218,10 +231,11 @@ fi
 
 ### 2b. Resolve Session ID
 
-→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> with literal path from Section 0):
+→ Execute using Bash tool:
 ```bash
+# Replace __PLUGIN_ROOT__ with literal path from Section 0
 TMP_RESOLVE="/tmp/write-git-commit-resolve-$$.sh"
-CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
 node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" resolve-session "$(pwd)" "$TMP_RESOLVE" --export-vars
 source "$TMP_RESOLVE"
 echo "RESULT_STATUS=$RESULT_STATUS"
@@ -245,11 +259,12 @@ fi
 **✓ If RESULT_STATUS is "found":**
   - Session ID resolved successfully
   - SESSION_ID captured from echo output
-  - Save to config and proceed to Section 2d using captured SESSION_ID literal value:  
-    → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SESSION_ID> with literal values):
+  - Save to config and proceed to Section 2d using captured SESSION_ID literal value:
+    → Execute using Bash tool:
     ```bash
-    CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
-    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<SESSION_ID>"
+    # Replace __PLUGIN_ROOT__ and __SESSION_ID__ with literal values from echo output
+    CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
+    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SESSION_ID__"
     ```
   - Skip to Section 2d (Fetch Costs)
 
@@ -280,20 +295,22 @@ fi
   - Example: `-Users-username-projects-myproject`
   - Validate format: Must start with `-` and contain hyphens
   - If invalid: Re-prompt for valid format
-  - Save to config using captured session ID literal value and proceed:  
-    → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <USER_SESSION_ID> with literal values):  
+  - Save to config using captured session ID literal value and proceed:
+    → Execute using Bash tool:
     ```bash
-    CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
-    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<USER_SESSION_ID>"
+    # Replace __PLUGIN_ROOT__ and __USER_SESSION_ID__ with literal values
+    CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
+    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__USER_SESSION_ID__"
     ```
   - Proceed to Section 2d (Fetch Costs)
 
 **Case 2: "Show available sessions and pick one"**
 
-→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> with literal path from Section 0):
+→ Execute using Bash tool:
 ```bash
+# Replace __PLUGIN_ROOT__ with literal path from Section 0
 TMP_SESSIONS="/tmp/write-git-commit-sessions-$$.txt"
-CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
+CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
 node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" list-sessions "$TMP_SESSIONS"
 
 # Read session IDs into array
@@ -325,11 +342,12 @@ done
   - Handle user selection:
     - If user picks a session:
       - Capture the selected session ID literal value from the user's selection
-      - Save config using the captured literal:  
-        → Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SELECTED_SESSION_ID> with literal values):
+      - Save config using the captured literal:
+        → Execute using Bash tool:
         ```bash
-        CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
-        node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "<SELECTED_SESSION_ID>"
+        # Replace __PLUGIN_ROOT__ and __SELECTED_SESSION_ID__ with literal values
+        CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
+        node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SELECTED_SESSION_ID__"
         ```
       - Proceed to Section 2d using captured literal value
     - If user picks "Other": Return to Case 1 (manual entry)
@@ -347,11 +365,12 @@ done
 
 ### 2d. Fetch Costs
 
-→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT> and <SESSION_ID> with literal values):
+→ Execute using Bash tool:
 ```bash
+# Replace __PLUGIN_ROOT__ and __SESSION_ID__ with literal values
 TMP_PREPARE="/tmp/write-git-commit-prepare-$$.sh"
-CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
-node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "<SESSION_ID>" "$TMP_PREPARE" --export-vars
+CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
+node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "__SESSION_ID__" "$TMP_PREPARE" --export-vars
 source "$TMP_PREPARE"
 echo "RESULT_STATUS=$RESULT_STATUS"
 if [ "$RESULT_STATUS" = "success" ]; then
@@ -387,23 +406,25 @@ fi
 
 See Workflow Rules section A for prerequisite requirements before entering this section.
 
-→ Execute using Bash tool (replace <CLAUDE_PLUGIN_ROOT>, <SESSION_ID>, <CURRENT_COST>, <COMMIT_SUBJECT>, and <COMMIT_BODY> with captured/approved values):
+→ Execute using Bash tool:
 ```bash
-CLAUDE_PLUGIN_ROOT=<CLAUDE_PLUGIN_ROOT> \
-SESSION_ID="<SESSION_ID>" \
-CURRENT_COST="<CURRENT_COST>" \
+# Replace __PLUGIN_ROOT__, __SESSION_ID__, __CURRENT_COST__, __COMMIT_SUBJECT__, and __COMMIT_BODY__
+# with captured/approved literal values from previous sections
+CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
+SESSION_ID="__SESSION_ID__" \
+CURRENT_COST="__CURRENT_COST__" \
 node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" commit <<'EOF'
-<COMMIT_SUBJECT>
+__COMMIT_SUBJECT__
 
-<COMMIT_BODY if present>
+__COMMIT_BODY__
 EOF
 ```
 
 **Value replacements required:**
-- `<SESSION_ID>`: Literal SESSION_ID captured from Section 2d echo output
-- `<CURRENT_COST>`: Literal CURRENT_COST captured from Section 2d echo output (JSON array string, keep quotes)
-- `<COMMIT_SUBJECT>`: Subject line approved by user in Section 1e
-- `<COMMIT_BODY>`: Body lines approved by user in Section 1e (omit entire section if body is empty)
+- `__SESSION_ID__`: Literal SESSION_ID captured from Section 2d echo output
+- `__CURRENT_COST__`: Literal CURRENT_COST captured from Section 2d echo output (JSON array string, keep quotes)
+- `__COMMIT_SUBJECT__`: Subject line approved by user in Section 1e
+- `__COMMIT_BODY__`: Body lines approved by user in Section 1e (omit entire section if body is empty)
 
 **Format rules:**
   - If body is empty: Only subject (no blank line)
