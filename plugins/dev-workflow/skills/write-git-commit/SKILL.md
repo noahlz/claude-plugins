@@ -17,17 +17,9 @@ Activate when the user explicitly requests a git commit using phrases like:
 **⚠️ CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
 
 When you see inline bash code blocks (```bash), you MUST:
-- Execute them using the Bash tool
-- NEVER narrate execution without actually running the command
+- MUST execute them using the Bash tool
+- NEVER narrate execution instead of actually running the command
 - NEVER fabricate outputs
-
-When instructed to "Execute from [file.md]" or "Execute instructions from [file.md]":
-1. Read the markdown file using Read tool
-2. Find the relevant bash code blocks
-3. Execute those code blocks using Bash tool
-4. Handle results as described in the file
-
-**Failure to execute commands results in workflow corruption and invalid commits.**
 
 ---
 
@@ -37,29 +29,19 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 
 ### A. Workflow Prerequisites Chain
 
-Do NOT proceed to Section 2 until Section 1e completes with user approval.
-
-Do NOT proceed to Section 3 until Section 2 completes successfully.
-
-Do NOT skip any section.
+- Do NOT proceed to Section 2 until Section 1e completes with user approval.
+- Do NOT proceed to Section 3 until Section 2 completes successfully.
+- Do NOT skip any section.
 
 ### B. Core Execution Rules
 
-Do NOT improvise logic - `commit-workflow.js` handles all commit creation logic. Do not duplicate or bypass this logic.
+- Do NOT improvise logic - `commit-workflow.js` handles all commit creation logic. Do not duplicate or bypass this logic.
+- MUST obtain user approval via AskUserQuestion in Section 1e before proceeding to Section 2.
 
-MUST obtain user approval via AskUserQuestion in Section 1e before proceeding to Section 2.
-
-**IMPORTANT: Environment Variables Do NOT Persist Between Bash Calls:**
-- Each Bash tool invocation runs in a separate shell process
-- Variables set via `source` are lost when that shell exits
-- MUST always capture values as literal strings using `echo` in the SAME bash call where they're sourced
-- In subsequent bash commands, use captured literal values (not shell variables)
-- Example: If Section 2a outputs `SESSION_ID=abc-123`, use the literal string `"abc-123"` in later commands, not `$SESSION_ID`
-
-### C. Display Format Requirements
+### C. Proposed Commit Message Format Requirements
 
 - MUST display commit message with ASCII box borders (━ characters) - this is mandatory.
-- Output MUST be plain text (direct output, NOT a tool call).
+- MUST output as plain text (direct output, NOT a tool call).
 - Do NOT batch display with approval request - display first, THEN ask for approval in a separate step.
 
 **Template for displaying commit message:**
@@ -71,20 +53,6 @@ Proposed commit message:
 [Body if present]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-
-### D. Standard Result Handling Pattern
-
-When executing bash commands that call commit-workflow.js scripts:
-
-1. Execute the bash command and capture the output  
-2. Look for the `RESULT_STATUS` value echoed in output  
-3. Handle the result based on status:
-   - **If status is "success"**: Capture the values (SESSION_ID, CURRENT_COST, etc) from echo output and proceed
-   - **If status is "found"**: Capture SESSION_ID from echo output and proceed
-   - **If status is "not_found"**: Capture CALCULATED_SESSION_ID from echo output and proceed to user choice (Section 2c)
-   - **If status is "error"**: Display error message from RESULT_MESSAGE and stop or retry as instructed in the section
-
-Use this pattern consistently in Sections 2a, 2b, and 2d instead of repeating full handling text.
 
 ---
 
@@ -111,14 +79,14 @@ The SESSION_ID value shown above is either:
 - "NOT_CONFIGURED" (will be auto-detected later)
 
 **You MUST:**
-1. Store the CLAUDE_PLUGIN_ROOT literal path value - you will use it to replace **__PLUGIN_ROOT__** in bash commands below
-2. Store the SESSION_ID literal value - you will use it to replace **__SESSION_ID__** in bash commands below
+1. Store the `CLAUDE_PLUGIN_ROOT` literal path value - you will use it to replace **`__PLUGIN_ROOT__`** in bash commands below
+2. Store the `SESSION_ID` literal value - you will use it to replace **`__SESSION_ID__`** in bash commands below
 3. In ALL bash commands throughout this skill:
-   - Replace **__PLUGIN_ROOT__** with the exact literal path shown above
-   - Replace **__SESSION_ID__** with the exact literal value shown above
+   - Replace **`__PLUGIN_ROOT__`** with the exact literal path shown above
+   - Replace **`__SESSION_ID__`** with the exact literal value shown above
 4. Examples:
-   - If CLAUDE_PLUGIN_ROOT shows /Users/username/.claude/plugins/cache/dev-workflow/0.1.0, then replace every **__PLUGIN_ROOT__** → /Users/username/.claude/plugins/cache/dev-workflow/0.1.0
-   - If SESSION_ID shows -Users-noahlz-projects-claude-plugins, then replace every **__SESSION_ID__** → -Users-noahlz-projects-claude-plugins
+   - If `CLAUDE_PLUGIN_ROOT` shows `/Users/username/.claude/plugins/cache/dev-workflow/0.1.0`, then replace every **`__PLUGIN_ROOT__`** → `/Users/username/.claude/plugins/cache/dev-workflow/0.1.0`
+   - If `SESSION_ID` shows `-Users-noahlz-projects-claude-plugins`, then replace every **`__SESSION_ID__`** → `-Users-noahlz-projects-claude-plugins`
 
 See Workflow Rules section B for environment variable scoping requirements.
 
@@ -159,7 +127,6 @@ Generate a commit message based on diff changes and the current chat context, bu
   - **Body** (if needed):
     - **Default: No body** - Prefer summary-only commits when possible
     - **When to omit body (summary-only):**
-      - Single file edited with cohesive changes
       - Change is straightforward and well-described by subject line
       - User explicitly requested, i.e. "commit with just a summary"
     - **When to add body (bullets):**
@@ -174,7 +141,7 @@ Generate a commit message based on diff changes and the current chat context, bu
 
 ### 1d. Display the Proposed Message (REQUIRED - DO NOT SKIP)
 
-Display the commit message using the format specified in Workflow Rules section C. Follow those format requirements exactly.
+Show the proposed the commit message using the EXACT format specified in Workflow Rules section C. 
 
 ### 1e. Obtain User Approval or Revisions (REQUIRED - DO NOT SKIP)
 
@@ -223,46 +190,13 @@ node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" pr
 → Handle result based on status:
 
 **✓ If status is "success":**
-  - SESSION_ID, CURRENT_COST, and METHOD are captured from JSON data fields
+  - `SESSION_ID` and `CURRENT_COST` are captured from JSON data fields
   - Store these as literal values for use in Section 3
   - Proceed to Section 3 (Create Commit) with captured literals
 
-**✗ If status is "error" and message contains "Session not found":**
-  - Execute using Bash tool to get available sessions:
-    ```bash
-    # Replace __PLUGIN_ROOT__ with literal path from Section 0
-    CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" list-sessions
-    ```
-  - Parse JSON output to extract sessions array from data.sessions
-  - Build AskUserQuestion with dynamic options:
-    - For each session in first 4 from sessions array: Create option with label = sessionId
-    - Add final option: "Other (cancel commit)"
-  - If user picks a session:
-    - Save to config using save-config command:
-      ```bash
-      # Replace __PLUGIN_ROOT__ and __SELECTED_SESSION_ID__ with literal values
-      CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-      node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SELECTED_SESSION_ID__"
-      ```
-    - Retry Section 2 with new session ID
-  - If user picks "Other":
-    - Run `git reset HEAD` to unstage changes
-    - Display: "Commit cancelled"
-    - Exit workflow
+**✗ If status is NOT "success":**
 
-**✗ If status is "error" (other errors):**
-  - Display error message
-  - Use AskUserQuestion:
-    - "Stop and investigate" (Recommended)
-    - "Commit without metrics"
-  - If "Stop and investigate":
-    - Run `git reset HEAD` to unstage changes
-    - Display: "Changes unstaged. Please investigate."
-    - Exit workflow
-  - If "Commit without metrics":
-    - Set CURRENT_COST to empty array: `[]`
-    - Proceed to Section 3
+Follow the procedures defined in `references/session_recovery.md`
 
 ## 3. Create Commit
 
@@ -297,47 +231,17 @@ EOF
   - This bash command should NOT trigger permission prompts - user already approved message in section 1e and session in section 2
   - Session ID and costs are passed as CLI arguments (not env vars)
   - Commit message is passed via stdin (heredoc)
-  - Ensure __CURRENT_COST__ remains a quoted JSON string
+  - Ensure `__CURRENT_COST__` remains a quoted JSON string
 
 → Validate cost metrics before sending commit:
-  - Check COMMIT_COST is array with at least one entry
+  - Check `COMMIT_COST` is array with at least one entry
   - Check at least one model has cost > 0
   - If invalid: Return to section 2 to re-fetch metrics
 
 → Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
 
 ✓ If status is "success" → Continue to section 4  
-✗ If status is "error" → Display error, return to section 2  
-
-⚠ If status is "metrics_invalid":
-  - Display error: "Cost metrics validation failed"
-  - Show attempted_costs from data
-  - Use AskUserQuestion:
-    - "Stop and investigate" (Recommended)
-    - "Commit without metrics"
-    - "Retry fetching metrics"
-  - If "Stop and investigate":
-    - Run `git reset HEAD` to unstage changes
-    - Display: "Changes unstaged. Please investigate ccusage data."
-    - Stop workflow
-  - If "Commit without metrics":
-    - Warn: "Commit will proceed WITHOUT cost metrics"
-    - Return to section 3 and re-run commit without validating metrics
-  - If "Retry fetching metrics":
-    - Return to section 2
-
-⚠ If status is "git_error":
-  - Display error: "Failed to create git commit"
-  - Show error_message and/or staged_changes from data
-  - Use AskUserQuestion:
-    - "View git status"
-    - "Unstage and stop"
-  - If "View git status":
-    - Run `git status` and display output
-    - Ask user to resolve manually
-  - If "Unstage and stop":
-    - Run `git reset HEAD` to unstage changes
-    - Stop workflow
+✗ If status is not "success" → Follow the procedures defined in `references/commit_recovery.md`
 
 ## 4. Success
 
