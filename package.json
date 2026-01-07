@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "node test/run-tests.js",
-    "coverage": "node --experimental-test-coverage --test test/**/*.test.js"
+    "coverage": "node --experimental-test-coverage --experimental-test-module-mocks --test test/**/*.test.js"
   },
   "devDependencies": {
     "ccusage": "^17.2.0"
