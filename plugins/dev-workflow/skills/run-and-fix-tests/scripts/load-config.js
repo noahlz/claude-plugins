@@ -1,7 +1,84 @@
 #!/usr/bin/env node
 
 import { resolvePath } from '../../../lib/common.js';
-import { loadSkillConfig, validateConfig } from '../../../lib/config-loader.js';
+import { loadSkillConfig } from '../../../lib/config-loader.js';
+
+/**
+ * Validate build configuration (array format)
+ * @param {array} buildConfig - Build configuration array
+ * @param {array} errors - Errors array to append to
+ */
+function validateBuildConfig(buildConfig, errors) {
+  if (!Array.isArray(buildConfig)) {
+    errors.push('build must be an array');
+    return;
+  }
+
+  if (buildConfig.length === 0) {
+    errors.push('build array cannot be empty');
+    return;
+  }
+
+  buildConfig.forEach((build, idx) => {
+    if (!build.command) errors.push(`build[${idx}].command is required`);
+    if (!build.logFile) errors.push(`build[${idx}].logFile is required`);
+    if (!build.errorPattern) errors.push(`build[${idx}].errorPattern is required`);
+  });
+}
+
+/**
+ * Validate config has required fields
+ * @param {object} config - Config object
+ * @returns {array} - Array of error messages (empty if valid)
+ */
+function validateConfig(config) {
+  const errors = [];
+
+  if (!config) {
+    errors.push('Config is null or undefined');
+    return errors;
+  }
+
+  // Check for build config (optional if skipBuild is true)
+  if (config.skipBuild === true) {
+    // When skipBuild is explicitly true, build config is optional
+    if (config.build) {
+      validateBuildConfig(config.build, errors);
+    }
+  } else {
+    // Build is required unless skipBuild is true
+    if (!config.build) {
+      errors.push('Config must have "build" property (or set skipBuild: true)');
+      return errors;
+    }
+
+    validateBuildConfig(config.build, errors);
+  }
+
+  // Check for test config
+  if (!config.test) {
+    errors.push('Config must have "test" property');
+    return errors;
+  }
+
+  if (!config.test.all) {
+    errors.push('test.all is required');
+  } else {
+    if (!config.test.all.command) errors.push('test.all.command is required');
+    if (!config.test.all.resultsPath) errors.push('test.all.resultsPath is required');
+    if (!config.test.all.errorPattern) errors.push('test.all.errorPattern is required');
+  }
+
+  if (!config.test.single) {
+    errors.push('test.single is required');
+  } else {
+    if (!config.test.single.command) errors.push('test.single.command is required');
+    if (!config.test.single.resultsPath) errors.push('test.single.resultsPath is required');
+    if (!config.test.single.errorPattern) errors.push('test.single.errorPattern is required');
+  }
+
+  return errors;
+}
 
 /**
  * Load and process configuration
@@ -134,6 +211,9 @@ async function main() {
     }
   }
 }
+
+
+
 
 // CLI entry point
 if (import.meta.url === `file://${process.argv[1]}`) {
