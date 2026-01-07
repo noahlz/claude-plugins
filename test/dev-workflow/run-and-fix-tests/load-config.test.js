@@ -1,13 +1,11 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, mkdirSync, readFileSync, cpSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   setupPluginTestEnv,
   teardownTestEnv,
   loadConfigFixture
 } from './helpers.js';
-import { loadConfig, generateEnv, formatJson } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/load-config.js';
+import { loadConfig } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/load-config.js';
 
 describe('run-and-fix-tests: load-config.js', () => {
   let testEnv;

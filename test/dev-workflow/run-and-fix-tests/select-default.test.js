@@ -1,6 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { readFileSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   setupPluginTestEnv,

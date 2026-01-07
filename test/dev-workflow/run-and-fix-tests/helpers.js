@@ -1,7 +1,6 @@
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync, cpSync } from 'node:fs';
+import { writeFileSync, mkdirSync, cpSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
 import { setupTestEnv, teardownTestEnv, readFixture } from '../../lib/helpers.js';
 
 const __filename = fileURLToPath(import.meta.url);

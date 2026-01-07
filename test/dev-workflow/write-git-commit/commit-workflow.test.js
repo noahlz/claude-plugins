@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   setupTestEnv,
@@ -10,32 +10,36 @@ import {
   getPluginScriptPath,
   extractJsonFromOutput
 } from '../../lib/helpers.js';
-import { log } from 'node:console';
 
 describe('write-git-commit: commit-workflow.js', () => {
   let testEnv;
 
   beforeEach(() => {
     testEnv = setupTestEnv();
+
     // Initialize git repo for testing
     execBashScript('git', {
       args: ['init'],
       cwd: testEnv.tmpDir
     });
+
     execBashScript('git', {
       args: ['config', 'user.email', 'test@example.com'],
       cwd: testEnv.tmpDir
     });
+
     execBashScript('git', {
       args: ['config', 'user.name', 'Test User'],
       cwd: testEnv.tmpDir
     });
+
     // Create initial commit
     writeFileSync(join(testEnv.tmpDir, 'initial.txt'), 'initial');
     execBashScript('git', {
       args: ['add', 'initial.txt'],
       cwd: testEnv.tmpDir
     });
+
     execBashScript('git', {
       args: ['commit', '-m', 'initial commit'],
       cwd: testEnv.tmpDir
