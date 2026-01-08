@@ -39,7 +39,9 @@ Also activate this skill when the user requests testing using phrases like:
 **⚠️ CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
 
 When you see inline bash code blocks (```bash), you MUST:
-- Execute them using the Bash tool
+- **TEXT SUBSTITUTION:** Replace `{{SKILL_BASE_DIR}}` with literal path from "Base directory for this skill:" message
+- These are TEMPLATE PLACEHOLDERS, not shell variables - perform textual substitution before execution
+- Execute the substituted command using the Bash tool
 - NEVER narrate execution without actually running the command
 - NEVER fabricate outputs
 
@@ -97,7 +99,7 @@ Execute ONLY if Section 1 shows "⚠️ Config setup required".
 
 → Execute load-config script to output configuration:
 ```bash
-node "$SKILL_BASE_DIR/scripts/load-config.js"
+node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 ```
 
 **⚠️ CRITICAL - Capture Output Values**

@@ -77,11 +77,18 @@ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory fo
 **HOW TO EXECUTE BASH CODE IN THIS SKILL:**
 
 When you see inline bash code blocks (```bash), you MUST:
-- Use `$SKILL_BASE_DIR` to construct script paths (already extracted from skill startup output)
-- Use `$SESSION_ID` for session ID references
-- Execute the code block using the Bash tool
+- **TEXT SUBSTITUTION REQUIRED:** Replace `{{SKILL_BASE_DIR}}` with the literal path from "Base directory for this skill:" message
+- **TEXT SUBSTITUTION REQUIRED:** Replace `{{SESSION_ID}}` with the literal session ID value
+- These are TEMPLATE PLACEHOLDERS, not shell variables - perform textual substitution before execution
+- Execute the substituted command using the Bash tool
 - NEVER narrate execution. ALWAYS execute the code block command
 - NEVER fabricate outputs (i.e. if the tool / command fails)
+
+**Example:**
+```
+Template: node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare
+After substitution: node "/Users/noahlz/.claude/plugins/.../write-git-commit/scripts/commit-workflow.js" prepare
+```
  
 ## 1. Stage and Analyze Changes
 

@@ -7,8 +7,8 @@ Execute commit-workflow.js prepare command to fetch session cost metrics.
 ## Bash Command
 
 ```bash
-# Use $SKILL_BASE_DIR (extracted from skill startup) and $SESSION_ID
-node "$SKILL_BASE_DIR/scripts/commit-workflow.js" prepare "$(pwd)" "$SESSION_ID"
+# Use {{SKILL_BASE_DIR}} (extracted from skill startup) and {{SESSION_ID}}
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION_ID}}"
 ```
 
 ## Parse JSON Output

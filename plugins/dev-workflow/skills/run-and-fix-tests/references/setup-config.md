@@ -6,7 +6,7 @@ Execute ONLY if config check failed (exit 1 from Section 1).
 
 → Execute detection script:
 ```bash
-node "$SKILL_BASE_DIR/scripts/detect-and-resolve.js" "$SKILL_BASE_DIR/../.."
+node "{{SKILL_BASE_DIR}}/scripts/detect-and-resolve.js" "{{SKILL_BASE_DIR}}/../.."
 ```
 
 **What this does:**

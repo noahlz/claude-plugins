@@ -7,23 +7,23 @@ Do NOT improvise git commit logic - commit-workflow.js handles all commit creati
 ## Bash Command
 
 ```bash
-# Use $SKILL_BASE_DIR (extracted from skill startup) and captured values
-node "$SKILL_BASE_DIR/scripts/commit-workflow.js" commit \
-  --session-id "$SESSION_ID" \
-  --costs "$CURRENT_COST" \
+# Use {{SKILL_BASE_DIR}} (extracted from skill startup) and captured values
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" commit \
+  --session-id "{{SESSION_ID}}" \
+  --costs "{{CURRENT_COST}}" \
   <<'EOF'
-$COMMIT_SUBJECT
+{{COMMIT_SUBJECT}}
 
-$COMMIT_BODY
+{{COMMIT_BODY}}
 EOF
 ```
 
 ## Value Replacements
 
-- `$SESSION_ID`: Literal session ID from Step 4
-- `$CURRENT_COST`: Literal JSON array from Step 4
-- `$COMMIT_SUBJECT`: Subject line from Step 3
-- `$COMMIT_BODY`: Body from Step 3 (omit blank line if empty)
+- `{{SESSION_ID}}`: Literal session ID from Step 4
+- `{{CURRENT_COST}}`: Literal JSON array from Step 4
+- `{{COMMIT_SUBJECT}}`: Subject line from Step 3
+- `{{COMMIT_BODY}}`: Body from Step 3 (omit blank line if empty)
 
 ## Format Rules
 
