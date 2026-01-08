@@ -25,21 +25,15 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 **FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
 
-### A. Workflow Prerequisites Chain
+### A. Workflow Order of Operations
 
-- DO NOT SKIP any section.
-- MUST obtain user approval via AskUserQuestion in Section 1e before proceeding to Section 2.
-- Do NOT proceed to Section 3 until Section 2 completes successfully.
+This skill defines a very precise workflow that MUST be followed exactly.
 
-### B. Workflow Narration
+**DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
 
-ALWAYS use "Step" instead of "Section" when narrating each step in this workflow.
-- Yes: "Step 1. Generate and Approve Commit Message"
-- No: "Section 1. Generate and Approve Commit Message"
+### B. Workflow Delegation Protocol
 
-### C. Delegation Protocol
-
-When instructions say `DELEGATE_TO: [file]`:
+When step instructions say `DELEGATE_TO: [file]`:
 
 1. **STOP** - Do not proceed based on assumed knowledge
 2. **READ** - Use the Read tool to read the referenced file
@@ -49,6 +43,20 @@ When instructions say `DELEGATE_TO: [file]`:
 
 **Why This Matters:**
 Reference files contain formatting requirements, templates, and constraints not visible in SKILL.md. Skipping the read step causes incorrect workflow execution.
+
+### C. Workflow Narration
+
+Only narrate if a step has a defined "STEP_DESCRIPTION" 
+
+BEFORE narrating any step, check:  
+1. Does this step have a STEP_DESCRIPTION: field?
+2. If YES → Narrate the STEP_DESCRIPTION value only
+3. If NO → DO NOT narrate anything, proceed silently to execute
+
+Silent operations (no narration):
+- Reading delegation files per DELEGATE_TO instructions
+- Executing sub-steps within a delegation
+- Internal step processing without user-facing output
 
 ---
 
@@ -79,7 +87,7 @@ When you see inline bash code blocks (```bash), you MUST:
 
 ### 1a. Stage changes
 
-**Step description**: "Staging all uncommitted changes"
+**STEP_DESCRIPTION**: "Staging changes"
 
 → Execute using Bash tool:
 ```bash
@@ -88,7 +96,7 @@ git add -A
 
 ### 1b. Analyze staged changes
 
-**Step description**: "Analyzing staged changes"
+**STEP_DESCRIPTION**: "Generating commit message"
 
 → Execute using Bash tool:
 ```bash
@@ -97,50 +105,29 @@ git diff --cached
 
 ## 2. Generate Commit Message
 
-**Step description**: "Generating commit message"
-
 DELEGATE_TO: `references/message_guidelines.md`
 
-Generate commit message following those guidelines. Do not display to user yet.
+Generate commit message following those guidelines.
 
-Store internally as:
+**Mentally store (do NOT output or display):**
 - `COMMIT_SUBJECT`: First line
 - `COMMIT_BODY`: Remaining lines (may be empty)
 
-## 3. Display Message to User
+Proceed silently to Step 3.
 
-**Step description**: "Displaying proposed commit message"
+## 3. Display Message to User for Approval
 
-DELEGATE_TO: `references/message_display.md`
+BLOCKING: This step MUST complete with user approval before Step 4.
 
-VERIFY (required before Step 4):
-- [ ] Output includes ASCII box borders (━━━ characters)
-- [ ] Message displayed as plain text (direct output)
-- [ ] Display is SEPARATE from approval request
-
-If verification fails, re-read reference file and retry display.
-
-## 4. Obtain User Approval
-
-**Step description**: "Awaiting user approval"
-
-BLOCKING: This step MUST complete with user approval before Step 5.
-
-DELEGATE_TO: `references/user_approval.md`
-
-**Quick Reference (full details in reference file):**
-- Use AskUserQuestion with exactly these options:
-  - "Accept this message?" (Recommended)
-  - "Make changes"
-  - "Stop/Cancel commit"
+DELEGATE_TO: `references/message_approval.md`
 
 → Handle user response per reference file instructions
 → Extract `COMMIT_SUBJECT` and `COMMIT_BODY` if approved
-→ Proceed to Step 5 only if approved
+→ Proceed to Step 4 only if approved by user
 
-## 5. Fetch Cost Data
+## 4. Fetch Cost Data
 
-**Step description**: "Fetching session cost metrics"
+**STEP_DESCRIPTION**: "Fetching session cost metrics"
 
 DELEGATE_TO: `references/fetch_cost.md`
 
@@ -151,11 +138,12 @@ DELEGATE_TO: `references/fetch_cost.md`
 
 ⚠️ NOTE: Do NOT ever make a commit with missing or contrived cost metrics. If encountering errors with ccusage, IMMEDIATELY stop and ask user for guidance.
 
-## 6. Create Commit
+## 5. Create Commit
 
-**Step description**: "Creating git commit with cost metrics"
+**STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
 DELEGATE_TO: `references/create_commit.md`
+
 
 **Quick Reference:**
 - Execute commit-workflow.js commit command
@@ -163,7 +151,7 @@ DELEGATE_TO: `references/create_commit.md`
 - Validate cost metrics before committing
 - Parse commit SHA from output
 
-## 7. Summary
+## 6. Summary
 
 → Display success summary:
 ```

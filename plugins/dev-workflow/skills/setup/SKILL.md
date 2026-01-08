@@ -87,7 +87,7 @@ cat > "$INSTALL_PATH" << 'EOF'
 # Usage: $(resolve_plugin_root.sh "plugin-identifier@publisher")
 #
 # Example:
-#   CLAUDE_PLUGIN_ROOT="$(resolve_plugin_root.sh "dev-workflow@noahlz.github.io")"
+#   CLAUDE_PLUGIN_ROOT="$(./resolve_plugin_root.sh "dev-workflow@noahlz.github.io")"
 #   export CLAUDE_PLUGIN_ROOT
 
 set -e

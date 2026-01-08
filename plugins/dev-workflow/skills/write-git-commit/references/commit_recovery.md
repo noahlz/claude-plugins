@@ -13,9 +13,9 @@
     - Stop workflow
   - If "Commit without metrics":
     - Warn: "Commit will proceed WITHOUT cost metrics"
-    - Return to section 3 and re-run commit without validating metrics
+    - Return to Step 3 and re-run commit without validating metrics
   - If "Retry fetching metrics":
-    - Return to section 2
+    - Return to Step 2
 
 ⚠ If status is "git_error":
   - Display error: "Failed to create git commit"

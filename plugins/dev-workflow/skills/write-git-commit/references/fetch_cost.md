@@ -27,7 +27,7 @@ Extract these fields:
 
 - Store `SESSION_ID` from data.session_id
 - Store `CURRENT_COST` from data.current_cost (as JSON array string)
-- Proceed to Step 6 (Create Commit) with these values
+- Proceed to Step 5 (Create Commit) with these values
 
 ### ✗ If status is NOT "success"
 
@@ -41,4 +41,4 @@ Follow recovery procedures in `references/session_recovery.md`
 
 ## Next Step
 
-If successful: Return to SKILL.md Step 6 with SESSION_ID and CURRENT_COST captured.
+If successful: Return to SKILL.md Step 5 with SESSION_ID and CURRENT_COST captured.

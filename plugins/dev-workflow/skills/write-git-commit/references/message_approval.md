@@ -47,8 +47,54 @@ Add dark mode toggle to settings
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
+## Verification
+
+VERIFY (required before proceeding to User Approval Instructions)
+- [ ] Output includes ASCII box borders (━━━ characters)
+- [ ] Message displayed as plain text (direct output)
+
+If verification fails, re-read reference file and retry display.
+
+# User Approval Instructions
+
+## Action Required
+
+Use AskUserQuestion tool with these exact options:
+
+## Question Options
+
+**Question text:** "Approve this commit message?"
+
+**Options (use these exactly):**
+1. "Accept this message?" (Recommended)
+2. "Make changes"
+3. "Stop/Cancel commit"
+
+## Response Handling
+
+### ✓ If "Accept this message?"
+- Extract `COMMIT_SUBJECT` (first line of message)
+- Extract `COMMIT_BODY` (remaining lines, may be empty)
+- Proceed to Step 4 (Fetch Cost Data)
+
+### ✗ If "Make changes"
+- Return to Step 2 (Generate Commit Message)
+- Regenerate message based on user feedback
+- Display new message per to Message Display Instructions
+- Obtain user approval per User Approval Instructions
+- Loop until approved or cancelled
+
+### ✗ If "Stop/Cancel commit"
+- Exit workflow immediately
+- Do NOT proceed to Step 4
+- Return control to user
+
+## Important Notes
+
+- This approval blocks all subsequent steps
+- User must explicitly approve before fetching cost data or creating commit
+- Do not proceed on assumed approval
+
 ## Next Step
 
-After displaying the message, return to SKILL.md Step 4 for user approval.
-
-DO NOT proceed to approval in this step - display must be separate.
+If approved: Return to SKILL.md Step 4 with COMMIT_SUBJECT and COMMIT_BODY extracted.
