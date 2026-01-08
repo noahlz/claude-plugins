@@ -69,7 +69,9 @@ Path: ../../../lib/common.js
 
 ### Testing Approach
 
-Use this project's own  `dev-workflow:run-and-fix-tests` skill for regression testing changes and fixing bugs.
+ALWAYS use the `dev-workflow:run-and-fix-tests` skill when testing changes.
+
+Use the experimental node mocking module. Add the flag `--experimental-test-module-mocks` to enable
 
 ### Dependencies
 
