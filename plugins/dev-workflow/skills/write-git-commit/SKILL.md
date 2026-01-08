@@ -33,9 +33,22 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 ### B. Workflow Narration
 
-ALWAYS use "Step" instead of "Section" when narrating each step in this workflow. 
+ALWAYS use "Step" instead of "Section" when narrating each step in this workflow.
 - Yes: "Step 1. Generate and Approve Commit Message"
 - No: "Section 1. Generate and Approve Commit Message"
+
+### C. Delegation Protocol
+
+When instructions say `DELEGATE_TO: [file]`:
+
+1. **STOP** - Do not proceed based on assumed knowledge
+2. **READ** - Use the Read tool to read the referenced file
+3. **EXECUTE** - Follow the instructions in that file exactly
+4. **VERIFY** - If a VERIFY checklist exists, confirm each item
+5. **CONTINUE** - Only then proceed to the next step
+
+**Why This Matters:**
+Reference files contain formatting requirements, templates, and constraints not visible in SKILL.md. Skipping the read step causes incorrect workflow execution.
 
 ---
 
@@ -62,9 +75,9 @@ When you see inline bash code blocks (```bash), you MUST:
 - NEVER narrate execution. ALWAYS execute the code block command
 - NEVER fabricate outputs (i.e. if the tool / command fails)
  
- ## 1. Generate and Approve Commit Message
+## 1. Stage and Analyze Changes
 
-✗### 1a. Stage changes
+### 1a. Stage changes
 
 **Step description**: "Staging all uncommitted changes"
 
@@ -82,35 +95,75 @@ git add -A
 git diff --cached
 ```
 
-### 1c. Generate a Commit Message
+## 2. Generate Commit Message
 
 **Step description**: "Generating commit message"
 
-Generate a commit message based on diff changes and the current chat context, but do not display it to the user yet.
+DELEGATE_TO: `references/message_guidelines.md`
 
-Read `references/message_guidelines.md` for MANDATORY instructions on crafting a commit message.
+Generate commit message following those guidelines. Do not display to user yet.
 
-### 1d. Display the Proposed Message
+Store internally as:
+- `COMMIT_SUBJECT`: First line
+- `COMMIT_BODY`: Remaining lines (may be empty)
 
-Read `references/message_display.md` for MANDATORY instructions on displaying the message to the user.
+## 3. Display Message to User
 
-### 1e. Obtain User Approval or Revisions
+**Step description**: "Displaying proposed commit message"
 
-⚠️ CRITICAL DECISION POINT: This step MUST be completed before any further action
+DELEGATE_TO: `references/message_display.md`
 
-Read `references/user_approval.md` for MANDATORY instructions on obtaining user approval.
+VERIFY (required before Step 4):
+- [ ] Output includes ASCII box borders (━━━ characters)
+- [ ] Message displayed as plain text (direct output)
+- [ ] Display is SEPARATE from approval request
 
-## 2. Fetch Cost Data
+If verification fails, re-read reference file and retry display.
 
-Read `references/fetch_cost.md` for MANDATORY instructions on obtaining cost data. 
+## 4. Obtain User Approval
 
-**⚠️ N️OTE:** Do NOT ever make a commit with missing or contrived/estimated cost metrics. If you are encountering errors with `ccusage`, IMMEDIATELY stop the workflow ask the User for guidance.
+**Step description**: "Awaiting user approval"
 
-## 3. Create Commit
+BLOCKING: This step MUST complete with user approval before Step 5.
 
-Read `references/create_commit.md` for MANDATORY instructions on creating the git commit.
+DELEGATE_TO: `references/user_approval.md`
 
-## 4. Summary 
+**Quick Reference (full details in reference file):**
+- Use AskUserQuestion with exactly these options:
+  - "Accept this message?" (Recommended)
+  - "Make changes"
+  - "Stop/Cancel commit"
+
+→ Handle user response per reference file instructions
+→ Extract `COMMIT_SUBJECT` and `COMMIT_BODY` if approved
+→ Proceed to Step 5 only if approved
+
+## 5. Fetch Cost Data
+
+**Step description**: "Fetching session cost metrics"
+
+DELEGATE_TO: `references/fetch_cost.md`
+
+**Quick Reference:**
+- Execute commit-workflow.js prepare command
+- Parse JSON output for session_id and current_cost
+- Handle errors per reference file recovery procedures
+
+⚠️ NOTE: Do NOT ever make a commit with missing or contrived cost metrics. If encountering errors with ccusage, IMMEDIATELY stop and ask user for guidance.
+
+## 6. Create Commit
+
+**Step description**: "Creating git commit with cost metrics"
+
+DELEGATE_TO: `references/create_commit.md`
+
+**Quick Reference:**
+- Execute commit-workflow.js commit command
+- Pass session_id, costs, commit message via stdin
+- Validate cost metrics before committing
+- Parse commit SHA from output
+
+## 7. Summary
 
 → Display success summary:
 ```

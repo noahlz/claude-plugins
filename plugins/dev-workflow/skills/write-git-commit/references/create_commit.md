@@ -1,9 +1,14 @@
- **IMPORTANT:** Do NOT improvise git commit creation logic - `commit-workflow.js` handles all commit creation logic. ONLY use that script for creating git commits (per these instrucitons). 
+# Commit Creation Instructions
 
-→ Execute using Bash tool:
+## Important
+
+Do NOT improvise git commit logic - commit-workflow.js handles all commit creation. ONLY use that script.
+
+## Bash Command
+
 ```bash
 # Replace __PLUGIN_ROOT__, __SESSION_ID__, __CURRENT_COST__, __COMMIT_SUBJECT__, and __COMMIT_BODY__
-# with captured/approved literal values from previous sections
+# with captured/approved literal values from previous steps
 CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
 node "__PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js" commit \
   --session-id "__SESSION_ID__" \
@@ -15,28 +20,41 @@ __COMMIT_BODY__
 EOF
 ```
 
-**Value replacements required:**
-- `__SESSION_ID__`: Literal SESSION_ID captured from Section 2 JSON output
-- `__CURRENT_COST__`: Literal CURRENT_COST captured from Section 2 JSON output (JSON array string)
-- `__COMMIT_SUBJECT__`: Subject line approved by user in Section 1e
-- `__COMMIT_BODY__`: Body lines approved by user in Section 1e (omit entire section if body is empty)
+## Value Replacements
 
-**Format rules:**
-  - If body is empty: Only subject (no blank line)
-  - If body exists: Subject, blank line, then body
+- `__SESSION_ID__`: Literal session ID from Step 5
+- `__CURRENT_COST__`: Literal JSON array from Step 5
+- `__COMMIT_SUBJECT__`: Subject line from Step 4
+- `__COMMIT_BODY__`: Body from Step 4 (omit blank line if empty)
 
-⚠ IMPORTANT:
-  - This bash command should NOT trigger permission prompts - user already approved message in section 1e and session in section 2
-  - Session ID and costs are passed as CLI arguments (not env vars)
-  - Commit message is passed via stdin (heredoc)
-  - Ensure `__CURRENT_COST__` remains a quoted JSON string
+## Format Rules
 
-→ Validate cost metrics before sending commit:
-  - Check `COMMIT_COST` is array with at least one entry
-  - Check at least one model has cost > 0
-  - If invalid: Return to section 2 to re-fetch metrics
+- If body is empty: Only subject (no blank line)
+- If body exists: Subject, blank line, then body
 
-→ Parse JSON output to extract `COMMIT_SHA` from `data.commit_sha`
+## Validation
 
-✓ If status is "success" → Continue to section 4  
-✗ If status is not "success" → Follow the procedures defined in `references/commit_recovery.md`
+Before executing:
+- Check `CURRENT_COST` is array with at least one entry
+- Check at least one model has cost > 0
+- If invalid: Return to Step 5 to re-fetch metrics
+
+## Parse Output
+
+Extract `COMMIT_SHA` from JSON data.commit_sha field
+
+## Response Handling
+
+- ✓ If status is "success": Continue to Step 7 with commit SHA
+- ✗ If status is NOT "success": Follow procedures in `references/commit_recovery.md`
+
+## Important Notes
+
+- This command should NOT trigger permission prompts (user approved in Step 4)
+- Session ID and costs are CLI arguments, not env vars
+- Commit message passed via stdin (heredoc)
+- Keep `__CURRENT_COST__` as quoted JSON string
+
+## Next Step
+
+If successful: Return to SKILL.md Step 7 with COMMIT_SHA for summary display.
