@@ -66,13 +66,11 @@ When instructed to "Execute from [file.md]" or "Execute instructions from [file.
 
 **SKILL_NAME**: run-and-fix-tests
 
-**CLAUDE_PLUGIN_ROOT**: !`if [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then $HOME/.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; elif [ -x "./.claude/resolve_plugin_root.sh" ]; then ./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; else echo "⚠️ Run dev-workflow:setup to install resolver"; fi`
-
 ---
 
-If you see "⚠️ Run dev-workflow:setup" above, the resolver script is missing. Stop and run the setup skill.
+At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" output message and store it for use in bash commands below.
 
-**⚠️ CRITICAL**: Use the `CLAUDE_PLUGIN_ROOT` value shown above in subsequent commands in this skill. Either interpolate the literal value or prefix each bash command with the value i.e. `CLAUDE_PLUGIN_ROOT=(literal value) (bash command)`
+✓ If `SKILL_BASE_DIR` is present, proceed with the workflow.
 
 ## 1. Detect Build Configuration
 
@@ -99,7 +97,7 @@ Execute ONLY if Section 1 shows "⚠️ Config setup required".
 
 → Execute load-config script to output configuration:
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/load-config.js "${CLAUDE_PLUGIN_ROOT}"
+node "$SKILL_BASE_DIR/scripts/load-config.js"
 ```
 
 **⚠️ CRITICAL - Capture Output Values**

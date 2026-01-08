@@ -51,10 +51,10 @@ Only narrate if a step has a defined "STEP_DESCRIPTION"
 BEFORE narrating any step, check:  
 1. Does this step have a STEP_DESCRIPTION: field?
 2. If YES → Narrate the STEP_DESCRIPTION value only
-3. If NO → DO NOT narrate anything, proceed silently to execute
+3. If NO → DO NOT narrate anything. Just execute WITHOUT a narration.
 
-Silent operations (no narration):
-- Reading delegation files per DELEGATE_TO instructions
+Examples of silent narration (just execute the steps, DO NOT print anything):
+- Read delegation files per DELEGATE_TO instructions
 - Executing sub-steps within a delegation
 - Internal step processing without user-facing output
 
@@ -64,22 +64,22 @@ Silent operations (no narration):
 
 **SKILL_NAME**: write-git-commit
 
-**CLAUDE_PLUGIN_ROOT**: !`if [ -x "$HOME/.claude/resolve_plugin_root.sh" ]; then $HOME/.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; elif [ -x "./.claude/resolve_plugin_root.sh" ]; then ./.claude/resolve_plugin_root.sh "dev-workflow@noahlz.github.io"; else echo "⚠️ Run dev-workflow:setup to install resolver"; fi`
-
 **SESSION_ID**: !`cat .claude/settings.plugins.write-git-commit.json 2>/dev/null | node -pe 'JSON.parse(require("fs").readFileSync(0, "utf-8")).sessionId' || echo "NOT_CONFIGURED"`
 
 ---
 
-✗ If you see "⚠️ Run dev-workflow:setup" above, a key prerequisite has failed → Exit this skill immediately.  
-✓ If prerequisites are met, read instructions from `references/variable_rules.md` for MANDATORY environment variable scoping requirements.
+At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" output message and store it for use in bash commands below.
 
-**NOTE:** If you see "NOT_CONFIGURED" above, the sessionId will be resolved and saved to configuration in a later step.  
+✓ If `SKILL_BASE_DIR` is present, proceed with the workflow.
 
-**⚠️ CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
+**NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED" above, it will be resolved and saved to configuration in a later step.
+
+**HOW TO EXECUTE BASH CODE IN THIS SKILL:**
 
 When you see inline bash code blocks (```bash), you MUST:
-- MUST FIRST place the skill variables `__PLUGIN_ROOT__` and `__SESSION_ID__` with their literal values.
-- MUST execute the modified code block using the Bash tool
+- Use `$SKILL_BASE_DIR` to construct script paths (already extracted from skill startup output)
+- Use `$SESSION_ID` for session ID references
+- Execute the code block using the Bash tool
 - NEVER narrate execution. ALWAYS execute the code block command
 - NEVER fabricate outputs (i.e. if the tool / command fails)
  

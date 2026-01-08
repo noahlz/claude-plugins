@@ -7,9 +7,8 @@ Execute commit-workflow.js prepare command to fetch session cost metrics.
 ## Bash Command
 
 ```bash
-# Replace __PLUGIN_ROOT__ and __SESSION_ID__ with literal values from Step 0
-CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node "__PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js" prepare "$(pwd)" "__SESSION_ID__"
+# Use $SKILL_BASE_DIR (extracted from skill startup) and $SESSION_ID
+node "$SKILL_BASE_DIR/scripts/commit-workflow.js" prepare "$(pwd)" "$SESSION_ID"
 ```
 
 ## Parse JSON Output

@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
 import * as git from './git-operations.js';
-import { detectPluginRoot } from '../../../lib/common.js';
 import { parseJsonFile } from '../../../lib/config-loader.js';
 import * as ccusage from './ccusage-operations.js';
 
@@ -224,12 +223,11 @@ function saveConfig({ baseDir = '.', sessionId } = {}) {
  * Prepare for commit: fetch costs for a given session ID
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
- * @param {string} options.pluginRoot - Plugin root
  * @param {string} options.sessionId - Session ID to fetch costs for (required if no config)
  * @returns {Promise<object>} - { status, data, message }
  */
 async function prepare(options = {}) {
-  const { baseDir = '.', pluginRoot, sessionId: providedSessionId } = options;
+  const { baseDir = '.', sessionId: providedSessionId } = options;
 
   try {
     // Handle "NOT_CONFIGURED" special value from preprocessing
@@ -321,13 +319,11 @@ async function readCommitMessage(inputStream = null) {
  * Note: SESSION_ID and CURRENT_COST are expected to be provided by skill orchestration
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
- * @param {string} options.pluginRoot - Plugin root
  * @returns {Promise<object>} - { status, data, message }
  */
 async function commit(options = {}) {
   const {
     baseDir = '.',
-    pluginRoot,
     sessionId: providedSessionId = null,
     costs: providedCosts = null,
     message: providedMessage = null
@@ -456,7 +452,6 @@ async function commit(options = {}) {
  */
 async function main() {
   const action = process.argv[2];
-  const pluginRoot = detectPluginRoot();
 
   let result;
   let outputFile;
@@ -496,7 +491,7 @@ async function main() {
         const baseDir = args[0] || '.';
         const sessionId = args[1] || null;
         outputFile = args[2];
-        result = await prepare({ baseDir, pluginRoot, sessionId });
+        result = await prepare({ baseDir, sessionId });
         break;
       }
 
@@ -518,7 +513,6 @@ async function main() {
 
         result = await commit({
           baseDir: '.',
-          pluginRoot,
           sessionId,
           costs
         });

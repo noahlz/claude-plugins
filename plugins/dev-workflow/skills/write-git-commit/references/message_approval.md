@@ -1,3 +1,5 @@
+Display the proposed commit message with AskUserQuestion confirmation per the following instructions:
+
 # Message Display Instructions
 
 ## Action Required
@@ -25,15 +27,6 @@ Proposed commit message:
 - `[COMMIT_SUBJECT]`: The subject line you generated (first line)
 - `[COMMIT_BODY]`: The body bullets you generated (may be empty)
 
-## Anti-patterns (DO NOT DO)
-
-❌ Showing message without ASCII borders
-❌ Using `-` or `=` characters instead of ━
-❌ Using Read/Write/Edit tools to display
-❌ Combining display with "Do you approve?" question
-❌ Summarizing message instead of showing exact text
-❌ Describing the message ("The message says...") instead of displaying it
-
 ## Example Output
 
 ```
@@ -59,13 +52,7 @@ If verification fails, re-read reference file and retry display.
 
 ## Action Required
 
-Use AskUserQuestion tool with these exact options:
-
-## Question Options
-
-**Question text:** "Approve this commit message?"
-
-**Options (use these exactly):**
+Use AskUserQuestion tool to ask "Approve this commit message?" Options:
 1. "Accept this message?" (Recommended)
 2. "Make changes"
 3. "Stop/Cancel commit"

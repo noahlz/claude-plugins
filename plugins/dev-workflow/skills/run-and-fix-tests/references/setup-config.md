@@ -2,14 +2,11 @@
 
 Execute ONLY if config check failed (exit 1 from Section 1).
 
-Parameters required:
-- CLAUDE_PLUGIN_ROOT: Plugin root path (already exported from Section 0)
-
 ## Auto-Detection and Selection
 
 → Execute detection script:
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/skills/run-and-fix-tests/scripts/detect-and-resolve.js "${CLAUDE_PLUGIN_ROOT}"
+node "$SKILL_BASE_DIR/scripts/detect-and-resolve.js" "$SKILL_BASE_DIR/../.."
 ```
 
 **What this does:**

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { detectPluginRoot } from '../../../lib/common.js';
 import { parseJsonFile } from '../../../lib/config-loader.js';
 import { findFiles, fileExists, getNormalizedDir } from '../../../lib/file-utils.js';
 import path from 'path';
@@ -95,8 +94,14 @@ export function detectTools(options = {}) {
  * Main entry point
  */
 async function main() {
-  const pluginRoot = process.argv[2] || detectPluginRoot();
+  const pluginRoot = process.argv[2];
   const rootDir = process.argv[3] || '.';
+
+  if (!pluginRoot) {
+    console.error('Error: Plugin root path required as first argument');
+    console.error('Usage: node detect-and-resolve.js <plugin-root> [root-dir]');
+    process.exit(1);
+  }
 
   try {
     const detected = detectTools({ pluginRoot, rootDir });

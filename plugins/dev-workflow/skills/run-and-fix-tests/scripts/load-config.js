@@ -179,16 +179,9 @@ export function formatJson(config) {
  * Main entry point
  */
 async function main() {
-  const pluginRoot = process.argv[2];
-  const format = process.argv[3] || 'bash'; // 'bash' or 'json'
+  const format = process.argv[2] || 'bash'; // 'bash' or 'json'
 
-  if (!pluginRoot) {
-    console.error('Error: CLAUDE_PLUGIN_ROOT required as first argument');
-    console.error('Usage: node load-config.js <plugin-root-path> [bash|json]');
-    process.exit(1);
-  }
-
-  const result = loadConfig({ pluginRoot, baseDir: '.' });
+  const result = loadConfig({ baseDir: '.' });
 
   if (result.errors.length > 0) {
     result.errors.forEach(err => console.error(`Error: ${err}`));

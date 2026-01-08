@@ -1,17 +1,3 @@
-import { execSync } from 'child_process';
-
-/**
- * Get CLAUDE_PLUGIN_ROOT from environment variable
- * @returns {string} - Path to plugin root
- * @throws {Error} If CLAUDE_PLUGIN_ROOT is not set
- */
-export function detectPluginRoot() {
-  if (!process.env.CLAUDE_PLUGIN_ROOT) {
-    throw new Error('CLAUDE_PLUGIN_ROOT environment variable not set. Skill prerequisites must execute first.');
-  }
-  return process.env.CLAUDE_PLUGIN_ROOT;
-}
-
 /**
  * Resolve path variables like {logDir}
  * @param {string} pathStr - Path string with variables

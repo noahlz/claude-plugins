@@ -7,25 +7,23 @@ Do NOT improvise git commit logic - commit-workflow.js handles all commit creati
 ## Bash Command
 
 ```bash
-# Replace __PLUGIN_ROOT__, __SESSION_ID__, __CURRENT_COST__, __COMMIT_SUBJECT__, and __COMMIT_BODY__
-# with captured/approved literal values from previous steps
-CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-node "__PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js" commit \
-  --session-id "__SESSION_ID__" \
-  --costs "__CURRENT_COST__" \
+# Use $SKILL_BASE_DIR (extracted from skill startup) and captured values
+node "$SKILL_BASE_DIR/scripts/commit-workflow.js" commit \
+  --session-id "$SESSION_ID" \
+  --costs "$CURRENT_COST" \
   <<'EOF'
-__COMMIT_SUBJECT__
+$COMMIT_SUBJECT
 
-__COMMIT_BODY__
+$COMMIT_BODY
 EOF
 ```
 
 ## Value Replacements
 
-- `__SESSION_ID__`: Literal session ID from Step 4
-- `__CURRENT_COST__`: Literal JSON array from Step 4
-- `__COMMIT_SUBJECT__`: Subject line from Step 3
-- `__COMMIT_BODY__`: Body from Step 3 (omit blank line if empty)
+- `$SESSION_ID`: Literal session ID from Step 4
+- `$CURRENT_COST`: Literal JSON array from Step 4
+- `$COMMIT_SUBJECT`: Subject line from Step 3
+- `$COMMIT_BODY`: Body from Step 3 (omit blank line if empty)
 
 ## Format Rules
 
@@ -51,9 +49,9 @@ Extract `COMMIT_SHA` from JSON data.commit_sha field
 ## Important Notes
 
 - This command should NOT trigger permission prompts (user approved in Step 3)
-- Session ID and costs are CLI arguments, not env vars
+- Session ID and costs are CLI arguments
 - Commit message passed via stdin (heredoc)
-- Keep `__CURRENT_COST__` as quoted JSON string
+- Keep `$CURRENT_COST` as quoted JSON string
 
 ## Next Step
 

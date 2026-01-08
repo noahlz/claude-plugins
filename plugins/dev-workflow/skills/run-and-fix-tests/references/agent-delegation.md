@@ -5,7 +5,6 @@ Common procedures for delegating work to and resuming sub-agents (build-fixer, t
 ## BUILD_FIXER_ENV_VARS
 
 Environment variables to provide when delegating to build-fixer agent:
-- `CLAUDE_PLUGIN_ROOT` - actual path (e.g., "/Users/user/.claude/plugins/dev-workflow@noahlz.github.io")
 - `BUILD_COUNT` - number of build steps (e.g., "1" or "2")
 - `BUILD_{i}_CMD` - actual command for step i (e.g., "npm run build")
 - `BUILD_{i}_LOG` - actual log path for step i (e.g., "dist/npm-build.log")

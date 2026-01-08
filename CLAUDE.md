@@ -18,7 +18,6 @@ claude-plugins/
 │           │   │   └── defaults/     # Default configs for build tools
 │           │   ├── references/
 │           │   └── scripts/
-│           ├── setup/
 │           └── write-git-commit/
 │               ├── references/
 │               └── scripts/
@@ -47,7 +46,26 @@ claude-plugins/
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
 - Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
 
-**IMPORTANT** Remember that environment variables (i.e. set via `export KEY=VALUE`) do not presist between Bash tool invocations. Therefore, Scripts or Bash commands that call scripts **MUST** output values to the console (stdout) i.e. `echo KEY=VALUE` for the skill to use later.  
+**IMPORTANT** Remember that environment variables (i.e. set via `export KEY=VALUE`) do not presist between Bash tool invocations. Therefore, Scripts or Bash commands that call scripts **MUST** output values to the console (stdout) i.e. `echo KEY=VALUE` for the skill to use later.
+
+### Skill Script Execution
+
+Skills in this plugin execute scripts located at the plugin level using the skill base directory provided by Claude Code at invocation:
+
+**Base directory extraction:**
+- Skills extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" message at startup
+- Example: `/Users/username/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
+
+**Script execution:**
+- Scripts are invoked using: `node "$SKILL_BASE_DIR/scripts/script-name.js"`
+- Scripts use relative paths to access shared libraries: `require('../../../lib/common.js')`
+
+**Relative path structure:**
+```
+From: skills/write-git-commit/scripts/script.js
+To:   lib/common.js
+Path: ../../../lib/common.js
+```
 
 ### Testing Approach
 

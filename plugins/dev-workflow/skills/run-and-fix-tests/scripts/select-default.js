@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { detectPluginRoot } from '../../../lib/common.js';
 import { writeJsonFile, parseJsonFile } from '../../../lib/config-loader.js';
 import { copyFile, fileExists, ensureClaudeDir } from '../../../lib/file-utils.js';
 import path from 'path';
@@ -161,12 +160,12 @@ function parseDetectedTools(detectedJson) {
  * Main entry point
  */
 async function main() {
-  const pluginRoot = process.argv[2] || detectPluginRoot();
+  const pluginRoot = process.argv[2];
   const detectedJson = process.argv[3];
   const targetDir = process.argv[4] || '.';
 
-  if (!detectedJson) {
-    console.error('Error: detected tools JSON required as second argument');
+  if (!pluginRoot || !detectedJson) {
+    console.error('Error: plugin root and detected tools JSON required');
     console.error('Usage: node select-default.js <plugin-root> <detected-json> [target-dir]');
     process.exit(1);
   }
