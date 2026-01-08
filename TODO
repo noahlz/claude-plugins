@@ -1,3 +1,4 @@
-- Use mock of ccusage (never CLI) for all write-git-commit tests
+- write-git-commit skill still sometimes doesn't resolve the script path properly
+- write-git-commit skill sometimes doesn't execute properly (insufficient guardrails). Probably should be in a sub-agent.
 - Revise run-and-fix-test skill to be more concise / less redundant (per commit 227e38b08d)
 - Revise sub-agents for fixing build / tests to behave consistently / properly (interative, explaining steps)
