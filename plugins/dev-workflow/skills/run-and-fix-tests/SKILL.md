@@ -36,7 +36,7 @@ Also activate this skill when the user requests testing using phrases like:
 
 ---
 
-**⚠️ CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
+**⚠️  CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
 
 When you see inline bash code blocks (```bash), you MUST:
 - **TEXT SUBSTITUTION:** Replace `{{SKILL_BASE_DIR}}` with literal path from "Base directory for this skill:" message

@@ -27,9 +27,9 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 ### A. Workflow Order of Operations
 
-This skill defines a very precise workflow that MUST be followed exactly.
-
-**DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
+- Follow the Workflow instructions **EXACTLY** as written. 
+- **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
+- This Workflow is **interactive**. You must ALWAYS get user approval per Step 3 before proceeding to the next step.
 
 ### B. Workflow Delegation Protocol
 
@@ -46,14 +46,18 @@ Reference files contain formatting requirements, templates, and constraints not 
 
 ### C. Workflow Narration
 
-Only narrate if a step has a defined "STEP_DESCRIPTION" 
+Only narrate if a step has a defined "STEP_DESCRIPTION"
 
 BEFORE narrating any step, check:  
 1. Does this step have a STEP_DESCRIPTION: field?
 2. If YES → Narrate the STEP_DESCRIPTION value only
 3. If NO → DO NOT narrate anything. Just execute WITHOUT a narration.
 
-Examples of silent narration (just execute the steps, DO NOT print anything):
+DO NOT:
+- Narrate the section names. I.e. do NOT print messages like "Step 1a. Stage changes"
+- Narrate reference you're reading.  I.e do NOT print messages like "Reading commit message approval instructions." 
+
+Examples of silent steps (just execute the steps, DO NOT print anything):
 - Read delegation files per DELEGATE_TO instructions
 - Executing sub-steps within a delegation
 - Internal step processing without user-facing output
@@ -86,8 +90,11 @@ When you see inline bash code blocks (```bash), you MUST:
 
 **Example:**
 ```
-Template: node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare
-After substitution: node "/Users/noahlz/.claude/plugins/.../write-git-commit/scripts/commit-workflow.js" prepare
+#Template:
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare
+
+# After substitution:
+node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js" prepare
 ```
  
 ## 1. Stage and Analyze Changes
@@ -138,25 +145,13 @@ DELEGATE_TO: `references/message_approval.md`
 
 DELEGATE_TO: `references/fetch_cost.md`
 
-**Quick Reference:**
-- Execute commit-workflow.js prepare command
-- Parse JSON output for session_id and current_cost
-- Handle errors per reference file recovery procedures
-
-⚠️ NOTE: Do NOT ever make a commit with missing or contrived cost metrics. If encountering errors with ccusage, IMMEDIATELY stop and ask user for guidance.
+⚠️  **NOTE:** Do NOT ever make a commit with missing or contrived cost metrics. If encountering errors with ccusage, IMMEDIATELY STOP and ask user for guidance.
 
 ## 5. Create Commit
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
 DELEGATE_TO: `references/create_commit.md`
-
-
-**Quick Reference:**
-- Execute commit-workflow.js commit command
-- Pass session_id, costs, commit message via stdin
-- Validate cost metrics before committing
-- Parse commit SHA from output
 
 ## 6. Summary
 
