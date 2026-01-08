@@ -34,7 +34,6 @@ claude plugin install dev-workflow@noahlz.github.io
 
 | Skill | Description | Command | Documentation |
 |-------|-------------|---------|---------------|
-| [`setup`](./plugins/dev-workflow/skills/setup/SKILL.md) | Set up plugin resolver script required by all dev-workflow skills. **Run this skill once after installation.** | `dev-workflow:setup` | [README.md](./plugins/dev-workflow/skills/setup/README.md) |
 | [`run-and-fix-tests`](./plugins/dev-workflow/skills/run-and-fix-tests/SKILL.md) | Run tests with clean output and fix any failures using the `test-fixer` agent. | `/dev-workflow:test` (or `/test`) | [README.md](./plugins/dev-workflow/skills/run-and-fix-tests/README.md) |
 | [`write-git-commit`](./plugins/dev-workflow/skills/write-git-commit/SKILL.md) | Create git commits with Claude Code cost metrics embedded in commit footers. Runs in sub-agent via `context: fork` | `/dev-workflow:commit` (or `/commit`) | [README.md](./plugins/dev-workflow/skills/write-git-commit/README.md) |
 
@@ -67,7 +66,13 @@ Alternatively, update the plugin version number in `marketplace.json` and then t
 
 ### Plugin Root Resolution
 
-Skills need to locate the plugin installation directory at runtime. The [`resolve_plugin_root.sh`](./.claude/resolve_plugin_root.sh) script handles this automatically by querying `~/.claude/plugins/installed_plugins.json` to find the installation path.
+Skills need to locate their install directory at runtime Fortunately, when a skill activates, Claude receives the skill source location as a message like:
+
+```
+Base directory for this skill: /User/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit
+```
+
+As the skills in this plugin use scripts heavily, they rely heavily on this behavior to locate the scripts accurate. If Anthropic changes this behavior, the skills could break.
 
 Related: [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https://github.com/anthropics/claude-code/issues/9354)
 
