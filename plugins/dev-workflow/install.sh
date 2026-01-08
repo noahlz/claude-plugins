@@ -48,7 +48,7 @@ echo "Installing plugin dependencies..."
 # First, try the standard cache location with 'latest' version
 
 PLUGIN_BASE=".claude/plugins/cache/noahlz-github-io/dev-workflow"
-PLUGIN_VERSION=$(ls -lht -1 $HOME/$PLUGIN_BASE)
+PLUGIN_VERSION=$(ls -lht -1 $HOME/$PLUGIN_BASE | head -n 1)
 PLUGIN_DIR=$HOME/$PLUGIN_BASE/$PLUGIN_VERSION
 
 if [ ! -d "$PLUGIN_DIR" ]; then

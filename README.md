@@ -36,7 +36,9 @@ claude plugin install dev-workflow@noahlz.github.io
 |-------|-------------|---------|---------------|
 | [`setup`](./plugins/dev-workflow/skills/setup/SKILL.md) | Set up plugin resolver script required by all dev-workflow skills. **Run this skill once after installation.** | `dev-workflow:setup` | [README.md](./plugins/dev-workflow/skills/setup/README.md) |
 | [`run-and-fix-tests`](./plugins/dev-workflow/skills/run-and-fix-tests/SKILL.md) | Run tests with clean output and fix any failures using the `test-fixer` agent. | `/dev-workflow:test` (or `/test`) | [README.md](./plugins/dev-workflow/skills/run-and-fix-tests/README.md) |
-| [`write-git-commit`](./plugins/dev-workflow/skills/write-git-commit/SKILL.md) | Create git commits with Claude Code cost metrics embedded in commit footers. | `/dev-workflow:commit` (or `/commit`) | [README.md](./plugins/dev-workflow/skills/write-git-commit/README.md) |
+| [`write-git-commit`](./plugins/dev-workflow/skills/write-git-commit/SKILL.md) | Create git commits with Claude Code cost metrics embedded in commit footers. Runs in sub-agent via `context: fork` | `/dev-workflow:commit` (or `/commit`) | [README.md](./plugins/dev-workflow/skills/write-git-commit/README.md) |
+
+**Note on v2.1.0+:** While Claude Code v2.1.0 [introduced](https://github.com/anthropics/claude-code/commit/870624fc1581a70590e382f263e2972b3f1e56f5) automatic slash command exposure for local skills (`~/.claude/skills`), plugin-installed skills require custom command definitions in the `/commands/` directory to appear in the slash menu. This is a known limitation of the plugin architecture.
 
 #### Agents
 

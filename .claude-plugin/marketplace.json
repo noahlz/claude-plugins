@@ -6,12 +6,12 @@
   },
   "metadata": {
     "description": "Dev workflows for claude code.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "dev-workflow",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "description": "Plugins for claude code workflow productivity.",
       "author": {
         "name": "Noah Zucker",

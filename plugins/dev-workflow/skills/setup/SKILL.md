@@ -1,6 +1,18 @@
 ---
 name: setup
 description: Set up requirements and plugin resolver script for dev-workflow skills. Creates resolve_plugin_root.sh that is required by all dev-workflow skills to resolve plugin paths.
+user-invocable: true
+allowed-tools:
+  - Bash(mkdir *)
+  - Bash(cat *)
+  - Bash(chmod *)
+  - Bash(ls *)
+  - Bash(command *)
+  - Bash(jq *)
+  - Bash(echo *)
+  - Read
+  - AskUserQuestion
+
 ---
 
 This skill checks baseline requirements and sets up the `resolve_plugin_root.sh` script that is required by all dev-workflow skills.

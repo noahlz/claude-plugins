@@ -1,6 +1,13 @@
 ---
 name: write-git-commit
 description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user mentions "commit", "commit my changes", "commit this", "save to git", "check in".
+user-invocable: true
+context: fork
+allowed-tools:
+  - Bash(git *)
+  - Bash(node *)
+  - Read
+  - Grep
 
 ---
 

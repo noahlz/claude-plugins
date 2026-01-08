@@ -1,6 +1,21 @@
 ---
 name: run-and-fix-tests
 description: Build the project, run tests and systematically fix any failures. Activate when user says: "run tests", "run the tests", "test this/it/the changes", "execute tests", "build and test", "fix tests", "make sure tests pass", "verify with tests", "check if tests work/pass", "verify the fix/changes", "see if this/it works", "check that/if it works", OR when user mentions "failing/failed tests", "test failures", "CI failing", "GitHub Actions failing", "tests not passing", OR after making code changes to verify they work, OR when tests are the logical next development step.
+user-invocable: true
+allowed-tools:
+  - Bash(npm *)
+  - Bash(yarn *)
+  - Bash(pnpm *)
+  - Bash(node *)
+  - Bash(git *)
+  - Bash(make *)
+  - Bash(cargo *)
+  - Bash(go *)
+  - Bash(python *)
+  - Read
+  - Grep
+  - Task
+
 ---
 
 This skill streamlines running and fixing unit tests in a project. It:
