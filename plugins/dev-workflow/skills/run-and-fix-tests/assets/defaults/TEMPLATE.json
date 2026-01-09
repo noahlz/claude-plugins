@@ -6,19 +6,22 @@
       "command": "__PLACEHOLDER_BUILD_COMMAND__",
       "logFile": "{outDir}/__PLACEHOLDER_BUILD_LOG__",
       "errorPattern": "__PLACEHOLDER_BUILD_ERROR_PATTERN__",
-      "workingDir": "."
+      "workingDir": ".",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "__PLACEHOLDER_TEST_ALL_COMMAND__",
       "resultsPath": "{outDir}/__PLACEHOLDER_TEST_RESULTS_PATH__",
-      "errorPattern": "__PLACEHOLDER_TEST_ERROR_PATTERN__"
+      "errorPattern": "__PLACEHOLDER_TEST_ERROR_PATTERN__",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "__PLACEHOLDER_TEST_SINGLE_COMMAND__",
       "resultsPath": "{outDir}/__PLACEHOLDER_TEST_SINGLE_RESULTS_PATH__",
-      "errorPattern": "__PLACEHOLDER_TEST_ERROR_PATTERN__"
+      "errorPattern": "__PLACEHOLDER_TEST_ERROR_PATTERN__",
+      "nativeOutputSupport": false
     }
   },
   "_instructions": "REPLACE ALL __PLACEHOLDER_*__ VALUES WITH YOUR PROJECT'S BUILD/TEST COMMANDS AND ERROR PATTERNS. resultsPath must be a file or directory containing structured test results (e.g., TAP, XML, or JSON)."

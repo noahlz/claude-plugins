@@ -15,6 +15,12 @@
 
 → Use TEST_SINGLE_CMD value with {testFile} replaced
 
+→ Check TEST_SINGLE_NATIVE_OUTPUT flag:
+
+**If TEST_SINGLE_NATIVE_OUTPUT=true:**
+→ Execute command WITHOUT stdout/stderr redirection
+
+**If TEST_SINGLE_NATIVE_OUTPUT=false:**
 → Redirect output to TEST_SINGLE_RESULTS_PATH
 
 Example bash command using literal values:
@@ -26,11 +32,24 @@ npm test -- path/to/test.js > dist/test-single-results.tap 2>&1
 
 → Use TEST_CMD value (captured literal from Section 2, e.g., "npm test")
 
-→ Redirect output to TEST_RESULTS_PATH value (e.g., "dist/test-results.tap")
+→ Use TEST_RESULTS_PATH value (e.g., "dist/test-results.tap")
 
-→ Optionally capture human-readable output to TEST_LOG value (e.g., "dist/test.log")
+→ Check TEST_NATIVE_OUTPUT flag:
 
-Example bash command using literal values:
+**If TEST_NATIVE_OUTPUT=true:**
+→ Tool natively supports file output (e.g., Maven's `--log-file`, npm's `--test-reporter-destination`)
+→ Execute command WITHOUT stdout/stderr redirection
+
+Example bash command:
+```bash
+npm test --silent -- --test-reporter=tap --test-reporter-destination=dist/test-results.tap
+```
+
+**If TEST_NATIVE_OUTPUT=false:**
+→ Tool requires stdout/stderr redirection
+→ Redirect output to TEST_RESULTS_PATH
+
+Example bash command:
 ```bash
 npm test > dist/test-results.tap 2>&1
 ```

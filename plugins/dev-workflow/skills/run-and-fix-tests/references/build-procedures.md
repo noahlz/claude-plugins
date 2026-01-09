@@ -22,7 +22,16 @@ Procedure to extract compilation errors from build log:
 Procedure to rebuild project and verify compilation:
 
 → Iterate through all builds by index (0 to BUILD_COUNT-1):
-  - For each i: `cd "${BUILD_${i}_WORKING_DIR}" && ${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
+  - For each i, check BUILD_${i}_NATIVE_OUTPUT flag:
+
+    **If BUILD_${i}_NATIVE_OUTPUT=true:**
+    - Tool natively supports file output, execute WITHOUT redirection:
+    - `cd "${BUILD_${i}_WORKING_DIR}" && ${BUILD_${i}_CMD}`
+
+    **If BUILD_${i}_NATIVE_OUTPUT=false:**
+    - Tool requires stdout/stderr redirection:
+    - `cd "${BUILD_${i}_WORKING_DIR}" && ${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
+
   - Track exit codes for each build step
 
 → After all builds complete:

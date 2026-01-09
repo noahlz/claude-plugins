@@ -5,19 +5,22 @@
     {
       "command": "dotnet build",
       "logFile": "{outDir}/dotnet.log",
-      "errorPattern": "error CS|FAILED"
+      "errorPattern": "error CS|FAILED",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "dotnet test",
       "resultsPath": "{outDir}/dotnet-test.txt",
-      "errorPattern": "FAILED|Failed:|error CS"
+      "errorPattern": "FAILED|Failed:|error CS",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "dotnet test --filter {testFile}",
       "resultsPath": "{outDir}/dotnet-test-single.txt",
-      "errorPattern": "FAILED|Failed:|error CS"
+      "errorPattern": "FAILED|Failed:|error CS",
+      "nativeOutputSupport": false
     }
   }
 }

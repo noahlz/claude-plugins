@@ -1,8 +1,8 @@
 → Use the BUILD_COUNT value from Section 2. If BUILD_COUNT=0, no build steps exist, proceed to step 4.
 
 → For each build index from 0 to (BUILD_COUNT - 1), use the captured literal values:
-  - BUILD_0_CMD, BUILD_0_LOG, BUILD_0_WORKING_DIR, BUILD_0_ERROR_PATTERN (if BUILD_COUNT >= 1)
-  - BUILD_1_CMD, BUILD_1_LOG, BUILD_1_WORKING_DIR, BUILD_1_ERROR_PATTERN (if BUILD_COUNT >= 2)
+  - BUILD_0_CMD, BUILD_0_LOG, BUILD_0_WORKING_DIR, BUILD_0_ERROR_PATTERN, BUILD_0_NATIVE_OUTPUT (if BUILD_COUNT >= 1)
+  - BUILD_1_CMD, BUILD_1_LOG, BUILD_1_WORKING_DIR, BUILD_1_ERROR_PATTERN, BUILD_1_NATIVE_OUTPUT (if BUILD_COUNT >= 2)
   - etc.
 
 → For each build:

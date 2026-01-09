@@ -5,19 +5,22 @@
     {
       "command": "sbt clean compile",
       "logFile": "{outDir}/sbt.log",
-      "errorPattern": "\\[error\\]|error:"
+      "errorPattern": "\\[error\\]|error:",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "sbt test",
       "resultsPath": "{outDir}/sbt-test.txt",
-      "errorPattern": "\\[error\\]|FAILED|failed|error:"
+      "errorPattern": "\\[error\\]|FAILED|failed|error:",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "sbt 'testOnly {testFile}'",
       "resultsPath": "{outDir}/sbt-test-single.txt",
-      "errorPattern": "\\[error\\]|FAILED|failed|error:"
+      "errorPattern": "\\[error\\]|FAILED|failed|error:",
+      "nativeOutputSupport": false
     }
   }
 }

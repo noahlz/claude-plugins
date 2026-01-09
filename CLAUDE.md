@@ -97,22 +97,42 @@ Inject dependencies as a `deps` parameter in function options:
 
 ### Running Tests: Silence is Golden
 
-**Redirect all test output to a TAP file. Only inspect output if tests fail.**
+Prefer tools with native silent + file output over stdout redirection. Only inspect output file if tests fail.
 
-Use TAP (Test Anything Protocol) reporter for machine-parsable results:
+**With native output support (preferred - no redirection):**
+
+Tools that natively support silent mode + file output:
 
 ```bash
+# Node.js native test runner with TAP reporter
 node --test --test-reporter=tap --test-reporter-destination=dist/test-results.tap test/**/*.test.js
 
-# Check exit code - only if non-zero, inspect the TAP file
-if [ $? -ne 0 ]; then
-  cat dist/test-results.tap
-fi
+# Maven with quiet mode and log file
+mvn test --quiet --log-file target/test.log
+```
+
+**Without native support (use redirection):**
+
+Tools that require stdout/stderr redirection:
+
+```bash
+# Generic test command - redirect output to file
+npm test > dist/test-results.tap 2>&1
 ```
 
 **Do NOT use `tee`.** Redirecting to file (not piping) keeps output silent and reduces context usage.
 
-**For npm scripts:** Use the bash exit code check pattern above, not interactive output.
+**Checking exit codes:**
+
+```bash
+# Run tests, redirect output based on tool capabilities
+npm test > dist/test-results.tap 2>&1
+
+# Check exit code - only inspect file if tests fail
+if [ $? -ne 0 ]; then
+  cat dist/test-results.tap
+fi
+```
 
 ### Troubleshooting Tests
 

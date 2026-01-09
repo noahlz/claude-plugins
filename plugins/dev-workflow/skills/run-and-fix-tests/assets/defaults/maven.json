@@ -5,19 +5,22 @@
     {
       "command": "mvn clean install --quiet --log-file {outDir}/build.log",
       "logFile": "{outDir}/build.log",
-      "errorPattern": "\\[ERROR\\]"
+      "errorPattern": "\\[ERROR\\]",
+      "nativeOutputSupport": true
     }
   ],
   "test": {
     "all": {
       "command": "mvn test --quiet --log-file {outDir}/test.log",
       "resultsPath": "{outDir}/surefire-reports",
-      "errorPattern": "\\[ERROR\\]|Tests run:.*Failures: [1-9]"
+      "errorPattern": "\\[ERROR\\]|Tests run:.*Failures: [1-9]",
+      "nativeOutputSupport": true
     },
     "single": {
       "command": "mvn test --quiet -Dtest={testFile} --log-file {outDir}/test.log",
       "resultsPath": "{outDir}/surefire-reports",
-      "errorPattern": "\\[ERROR\\]"
+      "errorPattern": "\\[ERROR\\]",
+      "nativeOutputSupport": true
     }
   }
 }

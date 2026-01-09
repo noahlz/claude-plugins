@@ -6,12 +6,14 @@
     "all": {
       "command": "./tests/run-all-tests.sh",
       "resultsPath": "{outDir}/shunit2-all.txt",
-      "errorPattern": "FAILED|failures=|Error"
+      "errorPattern": "FAILED|failures=|Error",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "bash tests/{testFile}",
       "resultsPath": "{outDir}/shunit2-single.txt",
-      "errorPattern": "FAILED|failures=|Error"
+      "errorPattern": "FAILED|failures=|Error",
+      "nativeOutputSupport": false
     }
   }
 }

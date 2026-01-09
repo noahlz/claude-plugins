@@ -5,19 +5,22 @@
     {
       "command": "vite build",
       "logFile": "{outDir}/vite.log",
-      "errorPattern": "(error|Error|✘|failed)"
+      "errorPattern": "(error|Error|✘|failed)",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "jest",
       "resultsPath": "{outDir}/jest-results.json",
-      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "jest {testFile}",
       "resultsPath": "{outDir}/jest-single-results.json",
-      "errorPattern": "(FAIL|●|Error:|Expected|Received)"
+      "errorPattern": "(FAIL|●|Error:|Expected|Received)",
+      "nativeOutputSupport": false
     }
   }
 }

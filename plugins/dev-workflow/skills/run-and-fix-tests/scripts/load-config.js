@@ -131,6 +131,7 @@ export function generateEnv(config, baseDir = '.') {
       env[`BUILD_${idx}_LOG`] = resolvePath(build.logFile, { outDir });
       env[`BUILD_${idx}_ERROR_PATTERN`] = build.errorPattern;
       env[`BUILD_${idx}_WORKING_DIR`] = build.workingDir || '.';
+      env[`BUILD_${idx}_NATIVE_OUTPUT`] = build.nativeOutputSupport ? 'true' : 'false';
     });
   }
 
@@ -138,10 +139,12 @@ export function generateEnv(config, baseDir = '.') {
   env.TEST_CMD = config.test.all.command;
   env.TEST_RESULTS_PATH = resolvePath(config.test.all.resultsPath, { outDir });
   env.TEST_ERROR_PATTERN = config.test.all.errorPattern;
+  env.TEST_NATIVE_OUTPUT = config.test.all.nativeOutputSupport ? 'true' : 'false';
 
   env.TEST_SINGLE_CMD = config.test.single.command;
   env.TEST_SINGLE_RESULTS_PATH = resolvePath(config.test.single.resultsPath, { outDir });
   env.TEST_SINGLE_ERROR_PATTERN = config.test.single.errorPattern;
+  env.TEST_SINGLE_NATIVE_OUTPUT = config.test.single.nativeOutputSupport ? 'true' : 'false';
 
   // Optional single log file for all test runs (human inspection)
   if (config.logFile) {

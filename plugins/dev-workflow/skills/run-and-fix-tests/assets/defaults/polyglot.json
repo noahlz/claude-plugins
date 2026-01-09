@@ -7,26 +7,30 @@
       "command": "npm run build",
       "workingDir": "frontend",
       "logFile": "{outDir}/npm.log",
-      "errorPattern": "(error|Error|✘)"
+      "errorPattern": "(error|Error|✘)",
+      "nativeOutputSupport": false
     },
     {
       "tool": "maven",
       "command": "mvn clean install --quiet --log-file {outDir}/maven.log",
       "workingDir": "backend",
       "logFile": "{outDir}/maven.log",
-      "errorPattern": "\\[ERROR\\]"
+      "errorPattern": "\\[ERROR\\]",
+      "nativeOutputSupport": true
     }
   ],
   "test": {
     "all": {
       "command": "npm test",
       "resultsPath": "{outDir}/test-results.tap",
-      "errorPattern": "(FAIL|●|Error:|Expected|Received|not ok)"
+      "errorPattern": "(FAIL|●|Error:|Expected|Received|not ok)",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "npm test -- {testFile}",
       "resultsPath": "{outDir}/test-single-results.tap",
-      "errorPattern": "(FAIL|●|Error:|Expected|Received|not ok)"
+      "errorPattern": "(FAIL|●|Error:|Expected|Received|not ok)",
+      "nativeOutputSupport": false
     }
   }
 }

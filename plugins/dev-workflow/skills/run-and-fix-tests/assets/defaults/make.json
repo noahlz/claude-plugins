@@ -5,19 +5,22 @@
     {
       "command": "make build",
       "logFile": "{outDir}/make.log",
-      "errorPattern": "Error|error:"
+      "errorPattern": "Error|error:",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "make test",
       "resultsPath": "{outDir}/make-test.txt",
-      "errorPattern": "FAIL|Error|error:"
+      "errorPattern": "FAIL|Error|error:",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "make test {testFile}",
       "resultsPath": "{outDir}/make-test-single.txt",
-      "errorPattern": "FAIL|Error|error:"
+      "errorPattern": "FAIL|Error|error:",
+      "nativeOutputSupport": false
     }
   }
 }

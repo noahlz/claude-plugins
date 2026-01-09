@@ -5,19 +5,22 @@
     {
       "command": "clojure -M:build",
       "logFile": "{outDir}/clojure.log",
-      "errorPattern": "error|ERROR|Exception"
+      "errorPattern": "error|ERROR|Exception",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "clojure -M:test",
       "resultsPath": "{outDir}/clojure-test.txt",
-      "errorPattern": "FAIL|ERROR|Exception"
+      "errorPattern": "FAIL|ERROR|Exception",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "clojure -M:test {testFile}",
       "resultsPath": "{outDir}/clojure-test-single.txt",
-      "errorPattern": "FAIL|ERROR|Exception"
+      "errorPattern": "FAIL|ERROR|Exception",
+      "nativeOutputSupport": false
     }
   }
 }

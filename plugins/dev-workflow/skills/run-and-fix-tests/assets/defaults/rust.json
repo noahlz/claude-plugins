@@ -5,19 +5,22 @@
     {
       "command": "cargo build",
       "logFile": "{outDir}/rust.log",
-      "errorPattern": "error\\[|error:"
+      "errorPattern": "error\\[|error:",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "cargo test",
       "resultsPath": "{outDir}/rust-test.txt",
-      "errorPattern": "test result:|failures:|FAILED"
+      "errorPattern": "test result:|failures:|FAILED",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "cargo test {testFile}",
       "resultsPath": "{outDir}/rust-test-single.txt",
-      "errorPattern": "test result:|failures:|FAILED"
+      "errorPattern": "test result:|failures:|FAILED",
+      "nativeOutputSupport": false
     }
   }
 }

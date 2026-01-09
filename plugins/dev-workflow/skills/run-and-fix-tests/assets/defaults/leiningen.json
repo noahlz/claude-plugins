@@ -5,19 +5,22 @@
     {
       "command": "lein compile",
       "logFile": "{outDir}/lein.log",
-      "errorPattern": "error|ERROR|Failed|Exception"
+      "errorPattern": "error|ERROR|Failed|Exception",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "lein test",
       "resultsPath": "{outDir}/lein-test.txt",
-      "errorPattern": "FAIL|ERROR|Exception"
+      "errorPattern": "FAIL|ERROR|Exception",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "lein test {testFile}",
       "resultsPath": "{outDir}/lein-test-single.txt",
-      "errorPattern": "FAIL|ERROR|Exception"
+      "errorPattern": "FAIL|ERROR|Exception",
+      "nativeOutputSupport": false
     }
   }
 }

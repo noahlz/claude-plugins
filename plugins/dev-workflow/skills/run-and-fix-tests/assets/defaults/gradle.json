@@ -6,25 +6,29 @@
       "command": "./gradlew :api:build --quiet",
       "workingDir": ".",
       "logFile": "{outDir}/gradle-api.log",
-      "errorPattern": "FAILURE|error:"
+      "errorPattern": "FAILURE|error:",
+      "nativeOutputSupport": false
     },
     {
       "command": "./gradlew :web:build --quiet",
       "workingDir": ".",
       "logFile": "{outDir}/gradle-web.log",
-      "errorPattern": "FAILURE|error:"
+      "errorPattern": "FAILURE|error:",
+      "nativeOutputSupport": false
     }
   ],
   "test": {
     "all": {
       "command": "./gradlew test --quiet",
       "resultsPath": "{outDir}/test-results",
-      "errorPattern": "FAILED|FAILURE"
+      "errorPattern": "FAILED|FAILURE",
+      "nativeOutputSupport": false
     },
     "single": {
       "command": "./gradlew test --tests {testFile} --quiet",
       "resultsPath": "{outDir}/test-results",
-      "errorPattern": "FAILED|FAILURE"
+      "errorPattern": "FAILED|FAILURE",
+      "nativeOutputSupport": false
     }
   }
 }
