@@ -11,7 +11,7 @@ allowed-tools:
 
 ---
 
-This skill creates a git commit with a summary and optional body consisting for terse bullet points and git trailers for attribution and Claude cost metrics.
+You use this skill - with interactive input from the user - to create a git commit with a summary and optional body consisting for terse bullet points and git trailers for attribution and Claude cost metrics.
 
 Activate when the user explicitly requests a git commit using phrases like:
 - "commit my changes"

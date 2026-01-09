@@ -69,23 +69,71 @@ Path: ../../../lib/common.js
 
 ### Testing Approach
 
-ALWAYS use the `dev-workflow:run-and-fix-tests` skill when testing changes.
+**Use Dependency Injection for all mocking. Do NOT use external mocking libraries or experimental Node.js features.**
 
-Use the experimental node mocking module. Add the flag `--experimental-test-module-mocks` to enable
+Inject dependencies as a `deps` parameter in function options:
+- Pass `deps: { git: mockGit, ccusage: mockCcusage }` to functions in tests
+- Create base mocks that throw errors for unexpected calls
+- Spread and override base mocks per test for fresh isolation
+- Example: `await prepare({ baseDir: '.', deps: { ccusage: testCcusage } })`
+
+Always use the `dev-workflow:run-and-fix-tests` skill when testing changes.
 
 ### Dependencies
 
-**Runtime**: `ccusage` (in `plugins/dev-workflow/package.json`)
-  - Installed as a regular dependency for the dev-workflow plugin
-  - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
+**Minimize external dependencies. Use pure Node.js and JavaScript only.**
 
-**Testing**: No ccusage dependency
-  - Tests use Node's native `t.mock.module()` to mock `ccusage-operations.js`
-  - Mock implementation in `test/dev-workflow/lib/mocks/ccusage-operations.js` provides all required functions
-  - Documentation: https://ccusage.com/guide/library-usage
+**Runtime**: `ccusage` (in `plugins/dev-workflow/package.json`)
+  - Only external dependency for the dev-workflow plugin
+  - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
+  - Do NOT add additional npm packages without justification
+
+**Testing**: Use Dependency Injection
+  - Pass mock objects directly via `deps` parameter
+  - Do NOT use mocking libraries (sinon, jest.mock, t.mock.module, etc.)
+  - Do NOT use experimental Node.js mocking features
+  - Create fresh mocks per test by spreading base mocks and overriding
 
 ## NOTE: Reinstall After Changing
 
 When modifying or debugging scripts **prompt the user to re-install the plugin**.
 
 Changes do not take effect immediately. The user needs to exit the session, run the provided `./reinstall.sh` script, and restart the session.
+
+## Troubleshooting Tests
+
+### Running Tests: Silence is Golden
+
+**Redirect all test output to a TAP file. Only inspect output if tests fail.**
+
+Use TAP (Test Anything Protocol) reporter for machine-parsable results:
+
+```bash
+node --test --test-reporter=tap --test-reporter-destination=dist/test-results.tap test/**/*.test.js
+
+# Check exit code - only if non-zero, inspect the TAP file
+if [ $? -ne 0 ]; then
+  cat dist/test-results.tap
+fi
+```
+
+**Do NOT use `tee`.** Redirecting to file (not piping) keeps output silent and reduces context usage.
+
+**For npm scripts:** Use the bash exit code check pattern above, not interactive output.
+
+### Hanging Tests: stdin/Stream Fallback
+
+**Problem:** Tests hang indefinitely.
+
+**Root cause:** Functions that depend on reading from `stdin` may hang. If a function that is hanging accepts a `message` parameter falls back stdin, it will block waiting for input. Empty string (`''`) is falsy and triggers the fallback.
+
+**Fix in code:** Use explicit nullish checks, not truthiness checks:
+```javascript
+// WRONG - empty string triggers stdin fallback
+if (providedMessage) { inputStream = ... }
+
+// CORRECT - distinguishes between null/undefined vs empty string
+if (providedMessage !== null && providedMessage !== undefined) { inputStream = ... }
+```
+
+**Fix in tests:** Always provide complete mock input or proper null checks in code.

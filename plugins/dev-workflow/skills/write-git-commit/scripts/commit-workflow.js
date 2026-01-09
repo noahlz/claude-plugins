@@ -8,6 +8,31 @@ import * as ccusage from './ccusage-operations.js';
 
 
 /**
+ * Create default dependency objects for production use
+ * @returns {object} Dependencies object with git and ccusage operations
+ */
+function createDefaultDeps() {
+  return {
+    git: {
+      execGit: git.execGit,
+      commit: git.commit,
+      getHeadSha: git.getHeadSha,
+      getStagedFiles: git.getStagedFiles
+    },
+    ccusage: {
+      loadSessionData: ccusage.loadSessionData,
+      getProjectsDir: ccusage.getProjectsDir,
+      getSessionCosts: ccusage.getSessionCosts,
+      listLocalSessions: ccusage.listLocalSessions,
+      findRecommendedSession: ccusage.findRecommendedSession,
+      pwdToSessionId: ccusage.pwdToSessionId,
+      extractCostMetrics: ccusage.extractCostMetrics,
+      validateCostMetrics: ccusage.validateCostMetrics
+    }
+  };
+}
+
+/**
  * Save session configuration
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory (defaults to current dir)
@@ -55,17 +80,25 @@ function saveConfig({ baseDir = '.', sessionId } = {}) {
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
  * @param {string} options.sessionId - Session ID to fetch costs for (required if no config)
+ * @param {object} options.deps - Dependencies object (required)
  * @returns {Promise<object>} - { status, data, message }
  */
 async function prepare(options = {}) {
-  const { baseDir = '.', sessionId: providedSessionId } = options;
+  const { baseDir = '.', sessionId: providedSessionId, deps } = options;
+
+  // Validate deps parameter
+  if (!deps) {
+    throw new Error('deps parameter required');
+  }
+
+  const { ccusage: ccusageOps } = deps;
 
   try {
     let sessionId = providedSessionId;
 
     // If no sessionId provided or "NOT_CONFIGURED", try to find recommendation
     if (!sessionId || sessionId === 'NOT_CONFIGURED') {
-      const recommendation = ccusage.findRecommendedSession(baseDir);
+      const recommendation = ccusageOps.findRecommendedSession(baseDir);
 
       if (recommendation.match) {
         sessionId = recommendation.sessionId;
@@ -73,7 +106,7 @@ async function prepare(options = {}) {
         return {
           status: 'not_found',
           data: {
-            calculated_session_id: ccusage.pwdToSessionId(path.resolve(baseDir))
+            calculated_session_id: ccusageOps.pwdToSessionId(path.resolve(baseDir))
           },
           message: 'Session not found for current directory'
         };
@@ -81,7 +114,7 @@ async function prepare(options = {}) {
     }
 
     // Fetch costs for the session using ccusage library
-    const costResult = await ccusage.getSessionCosts(sessionId);
+    const costResult = await ccusageOps.getSessionCosts(sessionId);
 
     if (!costResult.success) {
       return {
@@ -145,6 +178,7 @@ async function readCommitMessage(inputStream = null) {
  * Note: SESSION_ID and CURRENT_COST are expected to be provided by skill orchestration
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
+ * @param {object} options.deps - Dependencies object (required)
  * @returns {Promise<object>} - { status, data, message }
  */
 async function commit(options = {}) {
@@ -152,13 +186,21 @@ async function commit(options = {}) {
     baseDir = '.',
     sessionId: providedSessionId = null,
     costs: providedCosts = null,
-    message: providedMessage = null
+    message: providedMessage = null,
+    deps
   } = options;
+
+  // Validate deps parameter
+  if (!deps) {
+    throw new Error('deps parameter required');
+  }
+
+  const { git: gitOps, ccusage: ccusageOps } = deps;
 
   try {
     // Create input stream from provided message or use stdin
     let inputStream = null;
-    if (providedMessage) {
+    if (providedMessage !== null && providedMessage !== undefined) {
       inputStream = Readable.from([Buffer.from(providedMessage)]);
     }
 
@@ -211,7 +253,7 @@ async function commit(options = {}) {
     // Validate metrics before commit
     const costsArray = Array.isArray(currentCost) ? currentCost : [currentCost];
 
-    if (!ccusage.validateCostMetrics(costsArray)) {
+    if (!ccusageOps.validateCostMetrics(costsArray)) {
       return {
         status: 'metrics_invalid',
         data: { session_id: sessionId, attempted_costs: costsArray },
@@ -234,7 +276,7 @@ async function commit(options = {}) {
     }
 
     // Execute git commit with better error handling
-    const commitResult = git.commit(fullMessage, { cwd: baseDir });
+    const commitResult = gitOps.commit(fullMessage, { cwd: baseDir });
     if (commitResult.exitCode !== 0) {
       return {
         status: 'git_error',
@@ -244,7 +286,7 @@ async function commit(options = {}) {
     }
 
     // Verify commit succeeded
-    const commitSha = git.getHeadSha({ cwd: baseDir });
+    const commitSha = gitOps.getHeadSha({ cwd: baseDir });
     if (!commitSha) {
       return {
         status: 'git_error',
@@ -254,7 +296,7 @@ async function commit(options = {}) {
     }
 
     // Check if changes are still staged (indicates failure)
-    const stagedResult = git.execGit(['diff', '--cached', '--name-only'], { cwd: baseDir });
+    const stagedResult = gitOps.execGit(['diff', '--cached', '--name-only'], { cwd: baseDir });
     if (stagedResult.stdout.trim()) {
       return {
         status: 'git_error',
@@ -289,11 +331,14 @@ async function main() {
   // Parse CLI arguments
   const args = process.argv.slice(3);
 
+  // Create real dependency objects for all actions that need them
+  const deps = createDefaultDeps();
+
   try {
     switch (action) {
       case 'list-sessions': {
         outputFile = args[0];
-        result = ccusage.listLocalSessions();
+        result = deps.ccusage.listLocalSessions();
         break;
       }
 
@@ -301,7 +346,7 @@ async function main() {
         const baseDir = args[0] || '.';
         const sessionId = args[1] || null;
         outputFile = args[2];
-        result = await prepare({ baseDir, sessionId });
+        result = await prepare({ baseDir, sessionId, deps });
         break;
       }
 
@@ -324,7 +369,8 @@ async function main() {
         result = await commit({
           baseDir: '.',
           sessionId,
-          costs
+          costs,
+          deps
         });
         break;
       }
@@ -369,7 +415,7 @@ async function main() {
 }
 
 // Export functions for testing
-export { saveConfig, prepare, commit };
+export { createDefaultDeps, saveConfig, prepare, commit, readCommitMessage };
 
 // CLI entry guard
 if (import.meta.url === `file://${process.argv[1]}`) {
