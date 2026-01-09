@@ -7,21 +7,6 @@
  * ARCHITECTURE NOTES:
  * ==================
  * This module wraps the ccusage library with a stable API for the write-git-commit skill.
- *
- * Key Decision: Always use loadSessionData() + filter pattern instead of ccusage's
- * loadSessionUsageById(), because:
- * - ccusage's loadSessionUsageById() expects sessions to be stored as single {sessionId}.jsonl
- *   files in a flat directory structure
- * - Claude Code stores sessions in directories: projects/{sessionId}/{uuid}.jsonl (multiple
- *   files per session that get aggregated)
- * - loadSessionData() correctly handles Claude Code's directory structure by aggregating all
- *   session files, so we filter its results to get individual sessions
- *
- * This approach is efficient because:
- * - Sessions are typically 5-10 in number for most users
- * - loadSessionData() is fast and already fully loaded in memory
- * - Linear search/filter is negligible compared to I/O
- * - Provides a consistent, documented, working pattern across the module
  */
 
 /**

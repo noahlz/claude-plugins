@@ -8,72 +8,6 @@ import { parseJsonFile } from '../../../lib/config-loader.js';
 import * as ccusage from './ccusage-operations.js';
 
 /**
- * Escape string for safe use in shell single-quoted strings
- * Single quote becomes: '\''
- */
-function shellEscape(str) {
-  return String(str).replace(/'/g, "'\\''");
-}
-
-/**
- * Convert result object to sourceable shell variable assignments
- */
-function exportAsShellVars(result) {
-  const lines = [];
-
-  // Always export status
-  lines.push(`RESULT_STATUS='${shellEscape(result.status)}'`);
-
-  // Export message if present
-  if (result.message) {
-    lines.push(`RESULT_MESSAGE='${shellEscape(result.message)}'`);
-  }
-
-  // Export data fields based on status
-  if (result.status === 'success' && result.data) {
-    if (result.data.session_id) {
-      lines.push(`SESSION_ID='${shellEscape(result.data.session_id)}'`);
-    }
-    if (result.data.current_cost) {
-      // Export array as JSON string (bash can't handle complex types)
-      lines.push(`CURRENT_COST='${shellEscape(JSON.stringify(result.data.current_cost))}'`);
-    }
-    if (result.data.method) {
-      lines.push(`METHOD='${shellEscape(result.data.method)}'`);
-    }
-  }
-
-  if (result.status === 'found' && result.data) {
-    if (result.data.config) {
-      // check-config success case
-      lines.push(`SESSION_ID='${shellEscape(result.data.config.sessionId)}'`);
-    } else if (result.data.session_id) {
-      // resolve-session success case
-      lines.push(`SESSION_ID='${shellEscape(result.data.session_id)}'`);
-    }
-  }
-
-  if (result.status === 'not_found' && result.data) {
-    // resolve-session not_found case
-    if (result.data.calculated_session_id) {
-      lines.push(`CALCULATED_SESSION_ID='${shellEscape(result.data.calculated_session_id)}'`);
-    }
-  }
-
-  if (result.status === 'need_selection' && result.data) {
-    // Export sessions as JSON string
-    if (result.data.sessions) {
-      lines.push(`SESSIONS='${shellEscape(JSON.stringify(result.data.sessions))}'`);
-    }
-    if (result.data.recommended) {
-      lines.push(`RECOMMENDED_SESSION='${shellEscape(result.data.recommended)}'`);
-    }
-  }
-
-  return lines.join('\n');
-}
-
-/**
  * Resolve session costs
  * @param {string} sessionId - Session ID
  * @returns {Promise<object>} - { success, costs, error? }
@@ -455,32 +389,12 @@ async function main() {
 
   let result;
   let outputFile;
-  let exportVars = false;
 
-  // Check for --export-vars flag in arguments
+  // Parse CLI arguments
   const args = process.argv.slice(3);
-  const exportVarsIndex = args.indexOf('--export-vars');
-  if (exportVarsIndex !== -1) {
-    exportVars = true;
-    args.splice(exportVarsIndex, 1); // Remove flag from args
-  }
 
   try {
     switch (action) {
-      case 'check-config': {
-        const baseDir = args[0] || '.';
-        outputFile = args[1];
-        result = checkConfig({ baseDir });
-        break;
-      }
-
-      case 'resolve-session': {
-        const baseDir = args[0] || '.';
-        outputFile = args[1];
-        result = await resolveSession({ baseDir });
-        break;
-      }
-
       case 'list-sessions': {
         outputFile = args[0];
         result = await listSessions();
@@ -529,14 +443,8 @@ async function main() {
         break;
     }
 
-    // Output result
-    let output;
-
-    if (exportVars) {
-      output = exportAsShellVars(result);
-    } else {
-      output = JSON.stringify(result, null, 2);
-    }
+    // Output result as JSON
+    const output = JSON.stringify(result, null, 2);
 
     if (outputFile) {
       fs.writeFileSync(outputFile, output, 'utf-8');
@@ -552,12 +460,7 @@ async function main() {
       message: error.message
     };
 
-    let output;
-    if (exportVars) {
-      output = exportAsShellVars(errorResult);
-    } else {
-      output = JSON.stringify(errorResult, null, 2);
-    }
+    const output = JSON.stringify(errorResult, null, 2);
 
     if (outputFile) {
       fs.writeFileSync(outputFile, output, 'utf-8');
