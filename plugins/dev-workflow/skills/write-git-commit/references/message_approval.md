@@ -66,8 +66,8 @@ If verification fails, re-read reference file and retry display.
 Immediately after displaying the message, call AskUserQuestion with question "Approve this commit message?" Options:
 1. "Use full message" (Recommended)
 2. "Use just the subject"
-2. "Suggest revisions"
-3. "Stop/Cancel commit"
+3. "Suggest revisions"
+4. "Stop/Cancel commit"
 
 ## Response Handling
 
@@ -84,7 +84,7 @@ Immediately after displaying the message, call AskUserQuestion with question "Ap
 ### ✗ If "Suggest revisions"
 - Return to Step 2 (Generate Commit Message)
 - Regenerate message based on user feedback
-- Display new message per to Message Display Instructions
+- Display new message per the Message Display Instructions
 - Obtain user approval per User Approval Instructions
 - Loop until approved or cancelled
 

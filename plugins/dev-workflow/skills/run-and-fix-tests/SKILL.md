@@ -68,7 +68,7 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 - [`agent-delegation.md`](./references/agent-delegation.md) - Sub-agent env vars
 - [`completion.md`](./references/completion.md) - Summary and cleanup
 
-**Scripts:**  [scripts/](./scripts/) - untilty scripts
+**Scripts:**  [scripts/](./scripts/) - utility scripts
 
 **Defaults:** [`assets/defaults/`](./assets/defaults/) - default build tool configurations
 

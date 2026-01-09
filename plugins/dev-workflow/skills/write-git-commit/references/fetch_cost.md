@@ -6,14 +6,14 @@ Execute commit-workflow.js prepare command to fetch session cost metrics.
 
 ## REQUIRED: Check that ccusage dependency installed
 
-Check if 
+Check if `ccusage` is installed in the plugin directory:
 
 ```bash
 # Use {{SKILL_BASE_DIR}} (extracted from skill startup)
-if [ ! -d "{{SKILL_BASE_DIR}}/../../ccusage" ]; then 
+if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
   echo "Installing ccusage..."
   cd  "{{SKILL_BASE_DIR}}/../.."
-  npm install 
+  npm install
 fi
 ```
 
