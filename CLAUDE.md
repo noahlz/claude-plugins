@@ -35,9 +35,10 @@ claude-plugins/
 
 ## Development Philosophy
 
+
 ### Move Fast and Break Things
 
-*This plugin is in early stages!* You do **NOT* have to worry about backwards compatability when adding enhancements or refactoring.
+**This plugin is not yet released!** You do **NOT* have keep existing behavior for "backwards compatability" when adding enhancements or refactoring.
 
 ### Script-First Approach
 
@@ -46,7 +47,7 @@ claude-plugins/
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
 - Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
 
-**IMPORTANT** Remember that environment variables (i.e. set via `export KEY=VALUE`) do not presist between Bash tool invocations. Therefore, Scripts or Bash commands that call scripts **MUST** output values to the console (stdout) i.e. `echo KEY=VALUE` for the skill to use later.
+**IMPORTANT** Remember that environment variables (i.e. set via `export KEY=VALUE`) do not persist between Bash tool invocations. Therefore, Scripts or Bash commands that call scripts **MUST** output values to the console (stdout) i.e. `echo KEY=VALUE` for the skill to use later.
 
 ### Skill Script Execution
 
@@ -67,18 +68,6 @@ To:   lib/common.js
 Path: ../../../lib/common.js
 ```
 
-### Testing Approach
-
-**Use Dependency Injection for all mocking. Do NOT use external mocking libraries or experimental Node.js features.**
-
-Inject dependencies as a `deps` parameter in function options:
-- Pass `deps: { git: mockGit, ccusage: mockCcusage }` to functions in tests
-- Create base mocks that throw errors for unexpected calls
-- Spread and override base mocks per test for fresh isolation
-- Example: `await prepare({ baseDir: '.', deps: { ccusage: testCcusage } })`
-
-Always use the `dev-workflow:run-and-fix-tests` skill when testing changes.
-
 ### Dependencies
 
 **Minimize external dependencies. Use pure Node.js and JavaScript only.**
@@ -88,19 +77,23 @@ Always use the `dev-workflow:run-and-fix-tests` skill when testing changes.
   - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
   - Do NOT add additional npm packages without justification
 
-**Testing**: Use Dependency Injection
-  - Pass mock objects directly via `deps` parameter
-  - Do NOT use mocking libraries (sinon, jest.mock, t.mock.module, etc.)
-  - Do NOT use experimental Node.js mocking features
-  - Create fresh mocks per test by spreading base mocks and overriding
-
-## NOTE: Reinstall After Changing
+### NOTE: Reinstall After Changing
 
 When modifying or debugging scripts **prompt the user to re-install the plugin**.
 
 Changes do not take effect immediately. The user needs to exit the session, run the provided `./reinstall.sh` script, and restart the session.
 
-## Troubleshooting Tests
+## Testing Approach
+
+### Use Dependency Injection and Lightweight Mocking
+
+**Use Dependency Injection for all mocking. Do NOT use external mocking libraries or experimental Node.js features.**
+
+Inject dependencies as a `deps` parameter in function options:
+- Pass `deps: { git: mockGit, ccusage: mockCcusage }` to functions in tests
+- Create base mocks that throw errors for unexpected calls
+- Spread and override base mocks per test for fresh isolation
+- Example: `await prepare({ baseDir: '.', deps: { ccusage: testCcusage } })`
 
 ### Running Tests: Silence is Golden
 
@@ -121,7 +114,9 @@ fi
 
 **For npm scripts:** Use the bash exit code check pattern above, not interactive output.
 
-### Hanging Tests: stdin/Stream Fallback
+### Troubleshooting Tests
+
+#### Hanging Tests: stdin/Stream Fallback
 
 **Problem:** Tests hang indefinitely.
 

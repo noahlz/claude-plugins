@@ -64,7 +64,7 @@ The skill will verify this session exists in your ccusage data and prompt you to
 
 ### Finding Your Session ID
 
-On first use, the skill will list all available Claude Code sessions and let you select one. The session matching your current working directory is automatically recommended.
+On first use, the skill will list all available Claude Code sessions and let you select one, automatically recommending the one closest to your working directory.
 
 **Session IDs** are stored in `~/.claude/projects/`. List them with:
 ```bash
