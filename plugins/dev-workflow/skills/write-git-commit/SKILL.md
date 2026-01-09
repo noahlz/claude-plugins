@@ -88,15 +88,11 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 
 **SESSION_ID**: !`cat .claude/settings.plugins.write-git-commit.json 2>/dev/null | node -pe 'JSON.parse(require("fs").readFileSync(0, "utf-8")).sessionId' || echo "NOT_CONFIGURED"`
 
-## Dependencies
-
-Requires `ccusage` npm package for session cost tracking. The skill attempts to install it automatically if missing.
-
 ---
 
 At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" output message and store it for use in bash commands below.
 
-✓ If `SKILL_BASE_DIR` is present, proceed with the workflow.
+✓ If `SKILL_BASE_DIR` is present, display it then proceed with the workflow.
 
 **NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED" above, it will be resolved and saved to configuration in a later step.
 
@@ -106,7 +102,10 @@ Replace placeholders before executing bash commands:
 - `{{SKILL_BASE_DIR}}` → Literal path from "Base directory for this skill:"
 - `{{SESSION_ID}}` → Literal session ID value
 
-Example: `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes `node "/path/to/skills/write-git-commit/scripts/commit-workflow.js"`
+Example: 
+- Skill header states: `Base directory for this skill: /Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
+- `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit
+- `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js"`
  
 ## 1. Stage and Analyze Changes
 

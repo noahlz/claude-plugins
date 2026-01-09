@@ -106,7 +106,8 @@ Also activate this skill when the user requests testing using phrases like:
 
 At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" output message and store it for use in bash commands below.
 
-✓ If `SKILL_CONFIG` is `CONFIGURED`, proceed with the workflow.
+✓ If `SKILL_BASE_DIR` is present, display it  
+✓ If `SKILL_CONFIG` is `CONFIGURED`, proceed with the workflow.  
 
 **NOTE:** If `SKILL_CONFIG` shows `NOT_CONFIGURED` above, it will be resolved and saved to configuration in a later step.
 
@@ -115,7 +116,10 @@ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory fo
 Replace placeholders before executing bash commands:
 - `{{SKILL_BASE_DIR}}` → Literal path from "Base directory for this skill:"
 
-Example: `node "{{SKILL_BASE_DIR}}/scripts/detect.js"` becomes `node "/path/to/skills/run-and-fix-tests/scripts/detect.js"`
+Example: 
+- Skill header states: `Base directory for this skill: /Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests`
+- `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests`
+- `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
 
 ## 1. Detect Build Configuration
 

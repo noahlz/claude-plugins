@@ -11,7 +11,7 @@ Check if `ccusage` is installed in the plugin directory:
 ```bash
 # Use {{SKILL_BASE_DIR}} (extracted from skill startup)
 if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
-  echo "Installing ccusage..."
+  echo "!!! Installing ccusage:"
   cd  "{{SKILL_BASE_DIR}}/../.."
   npm install
 fi
