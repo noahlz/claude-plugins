@@ -4,7 +4,7 @@ Comprehensive test coverage for claude-plugins skills and scripts.
 
 ## Overview
 
-Tests are written using Node.js built-in `node:test` module and the [experimental node mocking module](https://nodejs.org/api/test.html#mockmodulespecifier-options). The test suite validates that scripts and JS modules work correctly with fixture data and mocked external dependencies.
+Tests are written using Node.js built-in `node:test` module with **dependency injection** for mocking. The test suite validates that scripts and JS modules work correctly with fixture data and injected dependencies (no external mocking libraries or experimental features).
 
 ## Running Tests
 
@@ -26,19 +26,7 @@ npm test -- test/path/to/test.js
 npm test -- test/dev-workflow/lib/*.test.js
 ```
 
-**Alternative: Run tests directly with Node.js**
-
-You can bypass the test runner and run tests directly, but you'll lose dual output (TAP file generation) and summary reordering:
-
-```bash
-node --experimental-test-module-mocks --test test/path/to/test.js
-```
-
-Note that you must include the flag enabling module mocking.
-
-## Coverage
-
-Using the built-in node code-coverage tool:
+**Run with coverage**
 
 ```bash
 npm run coverage
@@ -76,26 +64,18 @@ describe('my-skill: my-script.js', () => {
 
 Common utilities in `lib/helpers.js` support test setup, fixture loading, and script execution. See the file for available functions.
 
-### Module Mocking
+### Dependency Injection for Mocking
 
-Tests use Node.js's native [`t.mock.module()`](https://nodejs.org/api/test.html#mockmodulespecifier-options) API to mock ES modules at the module level. This approach:
+Tests use **dependency injection** to provide mock dependencies. Mock objects are passed via a `deps` parameter to functions under test. This avoids external mocking libraries and experimental Node.js features.
 
+Benefits:
 - Isolates tests from external dependencies
-- Avoids installing heavy dependencies in test environments
-- Allows precise control over mock behavior per test
+- Avoids heavy dependencies in test environments
+- Provides clean, controllable mock behavior per test
 
-Example mocking pattern:
-```javascript
-t.mock.module('./path/to/module.js', {
-  namedExports: {
-    functionName: (arg) => { /* mock implementation */ }
-  }
-});
-```
-
-Common modules mocked in tests:
-- **ccusage-operations.js** - Session data and cost metrics functions
-- **git-operations.js** - Git command execution (can use either mocking or separate mock module)
+See examples in:
+- `test/dev-workflow/write-git-commit/commit-workflow.test.js` - Injecting ccusage and git mocks
+- `test/dev-workflow/write-git-commit/git-operations.test.js` - Testing git operations directly
 
 ### Fixtures
 

@@ -1,8 +1,10 @@
 # Write Git Commit with Cost Metrics
 
-Create git commits with Claude Code. Automatically embeds attribution and session cost metrics in Git trailers.
+Create git commits with Claude Code with attribution and cost-tracking trailers.
 
 ## What It Does
+
+Using this skill, Claude:
 
 - Analyzes staged changes and creates a descriptive commit message
 - Automatically embeds Claude Code attribution and session cost metrics as [Git trailers](https://git-scm.com/docs/git-interpret-trailers)
@@ -14,9 +16,11 @@ Create git commits with Claude Code. Automatically embeds attribution and sessio
 ## Dependencies
 
 - **ccusage** - Claude Code usage library ([ryoppippi/ccusage](https://github.com/ryoppippi/ccusage))
-  - Installed automatically with the plugin via `package.json`
+  - Installed automatically by the plugin via `package.json`
 
 ## Usage
+
+Command:
 
 ```bash
 /commit
@@ -71,16 +75,6 @@ ls ~/.claude/projects
 ```bash
 ccusage session --json
 ```
-
-### Session Selection Flow
-
-The skill automatically:
-1. Lists all available sessions from ccusage data
-2. Recommends the session matching your current directory
-3. Lets you select from the list or enter manually
-4. Saves your selection to `.claude/settings.plugins.write-git-commit.json`
-
-Once configured, the skill will use the saved session for all future commits in this project.
 
 ## Author
 
