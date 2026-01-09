@@ -41,7 +41,7 @@ When step instructions say `DELEGATE_TO: [file]`:
 4. **VERIFY** - If a VERIFY checklist exists, confirm each item
 5. **CONTINUE** - Only then proceed to the next step
 
-**Why This Matters:**
+**Why This Matters:**  
 Reference files contain formatting requirements, templates, and constraints not visible in SKILL.md. Skipping the read step causes incorrect workflow execution.
 
 ### C. Workflow Narration
