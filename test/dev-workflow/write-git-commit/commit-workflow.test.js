@@ -40,7 +40,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     teardownTestEnv(testEnv);
   });
 
-  it('prepare action returns error when config does not exist', async () => {
+  it('prepare action returns "not_found" status when config does not exist', async () => {
     // Note: t.mock.module() doesn't work in subprocesses, so we test with real ccusage
     // The mocked ccusage tests in the "mocked ccusage" suite cover the case where
     // session resolution fails with a proper error message
@@ -51,7 +51,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       args: ['prepare', testEnv.tmpDir, '', outputFile],
       cwd: testEnv.tmpDir,
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -63,14 +62,8 @@ describe('write-git-commit: commit-workflow.js', () => {
       assert.fail(`Output file should contain valid JSON: ${e.message}`);
     }
 
-    // Should return a status (success or error) with a message
-    // The exact message depends on whether a session exists for the temp directory
-    assert.ok(['success', 'error'].includes(data.status), 'Should return valid status');
+    assert.ok(['not_found'].includes(data.status), 'Should return "not_found" status');
     assert.ok(typeof data.message === 'string', 'Should have message field');
-    if (data.status === 'error') {
-      // Error case: verify error message is meaningful
-      assert.ok(data.message.length > 0, 'Error message should not be empty');
-    }
   });
 
   it('handles unknown action with error', () => {
@@ -81,7 +74,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       args: ['unknown-action', outputFile],
       cwd: testEnv.tmpDir,
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -112,7 +104,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       cwd: testEnv.tmpDir,
       input: 'Test commit message',
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -145,7 +136,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       cwd: testEnv.tmpDir,
       input: 'Test commit message',
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -173,7 +163,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       cwd: testEnv.tmpDir,
       input: 'Test commit message',
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -206,7 +195,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       cwd: testEnv.tmpDir,
       input: 'Test commit message',
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -238,7 +226,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       cwd: testEnv.tmpDir,
       input: 'Test commit message',
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -261,7 +248,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       cwd: testEnv.tmpDir,
       input: 'Test commit message',
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -295,7 +281,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       cwd: testEnv.tmpDir,
       input: messageWithBody,
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });
@@ -318,7 +303,6 @@ describe('write-git-commit: commit-workflow.js', () => {
       args: ['prepare', testEnv.tmpDir, '-Users-noahlz-projects-claude-plugins'],
       cwd: testEnv.tmpDir,
       env: {
-        CLAUDE_PLUGIN_ROOT: testEnv.pluginRoot,
         PATH: testEnv.mockPath
       }
     });

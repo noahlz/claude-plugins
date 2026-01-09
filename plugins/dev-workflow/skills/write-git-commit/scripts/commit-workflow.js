@@ -4,111 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
 import * as git from './git-operations.js';
-import { parseJsonFile } from '../../../lib/config-loader.js';
 import * as ccusage from './ccusage-operations.js';
 
-/**
- * Resolve session costs
- * @param {string} sessionId - Session ID
- * @returns {Promise<object>} - { success, costs, error? }
- */
-async function resolveSessionCosts(sessionId) {
-  return await ccusage.getSessionCosts(sessionId);
-}
-
-/**
- * List available sessions
- * @returns {Promise<object>} - { status, data, error? }
- */
-async function listSessions() {
-  return await ccusage.listSessions();
-}
-
-/**
- * Resolve session ID from working directory with verification
- * Returns not_found if verification fails
- * @param {object} options - Options object
- * @param {string} options.baseDir - Base directory (defaults to current dir)
- * @returns {Promise<object>} - { status: 'found' | 'not_found', data, message }
- */
-async function resolveSession(options = {}) {
-  const { baseDir = '.' } = options;
-
-  try {
-    // Step 1: Calculate recommended session ID from baseDir
-    const absolutePath = path.resolve(baseDir);
-    const calculatedSessionId = ccusage.pwdToSessionId(absolutePath);
-
-    // Step 2: Try to verify it exists
-    const verify = await ccusage.verifySession(calculatedSessionId);
-
-    if (verify.success && verify.exists) {
-      // Session found!
-      return {
-        status: 'found',
-        data: { session_id: calculatedSessionId },
-        message: `Session resolved: ${calculatedSessionId}`
-      };
-    }
-
-    // Step 3: Session not found - return not_found with calculated ID
-    return {
-      status: 'not_found',
-      data: { calculated_session_id: calculatedSessionId },
-      message: `Session not found: ${calculatedSessionId}`
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      data: {},
-      message: error.message
-    };
-  }
-}
-
-/**
- * Check if config file exists and is valid
- * @param {object} options - Options object
- * @param {string} options.baseDir - Base directory (defaults to current dir)
- * @returns {object} - { status, data, message }
- */
-function checkConfig({ baseDir = '.' } = {}) {
-  const configPath = path.join(baseDir, '.claude/settings.plugins.write-git-commit.json');
-
-  // Check if config file exists
-  if (!fs.existsSync(configPath)) {
-    return {
-      status: 'not_found',
-      data: {},
-      message: `Configuration file not found: ${configPath}`
-    };
-  }
-
-  // Check if file is empty
-  if (fs.statSync(configPath).size === 0) {
-    return {
-      status: 'empty',
-      data: {},
-      message: `Configuration file is empty: ${configPath}`
-    };
-  }
-
-  // Try to parse as JSON
-  try {
-    const config = parseJsonFile(configPath);
-    return {
-      status: 'found',
-      data: { config },
-      message: 'Configuration file exists and is valid'
-    };
-  } catch (error) {
-    return {
-      status: 'invalid',
-      data: {},
-      message: `Configuration file is not valid JSON: ${configPath}`
-    };
-  }
-}
 
 /**
  * Save session configuration
@@ -164,32 +61,27 @@ async function prepare(options = {}) {
   const { baseDir = '.', sessionId: providedSessionId } = options;
 
   try {
-    // Handle "NOT_CONFIGURED" special value from preprocessing
     let sessionId = providedSessionId;
-    if (sessionId === 'NOT_CONFIGURED' || !sessionId) {
-      const configResult = checkConfig({ baseDir });
 
-      if (configResult.status === 'found') {
-        sessionId = configResult.data.config.sessionId;
+    // If no sessionId provided or "NOT_CONFIGURED", try to find recommendation
+    if (!sessionId || sessionId === 'NOT_CONFIGURED') {
+      const recommendation = ccusage.findRecommendedSession(baseDir);
+
+      if (recommendation.match) {
+        sessionId = recommendation.sessionId;
       } else {
-        // No config - try to auto-detect from current directory
-        const resolveResult = await resolveSession({ baseDir });
-
-        if (resolveResult.status === 'found') {
-          sessionId = resolveResult.data.session_id;
-        } else {
-          // Could not auto-detect session
-          return {
-            status: 'error',
-            data: {},
-            message: 'Session not found. No config exists and could not auto-detect session from current directory.'
-          };
-        }
+        return {
+          status: 'not_found',
+          data: {
+            calculated_session_id: ccusage.pwdToSessionId(path.resolve(baseDir))
+          },
+          message: 'Session not found for current directory'
+        };
       }
     }
 
-    // Fetch costs for the session
-    const costResult = await resolveSessionCosts(sessionId);
+    // Fetch costs for the session using ccusage library
+    const costResult = await ccusage.getSessionCosts(sessionId);
 
     if (!costResult.success) {
       return {
@@ -307,8 +199,12 @@ async function commit(options = {}) {
     if (typeof currentCost === 'string') {
       try {
         currentCost = JSON.parse(currentCost);
-      } catch {
-        currentCost = JSON.parse(currentCost);
+      } catch (error) {
+        return {
+          status: 'error',
+          data: {},
+          message: `Invalid JSON in --costs argument: ${error.message}`
+        };
       }
     }
 
@@ -397,7 +293,7 @@ async function main() {
     switch (action) {
       case 'list-sessions': {
         outputFile = args[0];
-        result = await listSessions();
+        result = ccusage.listLocalSessions();
         break;
       }
 
@@ -473,7 +369,7 @@ async function main() {
 }
 
 // Export functions for testing
-export { checkConfig, resolveSession, listSessions, prepare, saveConfig, commit };
+export { saveConfig, prepare, commit };
 
 // CLI entry guard
 if (import.meta.url === `file://${process.argv[1]}`) {

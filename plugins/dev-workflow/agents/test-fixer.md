@@ -164,7 +164,6 @@ When compilation fails in Phase 1:
 ## Environment Variables
 
 Provided by `run-and-fix-tests` skill:
-- `CLAUDE_PLUGIN_ROOT` - Plugin directory
 - `TEST_CMD` - Command to run all tests
 - `TEST_RESULTS_PATH` - Test results file path (programmatic parsing)
 - `TEST_SINGLE_CMD` - Command to run single test

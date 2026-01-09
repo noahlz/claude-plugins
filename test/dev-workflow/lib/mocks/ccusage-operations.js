@@ -3,6 +3,9 @@
  * Mirrors the production API but returns mock data without requiring ccusage library
  */
 
+import path from 'path';
+import os from 'os';
+
 let mockSessions = [
   {
     sessionId: '-Users-noahlz-projects-claude-plugins',
@@ -63,22 +66,6 @@ export async function loadSessionData() {
   return mockSessions;
 }
 
-export async function verifySession(sessionId) {
-  try {
-    const session = await loadSessionUsageById(sessionId);
-    return {
-      success: true,
-      exists: session !== null
-    };
-  } catch (error) {
-    return {
-      success: false,
-      exists: false,
-      error: error.message
-    };
-  }
-}
-
 export async function getSessionCosts(sessionId) {
   try {
     const session = await loadSessionUsageById(sessionId);
@@ -114,20 +101,28 @@ export async function getSessionCosts(sessionId) {
   }
 }
 
-export async function listSessions() {
-  try {
-    const sessions = await loadSessionData();
+/**
+ * Get the Claude projects directory path
+ * @returns {string} - Path to ~/.claude/projects
+ */
+export function getProjectsDir() {
+  return path.join(os.homedir(), '.claude', 'projects');
+}
 
-    const sortedSessions = sessions
+/**
+ * List all local project sessions from filesystem
+ * Uses directory mtime for sorting, doesn't read .jsonl contents
+ * @returns {{status: string, data: {sessions: Array}, error?: string}}
+ */
+export function listLocalSessions() {
+  try {
+    // In tests, return sorted mock sessions with lastActivity
+    const sortedSessions = mockSessions
       .map(s => ({
         sessionId: s.sessionId,
         lastActivity: s.lastActivity || ''
       }))
-      .sort((a, b) => {
-        const dateA = a.lastActivity || '';
-        const dateB = b.lastActivity || '';
-        return dateB.localeCompare(dateA);
-      });
+      .sort((a, b) => b.lastActivity.localeCompare(a.lastActivity));
 
     return {
       status: 'success',
@@ -140,6 +135,21 @@ export async function listSessions() {
       error: `Failed to list sessions: ${error.message}`
     };
   }
+}
+
+/**
+ * Find recommended session ID based on current working directory
+ * @param {string} cwd - Current working directory
+ * @returns {{sessionId: string | null, match: boolean}}
+ */
+export function findRecommendedSession(cwd) {
+  const calculatedId = pwdToSessionId(cwd);
+  const exists = mockSessions.some(s => s.sessionId === calculatedId);
+
+  return {
+    sessionId: exists ? calculatedId : null,
+    match: exists
+  };
 }
 
 export function pwdToSessionId(dirPath) {

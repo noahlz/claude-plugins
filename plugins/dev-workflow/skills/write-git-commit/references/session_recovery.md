@@ -1,9 +1,7 @@
 **✗ If status is "error" and message contains "Session not found":**
   - Execute using Bash tool to get available sessions:
     ```bash
-    # Replace __PLUGIN_ROOT__ with literal path from Section 0
-    CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-    node "$CLAUDE_PLUGIN_ROOT/skills/write-git-commit/scripts/commit-workflow.js" list-sessions
+    node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
     ```
   - Parse JSON output to extract sessions array from data.sessions
   - Build AskUserQuestion with dynamic options:
@@ -12,9 +10,7 @@
   - If user picks a session:
     - Save to config using save-config command:
       ```bash
-      # Replace __PLUGIN_ROOT__ and __SELECTED_SESSION_ID__ with literal values
-      CLAUDE_PLUGIN_ROOT=__PLUGIN_ROOT__ \
-      node "__PLUGIN_ROOT__/skills/write-git-commit/scripts/commit-workflow.js" save-config "$(pwd)" "__SELECTED_SESSION_ID__"
+      node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
       ```
     - Retry Section 2 with new session ID
   - If user picks "Other":

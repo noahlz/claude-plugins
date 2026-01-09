@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+
 /**
  * ccusage-operations.js
  * Abstraction layer for all ccusage operations
@@ -7,6 +11,7 @@
  * ARCHITECTURE NOTES:
  * ==================
  * This module wraps the ccusage library with a stable API for the write-git-commit skill.
+ * Filesystem-based session discovery replaces ccusage API calls for better performance.
  */
 
 /**
@@ -20,25 +25,11 @@ export async function loadSessionData() {
 }
 
 /**
- * Verify if a session exists
- * @param {string} sessionId - Session ID to verify
- * @returns {Promise<{success: boolean, exists: boolean, error?: string}>}
+ * Get the Claude projects directory path
+ * @returns {string} - Path to ~/.claude/projects
  */
-export async function verifySession(sessionId) {
-  try {
-    const sessions = await loadSessionData();
-    const session = sessions.find(s => s.sessionId === sessionId);
-    return {
-      success: true,
-      exists: session !== null
-    };
-  } catch (error) {
-    return {
-      success: false,
-      exists: false,
-      error: error.message
-    };
-  }
+export function getProjectsDir() {
+  return path.join(os.homedir(), '.claude', 'projects');
 }
 
 /**
@@ -87,27 +78,38 @@ export async function getSessionCosts(sessionId) {
 }
 
 /**
- * List all sessions sorted by lastActivity descending
- * @returns {Promise<{status: string, data: {sessions: Array}, error?: string}>}
+ * List all local project sessions from filesystem
+ * Uses directory mtime for sorting, doesn't read .jsonl contents
+ * @returns {{status: string, data: {sessions: Array}, error?: string}}
  */
-export async function listSessions() {
+export function listLocalSessions() {
   try {
-    const sessions = await loadSessionData();
+    const projectsDir = getProjectsDir();
 
-    const sortedSessions = sessions
-      .map(s => ({
-        sessionId: s.sessionId,
-        lastActivity: s.lastActivity || ''
-      }))
-      .sort((a, b) => {
-        const dateA = a.lastActivity || '';
-        const dateB = b.lastActivity || '';
-        return dateB.localeCompare(dateA);
-      });
+    if (!fs.existsSync(projectsDir)) {
+      return {
+        status: 'success',
+        data: { sessions: [] }
+      };
+    }
+
+    const entries = fs.readdirSync(projectsDir, { withFileTypes: true });
+
+    const sessions = entries
+      .filter(entry => entry.isDirectory() && entry.name.startsWith('-'))
+      .map(entry => {
+        const dirPath = path.join(projectsDir, entry.name);
+        const stats = fs.statSync(dirPath);
+        return {
+          sessionId: entry.name,
+          lastActivity: stats.mtime.toISOString()
+        };
+      })
+      .sort((a, b) => b.lastActivity.localeCompare(a.lastActivity));
 
     return {
       status: 'success',
-      data: { sessions: sortedSessions }
+      data: { sessions }
     };
   } catch (error) {
     return {
@@ -116,6 +118,24 @@ export async function listSessions() {
       error: `Failed to list sessions: ${error.message}`
     };
   }
+}
+
+/**
+ * Find recommended session ID based on current working directory
+ * @param {string} cwd - Current working directory
+ * @returns {{sessionId: string | null, match: boolean}}
+ */
+export function findRecommendedSession(cwd) {
+  const calculatedId = pwdToSessionId(path.resolve(cwd));
+  const projectsDir = getProjectsDir();
+  const sessionPath = path.join(projectsDir, calculatedId);
+
+  const exists = fs.existsSync(sessionPath);
+
+  return {
+    sessionId: exists ? calculatedId : null,
+    match: exists
+  };
 }
 
 /**

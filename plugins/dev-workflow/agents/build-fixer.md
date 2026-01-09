@@ -126,7 +126,6 @@ After rebuild, re-parse `$BUILD_LOG`:
 ## Environment Variables
 
 Provided by `run-and-fix-tests` skill:
-- `CLAUDE_PLUGIN_ROOT` - Plugin directory
 - `BUILD_CMD` - Build command to run
 - `BUILD_LOG` - Log file path
 - `BUILD_ERROR_PATTERN` - Regex to extract errors
