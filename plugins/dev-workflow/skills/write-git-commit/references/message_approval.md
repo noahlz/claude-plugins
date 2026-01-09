@@ -2,6 +2,11 @@ Display the proposed commit message with AskUserQuestion confirmation per the fo
 
 # Message Display Instructions
 
+**⚠️ CRITICAL: This must be your FIRST output after Step 2**
+- Do NOT narrate reading this file
+- Do NOT explain what you're about to do
+- Start immediately with "Proposed commit message:"
+
 ## Action Required
 
 Output the commit message to the user using this EXACT template:
@@ -18,9 +23,9 @@ Proposed commit message:
 ## Critical Requirements
 
 1. **ASCII borders are MANDATORY** - Use ━ (U+2501 box drawing character), not dashes or equals
-2. **Plain text output** - Output directly to user, do NOT use Read/Write/Edit tools
-3. **Display is SEPARATE from approval** - Do NOT ask "Do you approve?" in same message
-4. **Show actual message** - Do not summarize or describe, show the exact text
+2. **NO PREAMBLE** - Do NOT narrate, summarize, or explain before displaying. Start output with "Proposed commit message:"
+3. **Show actual message** - Do not summarize or describe, show the exact text
+4. **Same turn** - Display message and call AskUserQuestion in the same response (no separate outputs)
 
 ## Template Variables
 
@@ -52,7 +57,7 @@ If verification fails, re-read reference file and retry display.
 
 ## Action Required
 
-Use AskUserQuestion tool to ask "Approve this commit message?" Options:
+Immediately after displaying the message, call AskUserQuestion with question "Approve this commit message?" Options:
 1. "Accept this message?" (Recommended)
 2. "Make changes"
 3. "Stop/Cancel commit"

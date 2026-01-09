@@ -123,11 +123,12 @@ DELEGATE_TO: `references/message_guidelines.md`
 
 Generate commit message following those guidelines.
 
-**Mentally store (do NOT output or display):**
-- `COMMIT_SUBJECT`: First line
-- `COMMIT_BODY`: Remaining lines (may be empty)
-
-Proceed silently to Step 3.
+**⚠️ CRITICAL: ZERO OUTPUT IN THIS STEP**
+- Generate message completely internally
+- Store `COMMIT_SUBJECT` and `COMMIT_BODY` in memory only
+- NO summaries, NO narration, NO variable display, NO explanations
+- The FIRST text output after reading git diff must be "Proposed commit message:" in Step 3
+- Jump directly to Step 3 with zero intermediate text
 
 ## 3. Display Message to User for Approval
 
