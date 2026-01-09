@@ -58,7 +58,8 @@ If verification fails, re-read reference file and retry display.
 ## Action Required
 
 Immediately after displaying the message, call AskUserQuestion with question "Approve this commit message?" Options:
-1. "Accept this message?" (Recommended)
+1. "Use full message?" (Recommended)
+2. "Use just the Subject?" (Recommended)
 2. "Make changes"
 3. "Stop/Cancel commit"
 
@@ -67,6 +68,11 @@ Immediately after displaying the message, call AskUserQuestion with question "Ap
 ### ✓ If "Accept this message?"
 - Extract `COMMIT_SUBJECT` (first line of message)
 - Extract `COMMIT_BODY` (remaining lines, may be empty)
+- Proceed to Step 4 (Fetch Cost Data)
+
+### ✓ If "Use just the Subject?"
+- Extract `COMMIT_SUBJECT` (first line of message)
+- Set `COMMIT_BODY` empty.
 - Proceed to Step 4 (Fetch Cost Data)
 
 ### ✗ If "Make changes"
