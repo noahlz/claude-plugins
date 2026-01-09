@@ -4,7 +4,9 @@ import { strict as assert } from 'node:assert';
 import {
   pwdToSessionId,
   extractCostMetrics,
-  validateCostMetrics
+  validateCostMetrics,
+  listLocalSessions,
+  findRecommendedSession
 } from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/ccusage-operations.js';
 
 describe('write-git-commit: ccusage-operations.js', () => {
@@ -313,6 +315,45 @@ describe('write-git-commit: ccusage-operations.js', () => {
       ];
 
       assert.equal(validateCostMetrics(costs), false);
+    });
+  });
+
+  describe('listLocalSessions', () => {
+    it('returns object with status and data properties', () => {
+      const result = listLocalSessions();
+
+      // Should have proper response structure
+      assert.ok('status' in result);
+      assert.ok('data' in result);
+      assert.ok(result.status === 'success' || result.status === 'error');
+      assert.ok(Array.isArray(result.data.sessions));
+    });
+  });
+
+  describe('findRecommendedSession', () => {
+    it('returns object with sessionId and match properties', () => {
+      const result = findRecommendedSession('/test/path');
+
+      // Should have proper response structure
+      assert.ok('sessionId' in result);
+      assert.ok('match' in result);
+      assert.equal(typeof result.match, 'boolean');
+      // sessionId can be string or null
+      assert.ok(typeof result.sessionId === 'string' || result.sessionId === null);
+    });
+
+    it('converts path to session ID format', () => {
+      const testPath = '/Users/test/project';
+      const result = findRecommendedSession(testPath);
+
+      // Result structure should be valid
+      assert.ok('sessionId' in result);
+      assert.ok('match' in result);
+      assert.equal(typeof result.match, 'boolean');
+      // If sessionId is not null, it should contain dashes from path conversion
+      if (result.sessionId) {
+        assert.ok(result.sessionId.includes('-'));
+      }
     });
   });
 });
