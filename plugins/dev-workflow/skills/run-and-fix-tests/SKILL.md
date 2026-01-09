@@ -18,6 +18,49 @@ allowed-tools:
 
 ---
 
+## Workflow Rules & Guardrails
+
+**FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
+
+### A. Workflow Order of Operations
+
+- Follow the Workflow instructions **EXACTLY** as written.
+- **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
+- This Workflow includes decision points - follow conditional logic precisely.
+
+### B. Workflow Delegation Protocol
+
+When step instructions say `DELEGATE_TO: [file]`:
+
+1. **STOP** - Do not proceed based on assumed knowledge
+2. **READ** - Use the Read tool to read the referenced file
+3. **EXECUTE** - Follow the instructions in that file exactly
+4. **VERIFY** - If a VERIFY checklist exists, confirm each item
+5. **CONTINUE** - Only then proceed to the next step
+
+**Why This Matters:**
+Reference files contain formatting requirements, templates, and constraints not visible in SKILL.md. Skipping the read step causes incorrect workflow execution.
+
+### C. Workflow Narration
+
+Only narrate if a step has a defined "STEP_DESCRIPTION"
+
+BEFORE narrating any step, check:
+1. Does this step have a STEP_DESCRIPTION: field?
+2. If YES → Narrate the STEP_DESCRIPTION value only
+3. If NO → DO NOT narrate anything. Just execute WITHOUT a narration.
+
+DO NOT:
+- Narrate the section names. I.e. do NOT print messages like "Step 4. Run Tests"
+- Narrate the reference you're reading. I.e do NOT print messages like "Reading test execution instructions."
+
+Examples of silent steps (just execute the steps, DO NOT print anything):
+- Read delegation files per DELEGATE_TO instructions
+- Executing sub-steps within a delegation
+- Internal step processing without user-facing output
+
+---
+
 This skill streamlines running and fixing unit tests in a project. It:
 - resolves the project build/test commands from project-specific configuration, generating it for future use (with user input), if needed.
 - strives for minimal token / context usage by redirecting build/test output to files
@@ -36,57 +79,41 @@ Also activate this skill when the user requests testing using phrases like:
 
 ---
 
-**⚠️  CRITICAL: HOW TO EXECUTE BASH CODE IN THIS SKILL**
-
-When you see inline bash code blocks (```bash), you MUST:
-- **TEXT SUBSTITUTION:** Replace `{{SKILL_BASE_DIR}}` with literal path from "Base directory for this skill:" message
-- These are TEMPLATE PLACEHOLDERS, not shell variables - perform textual substitution before execution
-- Execute the substituted command using the Bash tool
-- NEVER narrate execution without actually running the command
-- NEVER fabricate outputs
-
-When instructed to "Execute from [file.md]" or "Execute instructions from [file.md]":
-1. Read the markdown file using Read tool
-2. Find the relevant bash code blocks
-3. Execute those code blocks using Bash tool
-4. Handle results as described in the file
-
-**Failure to execute commands results in workflow corruption and invalid test runs.**
-
----
-
-**⚠️  CRITICAL BUILD/TEST EXECUTION RULES**
-
-- **Silent execution**: NEVER use `tee` when running builds or test commands. Redirect all output to log files (`> "$LOG_FILE" 2>&1`). Only inspect logs when command returns non-zero exit code.
-- **Exit code checking**: Always capture and check exit codes to resolve build and test success/failure. Zero = success, non-zero = failure.
-- **No assumptions**: Never assume errors are "pre-existing" or skip investigating them. All errors must be analyzed unless user explicitly stops the workflow.
-- **No Git Commits:** DO NOT commit changes as part of this workflow. Users will do that separately.
-
----
-
 ## 0. Prerequisites
 
-**SKILL_NAME**: run-and-fix-tests
+**SKILL_NAME**: run-and-fix-tests 
+
+**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.run-and-fix-tests.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
 
 ---
 
 At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" output message and store it for use in bash commands below.
 
-✓ If `SKILL_BASE_DIR` is present, proceed with the workflow.
+✓ If `SKILL_CONFIG` is `CONFIGURED`, proceed with the workflow.
+
+**NOTE:** If `SKILL_CONFIG` shows `NOT_CONFIGURED` above, it will be resolved and saved to configuration in a later step.
+
+**HOW TO EXECUTE BASH CODE IN THIS SKILL:**
+
+When you see inline bash code blocks (```bash), you MUST:
+- **TEXT SUBSTITUTION REQUIRED:** Replace `{{SKILL_BASE_DIR}}` with the literal path from "Base directory for this skill:" message
+- These are TEMPLATE PLACEHOLDERS, not shell variables - perform textual substitution before execution
+- Execute the substituted command using the Bash tool
+- NEVER narrate execution. ALWAYS execute the code block command
+- NEVER fabricate outputs (i.e. if the tool / command fails)
+
+**Example:**
+```
+#Template:
+node "{{SKILL_BASE_DIR}}/scripts/detect-and-resolve.js" 
+
+# After substitution:
+node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/detect-and-resolve.js" prepare
+```
 
 ## 1. Detect Build Configuration
 
-**Build configuration status**: !`[ -f "./.claude/settings.plugins.run-and-fix-tests.json" ] && echo "✓ Config found" || echo "⚠️ Config setup required"`
-
----
-
-**Result handling:**  
-✓ If you see "✓ Config found" above → Config exists, proceed to Section 2  
-✗ If you see "⚠️ Config setup required" above → Config missing, proceed to Section 1a  
-
-## 1a. Setup Build Configuration (First Run Only)
-
-Execute ONLY if Section 1 shows "⚠️ Config setup required".
+Execute ONLY if Step 0. Prerequisites has "SKILL_CONFIG: NOT_CONFIGURED".
 
 → Execute setup instructions from `./references/setup-config.md`
 
@@ -96,6 +123,8 @@ Execute ONLY if Section 1 shows "⚠️ Config setup required".
 ⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding"  
 
 ## 2. Load Configuration
+
+**STEP_DESCRIPTION**: "Loading project configuration"
 
 → Execute load-config script to output configuration:
 ```bash
@@ -118,9 +147,11 @@ BUILD_COUNT=0
 SKIP_BUILD=true
 ```
 
-**Remember these values** You will use the literal values (not shell variables like `$TEST_CMD`) in subsequent bash commands.
+→ Store these literal values in memory for use in subsequent sections
+→ Use the literal values (not shell variables like `$TEST_CMD`) in bash commands
 
-✗ Script fails → Display error and stop  
+**Result handling:**
+✗ Script fails → Display error and stop
 ✓ Script succeeds → Values captured, proceed to Section 3   
 
 ## 3. Build Project
@@ -133,70 +164,22 @@ SKIP_BUILD=true
 
 **If SKIP_BUILD=false:**
 
-→ Use the BUILD_COUNT value from Section 2. If BUILD_COUNT=0, no build steps exist, proceed to step 4.
+**STEP_DESCRIPTION**: "Building project"
 
-→ For each build index from 0 to (BUILD_COUNT - 1), use the captured literal values:
-  - BUILD_0_CMD, BUILD_0_LOG, BUILD_0_WORKING_DIR, BUILD_0_ERROR_PATTERN (if BUILD_COUNT >= 1)
-  - BUILD_1_CMD, BUILD_1_LOG, BUILD_1_WORKING_DIR, BUILD_1_ERROR_PATTERN (if BUILD_COUNT >= 2)
-  - etc.
-
-→ For each build:
-  - Change to working directory using the captured BUILD_i_WORKING_DIR value
-  - Execute the build command using the captured BUILD_i_CMD value, redirect output to captured BUILD_i_LOG
-  - Check exit code: if non-zero, record failure and continue to next build
-
-→ If any builds fail:
-  - Collect error logs from all failed builds
-  - Use the BUILD_i_ERROR_PATTERN regex to parse errors from each log
-  - Proceed to step 3a with aggregated error list
-
-✓ All builds succeed → Proceed to step 4 (Run Tests)
-
-## 3a. Extract Build Errors
-
-→ Extract build errors (see ./references/build-procedures.md)
-
-→ Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
-  - "Yes" → Proceed to step 3b
-  - "No" → Stop
-
-## 3b. Delegate to Build-Fixer Agent
-
-→ Delegate to build-fixer (see ./references/agent-delegation.md)
-  - Provide error list from step 3a
-  - Provide BUILD_FIXER_ENV_VARS (see ./references/agent-delegation.md)
-
-✓ Agent completes → Proceed to step 3c
-
-## 3c. Rebuild After Fixes
-
-→ Rebuild and verify (see ./references/build-procedures.md)  
-✓ Build succeeds → Proceed to Section 4 (Run Tests)  
-✗ Build fails → Return to Section 3a (more errors)  
+→ Execute Build instructions from `references/run-build.md`
 
 ## 4. Run Tests
 
-→ Use the literal values captured from Section 2 (not shell variables):
+**STEP_DESCRIPTION**: "Running tests"
 
-**Single test mode** (if running a specific test):
-  - Use TEST_SINGLE_CMD value with {testFile} replaced
-  - Redirect output to TEST_SINGLE_RESULTS_PATH value
+DELEGATE_TO: `references/run-tests.md`
 
-**All tests mode** (normal case):
-  - Use TEST_CMD value (captured literal, e.g., "npm test")
-  - Redirect output to TEST_RESULTS_PATH value (e.g., "dist/test-results.tap")
-  - Optionally capture human-readable output to TEST_LOG value (e.g., "dist/test.log")
-
-Example bash command using literal values:  
-```bash
-npm test > dist/test-results.tap 2>&1
-```
-
-→ Execute test command and capture exit code  
-✓ Exit 0 → All tests pass, proceed to step 8 (Completion)  
-✗ Exit non-zero → Tests failed, proceed to step 5 (Extract Test Errors)  
+→ Follow test execution procedure
+→ Return to Section 5 if tests fail, Section 8 if tests pass  
 
 ## 5. Extract Test Errors
+
+**STEP_DESCRIPTION**: "Analyzing test failures"
 
 → Parse test results file using the captured literal values from Section 2:
   - Read the file at TEST_RESULTS_PATH (e.g., "dist/test-results.tap")
@@ -210,86 +193,20 @@ npm test > dist/test-results.tap 2>&1
 
 ## 6. Ask to Fix Tests
 
-→ Check failure count from step 5:
+DELEGATE_TO: `references/ask-to-fix.md`
 
-**If 30+ failures:**  
-⚠️ Display: "30+ tests failed. This is too many for efficient fixing in one chat."  
-→ Use AskUserQuestion:  
-  - "Attempt to fix 30+ tests?" (not recommended)  
-  - "No, I'll stop and create a plan"  
-
-→ If "No" → Stop (user exits to create plan)  
-→ If "Yes" → Continue to step 7  
-
-**If 1-29 failures:**  
-→ Use AskUserQuestion:  
-  - "Start fixing tests?" (recommended)
-  - "No, I'll fix manually"
-
-→ If "Yes" → Continue to step 7  
-→ If "No" → Stop  
+→ Follow decision logic based on failure count
+→ Handle user response per reference instructions
+→ Proceed to Section 7 if user approves, stop if user declines  
 
 ## 7. Delegate to Test-Fixer Agent
 
-→ Delegate to the `test-fixer` agent to fix failing tests one-by-one
-
-→ Store agent ID for potential resumption: `TEST_FIXER_AGENT_ID=[agent_id]`
-
-→ Provide agent with context in natural language:
-  - Failed test list: [bulleted list with test names and error excerpts from step 5]
-  - Example failed test entry: "TestLoginFlow (test/auth.test.js) - Expected 'logged in', got undefined"
-
-→ Provide TEST_FIXER_ENV_VARS (see ./references/agent-delegation.md)
-
-→ Agent fixes the tests per its instructions and context provided
-
-✓ Agent completes without delegation → Proceed to step 7d  
-🔄 Agent exits with COMPILATION_ERROR delegation → Proceed to step 7b  
-
-## 7b. Handle Compilation Error Delegation
-
-→ Detect delegation signal in test-fixer's final message:  
-Look for: "🔄 DELEGATION_REQUIRED: COMPILATION_ERROR"
-
-→ Extract build errors (see ./references/build-procedures.md)
-
-→ Use AskUserQuestion:
-  - "Test fix introduced compilation errors. Fix them with build-fixer?"
-  - "Yes" → Continue to step 7c
-  - "No" → Proceed to step 7d
-
-## 7c. Invoke Build-Fixer and Resume Test-Fixer
-
-→ Delegate to build-fixer (see ./references/agent-delegation.md)
-
-→ Rebuild and verify (see ./references/build-procedures.md)
-  - If build fails: Return to step 7b (more compilation errors)
-  - If build succeeds: Continue to resume test-fixer
-
-→ Resume test-fixer (see ./references/agent-delegation.md)
-
-✓ Test-fixer completes → Proceed to step 7d  
-🔄 Test-fixer delegates again → Loop back to step 7b (compilation errors reintroduced)  
-
-## 7d. Ask User to Re-run Tests
-
-→ Use AskUserQuestion:
-  - "Re-run all tests to verify fixes?"
-  - "No, stop for now"
-
-✓ User confirms → Proceed to step 4 (Run Tests)  
-✗ User declines → Proceed to step 8  
+→ Execute instructions for using `test-fixer` agent from `references/fix-tests.md`
 
 ## 8. Completion
 
-→ Check if all originally-failing tests were fixed:
-  - If yes → Display: "✅ All tests fixed and passed!"
-  - If no → Display: "⚠️ Workflow incomplete. Some tests remain unfixed."
+DELEGATE_TO: `references/completion.md`
 
-→ Show summary:
-  - Tests fixed in this session
-  - Tests skipped/remaining
-  - Root causes addressed
-
-→ Clear todo list with TodoWrite (empty)  
-→ Exit  
+→ Generate status summary
+→ Clear todo list
+→ Exit workflow  
