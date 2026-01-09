@@ -5,20 +5,27 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    paths:
+      - '!**/*.md'
+      - '!**/*.sh'
+      - '!LICENSE'
+      - '!TODO'
+      - '!CHANGELOG'
   pull_request:
-    branches: [ "main" ]
+    paths:
+      - '!**/*.md'
+      - '!**/*.sh'
+      - '!LICENSE'
+      - '!TODO'
+      - '!CHANGELOG'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [22.x, 24.x, 25.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
     - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
