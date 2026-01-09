@@ -38,6 +38,31 @@ Generate a commit message with imperative mood subject line and optional bullet 
 - Each bullet: focus on "what changed" and "why" - not "how"
 - Each bullet should add meaningful context not obvious from subject
 
+## Examples
+
+**Feature:**
+```
+Add JWT-based authentication
+
+- Implement login endpoint with token generation
+- Add middleware for token validation
+```
+
+**Bug fix:**
+```
+Fix date formatting in timezone conversion
+
+- Use UTC timestamps in report generation
+```
+
+**Refactoring:**
+```
+Refactor error handling and update dependencies
+
+- Standardize error response format
+- Upgrade lodash to 4.17.21
+```
+
 ## Next Step
 
 Return to SKILL.md with generated message stored internally.

@@ -1,6 +1,6 @@
 ---
 name: run-and-fix-tests
-description: Build the project, run tests and systematically fix any failures. Activate when user says: "run tests", "run the tests", "test this/it/the changes", "execute tests", "build and test", "fix tests", "make sure tests pass", "verify with tests", "check if tests work/pass", "verify the fix/changes", "see if this/it works", "check that/if it works", OR when user mentions "failing/failed tests", "test failures", "CI failing", "GitHub Actions failing", "tests not passing", OR after making code changes to verify they work, OR when tests are the logical next development step.
+description: Builds projects, runs test suites, and systematically fixes failures via build-fixer and test-fixer agents. Use for running tests, fixing failures, or verifying changes.
 user-invocable: true
 allowed-tools:
   - Bash(npm *)
@@ -28,36 +28,49 @@ allowed-tools:
 - **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
 - This Workflow includes decision points - follow conditional logic precisely.
 
-### B. Workflow Delegation Protocol
+### B. Delegation Protocol
 
-When step instructions say `DELEGATE_TO: [file]`:
+When you see `DELEGATE_TO: [file]`:
+1. Read the referenced file
+2. Execute its instructions exactly
+3. Check any VERIFY checklists
+4. Return to continue the workflow
 
-1. **STOP** - Do not proceed based on assumed knowledge
-2. **READ** - Use the Read tool to read the referenced file
-3. **EXECUTE** - Follow the instructions in that file exactly
-4. **VERIFY** - If a VERIFY checklist exists, confirm each item
-5. **CONTINUE** - Only then proceed to the next step
+Reference files contain detailed requirements not in SKILL.md. Always read them.
 
-**Why This Matters:**
-Reference files contain formatting requirements, templates, and constraints not visible in SKILL.md. Skipping the read step causes incorrect workflow execution.
+### C. Narration Control
 
-### C. Workflow Narration
+Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
 
-Only narrate if a step has a defined "STEP_DESCRIPTION"
+Steps without STEP_DESCRIPTION are silent - execute without output. Do not narrate section names, file reads, or internal processing.
 
-BEFORE narrating any step, check:
-1. Does this step have a STEP_DESCRIPTION: field?
-2. If YES → Narrate the STEP_DESCRIPTION value only
-3. If NO → DO NOT narrate anything. Just execute WITHOUT a narration.
+## Workflow Checklist
 
-DO NOT:
-- Narrate the section names. I.e. do NOT print messages like "Step 4. Run Tests"
-- Narrate the reference you're reading. I.e do NOT print messages like "Reading test execution instructions."
+```
+- [ ] Load configuration
+- [ ] Build project (or skip)
+- [ ] Run tests
+- [ ] Extract errors (if any)
+- [ ] Get user approval
+- [ ] Delegate to test-fixer
+- [ ] Complete
+```
 
-Examples of silent steps (just execute the steps, DO NOT print anything):
-- Read delegation files per DELEGATE_TO instructions
-- Executing sub-steps within a delegation
-- Internal step processing without user-facing output
+## Skill Organization
+
+**References:**
+- [`setup-config.md`](./references/setup-config.md) - Build tool detection
+- [`run-build.md`](./references/run-build.md) - Build execution
+- [`run-tests.md`](./references/run-tests.md) - Test execution
+- [`build-procedures.md`](./references/build-procedures.md) - Error extraction
+- [`ask-to-fix.md`](./references/ask-to-fix.md) - User decision logic
+- [`fix-tests.md`](./references/fix-tests.md) - Test-fixer delegation
+- [`agent-delegation.md`](./references/agent-delegation.md) - Sub-agent env vars
+- [`completion.md`](./references/completion.md) - Summary and cleanup
+
+**Scripts:**  [scripts/](./scripts/) - untilty scripts
+
+**Defaults:** [`assets/defaults/`](./assets/defaults/) - default build tool configurations
 
 ---
 
@@ -68,6 +81,10 @@ This skill streamlines running and fixing unit tests in a project. It:
 The skill delegates to sub-agents when there are a large number (10+) of test failures or build errors:
   - 'build-fixer' to fix compilation errors
   - 'test-fixer' to fix test failures
+
+## Feedback Loop
+
+This skill iterates: run tests → extract failures → fix one test → repeat until all pass.
 
 Activate this skill proactively after making code changes to verify they work (suggest first: "Should I run the test suite to verify these changes?").
 
@@ -93,23 +110,12 @@ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory fo
 
 **NOTE:** If `SKILL_CONFIG` shows `NOT_CONFIGURED` above, it will be resolved and saved to configuration in a later step.
 
-**HOW TO EXECUTE BASH CODE IN THIS SKILL:**
+**Template Substitution:**
 
-When you see inline bash code blocks (```bash), you MUST:
-- **TEXT SUBSTITUTION REQUIRED:** Replace `{{SKILL_BASE_DIR}}` with the literal path from "Base directory for this skill:" message
-- These are TEMPLATE PLACEHOLDERS, not shell variables - perform textual substitution before execution
-- Execute the substituted command using the Bash tool
-- NEVER narrate execution. ALWAYS execute the code block command
-- NEVER fabricate outputs (i.e. if the tool / command fails)
+Replace placeholders before executing bash commands:
+- `{{SKILL_BASE_DIR}}` → Literal path from "Base directory for this skill:"
 
-**Example:**
-```
-#Template:
-node "{{SKILL_BASE_DIR}}/scripts/detect-and-resolve.js" 
-
-# After substitution:
-node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/detect-and-resolve.js" prepare
-```
+Example: `node "{{SKILL_BASE_DIR}}/scripts/detect.js"` becomes `node "/path/to/skills/run-and-fix-tests/scripts/detect.js"`
 
 ## 1. Detect Build Configuration
 
@@ -150,8 +156,12 @@ SKIP_BUILD=true
 → Store these literal values in memory for use in subsequent sections
 → Use the literal values (not shell variables like `$TEST_CMD`) in bash commands
 
-**Result handling:**
-✗ Script fails → Display error and stop
+**Output handling flags:**
+- `nativeOutputSupport: true` → Tool has native file output (e.g., Maven's `--log-file`)
+- `nativeOutputSupport: false` → Use bash redirection (`> file 2>&1`)
+
+**Result handling:**  
+✗ Script fails → Display error and stop  
 ✓ Script succeeds → Values captured, proceed to Section 3   
 
 ## 3. Build Project
@@ -174,7 +184,7 @@ SKIP_BUILD=true
 
 DELEGATE_TO: `references/run-tests.md`
 
-→ Follow test execution procedure
+→ Follow test execution procedure  
 → Return to Section 5 if tests fail, Section 8 if tests pass  
 
 ## 5. Extract Test Errors
@@ -188,15 +198,15 @@ DELEGATE_TO: `references/run-tests.md`
 → For detailed extraction procedure, see ./references/build-procedures.md
 
 ✓ 0 failures detected → Proceed to step 8 (Completion)  
-✗ 1-30 failures → Display error summary, proceed to step 6  
-✗ 30+ failures → Display count, proceed to step 6  
+✗ 1-10 failures → Display error summary, proceed to step 6  
+✗ 10+ failures → Display count, proceed to step 6  
 
 ## 6. Ask to Fix Tests
 
 DELEGATE_TO: `references/ask-to-fix.md`
 
-→ Follow decision logic based on failure count
-→ Handle user response per reference instructions
+→ Follow decision logic based on failure count  
+→ Handle user response per reference instructions  
 → Proceed to Section 7 if user approves, stop if user declines  
 
 ## 7. Delegate to Test-Fixer Agent

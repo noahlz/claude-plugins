@@ -1,6 +1,6 @@
 ---
 name: write-git-commit
-description: Create a git commit with Claude Code session cost metrics and attribution embedded as git trailers. Activate when user mentions "commit", "commit my changes", "commit this", "save to git", "check in".
+description: Creates git commits with session cost metrics and Claude attribution as git trailers. Use when committing changes or saving work to git.
 user-invocable: true
 context: fork
 allowed-tools:
@@ -19,6 +19,16 @@ Activate when the user explicitly requests a git commit using phrases like:
 - "save to git"
 - "git commit"
 
+## Workflow
+
+```
+Stage → Generate → [User Approval] → Fetch Costs → Commit → Summary
+              ↑______________|
+              (revision loop)
+```
+
+Step 3 blocks until user approves the commit message.
+
 ---
 
 ## Workflow Rules & Guardrails
@@ -31,36 +41,44 @@ Activate when the user explicitly requests a git commit using phrases like:
 - **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
 - This Workflow is **interactive**. You must ALWAYS get user approval per Step 3 before proceeding to the next step.
 
-### B. Workflow Delegation Protocol
+### B. Delegation Protocol
 
-When step instructions say `DELEGATE_TO: [file]`:
+When you see `DELEGATE_TO: [file]`:
+1. Read the referenced file
+2. Execute its instructions exactly
+3. Check any VERIFY checklists
+4. Return to continue the workflow
 
-1. **STOP** - Do not proceed based on assumed knowledge
-2. **READ** - Use the Read tool to read the referenced file
-3. **EXECUTE** - Follow the instructions in that file exactly
-4. **VERIFY** - If a VERIFY checklist exists, confirm each item
-5. **CONTINUE** - Only then proceed to the next step
+Reference files contain detailed requirements not in SKILL.md. Always read them.
 
-**Why This Matters:**  
-Reference files contain formatting requirements, templates, and constraints not visible in SKILL.md. Skipping the read step causes incorrect workflow execution.
+### C. Narration Control
 
-### C. Workflow Narration
+Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
 
-Only narrate if a step has a defined "STEP_DESCRIPTION"
+Steps without STEP_DESCRIPTION are silent - execute without output. Do not narrate section names, file reads, or internal processing.
 
-BEFORE narrating any step, check:  
-1. Does this step have a STEP_DESCRIPTION: field?
-2. If YES → Narrate the STEP_DESCRIPTION value only
-3. If NO → DO NOT narrate anything. Just execute WITHOUT a narration.
+## Workflow Checklist
 
-DO NOT:
-- Narrate the section names. I.e. do NOT print messages like "Step 1a. Stage changes"
-- Narrate reference you're reading.  I.e do NOT print messages like "Reading commit message approval instructions." 
+```
+- [ ] Stage and analyze changes
+- [ ] Generate commit message
+- [ ] Get user approval
+- [ ] Fetch session costs
+- [ ] Create commit
+- [ ] Display summary
+```
 
-Examples of silent steps (just execute the steps, DO NOT print anything):
-- Read delegation files per DELEGATE_TO instructions
-- Executing sub-steps within a delegation
-- Internal step processing without user-facing output
+## Skill Organization
+
+**References:**
+- [`message_guidelines.md`](./references/message_guidelines.md)- Commit message format
+- [`message_approval.md`](./references/message_approval.md) - User approval workflow
+- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
+- [`create_commit.md`](./references/create_commit.md) - Git commit creation
+- [`session_recovery.md`](./references/session_recovery.md) - Session ID fallback
+- [`commit_recovery.md`](./references/commit_recovery.md) - Git error handling
+
+**Scripts:**  [scripts/](./scripts/) - untilty scripts
 
 ---
 
@@ -70,6 +88,10 @@ Examples of silent steps (just execute the steps, DO NOT print anything):
 
 **SESSION_ID**: !`cat .claude/settings.plugins.write-git-commit.json 2>/dev/null | node -pe 'JSON.parse(require("fs").readFileSync(0, "utf-8")).sessionId' || echo "NOT_CONFIGURED"`
 
+## Dependencies
+
+Requires `ccusage` npm package for session cost tracking. The skill attempts to install it automatically if missing.
+
 ---
 
 At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" output message and store it for use in bash commands below.
@@ -78,24 +100,13 @@ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory fo
 
 **NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED" above, it will be resolved and saved to configuration in a later step.
 
-**HOW TO EXECUTE BASH CODE IN THIS SKILL:**
+**Template Substitution:**
 
-When you see inline bash code blocks (```bash), you MUST:
-- **TEXT SUBSTITUTION REQUIRED:** Replace `{{SKILL_BASE_DIR}}` with the literal path from "Base directory for this skill:" message
-- **TEXT SUBSTITUTION REQUIRED:** Replace `{{SESSION_ID}}` with the literal session ID value
-- These are TEMPLATE PLACEHOLDERS, not shell variables - perform textual substitution before execution
-- Execute the substituted command using the Bash tool
-- NEVER narrate execution. ALWAYS execute the code block command
-- NEVER fabricate outputs (i.e. if the tool / command fails)
+Replace placeholders before executing bash commands:
+- `{{SKILL_BASE_DIR}}` → Literal path from "Base directory for this skill:"
+- `{{SESSION_ID}}` → Literal session ID value
 
-**Example:**
-```
-#Template:
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare
-
-# After substitution:
-node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js" prepare
-```
+Example: `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes `node "/path/to/skills/write-git-commit/scripts/commit-workflow.js"`
  
 ## 1. Stage and Analyze Changes
 
@@ -123,12 +134,7 @@ DELEGATE_TO: `references/message_guidelines.md`
 
 Generate commit message following those guidelines.
 
-**⚠️ CRITICAL: ZERO OUTPUT IN THIS STEP**
-- Generate message completely internally
-- Store `COMMIT_SUBJECT` and `COMMIT_BODY` in memory only
-- NO summaries, NO narration, NO variable display, NO explanations
-- The FIRST text output after reading git diff must be "Proposed commit message:" in Step 3
-- Jump directly to Step 3 with zero intermediate text
+**Silent generation:** Create message internally. First output must be "Proposed commit message:" in Step 3.
 
 ## 3. Display Message to User for Approval
 
@@ -136,9 +142,9 @@ BLOCKING: This step MUST complete with user approval before Step 4.
 
 DELEGATE_TO: `references/message_approval.md`
 
-→ Handle user response per reference file instructions
-→ Extract `COMMIT_SUBJECT` and `COMMIT_BODY` if approved
-→ Proceed to Step 4 only if approved by user
+→ Handle user response per reference file instructions  
+→ Extract `COMMIT_SUBJECT` and `COMMIT_BODY` if approved  
+→ Proceed to Step 4 only if approved by user  
 
 ## 4. Fetch Cost Data
 
