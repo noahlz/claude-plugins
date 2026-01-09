@@ -10,6 +10,20 @@ Guides Claude through automatically building, running and fixing your project te
 - Supports single test execution: `/test MyTest`
 - Supports multi-module projects with different build tools (custom configuration required)
 
+## Quick Start
+
+```bash
+/test
+```
+
+The skill auto-detects your build tool and runs your tests. If tests fail, it offers to fix them one-by-one with your approval.
+
+## When to Use
+
+- After making code changes to verify they work
+- To systematically fix compilation errors or test failures
+- When CI/CD tests are failing and you need to debug locally
+
 ## Prerequisites
 
 - `node` version 22+

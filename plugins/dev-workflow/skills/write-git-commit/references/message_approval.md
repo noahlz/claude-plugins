@@ -1,3 +1,9 @@
+## Contents
+- Display Format
+- User Approval Options
+- Response Handling
+- Output Requirements
+
 Display the proposed commit message with AskUserQuestion confirmation per the following instructions:
 
 # Message Display Instructions

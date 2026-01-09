@@ -36,18 +36,18 @@ npm test -- path/to/test.js > dist/test-single-results.tap 2>&1
 
 → Check TEST_NATIVE_OUTPUT flag:
 
-**If TEST_NATIVE_OUTPUT=true:**
-→ Tool natively supports file output (e.g., Maven's `--log-file`, npm's `--test-reporter-destination`)
-→ Execute command WITHOUT stdout/stderr redirection
+**If TEST_NATIVE_OUTPUT=true:**  
+→ Tool natively supports file output (e.g., Maven's `--log-file`, npm's `--test-reporter-destination`)  
+→ Execute command WITHOUT stdout/stderr redirection  
 
 Example bash command:
 ```bash
 npm test --silent -- --test-reporter=tap --test-reporter-destination=dist/test-results.tap
 ```
 
-**If TEST_NATIVE_OUTPUT=false:**
-→ Tool requires stdout/stderr redirection
-→ Redirect output to TEST_RESULTS_PATH
+**If TEST_NATIVE_OUTPUT=false:**  
+→ Tool requires stdout/stderr redirection  
+→ Redirect output to TEST_RESULTS_PATH  
 
 Example bash command:
 ```bash
