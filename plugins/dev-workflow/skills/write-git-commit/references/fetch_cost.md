@@ -4,10 +4,23 @@
 
 Execute commit-workflow.js prepare command to fetch session cost metrics.
 
+## REQUIRED: Check that ccusage dependency installed
+
+Check if 
+
+```bash
+# Use {{SKILL_BASE_DIR}} (extracted from skill startup)
+if [ ! -d "{{SKILL_BASE_DIR}}/../../ccusage" ]; then 
+  echo "Installing ccusage..."
+  cd  "{{SKILL_BASE_DIR}}/../.."
+  npm install 
+fi
+```
+
 ## Bash Command
 
 ```bash
-# Use {{SKILL_BASE_DIR}} (extracted from skill startup) and {{SESSION_ID}}
+# Use {{SKILL_BASE_DIR}} and {{SESSION_ID}} (extracted from skill startup)
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION_ID}}"
 ```
 
