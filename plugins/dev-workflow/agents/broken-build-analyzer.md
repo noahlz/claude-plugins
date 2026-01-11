@@ -2,7 +2,7 @@
 name: broken-build-analyzer 
 description: Analyzes build/compilation failures and determines root cause and potential fixes for a Plan.
 tools: Read, Glob, Grep, WebSearch, WebFetch
-disallowedTools: Write, Edt
+disallowedTools: Write, Edit
 color: red
 ---
 

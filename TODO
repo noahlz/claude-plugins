@@ -1,1 +1,6 @@
-- Revise sub-agents for fixing build / tests to behave consistently / properly (interative, explaining steps)
+- Revise/improve sub-agent instructions per best practices
+- test/run-tests.js needs to NOT output to console.log if command line includes --silent
+- run-and-fix-tests skill should:
+  - Exit workflow after setting up configuration first time.
+  - When exiting after setup, tell user to examine the build configuration and change as needed.
+- FIXME: write-git-commit skill sometimes doesn't follow workflows. Needs stronger "guardrails" restored.
