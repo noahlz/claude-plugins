@@ -1,49 +1,50 @@
 # Agent Delegation Procedures
 
-Common procedures for delegating work to and resuming sub-agents (build-fixer, test-fixer).
+Common procedures for delegating analysis to sub-agents (broken-build-analyzer, failed-test-analyzer).
 
-## BUILD_FIXER_ENV_VARS
+## DELEGATE_TO_BUILD_ANALYZER
 
-Environment variables to provide when delegating to build-fixer agent:
-- `BUILD_COUNT` - number of build steps (e.g., "1" or "2")
-- `BUILD_{i}_CMD` - actual command for step i (e.g., "npm run build")
-- `BUILD_{i}_LOG` - actual log path for step i (e.g., "dist/npm-build.log")
-- `BUILD_{i}_ERROR_PATTERN` - actual pattern for step i (e.g., "(error|Error|ERR!)")
-- `BUILD_{i}_WORKING_DIR` - actual path for step i (e.g., ".")
-- `OUT_DIR` - actual path (e.g., "dist/")
-- `INITIAL_PWD` - actual path (e.g., "/current/working/directory")
-- `SKIP_BUILD` - "true" or "false" (whether build step was skipped)
+Procedure to delegate to broken-build-analyzer agent:
 
-## TEST_FIXER_ENV_VARS
+→ Extract build errors from build log(s) (see build-procedures.md EXTRACT_BUILD_ERRORS)
 
-Environment variables to provide when delegating to test-fixer agent:
-- All BUILD_FIXER_ENV_VARS (above) for compilation checking, including `SKIP_BUILD`
-- `TEST_CMD` - actual value (e.g., "npm test")
-- `TEST_RESULTS_PATH` - actual path to test results file (e.g., "dist/test-results.tap")
-- `TEST_SINGLE_CMD` - actual value (e.g., "npm test -- {testFile}")
-- `TEST_SINGLE_RESULTS_PATH` - actual path to single test results file (e.g., "dist/test-single-results.tap")
-- `TEST_LOG` - optional path to human-readable log file (e.g., "dist/test.log")
+→ Delegate to the `broken-build-analyzer` agent using Task tool:
+  - `subagent_type: "broken-build-analyzer"`
+  - Pass config object as JSON in prompt
+  - Agent reads build errors from config.build[i].logFile
+  - Agent accesses config.build[i].command, config.build[i].workingDir, config.build[i].errorPattern, etc.
 
-## DELEGATE_TO_BUILD_FIXER
+→ Agent analyzes errors and returns:
+  - Root cause analysis
+  - Recommended fixes with file locations
+  - Next steps if solution unclear
 
-Procedure to delegate to build-fixer agent:
+→ Display agent's analysis to user
 
-→ Delegate to the `build-fixer` agent to fix compilation errors one-by-one.
+→ Ask user: "Enter plan mode to implement these fixes?"
+  - Yes → Use EnterPlanMode tool, include analysis in context
+  - No → Proceed to completion
 
-→ Provide agent with context in natural language:
-  - Build error list: [bulleted list with file:line:col and error messages]
-  - Example error entry: "src/auth.ts:45:12 - TS2304: Cannot find name 'User'"
+## DELEGATE_TO_TEST_ANALYZER
 
-→ Provide BUILD_FIXER_ENV_VARS (see above)
+Procedure to delegate to failed-test-analyzer agent (invoked from SKILL.md Section 6):
 
-→ Agent fixes the errors per its instructions and context provided.
+→ Extract test failures from test results (see build-procedures.md EXTRACT_TEST_ERRORS)
 
-## RESUME_TEST_FIXER
+→ Delegate to the `failed-test-analyzer` agent using Task tool:
+  - `subagent_type: "failed-test-analyzer"`
+  - Pass config object as JSON in prompt
+  - Agent reads test failures from config.test.all.resultsPath
+  - Agent accesses config.test.all.command, config.test.all.errorPattern, config.skipBuild, etc.
 
-Procedure to delegate back to the test-fixer agent after build-fixer completes:
+→ Agent analyzes failures and returns:
+  - Root cause analysis
+  - Recommended fixes with file locations
+  - Whether tests need updating vs code needs fixing
+  - Next steps if solution unclear
 
-→ Delegate back to the test-fixer agent using Task tool with resume parameter:
-  - `resume: $TEST_FIXER_AGENT_ID`
-  - `prompt: "Compilation errors have been resolved by build-fixer. BUILD_LOG shows clean build. Continue with test fix verification."`
+→ Display agent's analysis to user
 
-→ Test-fixer continues from where it left off (re-runs verification starting with compilation check)
+→ Ask user: "Enter plan mode to implement these fixes?"
+  - Yes → Use EnterPlanMode tool, include analysis in context
+  - No → Proceed to completion

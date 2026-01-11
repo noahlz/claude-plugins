@@ -73,9 +73,9 @@ Path: ../../../lib/common.js
 **Minimize external dependencies. Use pure Node.js and JavaScript only.**
 
 **Runtime**: `ccusage` (in `plugins/dev-workflow/package.json`)
-  - Only external dependency for the dev-workflow plugin
   - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
-  - Do NOT add additional npm packages without justification
+
+Do NOT add additional npm packages without justification and approval by the user.
 
 ### NOTE: Reinstall After Changing
 
@@ -97,42 +97,17 @@ Inject dependencies as a `deps` parameter in function options:
 
 ### Running Tests: Silence is Golden
 
-Prefer tools with native silent + file output over stdout redirection. Only inspect output file if tests fail.
+Use the `dev-workflow:run-and-fix-tests` skill to test changes to this project.
 
-**With native output support (preferred - no redirection):**
-
-Tools that natively support silent mode + file output:
+Example test command, which you should derive from the build configuration `.claude/settings.plugins.run-and-fix-tests.json`:
 
 ```bash
-# Node.js native test runner with TAP reporter
-node --test --test-reporter=tap --test-reporter-destination=dist/test-results.tap test/**/*.test.js
-
-# Maven with quiet mode and log file
-mvn test --quiet --log-file target/test.log
+npm test && echo "✓ Tests Passed!" || echo "✗ Tests FAILED!"  
 ```
 
-**Without native support (use redirection):**
+**NOTE: Do NOT use `tee`.** You'll obtain context for test failures from build and tests log files, if needed.
 
-Tools that require stdout/stderr redirection:
-
-```bash
-# Generic test command - redirect output to file
-npm test > dist/test-results.tap 2>&1
-```
-
-**Do NOT use `tee`.** Redirecting to file (not piping) keeps output silent and reduces context usage.
-
-**Checking exit codes:**
-
-```bash
-# Run tests, redirect output based on tool capabilities
-npm test > dist/test-results.tap 2>&1
-
-# Check exit code - only inspect file if tests fail
-if [ $? -ne 0 ]; then
-  cat dist/test-results.tap
-fi
-```
+If the tests fail (non-zero exit code) read the test results (tap report format) under `dist/`
 
 ### Troubleshooting Tests
 

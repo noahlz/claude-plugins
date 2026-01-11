@@ -6,9 +6,13 @@ Common procedures for extracting errors and rebuilding/testing projects.
 
 Procedure to extract compilation errors from build log:
 
-→ Try to get language diagnostics from editor using available IDE MCP or LSP tools  
-✓ MCP or LSP tool available → Extract errors with precise locations  
-✗ Not available → Parse build log at `$BUILD_LOG` using `$BUILD_ERROR_PATTERN` regex  
+→ Try to get language diagnostics from editor using available IDE MCP or LSP tools
+✓ MCP or LSP tool available → Extract errors with precise locations
+✗ Not available → Parse build logs using config.build[].errorPattern regex
+
+→ For each failed build in config.build:
+  - Read log file at config.build[i].logFile
+  - Extract errors using config.build[i].errorPattern regex
 
 → Extract up to 30 distinct compilation errors with:
   - File paths
@@ -21,34 +25,34 @@ Procedure to extract compilation errors from build log:
 
 Procedure to rebuild project and verify compilation:
 
-→ Iterate through all builds by index (0 to BUILD_COUNT-1):
-  - For each i, check BUILD_${i}_NATIVE_OUTPUT flag:
+→ Iterate through each build in config.build:
+  - For each build, check build.nativeOutputSupport flag:
 
-    **If BUILD_${i}_NATIVE_OUTPUT=true:**
+    **If build.nativeOutputSupport=true:**
     - Tool natively supports file output, execute WITHOUT redirection:
-    - `cd "${BUILD_${i}_WORKING_DIR}" && ${BUILD_${i}_CMD}`
+    - `cd "{build.workingDir}" && {build.command}`
 
-    **If BUILD_${i}_NATIVE_OUTPUT=false:**
+    **If build.nativeOutputSupport=false:**
     - Tool requires stdout/stderr redirection:
-    - `cd "${BUILD_${i}_WORKING_DIR}" && ${BUILD_${i}_CMD} > "${BUILD_${i}_LOG}" 2>&1`
+    - `cd "{build.workingDir}" && {build.command} > "{build.logFile}" 2>&1`
 
   - Track exit codes for each build step
 
 → After all builds complete:
-  - Exit 0 (all succeeded) → Return to INITIAL_PWD, build succeeded
-  - Exit non-zero (any failed) → Return to INITIAL_PWD, check logs for errors
+  - Exit 0 (all succeeded) → Return to original directory, build succeeded
+  - Exit non-zero (any failed) → Return to original directory, check logs for errors
 
 ## EXTRACT_TEST_ERRORS
 
 Procedure to extract test failures from test results:
 
-→ Parse test results at `$TEST_RESULTS_PATH` to identify failing tests  
-→ Extract error patterns from results using `$TEST_ERROR_PATTERN` regex  
-→ Identify failing tests (up to 30 distinct failures)  
+→ Parse test results at `config.test.all.resultsPath` to identify failing tests
+→ Extract error patterns from results using `config.test.all.errorPattern` regex
+→ Identify failing tests (up to 30 distinct failures)
 
-✓ 0 failures detected → No errors to extract  
-✗ 1-30 failures → Extract with test names, error messages, stack traces  
-✗ 30+ failures → Display count warning  
+✓ 0 failures detected → No errors to extract
+✗ 1-30 failures → Extract with test names, error messages, stack traces
+✗ 30+ failures → Display count warning
 
 → Display error summary to user with:
   - List of failing test names/paths

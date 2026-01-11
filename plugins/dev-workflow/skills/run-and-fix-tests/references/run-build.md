@@ -1,40 +1,33 @@
-→ Use the BUILD_COUNT value from Section 2. If BUILD_COUNT=0, no build steps exist, proceed to step 4.
+→ Check if config.build exists and has elements. If not, proceed to step 4 (Run Tests).
 
-→ For each build index from 0 to (BUILD_COUNT - 1), use the captured literal values:
-  - BUILD_0_CMD, BUILD_0_LOG, BUILD_0_WORKING_DIR, BUILD_0_ERROR_PATTERN, BUILD_0_NATIVE_OUTPUT (if BUILD_COUNT >= 1)
-  - BUILD_1_CMD, BUILD_1_LOG, BUILD_1_WORKING_DIR, BUILD_1_ERROR_PATTERN, BUILD_1_NATIVE_OUTPUT (if BUILD_COUNT >= 2)
-  - etc.
-
-→ For each build:
-  - Change to working directory using the captured BUILD_i_WORKING_DIR value
-  - Execute the build command using the captured BUILD_i_CMD value, redirect output to captured BUILD_i_LOG
+→ For each build in config.build:
+  - Change to working directory using build.workingDir
+  - Execute the build command using build.command, redirect output to build.logFile
+  - If build.nativeOutputSupport is true, use tool's native output option
+  - If build.nativeOutputSupport is false, use bash redirection (> file 2>&1)
   - Check exit code: if non-zero, record failure and continue to next build
 
 → If any builds fail:
-  - Collect error logs from all failed builds
-  - Use the BUILD_i_ERROR_PATTERN regex to parse errors from each log
-  - Proceed to step 3a with aggregated error list
+  - Collect error logs from all failed builds using build.logFile paths
+  - Use build.errorPattern regex to parse errors from each log
+  - Proceed to step 3a with aggregated error list and config context
 
 ✓ All builds succeed → Proceed to step 4 (Run Tests)
 
-## 3a. Extract Build Errors
+## 3a. Analyze Build Failures and Exit
 
-→ Extract build errors (see ./references/build-procedures.md)
+**STEP_DESCRIPTION**: "Analyzing build failures"
 
-→ Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
-  - "Yes" → Proceed to step 3b
-  - "No" → Stop
+DELEGATE_TO: `references/agent-delegation.md` - DELEGATE_TO_BUILD_ANALYZER
 
-## 3b. Delegate to Build-Fixer Agent
+→ Extract build errors (see ./references/build-procedures.md - EXTRACT_BUILD_ERRORS)
 
-→ Delegate to build-fixer (see ./references/agent-delegation.md)
-  - Provide error list from step 3a
-  - Provide BUILD_FIXER_ENV_VARS (see ./references/agent-delegation.md)
+→ Delegate to `broken-build-analyzer` agent with build failure context and config object
+→ Receive analysis with root causes and fix recommendations
+→ Display analysis summary to user
 
-✓ Agent completes → Proceed to step 3c
+→ Ask user: "Enter plan mode to implement fixes?"
+  - Yes → Use EnterPlanMode tool with analysis context
+  - No → Proceed to Section 7 (Completion)
 
-## 3c. Rebuild After Fixes
-
-→ Rebuild and verify (see ./references/build-procedures.md)  
-✓ Build succeeds → Proceed to Section 4 (Run Tests)  
-✗ Build fails → Return to Section 3a (more errors)  
+→ Exit workflow  
