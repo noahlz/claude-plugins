@@ -1,6 +1,6 @@
 ---
 name: run-and-fix-tests
-description: Builds projects, runs test suites, and systematically fixes failures via build-fixer and test-fixer agents. Use for running tests, fixing failures, or verifying changes.
+description: Builds projects and runs test suites. When failures occur, delegates to analyzer agents to diagnose root causes and provide fix recommendations. Use for running tests or verifying changes.
 user-invocable: true
 allowed-tools:
   - Bash(npm *)
@@ -50,23 +50,20 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 - [ ] Load configuration
 - [ ] Build project (or skip)
 - [ ] Run tests
-- [ ] Extract errors (if any)
-- [ ] Get user approval
-- [ ] Delegate to test-fixer
-- [ ] Complete
+- [ ] Extract failures (if any)
+- [ ] Delegate to analyzer
+- [ ] Exit with analysis
 ```
 
 ## Skill Organization
 
 **References:**
 - [`setup-config.md`](./references/setup-config.md) - Build tool detection
-- [`run-build.md`](./references/run-build.md) - Build execution
+- [`run-build.md`](./references/run-build.md) - Build execution and failure handling
 - [`run-tests.md`](./references/run-tests.md) - Test execution
-- [`build-procedures.md`](./references/build-procedures.md) - Error extraction
-- [`ask-to-fix.md`](./references/ask-to-fix.md) - User decision logic
-- [`fix-tests.md`](./references/fix-tests.md) - Test-fixer delegation
-- [`agent-delegation.md`](./references/agent-delegation.md) - Sub-agent env vars
-- [`completion.md`](./references/completion.md) - Summary and cleanup
+- [`build-procedures.md`](./references/build-procedures.md) - Error extraction procedures
+- [`agent-delegation.md`](./references/agent-delegation.md) - Analyzer delegation
+- [`completion.md`](./references/completion.md) - Summary and exit
 
 **Scripts:**  [scripts/](./scripts/) - utility scripts
 
@@ -74,17 +71,16 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 
 ---
 
-This skill streamlines running and fixing unit tests in a project. It:
-- resolves the project build/test commands from project-specific configuration, generating it for future use (with user input), if needed.
-- strives for minimal token / context usage by redirecting build/test output to files
+This skill streamlines running unit tests in a project. It:
+- Resolves project build/test commands from configuration (auto-generated on first use)
+- Minimizes token usage by redirecting build/test output to files
+- Delegates to analyzer agents when failures occur to provide root cause analysis
 
-The skill delegates to sub-agents when there are a large number (10+) of test failures or build errors:
-  - 'build-fixer' to fix compilation errors
-  - 'test-fixer' to fix test failures
-
-## Feedback Loop
-
-This skill iterates: run tests → extract failures → fix one test → repeat until all pass.
+When failures occur, the skill:
+  - Delegates to `broken-build-analyzer` for compilation errors
+  - Delegates to `failed-test-analyzer` for test failures
+  - Exits the workflow with analysis and fix recommendations
+  - Optionally enters plan mode for the user to implement fixes
 
 Activate this skill proactively after making code changes to verify they work (suggest first: "Should I run the test suite to verify these changes?").
 
@@ -92,7 +88,7 @@ Also activate this skill when the user requests testing using phrases like:
 - "run tests"
 - "test the changes"
 - "build and test"
-- "fix failing tests"
+- "verify changes"
 
 ---
 
@@ -188,8 +184,8 @@ SKIP_BUILD=true
 
 DELEGATE_TO: `references/run-tests.md`
 
-→ Follow test execution procedure  
-→ Return to Section 5 if tests fail, Section 8 if tests pass  
+→ Follow test execution procedure
+→ Return to Section 5 if tests fail, Section 7 if tests pass
 
 ## 5. Extract Test Errors
 
@@ -201,26 +197,24 @@ DELEGATE_TO: `references/run-tests.md`
 
 → For detailed extraction procedure, see ./references/build-procedures.md
 
-✓ 0 failures detected → Proceed to step 8 (Completion)  
-✗ 1-10 failures → Display error summary, proceed to step 6  
-✗ 10+ failures → Display count, proceed to step 6  
+✓ 0 failures detected → Proceed to step 7 (Completion)
+✗ 1+ failures → Display error summary, proceed to step 6
 
-## 6. Ask to Fix Tests
+## 6. Delegate to Analyzer and Exit
 
-DELEGATE_TO: `references/ask-to-fix.md`
+DELEGATE_TO: `references/agent-delegation.md`
 
-→ Follow decision logic based on failure count  
-→ Handle user response per reference instructions  
-→ Proceed to Section 7 if user approves, stop if user declines  
+→ Delegate to `failed-test-analyzer` agent with test failure context
+→ Receive analysis with root causes and fix recommendations
+→ Display analysis summary to user
+→ Ask user: "Enter plan mode to implement fixes?"
+  - Yes → Use EnterPlanMode tool with analysis context
+  - No → Proceed to Section 7
+→ Exit workflow
 
-## 7. Delegate to Test-Fixer Agent
-
-→ Execute instructions for using `test-fixer` agent from `references/fix-tests.md`
-
-## 8. Completion
+## 7. Completion
 
 DELEGATE_TO: `references/completion.md`
 
 → Generate status summary
-→ Clear todo list
 → Exit workflow  

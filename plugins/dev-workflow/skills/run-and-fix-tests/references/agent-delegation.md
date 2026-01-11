@@ -2,48 +2,60 @@
 
 Common procedures for delegating analysis to sub-agents (broken-build-analyzer, failed-test-analyzer).
 
-## BUILD_FIXER_ENV_VARS
+## DELEGATE_TO_BUILD_ANALYZER
 
-Environment variables to provide when delegating to build-fixer agent:
-- `BUILD_COUNT` - number of build steps (e.g., "1" or "2")
-- `BUILD_{i}_CMD` - actual command for step i (e.g., "npm run build")
-- `BUILD_{i}_LOG` - actual log path for step i (e.g., "dist/npm-build.log")
-- `BUILD_{i}_ERROR_PATTERN` - actual pattern for step i (e.g., "(error|Error|ERR!)")
-- `BUILD_{i}_WORKING_DIR` - actual path for step i (e.g., ".")
-- `OUT_DIR` - actual path (e.g., "dist/")
-- `INITIAL_PWD` - actual path (e.g., "/current/working/directory")
-- `SKIP_BUILD` - "true" or "false" (whether build step was skipped)
+Procedure to delegate to broken-build-analyzer agent:
 
-## TEST_FIXER_ENV_VARS
+→ Extract build errors from build log(s) (see build-procedures.md EXTRACT_BUILD_ERRORS)
 
-Environment variables to provide when delegating to test-fixer agent:
-- All BUILD_FIXER_ENV_VARS (above) for compilation checking, including `SKIP_BUILD`
-- `TEST_CMD` - actual value (e.g., "npm test")
-- `TEST_RESULTS_PATH` - actual path to test results file (e.g., "dist/test-results.tap")
-- `TEST_SINGLE_CMD` - actual value (e.g., "npm test -- {testFile}")
-- `TEST_SINGLE_RESULTS_PATH` - actual path to single test results file (e.g., "dist/test-single-results.tap")
-- `TEST_LOG` - optional path to human-readable log file (e.g., "dist/test.log")
-
-## DELEGATE_TO_BUILD_FIXER
-
-Procedure to delegate to build-fixer agent:
-
-→ Delegate to the `broken-build-analyzer` agent to fix compilation errors one-by-one.
+→ Delegate to the `broken-build-analyzer` agent using Task tool:
+  - `subagent_type: "Explore"`
+  - `prompt: "Analyze compilation failures and provide root cause analysis with fix recommendations"`
 
 → Provide agent with context in natural language:
+  - Build command used: [actual command]
+  - Build log location: [path to log file]
   - Build error list: [bulleted list with file:line:col and error messages]
   - Example error entry: "src/auth.ts:45:12 - TS2304: Cannot find name 'User'"
+  - Number of errors: [count]
 
-→ Provide BUILD_FIXER_ENV_VARS (see above)
+→ Agent analyzes errors and returns:
+  - Root cause analysis
+  - Recommended fixes with file locations
+  - Next steps if solution unclear
 
-→ Agent fixes the errors per its instructions and context provided.
+→ Display agent's analysis to user
 
-## RESUME_TEST_FIXER
+→ Ask user: "Enter plan mode to implement these fixes?"
+  - Yes → Use EnterPlanMode tool, include analysis in context
+  - No → Proceed to completion
 
-Procedure to delegate back to the test-fixer agent after build-fixer completes:
+## DELEGATE_TO_TEST_ANALYZER
 
-→ Delegate back to the test-fixer agent using Task tool with resume parameter:
-  - `resume: $TEST_FIXER_AGENT_ID`
-  - `prompt: "Compilation errors have been resolved by build-fixer. BUILD_LOG shows clean build. Continue with test fix verification."`
+Procedure to delegate to failed-test-analyzer agent (invoked from SKILL.md Section 6):
 
-→ Test-fixer continues from where it left off (re-runs verification starting with compilation check)
+→ Extract test failures from test results (see build-procedures.md EXTRACT_TEST_ERRORS)
+
+→ Delegate to the `failed-test-analyzer` agent using Task tool:
+  - `subagent_type: "Explore"`
+  - `prompt: "Analyze test failures and provide root cause analysis with fix recommendations"`
+
+→ Provide agent with context in natural language:
+  - Test command used: [actual command]
+  - Test results location: [path to results file]
+  - Test log location (if available): [path to log file]
+  - Failed test list: [bulleted list with test names and error excerpts]
+  - Example entry: "TestLoginFlow (test/auth.test.js) - Expected 'logged in', got undefined"
+  - Number of failures: [count]
+
+→ Agent analyzes failures and returns:
+  - Root cause analysis
+  - Recommended fixes with file locations
+  - Whether tests need updating vs code needs fixing
+  - Next steps if solution unclear
+
+→ Display agent's analysis to user
+
+→ Ask user: "Enter plan mode to implement these fixes?"
+  - Yes → Use EnterPlanMode tool, include analysis in context
+  - No → Proceed to completion

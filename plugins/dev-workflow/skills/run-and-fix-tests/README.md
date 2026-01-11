@@ -1,12 +1,14 @@
 # Run and Fix Tests
 
-Guides Claude through automatically building, running and fixing your project tests with minimal token usage. 
+Guides Claude through building and testing your project with minimal token usage. When failures occur, provides root cause analysis and fix recommendations.
 
 ## What It Does
 
 - Builds and tests your project using the appropriate build tool
-- Fixes compilation errors one by one using the `build-fixer` agent (with your approval)
-- Fixes failing tests one by one using the `test-fixer` agent (with your approval)
+- Analyzes compilation errors using the `broken-build-analyzer` agent
+- Analyzes test failures using the `failed-test-analyzer` agent
+- Provides root cause analysis and fix recommendations
+- Optionally enters plan mode for implementing fixes
 - Supports single test execution: `/test MyTest`
 - Supports multi-module projects with different build tools (custom configuration required)
 
@@ -16,13 +18,13 @@ Guides Claude through automatically building, running and fixing your project te
 /test
 ```
 
-The skill auto-detects your build tool and runs your tests. If tests fail, it offers to fix them one-by-one with your approval.
+The skill auto-detects your build tool and runs your tests. If tests fail, it analyzes failures and provides fix recommendations.
 
 ## When to Use
 
 - After making code changes to verify they work
-- To systematically fix compilation errors or test failures
-- When CI/CD tests are failing and you need to debug locally
+- To get root cause analysis of compilation errors or test failures
+- When CI/CD tests are failing and you need to understand why
 
 ## Prerequisites
 
@@ -122,10 +124,12 @@ To reset and re-detect your build tools, delete `.claude/settings.plugins.run-an
 
 ## Agents
 
-Because analysis of build and test failures can take up context, this skill delegates to specialized agents:
+This skill delegates to specialized analyzer agents for root cause analysis:
 
-- [broken-build-analyzer](../../agents/broken-build-analyzer.md)
-- [failed-test-analyzer](../../agents//failed-test-analyzer.md)
+- [broken-build-analyzer](../../agents/broken-build-analyzer.md) - Analyzes compilation failures
+- [failed-test-analyzer](../../agents/failed-test-analyzer.md) - Analyzes test failures
+
+Both agents provide fix recommendations without making edits. The user implements fixes via plan mode.
 
 ## Author
 

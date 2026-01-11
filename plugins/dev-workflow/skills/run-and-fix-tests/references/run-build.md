@@ -17,24 +17,20 @@
 
 ✓ All builds succeed → Proceed to step 4 (Run Tests)
 
-## 3a. Extract Build Errors
+## 3a. Analyze Build Failures and Exit
 
-→ Extract build errors (see ./references/build-procedures.md)
+**STEP_DESCRIPTION**: "Analyzing build failures"
 
-→ Use AskUserQuestion: "Build failed with [N] compilation errors. Fix them?"
-  - "Yes" → Proceed to step 3b
-  - "No" → Stop
+DELEGATE_TO: `references/agent-delegation.md` - DELEGATE_TO_BUILD_ANALYZER
 
-## 3b. Delegate to Build-Fixer Agent
+→ Extract build errors (see ./references/build-procedures.md - EXTRACT_BUILD_ERRORS)
 
-→ Delegate to build-fixer (see ./references/agent-delegation.md)
-  - Provide error list from step 3a
-  - Provide BUILD_FIXER_ENV_VARS (see ./references/agent-delegation.md)
+→ Delegate to `broken-build-analyzer` agent with build failure context
+→ Receive analysis with root causes and fix recommendations
+→ Display analysis summary to user
 
-✓ Agent completes → Proceed to step 3c
+→ Ask user: "Enter plan mode to implement fixes?"
+  - Yes → Use EnterPlanMode tool with analysis context
+  - No → Proceed to Section 7 (Completion)
 
-## 3c. Rebuild After Fixes
-
-→ Rebuild and verify (see ./references/build-procedures.md)  
-✓ Build succeeds → Proceed to Section 4 (Run Tests)  
-✗ Build fails → Return to Section 3a (more errors)  
+→ Exit workflow  
