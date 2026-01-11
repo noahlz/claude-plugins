@@ -88,7 +88,7 @@ Run tests with this plugin's `run-and-fix-tests` skill ("eat your own dogfood") 
 npm test
 ```
 
-See `test/README.md` for detailed testing documentation.
+See the [test/README.md](./test/README.md) for detailed testing documentation.
 
 ## Author
 

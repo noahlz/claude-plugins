@@ -102,7 +102,7 @@ Use the `dev-workflow:run-and-fix-tests` skill to test changes to this project.
 Example test command, which you should derive from the build configuration `.claude/settings.plugins.run-and-fix-tests.json`:
 
 ```bash
-npm test && echo "✓ Tests Passed!" || echo "✗ Tests FAILED!"  
+npm test && echo "✓ Tests Passed!" || echo "✗ Tests FAILED"  
 ```
 
 **NOTE: Do NOT use `tee`.** You'll obtain context for test failures from build and tests log files, if needed.
