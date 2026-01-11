@@ -132,47 +132,69 @@ Execute ONLY if Step 0. Prerequisites has "SKILL_CONFIG: NOT_CONFIGURED".
 
 **STEP_DESCRIPTION**: "Loading project configuration"
 
-→ Execute load-config script to output configuration:
+→ Execute load-config script to output configuration as JSON:
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 ```
 
-**⚠️ CRITICAL - Capture Output Values**
+**Parse the JSON output:**
 
-The script outputs key=value pairs. Example:
+The script outputs JSON configuration. Example structure:
+```json
+{
+  "outDir": "dist",
+  "skipBuild": false,
+  "logFile": "dist/test.log",
+  "build": [{
+    "command": "npm run build",
+    "logFile": "dist/build.log",
+    "errorPattern": "error",
+    "workingDir": ".",
+    "nativeOutputSupport": false
+  }],
+  "test": {
+    "all": {
+      "command": "npm test",
+      "resultsPath": "dist/test-results.tap",
+      "errorPattern": "(not ok|Bail out!)",
+      "nativeOutputSupport": false
+    },
+    "single": {
+      "command": "npm test -- {testFile}",
+      "resultsPath": "dist/test-single-results.tap",
+      "errorPattern": "(not ok|Bail out!)",
+      "nativeOutputSupport": false
+    }
+  }
+}
 ```
-TEST_CMD=npm test
-TEST_RESULTS_PATH=dist/test-results.tap
-TEST_ERROR_PATTERN=(not ok|Bail out!)
-TEST_SINGLE_CMD=npm test -- {testFile}
-TEST_SINGLE_RESULTS_PATH=dist/test-single-results.tap
-TEST_SINGLE_ERROR_PATTERN=(not ok|Bail out!)
-TEST_LOG=dist/test.log
-OUT_DIR=dist
-BUILD_COUNT=0
-SKIP_BUILD=true
-```
 
-→ Store these literal values in memory for use in subsequent sections
-→ Use the literal values (not shell variables like `$TEST_CMD`) in bash commands
+→ Parse the JSON output as the project configuration
+→ Reference values using paths like:
+  - `config.test.all.command` - test command
+  - `config.build[0].logFile` - build log location
+  - `config.build[0].workingDir` - build working directory
+  - `config.skipBuild` - whether build should be skipped
+  - `config.test.all.resultsPath` - test results file location
+  - `config.test.all.errorPattern` - regex for test failures
 
-**Output handling flags:**
+**Output handling:**
 - `nativeOutputSupport: true` → Tool has native file output (e.g., Maven's `--log-file`)
 - `nativeOutputSupport: false` → Use bash redirection (`> file 2>&1`)
 
-**Result handling:**  
-✗ Script fails → Display error and stop  
-✓ Script succeeds → Values captured, proceed to Section 3   
+**Result handling:**
+✗ Script fails → Display error and stop
+✓ Script succeeds → Configuration parsed, proceed to Section 3   
 
 ## 3. Build Project
 
-→ Check the SKIP_BUILD value captured from Section 2 (literal value, not shell variable)
+→ Check `config.skipBuild` from Section 2 configuration
 
-**If SKIP_BUILD=true:**  
-→ Display: "Build step skipped (build command identical to test command)"  
-→ Proceed directly to step 4 (Run Tests)  
+**If config.skipBuild is true:**
+→ Display: "Build step skipped (build command identical to test command)"
+→ Proceed directly to step 4 (Run Tests)
 
-**If SKIP_BUILD=false:**
+**If config.skipBuild is false:**
 
 **STEP_DESCRIPTION**: "Building project"
 
@@ -191,9 +213,9 @@ DELEGATE_TO: `references/run-tests.md`
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
-→ Parse test results file using the captured literal values from Section 2:
-  - Read the file at TEST_RESULTS_PATH (e.g., "dist/test-results.tap")
-  - Extract failures using TEST_ERROR_PATTERN regex (e.g., "(not ok|Bail out!)")
+→ Parse test results file using config from Section 2:
+  - Read the file at `config.test.all.resultsPath` (e.g., "dist/test-results.tap")
+  - Extract failures using `config.test.all.errorPattern` regex (e.g., "(not ok|Bail out!)")
 
 → For detailed extraction procedure, see ./references/build-procedures.md
 

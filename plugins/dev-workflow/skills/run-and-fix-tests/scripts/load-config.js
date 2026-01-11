@@ -81,11 +81,52 @@ function validateConfig(config) {
 }
 
 /**
+ * Resolve config - expands placeholders and computes derived values
+ * @param {object} config - Config object
+ * @returns {object} - Resolved config with expanded paths and computed fields
+ */
+export function resolveConfig(config) {
+  const resolved = JSON.parse(JSON.stringify(config)); // Deep copy
+  const outDir = resolved.outDir || 'dist';
+
+  // Resolve build paths
+  if (resolved.build && Array.isArray(resolved.build)) {
+    resolved.build.forEach(build => {
+      build.logFile = resolvePath(build.logFile, { outDir });
+      build.workingDir = build.workingDir || '.';
+    });
+  }
+
+  // Resolve test paths
+  if (resolved.test && resolved.test.all) {
+    resolved.test.all.resultsPath = resolvePath(resolved.test.all.resultsPath, { outDir });
+  }
+  if (resolved.test && resolved.test.single) {
+    resolved.test.single.resultsPath = resolvePath(resolved.test.single.resultsPath, { outDir });
+  }
+
+  // Resolve optional logFile
+  if (resolved.logFile) {
+    resolved.logFile = resolvePath(resolved.logFile, { outDir });
+  }
+
+  // Compute skipBuild
+  let skipBuild = false;
+  if (resolved.skipBuild !== undefined) {
+    skipBuild = resolved.skipBuild;
+  } else if (resolved.build && resolved.build.length === 1 && resolved.build[0].command === resolved.test.all.command) {
+    skipBuild = true;
+  }
+  resolved.skipBuild = skipBuild;
+
+  return resolved;
+}
+
+/**
  * Load and process configuration
  * @param {object} options - Options
- * @param {string} options.pluginRoot - Plugin root directory
  * @param {string} options.baseDir - Base directory (defaults to cwd)
- * @returns {object} - { config, env, errors, warnings }
+ * @returns {object} - { resolved, errors, warnings }
  */
 export function loadConfig(options = {}) {
   const { baseDir = '.' } = options;
@@ -96,94 +137,25 @@ export function loadConfig(options = {}) {
   const projectConfig = loadSkillConfig('run-and-fix-tests', baseDir);
   if (!projectConfig) {
     errors.push('No project configuration found at .claude/settings.plugins.run-and-fix-tests.json');
-    return { config: null, env: {}, errors, warnings };
+    return { resolved: null, errors, warnings };
   }
-
-  const config = projectConfig;
 
   // Validate config
-  const validationErrors = validateConfig(config);
+  const validationErrors = validateConfig(projectConfig);
   if (validationErrors.length > 0) {
-    return { config: null, env: {}, errors: validationErrors, warnings };
+    return { resolved: null, errors: validationErrors, warnings };
   }
 
-  // Generate environment variables
-  const env = generateEnv(config, baseDir);
+  // Resolve configuration
+  const resolved = resolveConfig(projectConfig);
 
-  return { config, env, errors, warnings };
-}
-
-/**
- * Generate environment variables from config
- * @param {object} config - Config object
- * @param {string} baseDir - Base directory for path resolution
- * @returns {object} - Environment variables
- */
-export function generateEnv(config, baseDir = '.') {
-  const env = {};
-  const outDir = config.outDir || 'dist';
-
-  // Build configuration (always array format)
-  if (config.build && Array.isArray(config.build)) {
-    env.BUILD_COUNT = config.build.length.toString();
-    config.build.forEach((build, idx) => {
-      env[`BUILD_${idx}_CMD`] = build.command;
-      env[`BUILD_${idx}_LOG`] = resolvePath(build.logFile, { outDir });
-      env[`BUILD_${idx}_ERROR_PATTERN`] = build.errorPattern;
-      env[`BUILD_${idx}_WORKING_DIR`] = build.workingDir || '.';
-      env[`BUILD_${idx}_NATIVE_OUTPUT`] = build.nativeOutputSupport ? 'true' : 'false';
-    });
-  }
-
-  // Test configuration (always single)
-  env.TEST_CMD = config.test.all.command;
-  env.TEST_RESULTS_PATH = resolvePath(config.test.all.resultsPath, { outDir });
-  env.TEST_ERROR_PATTERN = config.test.all.errorPattern;
-  env.TEST_NATIVE_OUTPUT = config.test.all.nativeOutputSupport ? 'true' : 'false';
-
-  env.TEST_SINGLE_CMD = config.test.single.command;
-  env.TEST_SINGLE_RESULTS_PATH = resolvePath(config.test.single.resultsPath, { outDir });
-  env.TEST_SINGLE_ERROR_PATTERN = config.test.single.errorPattern;
-  env.TEST_SINGLE_NATIVE_OUTPUT = config.test.single.nativeOutputSupport ? 'true' : 'false';
-
-  // Optional single log file for all test runs (human inspection)
-  if (config.logFile) {
-    env.TEST_LOG = resolvePath(config.logFile, { outDir });
-  }
-
-  env.OUT_DIR = outDir;
-
-  // Auto-detect if build should be skipped
-  let skipBuild = false;
-
-  // Check explicit flag first (allows override)
-  if (config.skipBuild !== undefined) {
-    skipBuild = config.skipBuild;
-  } else if (config.build && config.build.length === 1 && env.BUILD_0_CMD === env.TEST_CMD) {
-    // Auto-detect: single build command matches test command
-    skipBuild = true;
-  }
-
-  env.SKIP_BUILD = skipBuild ? 'true' : 'false';
-
-  return env;
-}
-
-/**
- * Format config as JSON
- * @param {object} config - Config object
- * @returns {string} - JSON string
- */
-export function formatJson(config) {
-  return JSON.stringify(config, null, 2);
+  return { resolved, errors, warnings };
 }
 
 /**
  * Main entry point
  */
 async function main() {
-  const format = process.argv[2] || 'bash'; // 'bash' or 'json'
-
   const result = loadConfig({ baseDir: '.' });
 
   if (result.errors.length > 0) {
@@ -198,14 +170,8 @@ async function main() {
     result.warnings.forEach(warn => console.error(`Warning: ${warn}`));
   }
 
-  if (format === 'json') {
-    console.log(formatJson(result.config));
-  } else {
-    // Output simple key=value pairs for LLM to capture
-    for (const [key, value] of Object.entries(result.env)) {
-      console.log(`${key}=${value}`);
-    }
-  }
+  // Output resolved config as JSON
+  console.log(JSON.stringify(result.resolved, null, 2));
 }
 
 
