@@ -1,6 +1,6 @@
 # Agent Delegation Procedures
 
-Common procedures for delegating work to and resuming sub-agents (build-fixer, test-fixer).
+Common procedures for delegating analysis to sub-agents (broken-build-analyzer, failed-test-analyzer).
 
 ## BUILD_FIXER_ENV_VARS
 
@@ -28,7 +28,7 @@ Environment variables to provide when delegating to test-fixer agent:
 
 Procedure to delegate to build-fixer agent:
 
-→ Delegate to the `build-fixer` agent to fix compilation errors one-by-one.
+→ Delegate to the `broken-build-analyzer` agent to fix compilation errors one-by-one.
 
 → Provide agent with context in natural language:
   - Build error list: [bulleted list with file:line:col and error messages]

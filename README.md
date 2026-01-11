@@ -34,17 +34,19 @@ claude plugin install dev-workflow@noahlz.github.io
 
 | Skill | Description | Command | Documentation |
 |-------|-------------|---------|---------------|
-| [`run-and-fix-tests`](./plugins/dev-workflow/skills/run-and-fix-tests/SKILL.md) | Run tests with clean output and fix any failures using the `test-fixer` agent. | `/dev-workflow:test` (or `/test`) | [README.md](./plugins/dev-workflow/skills/run-and-fix-tests/README.md) |
-| [`write-git-commit`](./plugins/dev-workflow/skills/write-git-commit/SKILL.md) | Create git commits with Claude Code cost metrics embedded in commit footers. Runs in sub-agent via `context: fork` | `/dev-workflow:commit` (or `/commit`) | [README.md](./plugins/dev-workflow/skills/write-git-commit/README.md) |
+| [`run-and-fix-tests`](./plugins/dev-workflow/skills/run-and-fix-tests/SKILL.md) | Run tests with clean output and steps through fixing failures, using a plan created by a sub-agent if necessary. | `/dev-workflow:test` (or `/test`) | [README.md](./plugins/dev-workflow/skills/run-and-fix-tests/README.md) |
+| [`write-git-commit`](./plugins/dev-workflow/skills/write-git-commit/SKILL.md) | Create git commits with Claude Code cost metrics embedded in commit footers. | `/dev-workflow:commit` (or `/commit`) | [README.md](./plugins/dev-workflow/skills/write-git-commit/README.md) |
 
 **Note on v2.1.0+:** While Claude Code v2.1.0 [introduced](https://github.com/anthropics/claude-code/commit/870624fc1581a70590e382f263e2972b3f1e56f5) automatic slash command exposure for local skills (`~/.claude/skills`), plugin-installed skills require custom command definitions in the `/commands/` directory to appear in the slash menu. This is a known limitation of the plugin architecture.
 
 #### Agents
 
+Because reading build and test failures quickly use up context, the`r un-and-fix-test` skill delegates failure analysis to specialized agents:
+
 | Agent | Description | Invoked By |
 |-------|-------------|-----------|
-| [`build-fixer`](./plugins/dev-workflow/agents/build-fixer.md) | Analyzes build/compilation failures and implements root-cause fixes. Handles iterative fix-verify loop for compilation errors. | `run-and-fix-tests` skill | 
-| [`test-fixer`](./plugins/dev-workflow/agents/test-fixer.md) | Analyzes failing tests and implements root-cause fixes. Guides test failure diagnosis with iterative fix-verify loop. | `run-and-fix-tests` skill |
+| [`broken-build-analyzer`](./plugins/dev-workflow/agents/broken-build-analyzer.md) | Analyzes build/compilation failures and provides diagnosis suitable for creating a plan to fix the build. | `run-and-fix-tests` skill | 
+| [`failed-test-analyzer`](./plugins/dev-workflow/agents/failed-test-analyzer.md) | Analyzes test failures and provides diagnosis suitable for creating a plan to fix the tests. | `run-and-fix-tests` skill |
 
 ## Development
 

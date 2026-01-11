@@ -122,11 +122,10 @@ To reset and re-detect your build tools, delete `.claude/settings.plugins.run-an
 
 ## Agents
 
-**build-fixer**: Fixes compilation errors one-by-one with IDE diagnostics and LSP support. Rebuilds after each fix to catch cascading effects.
+Because analysis of build and test failures can take up context, this skill delegates to specialized agents:
 
-**test-fixer**: Fixes failing tests one-by-one by running individual tests to verify each fix.
-
-Both agents offer approval prompts after each fix (continue/skip/stop) to maintain your control.
+- [broken-build-analyzer](../../agents/broken-build-analyzer.md)
+- [failed-test-analyzer](../../agents//failed-test-analyzer.md)
 
 ## Author
 
