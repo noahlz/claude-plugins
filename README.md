@@ -41,7 +41,7 @@ claude plugin install dev-workflow@noahlz.github.io
 
 #### Agents
 
-Because reading build and test failures quickly use up context, the`r un-and-fix-test` skill delegates failure analysis to specialized agents:
+Because reading build and test failures quickly use up context, the `run-and-fix-test` skill delegates failure analysis to specialized agents:
 
 | Agent | Description | Invoked By |
 |-------|-------------|-----------|
