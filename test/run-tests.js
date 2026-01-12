@@ -11,6 +11,8 @@ const distDir = join(dirname(__dirname), 'dist');
 const args = process.argv.slice(2);
 const isSingleTestMode = args.length > 0;
 
+const isSilent = process.env.npm_config_loglevel === 'silent' || process.env.npm_config_silent === 'true';
+
 // Use different result files for single vs all tests
 const tapLogFile = join(distDir, isSingleTestMode ? 'test-single-results.tap' : 'test-results.tap');
 
@@ -48,7 +50,7 @@ const stripAnsi = (str) => str.replace(/\x1b\[[0-9;]*m/g, '');
 const summaryStart = lines.findIndex(line => stripAnsi(line).trim().startsWith('ℹ tests'));
 
 if (summaryStart === -1) {
-  console.log(lines.join('\n'));
+  if (!isSilent) console.log(lines.join('\n'));
   process.exit(result.status);
 }
 
@@ -66,5 +68,8 @@ const reordered = [
   ...lines.slice(summaryStart, summaryEnd + 1)
 ];
 
-console.log(reordered.join('\n'));
+if (!isSilent) {
+  console.log(reordered.join('\n'));
+}
+
 process.exit(result.status);

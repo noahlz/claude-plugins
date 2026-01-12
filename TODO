@@ -1,5 +1,4 @@
 Immediate:
-- FIXME: test/run-tests.js needs to NOT output to console.log if command line includes --silent
 - Reference files need to have TOC / summary at top so agent knows to read whole file
 - FIXME: reference files should not reference other reference files. Check all of them.
 
