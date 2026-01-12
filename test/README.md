@@ -45,13 +45,11 @@ Common utilities in [`lib/helpers.js`](./lib/helpers.js) support test setup, fix
 
 ### Dependency Injection for Mocking
 
-Tests use **dependency injection** to provide mock dependencies. Mock objects are passed via a `deps` parameter to functions under test. This avoids external mocking libraries and experimental Node.js features.
+Tests use **dependency injection** to provide mock dependencies. 
 
-Mock libaries are located adjacent to their tests. For example [`test/dev-workflow/write-git-commit/mocks/`](./dev-workflow/write-git-commit/mocks/)
+Tests define lightweight, inline mock objects that are passed to functions-under-test via a `deps` parameter
 
-See: 
-- [`test/dev-workflow/write-git-commit/commit-workflow.test.js`](./dev-workflow/write-git-commit/commit-workflow.test.js) - Injecting ccusage and git mocks
-- [`test/dev-workflow/write-git-commit/git-operations.integration.test.js`](./dev-workflow/write-git-commit/git-operations.integration.test.js) - Testing git operations directly without mocks
+See [commit-workflow.test.js](./dev-workflow/write-git-commit/commit-workflow.test.js) for examples.
 
 ### Fixtures
 

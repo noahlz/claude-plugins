@@ -1,14 +1,17 @@
+Immediate:
 - FIXME: test/run-tests.js needs to NOT output to console.log if command line includes --silent
--  Also, rename / combine commit-workflow-unit.tests.js and commit-workflow.test.js
--  README is wrong: mocks are not adjacent to their tests (fix)
-- Rename "settings.plugins.run-and-fix-tests.json" default to just `tools.json` and it shouldn't be merged.
+- Reference files need to have TOC / summary at top so agent knows to read whole file
+- FIXME: reference files should not reference other reference files. Check all of them.
+
+Backlog:
+- Some unit tests are probably overlapping and could be consolidated.
 - Run and fix tests "Customizing Configuration" secton might be in accurate. Build tool is always an array now.
 - FIXME: write-git-commit skill sometimes doesn't follow workflows. Needs stronger "guardrails" restored.
   - move as much as you can to scripts as possible. I.e. formatting for presentation
+- Rename "settings.plugins.run-and-fix-tests.json" default to just `tools.json` and it shouldn't be merged.
 - write-git-commit: Simplify
   - Do not recover from git errors. Print a warning / explanation and exit the workflow if unexpected error happens.
   - If session Id is not available, make it a configuration setup workflow. After setting up the session Id config, exit the workflow / tell user to start over
-- FIXME: reference files should not reference other reference files. Check all of them.
 - Revise/improve sub-agent instructions per best practices
 - run-and-fix-tests skill should:
   - Exit workflow after setting up configuration first time.
@@ -18,6 +21,5 @@
   - remove / greatly reduce build-procedures and run-build reference files.
   - remove completion.md / simplify and move to main skill.
   - run-tests should reference sub-agent
-- Reference files need to have TOC / summary at top so agent knows to read whole file
 - Feature: Run and Fix tests needs CI/CD mode that skips build/test output and just analyzes the failures directly (assuming they're available)
 - Improve test line coverage > 90%

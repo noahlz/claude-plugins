@@ -20,12 +20,9 @@ const testFiles = isSingleTestMode
   ? args
   : globSync('**/*.test.js', { cwd: __dirname }).map(file => join(__dirname, file));
 
-// Include mock binaries in PATH for all Node.js test processes
-const mockPath = join(__dirname, 'dev-workflow', 'lib', 'mocks');
 const testEnv = {
   ...process.env,
-  FORCE_COLOR: '1',
-  PATH: `${mockPath}:${process.env.PATH}`
+  FORCE_COLOR: '1'
 };
 
 const result = spawnSync(

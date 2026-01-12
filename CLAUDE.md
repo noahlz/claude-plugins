@@ -26,8 +26,6 @@ claude-plugins/
     │   ├── fixtures/
     │   │   ├── configs/
     │   │   └── project-templates/
-    │   ├── lib/                 # Test suite library scripts (mocks, helpers, utilities)
-    │   │   └── mocks/
     │   ├── run-and-fix-tests/
     │   └── write-git-commit/
     └── lib/                     # Cross-module test utilities

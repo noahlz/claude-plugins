@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync, cpSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -15,26 +15,18 @@ const PLUGIN_ROOT = join(dirname(TESTS_ROOT), 'plugins'); // project root plugin
  * @param {string[]} args - Command arguments
  * @param {Object} options - Options object
  * @param {string} options.cwd - Working directory
- * @param {Object} options.env - Environment variables (merged with process.env)
  * @param {string} options.input - stdin input
  * @returns {Object} { exitCode, stdout, stderr, output }
  */
 function execCommand(command, args, options = {}) {
   const {
     cwd = process.cwd(),
-    env = {},
     input = ''
   } = options;
-
-  const fullEnv = {
-    ...process.env,
-    ...env
-  };
 
   try {
     const result = spawnSync(command, args, {
       cwd,
-      env: fullEnv,
       input,
       encoding: 'utf8'
     });
@@ -57,7 +49,7 @@ function execCommand(command, args, options = {}) {
 
 /**
  * Setup test environment
- * @returns {Object} Test environment object with cleanup function
+ * @returns {Object} Test environment object
  */
 export function setupTestEnv() {
   const tmpDir = mkdtempSync(join(tmpdir(), 'node-test-'));
@@ -65,30 +57,25 @@ export function setupTestEnv() {
   // Create .claude directory
   mkdirSync(join(tmpDir, '.claude'), { recursive: true });
 
-  // Create mocks directory in tmpDir
-  const mockPath = join(tmpDir, 'mocks');
-  mkdirSync(mockPath, { recursive: true });
-
-  const env = {
+  const testEnv = {
     tmpDir,
     pluginRoot: PLUGIN_ROOT,
-    mockPath: mockPath,
     cleanup: () => {
       rmSync(tmpDir, { recursive: true, force: true });
     }
   };
 
-  return env;
+  return testEnv;
 }
 
 /**
  * Teardown test environment
- * @param {Object} env - Test environment object from setupTestEnv
+ * @param {Object} testEnv - Test environment object from setupTestEnv
  */
-export function teardownTestEnv(env) {
-  if (env && env.cleanup) {
+export function teardownTestEnv(testEnv) {
+  if (testEnv && testEnv.cleanup) {
     try {
-      env.cleanup();
+      testEnv.cleanup();
     } catch (e) {
       // Ignore cleanup errors
     }
@@ -107,33 +94,6 @@ export function readFixture(pluginName, fixtureName) {
 }
 
 /**
- * Execute bash script and capture output/exit code
- * @param {string} pluginName - Plugin name
- * @param {string} scriptPath - Path to bash script
- * @param {Object} options - Options object
- * @param {string} options.cwd - Working directory
- * @param {Object} options.env - Environment variables (merged with process.env)
- * @param {string} options.input - stdin input
- * @param {string[]} options.args - Arguments to pass to script
- * @returns {Object} { exitCode, stdout, stderr }
- */
-export function execBashScript(pluginName, scriptPath, options = {}) {
-  const {
-    cwd = process.cwd(),
-    env = {},
-    input = '',
-    args = []
-  } = options;
-
-  const fullEnv = {
-    ...env,
-    PATH: `${join(TESTS_ROOT, pluginName, 'lib', 'mocks')}:${process.env.PATH}`
-  };
-
-  return execCommand('bash', [scriptPath, ...args], { cwd, env: fullEnv, input });
-}
-
-/**
  * Execute a Node.js script with given options
  * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
  * @param {string} scriptPath - Path to Node.js script
@@ -143,17 +103,11 @@ export function execBashScript(pluginName, scriptPath, options = {}) {
 export function execNodeScript(pluginName, scriptPath, options = {}) {
   const {
     cwd = process.cwd(),
-    env = {},
     input = '',
     args = []
   } = options;
 
-  const fullEnv = {
-    ...env,
-    PATH: `${join(TESTS_ROOT, pluginName, 'lib', 'mocks')}:${process.env.PATH}`
-  };
-
-  return execCommand('node', [scriptPath, ...args], { cwd, env: fullEnv, input });
+  return execCommand('node', [scriptPath, ...args], { cwd, input });
 }
 
 /**
@@ -161,12 +115,11 @@ export function execNodeScript(pluginName, scriptPath, options = {}) {
  * @param {string[]} args - Git command arguments (e.g., ['init'] or ['config', 'user.email', 'test@example.com'])
  * @param {Object} options - Options object
  * @param {string} options.cwd - Working directory
- * @param {Object} options.env - Environment variables (merged with process.env)
  * @returns {Object} { exitCode, stdout, stderr, output }
  */
 export function execGit(args, options = {}) {
-  const { cwd = process.cwd(), env = {} } = options;
-  return execCommand('git', args, { cwd, env });
+  const { cwd = process.cwd() } = options;
+  return execCommand('git', args, { cwd });
 }
 
 /**
