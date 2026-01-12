@@ -17,15 +17,15 @@
 
 → Check `config.test.single.nativeOutputSupport` flag:
 
-**If config.test.single.nativeOutputSupport=true:**
+**If `config.test.single.nativeOutputSupport=true`:**
 → Execute command WITHOUT stdout/stderr redirection
 
-**If config.test.single.nativeOutputSupport=false:**
+**If `config.test.single.nativeOutputSupport=false`:**
 → Redirect output to `config.test.single.resultsPath`
 
-Example bash command:
+Example bash command with native output support:
 ```bash
-npm test -- path/to/test.js > dist/test-single-results.tap 2>&1
+npm --silent test -- path/to/test.js
 ```
 
 ### All Tests Mode (Default)
@@ -37,17 +37,17 @@ npm test -- path/to/test.js > dist/test-single-results.tap 2>&1
 → Check `config.test.all.nativeOutputSupport` flag:
 
 **If config.test.all.nativeOutputSupport=true:**
-→ Tool natively supports file output (e.g., Maven's `--log-file`, npm's `--test-reporter-destination`)
-→ Execute command WITHOUT stdout/stderr redirection
+→ Tool natively supports file output (e.g., Maven's `--log-file`, npm's `--test-reporter-destination`)  
+→ Execute command WITHOUT stdout/stderr redirection  
 
 Example bash command:
 ```bash
 npm test --silent -- --test-reporter=tap --test-reporter-destination=dist/test-results.tap
 ```
 
-**If config.test.all.nativeOutputSupport=false:**
-→ Tool requires stdout/stderr redirection
-→ Redirect output to `config.test.all.resultsPath`
+**If config.test.all.nativeOutputSupport=false:**  
+→ Tool requires stdout/stderr redirection  
+→ Redirect output to `config.test.all.resultsPath`  
 
 Example bash command:
 ```bash
@@ -58,6 +58,6 @@ npm test > dist/test-results.tap 2>&1
 
 → Execute test command and capture exit code
 
-✓ Exit 0 → All tests pass, return to SKILL.md Section 8 (Completion)
+✓ Exit 0 → All tests pass, return to SKILL.md step 7 (Completion)
 
 ✗ Exit non-zero → Tests failed, return to SKILL.md Section 5 (Extract Test Errors)

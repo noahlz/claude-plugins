@@ -59,6 +59,8 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 
 ## Workflow Checklist
 
+**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
+
 ```
 - [ ] Stage and analyze changes
 - [ ] Generate commit message
@@ -71,12 +73,12 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 ## Skill Organization
 
 **References:**
-- [`message_guidelines.md`](./references/message_guidelines.md)- Commit message format
-- [`message_approval.md`](./references/message_approval.md) - User approval workflow
-- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
-- [`create_commit.md`](./references/create_commit.md) - Git commit creation
-- [`session_recovery.md`](./references/session_recovery.md) - Session ID fallback
 - [`commit_recovery.md`](./references/commit_recovery.md) - Git error handling
+- [`create_commit.md`](./references/create_commit.md) - Git commit creation
+- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
+- [`message_approval.md`](./references/message_approval.md) - User approval workflow
+- [`message_guidelines.md`](./references/message_guidelines.md)- Commit message format
+- [`session_recovery.md`](./references/session_recovery.md) - Session ID fallback
 
 **Scripts:**  [scripts/](./scripts/) - utility scripts
 
@@ -104,7 +106,7 @@ Replace placeholders before executing bash commands:
 
 Example: 
 - Skill header states: `Base directory for this skill: /Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
-- `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit
+- `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
 - `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js"`
  
 ## 1. Stage and Analyze Changes

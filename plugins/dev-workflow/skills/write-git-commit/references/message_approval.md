@@ -4,7 +4,7 @@
 - Response Handling
 - Output Requirements
 
-Display the proposed commit message with AskUserQuestion confirmation per the following instructions:
+Display the proposed commit message per the following instructions:
 
 # Message Display Instructions
 
@@ -25,6 +25,8 @@ Proposed commit message:
 [COMMIT_BODY - include if present, omit this line if no body]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+**IMPORTANT** You MUST display the proposed commit message in this format.
 
 ## Critical Requirements
 
@@ -62,6 +64,8 @@ If verification fails, re-read reference file and retry display.
 # User Approval Instructions
 
 ## Action Required
+
+**IMPORTANT** Use the `AskUserQuestionTool` to obtain approval:
 
 Immediately after displaying the message, call AskUserQuestion with question "Approve this commit message?" Options:
 1. "Use full message" (Recommended)

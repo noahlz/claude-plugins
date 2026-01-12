@@ -2,7 +2,7 @@
 
 ## Important
 
-Do NOT improvise git commit logic - commit-workflow.js handles all commit creation. ONLY use that script.
+Do NOT improvise git commit logic - the script `scripts/commit-workflow.js` handles all git commit operations.
 
 ## Bash Command
 
@@ -43,8 +43,8 @@ Extract `COMMIT_SHA` from JSON data.commit_sha field
 
 ## Response Handling
 
-- ✓ If status is "success": Continue to Step 6 with commit SHA
-- ✗ If status is NOT "success": Follow procedures in `references/commit_recovery.md`
+- ✓ If status is "success": Continue to Step 6 with commit SHA  
+- ✗ If status is NOT "success": Follow procedures in `references/commit_recovery.md` 
 
 ## Important Notes
 

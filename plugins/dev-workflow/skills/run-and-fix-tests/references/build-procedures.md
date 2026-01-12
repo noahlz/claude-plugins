@@ -6,9 +6,9 @@ Common procedures for extracting errors and rebuilding/testing projects.
 
 Procedure to extract compilation errors from build log:
 
-→ Try to get language diagnostics from editor using available IDE MCP or LSP tools
-✓ MCP or LSP tool available → Extract errors with precise locations
-✗ Not available → Parse build logs using config.build[].errorPattern regex
+→ Try to get language diagnostics from editor using available IDE MCP or LSP tools  
+✓ MCP or LSP tool available → Extract errors with precise locations  
+✗ Not available → Parse build logs using config.build[].errorPattern regex  
 
 → For each failed build in config.build:
   - Read log file at config.build[i].logFile
@@ -46,13 +46,13 @@ Procedure to rebuild project and verify compilation:
 
 Procedure to extract test failures from test results:
 
-→ Parse test results at `config.test.all.resultsPath` to identify failing tests
-→ Extract error patterns from results using `config.test.all.errorPattern` regex
-→ Identify failing tests (up to 30 distinct failures)
+→ Parse test results at `config.test.all.resultsPath` to identify failing tests  
+→ Extract error patterns from results using `config.test.all.errorPattern` regex  
+→ Identify failing tests (up to 30 distinct failures)  
 
-✓ 0 failures detected → No errors to extract
-✗ 1-30 failures → Extract with test names, error messages, stack traces
-✗ 30+ failures → Display count warning
+✓ 0 failures detected → No errors to extract  
+✗ 1-30 failures → Extract with test names, error messages, stack traces  
+✗ 30+ failures → Display count warning  
 
 → Display error summary to user with:
   - List of failing test names/paths

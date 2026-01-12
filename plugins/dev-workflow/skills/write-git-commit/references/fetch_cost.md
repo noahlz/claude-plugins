@@ -2,7 +2,7 @@
 
 ## Action Required
 
-Execute commit-workflow.js prepare command to fetch session cost metrics.
+Execute `scripts/commit-workflow.js` "prepare" command to fetch session cost metrics.
 
 ## REQUIRED: Check that ccusage dependency installed
 
@@ -27,11 +27,11 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION
 ## Parse JSON Output
 
 Extract these fields:
-- **status**: Result status ("success" or "error")
-- **data.session_id**: Resolved session ID (may differ from input if auto-detected)
-- **data.current_cost**: JSON array of cost objects
-- **data.method**: Detection method ("library" or "cli")
-- **message**: Error message (if status is "error")
+- `status`: Result status ("success" or "error")
+- `data.session_id`: Resolved session ID (may differ from input if auto-detected)
+- `data.current_cost`: JSON array of cost objects
+- `data.method`: Detection method ("library" or "cli")
+- `message`: Error message (if status is "error")
 
 ## Response Handling
 

@@ -47,9 +47,9 @@ Example format:
    - Tests fixed: 12
    - Tests skipped: 3
    - Root causes:
-     • Incorrect import paths (5 tests)
-     • Missing mock setup (4 tests)
-     • Type errors (3 tests)
+     - Incorrect import paths (5 tests)  
+     - Missing mock setup (4 tests)
+     - Type errors (3 tests)
 ```
 
 ---
