@@ -1,5 +1,12 @@
 # Cost Data Fetch Instructions
 
+Contents:
+- Action required
+- ccusage dependency check
+- Main bash command
+- JSON output parsing
+- Response handling and next steps
+
 ## Action Required
 
 Execute `scripts/commit-workflow.js` "prepare" command to fetch session cost metrics.

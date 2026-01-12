@@ -1,6 +1,8 @@
-# Build and Test Procedures
+# Build and Test Failure Extraction 
 
-Common procedures for extracting errors and rebuilding/testing projects.
+Contents:
+- Extracting build errors.
+- Extracting test failures.
 
 ## EXTRACT_BUILD_ERRORS
 
@@ -21,30 +23,9 @@ Procedure to extract compilation errors from build log:
 
 → Display compilation error summary to user
 
-## REBUILD_AND_VERIFY
+## EXTRACT_TEST_FAILURE
 
-Procedure to rebuild project and verify compilation:
-
-→ Iterate through each build in `config.build`:
-  - For each build, check `build.nativeOutputSupport` flag:
-
-    **If `build.nativeOutputSupport=true`:**
-    - Tool natively supports file output, execute WITHOUT redirection:
-    - `cd "{build.workingDir}" && {build.command}`
-
-    **If `build.nativeOutputSupport=false`:**
-    - Tool requires stdout/stderr redirection:
-    - `cd "{build.workingDir}" && {build.command} > "{build.logFile}" 2>&1`
-
-  - Track exit codes for each build step
-
-→ After all builds complete:
-  - Exit 0 (all succeeded) → Return to original directory, build succeeded
-  - Exit non-zero (any failed) → Return to original directory, check logs for errors
-
-## EXTRACT_TEST_ERRORS
-
-Procedure to extract test failures from test results:
+Procedure to extract failures from test results:
 
 → Parse test results at `config.test.all.resultsPath` to identify failing tests  
 → Extract error patterns from results using `config.test.all.errorPattern` regex  

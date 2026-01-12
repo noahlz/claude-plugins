@@ -4,6 +4,12 @@
 
 Generate a commit message with imperative mood subject line and optional bullet point body.
 
+Contents:
+- General Guidelines
+- Commit Subject Line
+- Commit Body
+- Examples
+
 ## General Guidelines
 
 - Follow any user direction / customizations from their prompt i.e. "write a git commit summarizing this refactoring."

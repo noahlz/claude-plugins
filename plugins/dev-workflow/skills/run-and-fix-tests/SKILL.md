@@ -215,12 +215,4 @@ DELEGATE_TO: `references/agent-delegation.md`
 → Display analysis summary to user  
 → Ask user: "Enter plan mode to implement fixes?"  
   - Yes → Use EnterPlanMode tool with analysis context
-  - No → Proceed to step 7
-→ Exit workflow  
-
-## 7. Completion
-
-DELEGATE_TO: `references/completion.md`
-
-→ Generate status summary  
-→ Exit workflow  
+  - No → Exit workflow  

@@ -1,16 +1,11 @@
 Immediate:
-- FIXME: reference files should not reference other reference files. Check all of them.
-- Reference files need to have TOC / summary at top so agent knows to read whole file
+- Run and fix tests "Customizing Configuration" secton might be in accurate. Build tool is always an array now.
+- Move git formatting for presentation to script instead of instructing LLM
 
 Backlog:
 - Some unit tests are probably overlapping and could be consolidated.
-- Run and fix tests "Customizing Configuration" secton might be in accurate. Build tool is always an array now.
 - FIXME: write-git-commit skill sometimes doesn't follow workflows. Needs stronger "guardrails" restored.
-  - move as much as you can to scripts as possible. I.e. formatting for presentation
 - Rename "settings.plugins.run-and-fix-tests.json" default to just `tools.json` and it shouldn't be merged.
-- write-git-commit: Simplify
-  - Do not recover from git errors. Print a warning / explanation and exit the workflow if unexpected error happens.
-  - If session Id is not available, make it a configuration setup workflow. After setting up the session Id config, exit the workflow / tell user to start over
 - Revise/improve sub-agent instructions per best practices
 - run-and-fix-tests skill should:
   - Exit workflow after setting up configuration first time.

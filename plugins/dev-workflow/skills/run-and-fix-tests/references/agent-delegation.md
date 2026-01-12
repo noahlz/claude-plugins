@@ -1,6 +1,9 @@
 # Agent Delegation Procedures
 
-How to delegate to sub-agents broken-build-analyzer and failed-test-analyzer:
+Contents:
+- HOWTO Delegate to the broken-build-analyzer
+- HOWTO Delegate to the failed-test-analyzer
+
 
 ## HOWTO: DELEGATE_TO_BUILD_ANALYZER
 
