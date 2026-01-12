@@ -14,20 +14,3 @@
 
 ✓ All builds succeed → Proceed to step 4 (Run Tests)
 
-## 3a. Analyze Build Failures and Exit
-
-**STEP_DESCRIPTION**: "Analyzing build failures"
-
-DELEGATE_TO: `references/agent-delegation.md` - DELEGATE_TO_BUILD_ANALYZER
-
-→ Extract build errors (see ./references/build-procedures.md - EXTRACT_BUILD_ERRORS)
-
-→ Delegate to `broken-build-analyzer` agent with build failure context and config object  
-→ Receive analysis with root causes and fix recommendations  
-→ Display analysis summary to user  
-
-→ Ask user: "Enter plan mode to implement fixes?"
-  - Yes → Use EnterPlanMode tool with analysis context
-  - No → Proceed to step 7 (Completion)
-
-→ Exit workflow  

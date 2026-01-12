@@ -49,7 +49,7 @@ When you see `DELEGATE_TO: [file]`:
 3. Check any VERIFY checklists
 4. Return to continue the workflow
 
-Reference files contain detailed requirements not in SKILL.md. Always read them.
+Reference files contain detailed requirements. ALWAYS read them when cited.
 
 ### C. Narration Control
 
@@ -62,6 +62,7 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 **Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
 
 ```
+- [ ] Resolve and Save sessionId (if necessary)
 - [ ] Stage and analyze changes
 - [ ] Generate commit message
 - [ ] Get user approval
@@ -73,7 +74,6 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 ## Skill Organization
 
 **References:**
-- [`commit_recovery.md`](./references/commit_recovery.md) - Git error handling
 - [`create_commit.md`](./references/create_commit.md) - Git commit creation
 - [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
 - [`message_approval.md`](./references/message_approval.md) - User approval workflow
@@ -108,10 +108,31 @@ Example:
 - Skill header states: `Base directory for this skill: /Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
 - `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
 - `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js"`
- 
-## 1. Stage and Analyze Changes
 
-### 1a. Stage changes
+## 1. Resolve SessionID
+
+IF the `SESSION_ID` as found, proceed immediately to Step 2.
+
+OTHERWISE if the `SESSION_ID` value was `NOT_CONFIGURED` resolve and save it as follows:
+  - Execute using Bash tool to get available sessions:
+    ```bash
+    node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
+    ```
+  - Parse JSON output to extract sessions array from `data.sessions`
+  - Build AskUserQuestion with dynamic options:
+    - For each session in first 4 from sessions array: Create option with label = sessionId
+  - If user picks a session:
+    - Save to config using save-config command:
+      ```bash
+      node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
+      ```
+    - Continue workflow.
+
+If you encounter an error in the above procedure, exit the workflow.
+ 
+## 2. Stage and Analyze Changes
+
+### 2a. Stage changes
 
 **STEP_DESCRIPTION**: "Staging changes"
 
@@ -120,7 +141,7 @@ Example:
 git add -A
 ```
 
-### 1b. Analyze staged changes
+### 2b. Analyze staged changes
 
 **STEP_DESCRIPTION**: "Generating commit message"
 
@@ -129,17 +150,17 @@ git add -A
 git diff --cached
 ```
 
-## 2. Generate Commit Message
+## 3. Generate Commit Message
 
 DELEGATE_TO: `references/message_guidelines.md`
 
 Generate commit message following those guidelines.
 
-**Silent generation:** Create message internally. First output must be "Proposed commit message:" in Step 3.
+**Silent generation:** Create message internally. First output must be "Proposed commit message:" in Step 4.
 
-## 3. Display Message to User for Approval
+## 4. Display Message to User for Approval
 
-BLOCKING: This step MUST complete with user approval before Step 4.
+BLOCKING: This step MUST complete with user approval before Step 5.
 
 DELEGATE_TO: `references/message_approval.md`
 
@@ -147,7 +168,7 @@ DELEGATE_TO: `references/message_approval.md`
 → Extract `COMMIT_SUBJECT` and `COMMIT_BODY` if approved  
 → Proceed to Step 4 only if approved by user  
 
-## 4. Fetch Cost Data
+## 5. Fetch Cost Data
 
 **STEP_DESCRIPTION**: "Fetching session cost metrics"
 
@@ -155,13 +176,13 @@ DELEGATE_TO: `references/fetch_cost.md`
 
 ⚠️  **NOTE:** Do NOT ever make a commit with missing or contrived cost metrics. If encountering errors with ccusage, IMMEDIATELY STOP and ask user for guidance.
 
-## 5. Create Commit
+## 6. Create Commit
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
 DELEGATE_TO: `references/create_commit.md`
 
-## 6. Summary
+## 7. Summary
 
 → Display success summary:
 ```

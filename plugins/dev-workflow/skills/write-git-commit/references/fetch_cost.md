@@ -39,11 +39,13 @@ Extract these fields:
 
 - Store `SESSION_ID` from data.session_id
 - Store `CURRENT_COST` from data.current_cost (as JSON array string)
-- Proceed to Step 5 (Create Commit) with these values
+- Proceed to Step 6 (Create Commit) with these values
 
 ### ✗ If status is NOT "success"
 
-Follow recovery procedures in `references/session_recovery.md`
+- Display the error to the user 
+- Tell the user "*** Session ID must be configured to accurately extract Claude Code cost metrics."
+- Exit the workflow
 
 ## Important Notes
 
@@ -53,4 +55,4 @@ Follow recovery procedures in `references/session_recovery.md`
 
 ## Next Step
 
-If successful: Return to SKILL.md Step 5 with SESSION_ID and CURRENT_COST captured.
+If successful: Return to Step 6 with SESSION_ID and CURRENT_COST captured.

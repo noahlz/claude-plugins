@@ -65,4 +65,4 @@ Refactor error handling and update dependencies
 
 ## Next Step
 
-Return to SKILL.md with generated message stored internally.
+Return to workflow with generated message stored internally.

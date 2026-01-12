@@ -8,11 +8,11 @@ Procedure to extract compilation errors from build log:
 
 → Try to get language diagnostics from editor using available IDE MCP or LSP tools  
 ✓ MCP or LSP tool available → Extract errors with precise locations  
-✗ Not available → Parse build logs using config.build[].errorPattern regex  
+✗ Not available → Parse build logs using `config.build[].errorPattern` regex  
 
-→ For each failed build in config.build:
-  - Read log file at config.build[i].logFile
-  - Extract errors using config.build[i].errorPattern regex
+→ For each failed build in `config.build`:
+  - Read log file at `config.build[i].logFile`
+  - Extract errors using `config.build[i].errorPattern` regex
 
 → Extract up to 30 distinct compilation errors with:
   - File paths
@@ -25,14 +25,14 @@ Procedure to extract compilation errors from build log:
 
 Procedure to rebuild project and verify compilation:
 
-→ Iterate through each build in config.build:
-  - For each build, check build.nativeOutputSupport flag:
+→ Iterate through each build in `config.build`:
+  - For each build, check `build.nativeOutputSupport` flag:
 
-    **If build.nativeOutputSupport=true:**
+    **If `build.nativeOutputSupport=true`:**
     - Tool natively supports file output, execute WITHOUT redirection:
     - `cd "{build.workingDir}" && {build.command}`
 
-    **If build.nativeOutputSupport=false:**
+    **If `build.nativeOutputSupport=false`:**
     - Tool requires stdout/stderr redirection:
     - `cd "{build.workingDir}" && {build.command} > "{build.logFile}" 2>&1`
 

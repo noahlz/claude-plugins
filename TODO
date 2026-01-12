@@ -1,6 +1,6 @@
 Immediate:
-- Reference files need to have TOC / summary at top so agent knows to read whole file
 - FIXME: reference files should not reference other reference files. Check all of them.
+- Reference files need to have TOC / summary at top so agent knows to read whole file
 
 Backlog:
 - Some unit tests are probably overlapping and could be consolidated.

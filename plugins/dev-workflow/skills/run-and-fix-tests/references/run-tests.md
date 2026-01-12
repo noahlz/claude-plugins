@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- Configuration values loaded from Section 2 (parsed JSON config)
-- Build completed (or skipped if config.skipBuild=true)
+- Configuration values loaded from step 2 (parsed JSON config)
+- Build completed (or skipped if `config.skipBuild=true`)
 
 ---
 
@@ -36,7 +36,7 @@ npm --silent test -- path/to/test.js
 
 → Check `config.test.all.nativeOutputSupport` flag:
 
-**If config.test.all.nativeOutputSupport=true:**
+**If `config.test.all.nativeOutputSupport=true`:**
 → Tool natively supports file output (e.g., Maven's `--log-file`, npm's `--test-reporter-destination`)  
 → Execute command WITHOUT stdout/stderr redirection  
 
@@ -45,7 +45,7 @@ Example bash command:
 npm test --silent -- --test-reporter=tap --test-reporter-destination=dist/test-results.tap
 ```
 
-**If config.test.all.nativeOutputSupport=false:**  
+**If `config.test.all.nativeOutputSupport=false`:**  
 → Tool requires stdout/stderr redirection  
 → Redirect output to `config.test.all.resultsPath`  
 
@@ -56,8 +56,6 @@ npm test > dist/test-results.tap 2>&1
 
 ## Exit Code Handling
 
-→ Execute test command and capture exit code
-
-✓ Exit 0 → All tests pass, return to SKILL.md step 7 (Completion)
-
-✗ Exit non-zero → Tests failed, return to SKILL.md Section 5 (Extract Test Errors)
+→ Execute test command and capture exit code:  
+✓ Exit 0 → All tests pass, return to step 7 (Completion)  
+✗ Exit non-zero → Tests failed, return to step 5 (Extract Test Errors)  
