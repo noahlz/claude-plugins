@@ -1,5 +1,4 @@
 Immediate:
-- Rename "settings.plugins.run-and-fix-tests.json" default to just `tools.json` and it shouldn't be merged.
 - Move git formatting for presentation to script instead of instructing LLM
 
 Backlog:

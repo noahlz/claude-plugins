@@ -10,9 +10,8 @@ import path from 'path';
  * @returns {object|null} - Tools registry
  */
 export function loadToolRegistry(pluginRoot) {
-  const registryPath = path.join(pluginRoot, 'skills/run-and-fix-tests/assets/defaults/settings.plugins.run-and-fix-tests.json');
-  const registry = parseJsonFile(registryPath);
-  return registry && registry.tools ? registry.tools : null;
+  const registryPath = path.join(pluginRoot, 'skills/run-and-fix-tests/assets/defaults/tools.json');
+  return parseJsonFile(registryPath);
 }
 
 /**
@@ -44,8 +43,8 @@ export function detectTools(options = {}) {
 
   const detected = [];
 
-  for (const [toolName, toolInfo] of Object.entries(toolRegistry)) {
-    const configFile = toolInfo.configFile;
+  for (const toolName in toolRegistry) {
+    const configFile = toolRegistry[toolName].configFile;
     if (!configFile) continue;
 
     // Check if config file exists
@@ -118,7 +117,6 @@ async function main() {
   }
 }
 
-// CLI entry point
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }

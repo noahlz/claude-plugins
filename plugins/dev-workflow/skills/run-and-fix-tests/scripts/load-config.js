@@ -161,10 +161,6 @@ async function main() {
   console.log(JSON.stringify(result.resolved, null, 2));
 }
 
-
-
-
-// CLI entry point
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
