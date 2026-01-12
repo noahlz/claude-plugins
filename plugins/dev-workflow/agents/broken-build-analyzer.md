@@ -13,11 +13,11 @@ Your parent agent has just attempted to build the current project, but the build
 ## Build Configuration
 
 You receive the project configuration as JSON. Access build information as:
-- `config.build[0].command` - the build command that was executed
-- `config.build[0].logFile` - where to find the build error log
-- `config.build[0].workingDir` - the working directory where build was executed
-- `config.build[0].errorPattern` - regex pattern for extracting errors
-- `config.build[0].nativeOutputSupport` - whether tool has native output support
+- `config.build.command` - the build command that was executed
+- `config.build.logFile` - where to find the build error log
+- `config.build.workingDir` - the working directory where build was executed
+- `config.build.errorPattern` - regex pattern for extracting errors
+- `config.build.nativeOutputSupport` - whether tool has native output support
 
 ## Analysis Methodology
 

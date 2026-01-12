@@ -124,8 +124,8 @@ Execute ONLY if Step 0. Prerequisites has "SKILL_CONFIG: NOT_CONFIGURED".
 
 **Result handling:**  
 ✓ Exit 0 → Config created, proceed to step 2  
-✗ Exit 1 → Display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually"  
-⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding"  
+✗ Exit 1 → Display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually" and Exit the Workflow. 
+⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding" and Exit the Workflow. 
 
 ## 2. Load Configuration
 
@@ -143,8 +143,8 @@ The script outputs JSON configuration for project build and test commands.
 → Parse the JSON output as the project configuration  
 → Reference values using paths like:  
   - `config.test.all.command` - test command
-  - `config.build[0].logFile` - build log location
-  - `config.build[0].workingDir` - build working directory
+  - `config.build.logFile` - build log location
+  - `config.build.workingDir` - build working directory
   - `config.skipBuild` - whether build should be skipped
   - `config.test.all.resultsPath` - test results file location
   - `config.test.all.errorPattern` - regex for test failures

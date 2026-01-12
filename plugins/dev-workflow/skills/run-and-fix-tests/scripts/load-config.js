@@ -4,26 +4,14 @@ import { resolvePath } from '../../../lib/common.js';
 import { loadSkillConfig } from '../../../lib/config-loader.js';
 
 /**
- * Validate build configuration (array format)
- * @param {array} buildConfig - Build configuration array
+ * Validate build configuration
+ * @param {Object} buildConfig - Build configuration 
  * @param {array} errors - Errors array to append to
  */
 function validateBuildConfig(buildConfig, errors) {
-  if (!Array.isArray(buildConfig)) {
-    errors.push('build must be an array');
-    return;
-  }
-
-  if (buildConfig.length === 0) {
-    errors.push('build array cannot be empty');
-    return;
-  }
-
-  buildConfig.forEach((build, idx) => {
-    if (!build.command) errors.push(`build[${idx}].command is required`);
-    if (!build.logFile) errors.push(`build[${idx}].logFile is required`);
-    if (!build.errorPattern) errors.push(`build[${idx}].errorPattern is required`);
-  });
+  if (!buildConfig.command) errors.push(`build.command is required`);
+  if (!buildConfig.logFile) errors.push(`build.logFile is required`);
+  if (!buildConfig.errorPattern) errors.push(`build.errorPattern is required`);
 }
 
 /**
@@ -87,22 +75,21 @@ function validateConfig(config) {
  */
 export function resolveConfig(config) {
   const resolved = JSON.parse(JSON.stringify(config)); // Deep copy
-  const outDir = resolved.outDir || 'dist';
+  const build = resolved.build;
+  const test = resolved.test
+  const outDir = resolved.outDir;
 
-  // Resolve build paths
-  if (resolved.build && Array.isArray(resolved.build)) {
-    resolved.build.forEach(build => {
-      build.logFile = resolvePath(build.logFile, { outDir });
-      build.workingDir = build.workingDir || '.';
-    });
+  if (build) {
+    build.logFile = resolvePath(build.logFile, { outDir });
+    build.workingDir = build.workingDir || '.';
   }
 
   // Resolve test paths
-  if (resolved.test && resolved.test.all) {
-    resolved.test.all.resultsPath = resolvePath(resolved.test.all.resultsPath, { outDir });
+  if (test && test.all) {
+    test.all.resultsPath = resolvePath(test.all.resultsPath, { outDir });
   }
-  if (resolved.test && resolved.test.single) {
-    resolved.test.single.resultsPath = resolvePath(resolved.test.single.resultsPath, { outDir });
+  if (test && test.single) {
+    test.single.resultsPath = resolvePath(test.single.resultsPath, { outDir });
   }
 
   // Resolve optional logFile
@@ -114,7 +101,7 @@ export function resolveConfig(config) {
   let skipBuild = false;
   if (resolved.skipBuild !== undefined) {
     skipBuild = resolved.skipBuild;
-  } else if (resolved.build && resolved.build.length === 1 && resolved.build[0].command === resolved.test.all.command) {
+  } else if (build && build.command === test.all.command) {
     skipBuild = true;
   }
   resolved.skipBuild = skipBuild;

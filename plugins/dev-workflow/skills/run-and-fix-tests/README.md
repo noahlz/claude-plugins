@@ -36,18 +36,6 @@ When you run `/test` for the first time, the plugin automatically:
 
 See [settings.plugins.run-and-fix-tests.json](./assets/defaults/settings.plugins.run-and-fix-tests.json) (reference file showing all supported build tools) and [assets/defaults/](./assets/defaults) for example default configurations. You can customize tool detection in your project or user-level plugin configuration. Configurations are merged with defaults.
 
-Note: The default `polyglot.json` serves as an example multi-module build (see next section).
-
-### Multi-Tool Projects
-
-If your project has multiple build tools detected (e.g., npm + maven), the plugin automatically generates a polyglot configuration that builds all tools in sequence:
-
-```
-🔧 Multiple build tools detected, creating polyglot configuration...
-```
-
-The generated config uses an array structure for `build` to run each tool in order.
-
 ### Placeholder Configuration
 
 If your build tool isn't recognized, the plugin creates a placeholder template.  You must edit the config before using the plugin. Replace the placeholders with your actual commands.
@@ -56,52 +44,7 @@ See the [`assets/defaults/TEMPLATE.json`](./assets/defaults/TEMPLATE.json) file 
 
 ### Customizing Configuration
 
-To customize after auto-config, edit `.claude/settings.plugins.run-and-fix-tests.json`:
-
-```json
-{
-  "logDir": "dist",
-  "build": {
-    "command": "yarn build"
-  },
-  "test": {
-    "all": {
-      "command": "yarn test:ci"
-    },
-    "single": {
-      "command": "yarn test {testFile}"
-    }
-  }
-}
-```
-
-For multi-module projects, use an array for `build`:
-
-```json
-{
-  "logDir": "build-logs",
-  "build": [
-    {
-      "tool": "npm",
-      "command": "npm run build",
-      "workingDir": "frontend"
-    },
-    {
-      "tool": "maven",
-      "command": "mvn clean install",
-      "workingDir": "backend"
-    }
-  ],
-  "test": {
-    "all": {
-      "command": "npm test"
-    },
-    "single": {
-      "command": "npm test -- {testFile}"
-    }
-  }
-}
-```
+To customize after auto-config, edit your project's configuration at:`.claude/settings.plugins.run-and-fix-tests.json`. 
 
 ### Starting Over
 

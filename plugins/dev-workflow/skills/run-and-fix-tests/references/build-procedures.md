@@ -10,11 +10,11 @@ Procedure to extract compilation errors from build log:
 
 → Try to get language diagnostics from editor using available IDE MCP or LSP tools  
 ✓ MCP or LSP tool available → Extract errors with precise locations  
-✗ Not available → Parse build logs using `config.build[].errorPattern` regex  
+✗ Not available → Parse build logs using `config.build.errorPattern` regex  
 
-→ For each failed build in `config.build`:
-  - Read log file at `config.build[i].logFile`
-  - Extract errors using `config.build[i].errorPattern` regex
+→ Per the failed build defined by `config.build`:
+  - Read log file at `config.build.logFile`
+  - Extract errors using `config.build.errorPattern` regex
 
 → Extract up to 30 distinct compilation errors with:
   - File paths

@@ -57,18 +57,6 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
     assert.ok(goTool, 'Should detect go');
   });
 
-  it('detects multiple tools in polyglot project', () => {
-    setupProjectTemplate(testEnv, 'dev-workflow', 'polyglot-project');
-
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-
-    assert.ok(detected.length >= 2, 'Should detect multiple tools');
-    const hasNpm = detected.some(t => t.tool === 'npm');
-    const hasMaven = detected.some(t => t.tool === 'maven');
-    assert.ok(hasNpm, 'Should detect npm');
-    assert.ok(hasMaven, 'Should detect maven');
-  });
-
   it('searches subdirectories for config files', () => {
     mkdirSync(join(testEnv.tmpDir, 'apps', 'frontend'), { recursive: true });
     writeFileSync(join(testEnv.tmpDir, 'apps', 'frontend', 'package.json'), JSON.stringify({ name: 'frontend' }));

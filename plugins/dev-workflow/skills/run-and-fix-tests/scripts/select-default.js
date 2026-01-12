@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { writeJsonFile, parseJsonFile } from '../../../lib/config-loader.js';
 import { copyFile, fileExists, ensureClaudeDir } from '../../../lib/file-utils.js';
 import path from 'path';
 
@@ -74,74 +73,8 @@ export function selectDefault(options = {}) {
       };
     }
   } else {
-    // Multiple tools - generate polyglot config
-    const polyglotConfig = generatePolyglotConfig(detectedTools, pluginRoot);
-    writeJsonFile(configPath, polyglotConfig);
-
-    return {
-      configPath,
-      source: 'polyglot',
-      tools: detectedTools.map(t => t.tool),
-      warnings: [
-        `Multiple build tools detected, created polyglot configuration with ${detectedTools.length} tools`,
-        `Review and customize ${configPath} as needed`
-      ]
-    };
+    throw new Error("Polyglot projects not yet supported.")
   }
-}
-
-/**
- * Generate polyglot configuration for multiple tools
- * @param {array} detectedTools - Array of detected tool objects
- * @param {string} pluginRoot - Plugin root directory
- * @returns {object} - Polyglot config
- */
-export function generatePolyglotConfig(detectedTools, pluginRoot) {
-  // Load polyglot template
-  const templatePath = path.join(pluginRoot, 'skills/run-and-fix-tests/assets/defaults/polyglot.json');
-  const template = parseJsonFile(templatePath);
-
-  if (!template) {
-    throw new Error(`Polyglot template not found at ${templatePath}`);
-  }
-
-  // Build array from detected tools
-  const buildArray = detectedTools
-    .filter(tool => tool.config && tool.config.build && Array.isArray(tool.config.build) && tool.config.build.length > 0)
-    .map(tool => {
-      const build = tool.config.build[0]; // Get first build step
-      return {
-        tool: tool.tool,
-        workingDir: build.workingDir || (tool.location === '(project root)' ? '.' : tool.location),
-        command: build.command,
-        logFile: `{logDir}/${tool.tool}-build.log`,
-        errorPattern: build.errorPattern
-      };
-    });
-
-  // Use first tool's test config (could be made configurable)
-  let testConfig = template.test || {
-    all: {
-      command: 'npm test',
-      logFile: '{logDir}/test.log',
-      errorPattern: '(FAIL|●|Error:|Expected|Received)'
-    },
-    single: {
-      command: 'npm test -- {testFile}',
-      logFile: '{logDir}/test-single.log',
-      errorPattern: '(FAIL|●|Error:|Expected|Received)'
-    }
-  };
-
-  if (detectedTools[0]?.config?.test) {
-    testConfig = detectedTools[0].config.test;
-  }
-
-  return {
-    logDir: template.logDir || 'build-logs',
-    build: buildArray,
-    test: testConfig
-  };
 }
 
 /**
