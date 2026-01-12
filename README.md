@@ -28,7 +28,6 @@ claude plugin install dev-workflow@noahlz.github.io
 #### Prerequisites
 
 - Node.js 22+
-- `jq`
 
 #### Skills
 

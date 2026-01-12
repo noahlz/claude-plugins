@@ -1,4 +1,3 @@
-- Maybe we no longer have a dependency on jq - at all?
 - FIXME: test/run-tests.js needs to NOT output to console.log if command line includes --silent
 -  Also, rename / combine commit-workflow-unit.tests.js and commit-workflow.test.js
 -  README is wrong: mocks are not adjacent to their tests (fix)

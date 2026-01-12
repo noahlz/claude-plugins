@@ -6,7 +6,7 @@ echo "Reloading..."
 claude plugin uninstall dev-workflow@noahlz.github.io
 claude plugin marketplace remove noahlz.github.io
 
-# Read version from marketplace.json and delete cache
+# Read version from marketplace.json and delete cache (requires jq)
 VERSION=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
 CACHE_PATH="$HOME/.claude/plugins/cache/noahlz-github-io/dev-workflow/$VERSION"
 
