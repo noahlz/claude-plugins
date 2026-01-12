@@ -50,7 +50,7 @@ describe('commit-workflow.js unit tests', () => {
   // Test Group 1: saveConfig Function Tests (4 tests)
   // ============================================================================
 
-  test('Test 1: saveConfig succeeds with valid sessionId', async () => {
+  test('saveConfig succeeds with valid sessionId', async () => {
     const result = saveConfig({ baseDir: tmpDir, sessionId: 'test-123' });
 
     assert.equal(result.status, 'success');
@@ -65,7 +65,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 2: saveConfig fails when sessionId is missing', async () => {
+  test('saveConfig fails when sessionId is missing', async () => {
     const result = saveConfig({ baseDir: tmpDir });
 
     assert.equal(result.status, 'error');
@@ -74,7 +74,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 3: saveConfig creates .claude directory if missing', async () => {
+  test('saveConfig creates .claude directory if missing', async () => {
     const result = saveConfig({ baseDir: tmpDir, sessionId: 'test' });
 
     assert.equal(result.status, 'success');
@@ -88,7 +88,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 4: saveConfig handles write errors gracefully', async () => {
+  test('saveConfig handles write errors gracefully', async () => {
     const result = saveConfig({ baseDir: '/invalid/nonexistent/path/that/does/not/exist', sessionId: 'test' });
 
     assert.equal(result.status, 'error');
@@ -101,7 +101,7 @@ describe('commit-workflow.js unit tests', () => {
   // Test Group 2: prepare Function Tests (4 tests)
   // ============================================================================
 
-  test('Test 5: prepare succeeds with valid sessionId and ccusage match', async () => {
+  test('prepare succeeds with valid sessionId and ccusage match', async () => {
     // Create test-specific mocks - only override what this test uses
     const testCcusage = {
       ...mockCcusage,
@@ -124,7 +124,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 6: prepare returns not_found when no session matches', async () => {
+  test('prepare returns not_found when no session matches', async () => {
     // Create test-specific mocks
     const testCcusage = {
       ...mockCcusage,
@@ -144,7 +144,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 7: prepare returns error when ccusage.getSessionCosts fails', async () => {
+  test('prepare returns error when ccusage.getSessionCosts fails', async () => {
     // Create test-specific mocks
     const testCcusage = {
       ...mockCcusage,
@@ -165,7 +165,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 8: prepare handles unexpected errors in catch block', async () => {
+  test('prepare handles unexpected errors in catch block', async () => {
     // Create test-specific mocks
     const testCcusage = {
       ...mockCcusage,
@@ -189,7 +189,7 @@ describe('commit-workflow.js unit tests', () => {
   // Test Group 3: commit Function Tests (12 tests)
   // ============================================================================
 
-  test('Test 9: commit succeeds with providedMessage parameter (no stdin)', async () => {
+  test('commit succeeds with providedMessage parameter (no stdin)', async () => {
     // Create test-specific mocks
     const testGit = {
       ...mockGit,
@@ -216,7 +216,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 10: commit fails with missing subject', async () => {
+  test('commit fails with missing subject', async () => {
     const testCcusage = {
       ...mockCcusage,
       validateCostMetrics: () => true
@@ -235,7 +235,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 11: commit fails when sessionId is missing', async () => {
+  test('commit fails when sessionId is missing', async () => {
     const testCcusage = {
       ...mockCcusage,
       validateCostMetrics: () => true
@@ -253,7 +253,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 12: commit fails when costs is missing', async () => {
+  test('commit fails when costs is missing', async () => {
     const testCcusage = {
       ...mockCcusage,
       validateCostMetrics: () => true
@@ -271,7 +271,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 13: commit handles invalid JSON in costs string', async () => {
+  test('commit handles invalid JSON in costs string', async () => {
     const testCcusage = {
       ...mockCcusage,
       validateCostMetrics: () => true
@@ -290,7 +290,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 14: commit validates metrics before committing', async () => {
+  test('commit validates metrics before committing', async () => {
     const testCcusage = {
       ...mockCcusage,
       validateCostMetrics: () => false
@@ -308,7 +308,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 15: commit returns git_error when git.commit fails', async () => {
+  test('commit returns git_error when git.commit fails', async () => {
     const testGit = {
       ...mockGit,
       commit: () => ({
@@ -335,7 +335,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 16: commit returns git_error when getHeadSha returns null', async () => {
+  test('commit returns git_error when getHeadSha returns null', async () => {
     const testGit = {
       ...mockGit,
       commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
@@ -360,7 +360,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 17: commit returns git_error when changes still staged', async () => {
+  test('commit returns git_error when changes still staged', async () => {
     const testGit = {
       ...mockGit,
       commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
@@ -390,7 +390,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 18: commit handles unexpected error in catch block', async () => {
+  test('commit handles unexpected error in catch block', async () => {
     const testGit = {
       ...mockGit,
       commit: () => {
@@ -416,7 +416,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 19: commit includes body in message when provided', async () => {
+  test('commit includes body in message when provided', async () => {
     let capturedMessage;
     const testGit = {
       ...mockGit,
@@ -446,7 +446,7 @@ describe('commit-workflow.js unit tests', () => {
     cleanup();
   });
 
-  test('Test 20: commit builds message without body when not provided', async () => {
+  test('commit builds message without body when not provided', async () => {
     let capturedMessage;
     const testGit = {
       ...mockGit,
@@ -480,7 +480,7 @@ describe('commit-workflow.js unit tests', () => {
   // Test Group 4: readCommitMessage Function Tests (4 tests)
   // ============================================================================
 
-  test('Test 21: readCommitMessage parses subject-only message', async () => {
+  test('readCommitMessage parses subject-only message', async () => {
     const stream = Readable.from([Buffer.from('Single line')]);
     const result = await readCommitMessage(stream);
 
@@ -488,7 +488,7 @@ describe('commit-workflow.js unit tests', () => {
     assert.equal(result.body, '');
   });
 
-  test('Test 22: readCommitMessage parses message with blank line separator', async () => {
+  test('readCommitMessage parses message with blank line separator', async () => {
     const stream = Readable.from([Buffer.from('Subject\n\nBody')]);
     const result = await readCommitMessage(stream);
 
@@ -496,7 +496,7 @@ describe('commit-workflow.js unit tests', () => {
     assert.equal(result.body, 'Body');
   });
 
-  test('Test 23: readCommitMessage parses message without blank separator', async () => {
+  test('readCommitMessage parses message without blank separator', async () => {
     const stream = Readable.from([Buffer.from('Subject\nBody immediately')]);
     const result = await readCommitMessage(stream);
 
@@ -504,7 +504,7 @@ describe('commit-workflow.js unit tests', () => {
     assert.equal(result.body, 'Body immediately');
   });
 
-  test('Test 24: readCommitMessage handles empty input', async () => {
+  test('readCommitMessage handles empty input', async () => {
     const stream = Readable.from([Buffer.from('')]);
     const result = await readCommitMessage(stream);
 

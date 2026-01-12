@@ -1,5 +1,11 @@
+- Maybe we no longer have a dependency on jq - at all?
 - FIXME: test/run-tests.js needs to NOT output to console.log if command line includes --silent
+-  Also, rename / combine commit-workflow-unit.tests.js and commit-workflow.test.js
+-  README is wrong: mocks are not adjacent to their tests (fix)
+- Rename "settings.plugins.run-and-fix-tests.json" default to just `tools.json` and it shouldn't be merged.
+- Run and fix tests "Customizing Configuration" secton might be in accurate. Build tool is always an array now.
 - FIXME: write-git-commit skill sometimes doesn't follow workflows. Needs stronger "guardrails" restored.
+  - move as much as you can to scripts as possible. I.e. formatting for presentation
 - write-git-commit: Simplify
   - Do not recover from git errors. Print a warning / explanation and exit the workflow if unexpected error happens.
   - If session Id is not available, make it a configuration setup workflow. After setting up the session Id config, exit the workflow / tell user to start over

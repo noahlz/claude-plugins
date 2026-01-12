@@ -4,27 +4,12 @@ Guides Claude through building and testing your project with minimal token usage
 
 ## What It Does
 
-- Builds and tests your project using the appropriate build tool
+- Builds and tests your project with minimal console output, per configuration file: `.claude/settings.plugins.run-and-fix-tests.json`
 - Analyzes compilation errors using the `broken-build-analyzer` agent
 - Analyzes test failures using the `failed-test-analyzer` agent
-- Provides root cause analysis and fix recommendations
-- Optionally enters plan mode for implementing fixes
+- Provides root cause analysis and fix recommendations suitable for subsequent Plan mode
 - Supports single test execution: `/test MyTest`
 - Supports multi-module projects with different build tools (custom configuration required)
-
-## Quick Start
-
-```bash
-/test
-```
-
-The skill auto-detects your build tool and runs your tests. If tests fail, it analyzes failures and provides fix recommendations.
-
-## When to Use
-
-- After making code changes to verify they work
-- To get root cause analysis of compilation errors or test failures
-- When CI/CD tests are failing and you need to understand why
 
 ## Prerequisites
 
@@ -120,7 +105,7 @@ For multi-module projects, use an array for `build`:
 
 ### Starting Over
 
-To reset and re-detect your build tools, delete `.claude/settings.plugins.run-and-fix-tests.json` and run `/test` again.
+To reset and re-detect your build tools, delete your project's `.claude/settings.plugins.run-and-fix-tests.json` and run `/test` again.
 
 ## Agents
 

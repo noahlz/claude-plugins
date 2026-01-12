@@ -9,21 +9,6 @@ Using this skill, Claude:
 - Analyzes staged changes and creates a descriptive commit message
 - Automatically embeds Claude Code attribution and session cost metrics as [Git trailers](https://git-scm.com/docs/git-interpret-trailers)
 
-## Quick Start
-
-```bash
-git add .
-/commit
-```
-
-Claude analyzes your changes, generates a commit message, and prompts for your approval before committing with cost metrics.
-
-## When to Use
-
-- After completing a feature or bug fix
-- When you want automated commit messages with cost tracking
-- To maintain consistent commit message format across your team
-
 ## Prerequisites
 
 - `node` version 22+
@@ -41,9 +26,7 @@ Command:
 /commit
 ```
 
-Or tell Claude: "commit", "write commit", "create commit", "git commit"
-
-Requires: staged changes (`git add <files>`)
+Or tell Claude: "commit", "write commit", "create commit", "git commit", etc.
 
 ## Cost Metrics in Commits
 
