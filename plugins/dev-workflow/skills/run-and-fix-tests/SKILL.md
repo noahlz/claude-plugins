@@ -18,6 +18,25 @@ allowed-tools:
 
 ---
 
+You use this skill proactively to verify your code changes. For example, when you think "Now I should run tests to verify my changes" - activate this skill. 
+
+Also activate this skill when the user requests testing using phrases like:
+- "run tests"
+- "test the changes"
+- "build and test"
+- "verify changes"
+
+This skill streamlines executing and analyzing project test suites, preserving context while following a preciesely-defined workflow. It:
+- Resolves project build/test commands from configuration: `.claude/settings.plugins.run-and-fix-tests.json`
+- Minimizes token usage by redirecting build/test output to files
+
+When build or test failures occur, you:
+  - Delegate to `broken-build-analyzer` to analyze compilation errors
+  - Delegate to `failed-test-analyzer` to analyze test failures
+  - Pass the resulting agent analysis to Plan mode for the user to implement fixes
+
+---
+
 ## Workflow Rules & Guardrails
 
 **FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
@@ -31,14 +50,11 @@ allowed-tools:
 ### B. Delegation Protocol
 
 When you see `DELEGATE_TO: [file]`:
-1. Read the referenced file
-2. Execute its instructions exactly
-3. Check any VERIFY checklists
-4. Return to continue the workflow
+1. ALWAYS read the ENTIRE referenced file
+2. Execute its instructions EXACTLY
+3. After completing the file instructions, return to the main workflow and continue
 
-Reference files contain detailed requirements not in SKILL.md. Always read them.
-
-### C. Narration Control
+### C. Narration Control ("Silence is Golden")
 
 Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
 
@@ -46,49 +62,31 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 
 ## Workflow Checklist
 
+**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
+
 ```
-- [ ] Load configuration
-- [ ] Build project (or skip)
-- [ ] Run tests
-- [ ] Extract failures (if any)
-- [ ] Delegate to analyzer
-- [ ] Exit with analysis
+- [ ] 1. Detect Build Configuration (If Necessary)
+- [ ] 2. Load Build Configuration
+- [ ] 3. Build Project (If Necessary)
+- [ ] 3a. Analyze Build Errors (If Necessary)
+- [ ] 4. Run tests
+- [ ] 5. Extract Test Failures
+- [ ] 6. Delegate to Failed Test Analyzer (If Necessary)
+- [ ] 7. Present Test Failure Analysis to User
 ```
 
 ## Skill Organization
 
 **References:**
-- [`setup-config.md`](./references/setup-config.md) - Build tool detection
+- [`agent-delegation.md`](./references/agent-delegation.md) - Analyzer delegation
+- [`build-procedures.md`](./references/build-procedures.md) - Error extraction procedures
 - [`run-build.md`](./references/run-build.md) - Build execution and failure handling
 - [`run-tests.md`](./references/run-tests.md) - Test execution
-- [`build-procedures.md`](./references/build-procedures.md) - Error extraction procedures
-- [`agent-delegation.md`](./references/agent-delegation.md) - Analyzer delegation
-- [`completion.md`](./references/completion.md) - Summary and exit
+- [`setup-config.md`](./references/setup-config.md) - Build tool detection / configuration
 
 **Scripts:**  [scripts/](./scripts/) - utility scripts
 
 **Defaults:** [`assets/defaults/`](./assets/defaults/) - default build tool configurations
-
----
-
-This skill streamlines running unit tests in a project. It:
-- Resolves project build/test commands from configuration (auto-generated on first use)
-- Minimizes token usage by redirecting build/test output to files
-- Delegates to analyzer agents when failures occur to provide root cause analysis
-
-When failures occur, the skill:
-  - Delegates to `broken-build-analyzer` for compilation errors
-  - Delegates to `failed-test-analyzer` for test failures
-  - Exits the workflow with analysis and fix recommendations
-  - Optionally enters plan mode for the user to implement fixes
-
-Activate this skill proactively after making code changes to verify they work (suggest first: "Should I run the test suite to verify these changes?").
-
-Also activate this skill when the user requests testing using phrases like:
-- "run tests"
-- "test the changes"
-- "build and test"
-- "verify changes"
 
 ---
 
@@ -117,16 +115,16 @@ Example:
 - `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests`
 - `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
 
-## 1. Detect Build Configuration
+## 1. Detect Build Configuration (If Necessary)
 
 Execute ONLY if Step 0. Prerequisites has "SKILL_CONFIG: NOT_CONFIGURED".
 
 → Execute setup instructions from `./references/setup-config.md`
 
 **Result handling:**  
-✓ Exit 0 → Config created, proceed to Section 2  
-✗ Exit 1 → Display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually"  
-⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding"  
+✓ Exit 0 → Config created, proceed to step 2  
+✗ Exit 1 → Display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually" and Exit the Workflow.  
+⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding" and Exit the Workflow.  
 
 ## 2. Load Configuration
 
@@ -139,41 +137,13 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 
 **Parse the JSON output:**
 
-The script outputs JSON configuration. Example structure:
-```json
-{
-  "outDir": "dist",
-  "skipBuild": false,
-  "logFile": "dist/test.log",
-  "build": [{
-    "command": "npm run build",
-    "logFile": "dist/build.log",
-    "errorPattern": "error",
-    "workingDir": ".",
-    "nativeOutputSupport": false
-  }],
-  "test": {
-    "all": {
-      "command": "npm test",
-      "resultsPath": "dist/test-results.tap",
-      "errorPattern": "(not ok|Bail out!)",
-      "nativeOutputSupport": false
-    },
-    "single": {
-      "command": "npm test -- {testFile}",
-      "resultsPath": "dist/test-single-results.tap",
-      "errorPattern": "(not ok|Bail out!)",
-      "nativeOutputSupport": false
-    }
-  }
-}
-```
+The script outputs JSON configuration for project build and test commands.
 
-→ Parse the JSON output as the project configuration
-→ Reference values using paths like:
+→ Parse the JSON output as the project configuration  
+→ Reference values using paths like:  
   - `config.test.all.command` - test command
-  - `config.build[0].logFile` - build log location
-  - `config.build[0].workingDir` - build working directory
+  - `config.build.logFile` - build log location
+  - `config.build.workingDir` - build working directory
   - `config.skipBuild` - whether build should be skipped
   - `config.test.all.resultsPath` - test results file location
   - `config.test.all.errorPattern` - regex for test failures
@@ -182,23 +152,36 @@ The script outputs JSON configuration. Example structure:
 - `nativeOutputSupport: true` → Tool has native file output (e.g., Maven's `--log-file`)
 - `nativeOutputSupport: false` → Use bash redirection (`> file 2>&1`)
 
-**Result handling:**
-✗ Script fails → Display error and stop
-✓ Script succeeds → Configuration parsed, proceed to Section 3   
+**Result handling:**  
+✗ Script fails → Display error and stop  
+✓ Script succeeds → Configuration parsed, proceed to step 3  
 
 ## 3. Build Project
 
-→ Check `config.skipBuild` from Section 2 configuration
+→ Check `config.skipBuild` from step 2 (Configuration)
 
-**If config.skipBuild is true:**
+**If `config.skipBuild` is true:**
 → Display: "Build step skipped (build command identical to test command)"
 → Proceed directly to step 4 (Run Tests)
 
-**If config.skipBuild is false:**
+**If `config.skipBuild` is false:**
+- **STEP_DESCRIPTION**: "Building project"
+- → Execute Build instructions from `references/run-build.md`
 
-**STEP_DESCRIPTION**: "Building project"
+## 3a. Analyze Build Failures and Exit
 
-→ Execute Build instructions from `references/run-build.md`
+**STEP_DESCRIPTION**: "Analyzing build failures"
+
+DELEGATE_TO: `references/agent-delegation.md` - DELEGATE_TO_BUILD_ANALYZER
+
+→ Extract build errors (see `./references/build-procedures.md` - EXTRACT_BUILD_ERRORS)  
+→ Delegate to `broken-build-analyzer` agent with build failure context and config object  
+→ Receive analysis with root causes and fix recommendations  
+→ Display analysis summary to user  
+→ Ask user: "Enter plan mode to implement fixes?"  
+  - Yes → Use EnterPlanMode tool with analysis context
+  - No → Proceed to step 7 (Completion)
+→ Exit workflow  
 
 ## 4. Run Tests
 
@@ -206,37 +189,33 @@ The script outputs JSON configuration. Example structure:
 
 DELEGATE_TO: `references/run-tests.md`
 
-→ Follow test execution procedure
-→ Return to Section 5 if tests fail, Section 7 if tests pass
+→ Follow test execution procedure  
+→ Return to step 5 if tests fail, step 7 (Completion) if tests pass  
 
-## 5. Extract Test Errors
+## 5. Extract Test Failures 
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
-→ Parse test results file using config from Section 2:
+→ Parse test results file using config from step 2:
   - Read the file at `config.test.all.resultsPath` (e.g., "dist/test-results.tap")
   - Extract failures using `config.test.all.errorPattern` regex (e.g., "(not ok|Bail out!)")
 
-→ For detailed extraction procedure, see ./references/build-procedures.md
+→ For detailed extraction procedure, see `./references/build-procedures.md` - EXTRACT_TEST_FAILURES  
+✓ 0 failures detected → Inform user and Exit Workflow.  
+✗ 1+ failures → Display count of test failures, proceed to step 6  
 
-✓ 0 failures detected → Proceed to step 7 (Completion)
-✗ 1+ failures → Display error summary, proceed to step 6
-
-## 6. Delegate to Analyzer and Exit
+## 6. Delegate to Failed Test Analyzer (If Necessary)
 
 DELEGATE_TO: `references/agent-delegation.md`
 
-→ Delegate to `failed-test-analyzer` agent with test failure context
-→ Receive analysis with root causes and fix recommendations
-→ Display analysis summary to user
-→ Ask user: "Enter plan mode to implement fixes?"
+→ Delegate to `failed-test-analyzer` agent with test failure context  
+→ Receive analysis with root causes and fix recommendations  
+
+## 7. Present Test Failure Analysis to User
+
+When the `failed-test-analyzer` completes its analysis:
+
+→ Display analysis summary to user  
+→ Ask user: "Enter plan mode to implement fixes?"  
   - Yes → Use EnterPlanMode tool with analysis context
-  - No → Proceed to Section 7
-→ Exit workflow
-
-## 7. Completion
-
-DELEGATE_TO: `references/completion.md`
-
-→ Generate status summary
-→ Exit workflow  
+  - No → Exit workflow  

@@ -11,6 +11,8 @@ const distDir = join(dirname(__dirname), 'dist');
 const args = process.argv.slice(2);
 const isSingleTestMode = args.length > 0;
 
+const isSilent = process.env.npm_config_loglevel === 'silent' || process.env.npm_config_silent === 'true';
+
 // Use different result files for single vs all tests
 const tapLogFile = join(distDir, isSingleTestMode ? 'test-single-results.tap' : 'test-results.tap');
 
@@ -20,12 +22,9 @@ const testFiles = isSingleTestMode
   ? args
   : globSync('**/*.test.js', { cwd: __dirname }).map(file => join(__dirname, file));
 
-// Include mock binaries in PATH for all Node.js test processes
-const mockPath = join(__dirname, 'dev-workflow', 'lib', 'mocks');
 const testEnv = {
   ...process.env,
-  FORCE_COLOR: '1',
-  PATH: `${mockPath}:${process.env.PATH}`
+  FORCE_COLOR: '1'
 };
 
 const result = spawnSync(
@@ -51,7 +50,7 @@ const stripAnsi = (str) => str.replace(/\x1b\[[0-9;]*m/g, '');
 const summaryStart = lines.findIndex(line => stripAnsi(line).trim().startsWith('ℹ tests'));
 
 if (summaryStart === -1) {
-  console.log(lines.join('\n'));
+  if (!isSilent) console.log(lines.join('\n'));
   process.exit(result.status);
 }
 
@@ -69,5 +68,8 @@ const reordered = [
   ...lines.slice(summaryStart, summaryEnd + 1)
 ];
 
-console.log(reordered.join('\n'));
+if (!isSilent) {
+  console.log(reordered.join('\n'));
+}
+
 process.exit(result.status);

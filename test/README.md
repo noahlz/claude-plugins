@@ -1,6 +1,6 @@
 # Claude Plugins Test Suite
 
-Comprehensive test coverage for skill node scripts using minimal Node.js, the built-in `node:test` module and dependency injection for mocking. 
+Comprehensive test coverage for skill node scripts using minimal Node.js, the [built-in](https://nodejs.org/api/test.html) `node:test` module and simple dependency injection for mocking. 
 
 ## Running Tests
 
@@ -35,30 +35,28 @@ npm run coverage
 3. Use `setupTestEnv()` in `beforeEach()` to initialize test directories
 4. Use `readFixture()` to load pre-built test data from `fixtures/`
 
-See existing tests in `test/dev-workflow/` for examples.
+See existing tests in [`test/dev-workflow/`](test/dev-workflow/) for examples.
 
 ## Test Infrastructure
 
 ### Test Helpers
 
-Common utilities in `lib/helpers.js` support test setup, fixture loading, and script execution. See the file for available functions.
+Common utilities in [`lib/helpers.js`](./lib/helpers.js) support test setup, fixture loading, and script execution. See the file for available functions.
 
 ### Dependency Injection for Mocking
 
-Tests use **dependency injection** to provide mock dependencies. Mock objects are passed via a `deps` parameter to functions under test. This avoids external mocking libraries and experimental Node.js features.
+Tests use **dependency injection** to provide mock dependencies. 
 
-Mock libaries are located adjacent to their tests. For example `test/dev-workflow/write-git-commit/lib/mocks/`
+Tests define lightweight, inline mock objects that are passed to functions-under-test via a `deps` parameter
 
-Dependency-injection mocking examples in:
-- `test/dev-workflow/write-git-commit/commit-workflow.test.js` - Injecting ccusage and git mocks
-- `test/dev-workflow/write-git-commit/git-operations.test.js` - Testing git operations directly
+See [commit-workflow.test.js](./dev-workflow/write-git-commit/commit-workflow.test.js) for examples.
 
 ### Fixtures
 
 Pre-built test data in `test/dev-workflow/fixtures/`:
 
-- **`configs/`** - Configuration files for build and commit tests
-- **`project-templates/`** - Minimal project structures for tool detection tests
+- [`configs/`](./dev-workflow/fixtures/configs/) - Configuration files for build and commit tests
+- [`project-templates/`](./dev-workflow/fixtures/project-templates/) - Minimal project structures for tool detection tests
 
-Use `readFixture()` to load fixtures in tests. Modify loaded data inline for variations without creating additional fixture files.
+Use the helper function `readFixture()` to load fixtures in tests and modify them inline rather than creating additional fixture files.
 

@@ -19,10 +19,9 @@ import {
  *
  * Tests real git subprocess execution using the production git-operations.js functions.
  * Each test initializes a real git repository with proper setup/teardown.
- * No mocking - validates actual git behavior and subprocess handling.
  */
 
-describe('git-operations: integration tests (real git)', () => {
+describe('git-operations: integration tests', () => {
   let testEnv;
 
   beforeEach(() => {
@@ -44,7 +43,6 @@ describe('git-operations: integration tests (real git)', () => {
   });
 
   // ====== execGit() - 3 tests ======
-
   it('execGit executes git commands successfully', () => {
     const result = prodExecGit(['status'], { cwd: testEnv.tmpDir });
 

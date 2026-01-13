@@ -8,9 +8,9 @@ See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-m
 
 ## Available Plugins
 
-### Dev Workflow
+### dev-workflow
 
-Efficient workflows for common development tasks.
+AI-assisted workflows for common development tasks.
 
 **Quick Install:**
 
@@ -27,8 +27,7 @@ claude plugin install dev-workflow@noahlz.github.io
 
 #### Prerequisites
 
-- Node.js 22+ (checked by install script)
-
+- Node.js 22+
 
 #### Skills
 
@@ -41,40 +40,41 @@ claude plugin install dev-workflow@noahlz.github.io
 
 #### Agents
 
-Because reading build and test failures quickly use up context, the `run-and-fix-test` skill delegates failure analysis to specialized agents:
+Because reading build and test failures quickly use up context, the `run-and-fix-tests` skill delegates failure analysis to specialized agents:
 
-| Agent | Description | Invoked By |
-|-------|-------------|-----------|
+| Agent | Description |
+|-------|-------------|
 | [`broken-build-analyzer`](./plugins/dev-workflow/agents/broken-build-analyzer.md) | Analyzes build/compilation failures and provides diagnosis suitable for creating a plan to fix the build. | `run-and-fix-tests` skill | 
-| [`failed-test-analyzer`](./plugins/dev-workflow/agents/failed-test-analyzer.md) | Analyzes test failures and provides diagnosis suitable for creating a plan to fix the tests. | `run-and-fix-tests` skill |
+| [`failed-test-analyzer`](./plugins/dev-workflow/agents/failed-test-analyzer.md) | Analyzes test failures and provides diagnosis suitable for creating a plan to fix the tests. |
 
 ## Development
 
 ### Local Development Setup
 
-When developing these plugins, you can test them locally using the marketplace path:
+When developing these plugins, you can install them from local source:
 
 ```bash
-# From the claude-plugins directory, add the local marketplace
 claude plugin marketplace add ./
 ```
 
-### Plugin Reinstallation
+### Updating
 
-When making changes to plugin code, you must fully uninstall and reinstall the plugin for changes to take effect. Run the provided script `./reinstall.sh`
+After making changes, you must fully uninstall and reinstall the plugin. 
+
+Run the provided script `./reinstall.sh`. 
 
 Alternatively, update the plugin version number in `marketplace.json` and then trigger a marketplace/plugin update in Claude Code.
 
 
 ### Plugin Root Resolution
 
-Skills need to locate their install directory at runtime Fortunately, when a skill activates, Claude receives the skill source location as a message like:
+In order to run packaged scripts, skills need to know their install directory. Fortunately, when a skill activates, Claude receives the skill source location as a message like the following:
 
 ```
 Base directory for this skill: /User/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit
 ```
 
-As the skills in this plugin use scripts heavily, they rely heavily on this behavior to locate the scripts accurate. If Anthropic changes this behavior, the skills could break.
+The skills in this plugin rely on this message to locate scripts. Of course, things will break if Anthropic changes this behavior.
 
 Related: [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https://github.com/anthropics/claude-code/issues/9354)
 
@@ -82,7 +82,7 @@ Related: [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https
 
 Scripts used by skills are tested using Node.js with the native `node:test` module.
 
-Run tests with this plugin's `run-and-fix-tests` skill ("eat your own dogfood") or:
+Run tests with this plugin's `dev-workflow:run-and-fix-tests` skill ("eat your own dogfood") or:
 
 ```bash
 npm test

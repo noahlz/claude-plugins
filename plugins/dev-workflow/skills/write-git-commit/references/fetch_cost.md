@@ -1,8 +1,15 @@
-# Cost Data Fetch Instructions
+# Fetch Cost Metrics
+
+Contents:
+- Action required
+- ccusage dependency check
+- Main bash command
+- JSON output parsing
+- Response handling and next steps
 
 ## Action Required
 
-Execute commit-workflow.js prepare command to fetch session cost metrics.
+Execute `scripts/commit-workflow.js` "prepare" command to fetch session cost metrics.
 
 ## REQUIRED: Check that ccusage dependency installed
 
@@ -27,11 +34,11 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION
 ## Parse JSON Output
 
 Extract these fields:
-- **status**: Result status ("success" or "error")
-- **data.session_id**: Resolved session ID (may differ from input if auto-detected)
-- **data.current_cost**: JSON array of cost objects
-- **data.method**: Detection method ("library" or "cli")
-- **message**: Error message (if status is "error")
+- `status`: Result status ("success" or "error")
+- `data.session_id`: Resolved session ID (may differ from input if auto-detected)
+- `data.current_cost`: JSON array of cost objects
+- `data.method`: Detection method ("library" or "cli")
+- `message`: Error message (if status is "error")
 
 ## Response Handling
 
@@ -39,18 +46,16 @@ Extract these fields:
 
 - Store `SESSION_ID` from data.session_id
 - Store `CURRENT_COST` from data.current_cost (as JSON array string)
-- Proceed to Step 5 (Create Commit) with these values
+- Proceed to Step 6 (Create Commit) with these values
 
 ### ✗ If status is NOT "success"
 
-Follow recovery procedures in `references/session_recovery.md`
+- Display the error to the user 
+- Tell the user "*** Session ID must be configured to accurately extract Claude Code cost metrics."
+- Exit the workflow
 
-## Important Notes
-
-- Do NOT proceed with missing cost data
+**IMPORTANT:**
+- Do NOT proceed with missing cost data.
 - Do NOT fabricate or estimate cost metrics
-- If errors persist, stop workflow and ask user for guidance
+- If errors persist, HALT the workflow and ask user for guidance
 
-## Next Step
-
-If successful: Return to SKILL.md Step 5 with SESSION_ID and CURRENT_COST captured.

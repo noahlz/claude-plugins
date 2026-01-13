@@ -26,8 +26,6 @@ claude-plugins/
     │   ├── fixtures/
     │   │   ├── configs/
     │   │   └── project-templates/
-    │   ├── lib/                 # Test suite library scripts (mocks, helpers, utilities)
-    │   │   └── mocks/
     │   ├── run-and-fix-tests/
     │   └── write-git-commit/
     └── lib/                     # Cross-module test utilities
@@ -38,7 +36,7 @@ claude-plugins/
 
 ### Move Fast and Break Things
 
-**This plugin is not yet released!** You do **NOT* have keep existing behavior for "backwards compatability" when adding enhancements or refactoring.
+**This plugin is not yet released!** You do **NOT** have keep existing behavior for "backwards compatability" when adding enhancements or refactoring.
 
 ### Script-First Approach
 
@@ -47,7 +45,7 @@ claude-plugins/
 - Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
 - Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
 
-**IMPORTANT** Remember that environment variables (i.e. set via `export KEY=VALUE`) do not persist between Bash tool invocations. Therefore, Scripts or Bash commands that call scripts **MUST** output values to the console (stdout) i.e. `echo KEY=VALUE` for the skill to use later.
+**IMPORTANT** Remember that environment variables (i.e. set via `export KEY=VALUE`) do not persist between Bash tool invocations. Therefore, Skills must store such values mentally and explicitly interpolate them into commands / script invocations *every time*.
 
 ### Skill Script Execution
 
@@ -55,13 +53,16 @@ Skills in this plugin execute scripts located at the plugin level using the skil
 
 **Base directory extraction:**
 - Skills extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" message at startup
-- Example: `/Users/username/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
+- Example: 
+  - Startup message: `Base directory for this skill: /Users/username/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
+  - Action: `/Users/username/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit` value stored in `SKILL_BASE_DIR` for template substitution in commands.
 
 **Script execution:**
-- Scripts are invoked using: `node "$SKILL_BASE_DIR/scripts/script-name.js"`
+- Scripts are invoked using template commands. Example: `node "{{SKILL_BASE_DIR}}/scripts/script-name.js"`
 - Scripts use relative paths to access shared libraries: `require('../../../lib/common.js')`
 
 **Relative path structure:**
+
 ```
 From: skills/write-git-commit/scripts/script.js
 To:   lib/common.js
@@ -70,12 +71,12 @@ Path: ../../../lib/common.js
 
 ### Dependencies
 
-**Minimize external dependencies. Use pure Node.js and JavaScript only.**
+**Minimize external dependencies. Use pure Node.js and JavaScript.**
+
+Do NOT add additional npm packages without justification and approval by the user.
 
 **Runtime**: `ccusage` (in `plugins/dev-workflow/package.json`)
   - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
-
-Do NOT add additional npm packages without justification and approval by the user.
 
 ### NOTE: Reinstall After Changing
 
@@ -91,8 +92,7 @@ Changes do not take effect immediately. The user needs to exit the session, run 
 
 Inject dependencies as a `deps` parameter in function options:
 - Pass `deps: { git: mockGit, ccusage: mockCcusage }` to functions in tests
-- Create base mocks that throw errors for unexpected calls
-- Spread and override base mocks per test for fresh isolation
+- For each test, create new base mocks that selectively override functions under test and throw errors for unexpected calls
 - Example: `await prepare({ baseDir: '.', deps: { ccusage: testCcusage } })`
 
 ### Running Tests: Silence is Golden
@@ -102,7 +102,7 @@ Use the `dev-workflow:run-and-fix-tests` skill to test changes to this project.
 Example test command, which you should derive from the build configuration `.claude/settings.plugins.run-and-fix-tests.json`:
 
 ```bash
-npm test && echo "✓ Tests Passed!" || echo "✗ Tests FAILED"  
+npm --silent test && echo "✓ Tests Passed!" || echo "✗ Tests FAILED"  
 ```
 
 **NOTE: Do NOT use `tee`.** You'll obtain context for test failures from build and tests log files, if needed.
@@ -113,7 +113,7 @@ If the tests fail (non-zero exit code) read the test results (tap report format)
 
 #### Hanging Tests: stdin/Stream Fallback
 
-**Problem:** Tests hang indefinitely.
+**Problem:** Tests for the plugins should complete in *under 10 seconds*, but sometimes (due to a bug) tests hang indefinitely.
 
 **Root cause:** Functions that depend on reading from `stdin` may hang. If a function that is hanging accepts a `message` parameter falls back stdin, it will block waiting for input. Empty string (`''`) is falsy and triggers the fallback.
 

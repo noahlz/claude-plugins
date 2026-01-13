@@ -25,8 +25,7 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     assert.equal(result.errors.length, 0, 'Should have no errors');
     assert.ok(result.resolved, 'Should load config');
-    assert.equal(result.resolved.build.length, 1, 'Should indicate single build');
-    assert.equal(result.resolved.build[0].command, 'npm run build', 'Should set build command');
+    assert.equal(result.resolved.build.command, 'npm run build', 'Should set build command');
   });
 
   it('resolves {outDir} variable in paths', () => {
@@ -37,21 +36,8 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     const result = loadConfig({ baseDir: testEnv.tmpDir });
 
-    assert.equal(result.resolved.build[0].logFile, 'build-logs/build.log', 'Should resolve {outDir}');
+    assert.equal(result.resolved.build.logFile, 'build-logs/build.log', 'Should resolve {outDir}');
     assert.equal(result.resolved.outDir, 'build-logs', 'Should preserve outDir');
-  });
-
-  it('handles multi-build config with array', () => {
-    loadConfigFixture(testEnv, 'dev-workflow', 'configs/multi-build-polyglot.json');
-
-    const result = loadConfig({ baseDir: testEnv.tmpDir });
-
-    assert.equal(result.errors.length, 0, 'Should handle multi-build config');
-    assert.equal(result.resolved.build.length, 2, 'Should have 2 builds');
-    assert.equal(result.resolved.build[0].command, 'npm run build', 'Should set first build command');
-    assert.equal(result.resolved.build[1].command, 'mvn clean install', 'Should set second build command');
-    assert.equal(result.resolved.build[0].workingDir, 'frontend', 'Should set first working dir');
-    assert.equal(result.resolved.build[1].workingDir, 'backend', 'Should set second working dir');
   });
 
   it('validates required fields', () => {
@@ -80,19 +66,19 @@ describe('run-and-fix-tests: load-config.js', () => {
 
   it('exports working directory for single build', () => {
     loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
-      config.build[0].workingDir = 'frontend';
+      config.build.workingDir = 'frontend';
       return config;
     });
 
     const result = loadConfig({ baseDir: testEnv.tmpDir });
 
-    assert.equal(result.resolved.build[0].workingDir, 'frontend', 'Should export working directory');
+    assert.equal(result.resolved.build.workingDir, 'frontend', 'Should export working directory');
   });
 
   it('auto-detects skip when build command equals test command', () => {
     loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
       // Make build and test commands identical (like test-only projects)
-      config.build[0].command = 'npm test';
+      config.build.command = 'npm test';
       config.test.all.command = 'npm test';
       return config;
     });
@@ -122,7 +108,7 @@ describe('run-and-fix-tests: load-config.js', () => {
       // Set skipBuild explicitly to false to override auto-detection
       config.skipBuild = false;
       // Commands are still identical, but should not skip
-      config.build[0].command = 'npm test';
+      config.build.command = 'npm test';
       config.test.all.command = 'npm test';
       return config;
     });
@@ -131,18 +117,6 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     assert.equal(result.errors.length, 0, 'Should have no errors');
     assert.equal(result.resolved.skipBuild, false, 'Should respect explicit skipBuild=false');
-  });
-
-  it('does not auto-skip for multi-build configs', () => {
-    loadConfigFixture(testEnv, 'dev-workflow', 'configs/multi-build-polyglot.json', (config) => {
-      // Multi-build (build.length > 1) should never auto-skip
-      return config;
-    });
-
-    const result = loadConfig({ baseDir: testEnv.tmpDir });
-
-    assert.equal(result.errors.length, 0, 'Should have no errors');
-    assert.equal(result.resolved.skipBuild, false, 'Should not auto-skip for multi-build');
   });
 
   it('sets skipBuild=false by default for single-build with different commands', () => {
@@ -157,12 +131,12 @@ describe('run-and-fix-tests: load-config.js', () => {
   it('resolveConfig expands all paths', () => {
     const config = {
       outDir: 'build-logs',
-      build: [{
+      build: {
         command: 'npm run build',
         logFile: '{outDir}/build.log',
         errorPattern: 'error',
         workingDir: 'frontend'
-      }],
+      },
       test: {
         all: {
           command: 'npm test',
@@ -180,7 +154,7 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     const resolved = resolveConfig(config);
 
-    assert.equal(resolved.build[0].logFile, 'build-logs/build.log', 'Should resolve build logFile');
+    assert.equal(resolved.build.logFile, 'build-logs/build.log', 'Should resolve build logFile');
     assert.equal(resolved.test.all.resultsPath, 'build-logs/test.log', 'Should resolve test resultsPath');
     assert.equal(resolved.test.single.resultsPath, 'build-logs/test-single.log', 'Should resolve single test resultsPath');
     assert.equal(resolved.logFile, 'build-logs/output.log', 'Should resolve logFile');

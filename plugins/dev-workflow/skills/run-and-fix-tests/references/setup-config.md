@@ -1,6 +1,6 @@
 # Build Configuration Setup - First Run Only
 
-Execute ONLY if config check failed (exit 1 from Section 1).
+Execute ONLY if config check failed (non-zero exit code from step 1).
 
 ## Auto-Detection and Selection
 
@@ -18,18 +18,14 @@ node "{{SKILL_BASE_DIR}}/scripts/detect-and-resolve.js" "{{SKILL_BASE_DIR}}/../.
 
 → Script applies these rules automatically:
 - **Exactly 1 tool detected** → Use `assets/defaults/{tool}.json`
-- **Multiple tools in different locations** → Generate polyglot config (🔧 shown to user)
-- **Multiple tools in same location** → Generate polyglot config
 - **No matching default exists** → Use `assets/defaults/TEMPLATE.json` placeholder template (user must customize)
 - **0 tools detected** → Error: no build tools detected
 
 ## Result Handling
 
-✓ Exit 0 → Config created at `.claude/settings.plugins.run-and-fix-tests.json`, proceed to Section 2
-
-✗ Exit 1 → No tools detected, display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually"
-
-⚠️ Exit 2 → Placeholder template used, display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding"
+✓ Exit 0 → Config created at `.claude/settings.plugins.run-and-fix-tests.json`, proceed to step 2  
+✗ Exit 1 → No tools detected, display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually"  
+⚠️ Exit 2 → Placeholder template used, display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding"  
 
 ## Exit Codes
 

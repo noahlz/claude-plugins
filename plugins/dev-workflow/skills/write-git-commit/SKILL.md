@@ -19,15 +19,17 @@ Activate when the user explicitly requests a git commit using phrases like:
 - "save to git"
 - "git commit"
 
+**DO NOT** use this skill autonomously - only activate it when requested or invoked by the user.
+
 ## Workflow
 
 ```
-Stage → Generate → [User Approval] → Fetch Costs → Commit → Summary
-              ↑______________|
-              (revision loop)
+(1) Check SessionId → (2) Stage → (3) Generate → (4) [User Approval] → (5) Fetch Costs → (6) Commit → (7) Summary
+                                            ↑____________________|
+                                                (revision loop)
 ```
 
-Step 3 blocks until user approves the commit message.
+Step 4 **MUST** block until user approves the commit message. **Do NOT COMMIT without approval!**
 
 ---
 
@@ -39,7 +41,7 @@ Step 3 blocks until user approves the commit message.
 
 - Follow the Workflow instructions **EXACTLY** as written. 
 - **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
-- This Workflow is **interactive**. You must ALWAYS get user approval per Step 3 before proceeding to the next step.
+- This Workflow is **interactive**. You must ALWAYS get user approval per Step 4 before proceeding to the next step.
 
 ### B. Delegation Protocol
 
@@ -49,7 +51,7 @@ When you see `DELEGATE_TO: [file]`:
 3. Check any VERIFY checklists
 4. Return to continue the workflow
 
-Reference files contain detailed requirements not in SKILL.md. Always read them.
+Reference files contain detailed requirements. ALWAYS read them when cited.
 
 ### C. Narration Control
 
@@ -59,24 +61,25 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 
 ## Workflow Checklist
 
+**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
+
 ```
-- [ ] Stage and analyze changes
-- [ ] Generate commit message
-- [ ] Get user approval
-- [ ] Fetch session costs
-- [ ] Create commit
-- [ ] Display summary
+- [ ] 1. Resolve and Save sessionId (if necessary)
+- [ ] 2. Stage and analyze changes
+- [ ] 3. Generate commit message
+- [ ] 4. Get user approval
+- [ ] 5. Fetch session costs
+- [ ] 6. Create commit
+- [ ] 7. Display summary
 ```
 
 ## Skill Organization
 
 **References:**
-- [`message_guidelines.md`](./references/message_guidelines.md)- Commit message format
-- [`message_approval.md`](./references/message_approval.md) - User approval workflow
-- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
 - [`create_commit.md`](./references/create_commit.md) - Git commit creation
-- [`session_recovery.md`](./references/session_recovery.md) - Session ID fallback
-- [`commit_recovery.md`](./references/commit_recovery.md) - Git error handling
+- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
+- [`message_approval.md`](./references/message_approval.md) - User approval workflow
+- [`message_guidelines.md`](./references/message_guidelines.md)- Commit message format
 
 **Scripts:**  [scripts/](./scripts/) - utility scripts
 
@@ -104,12 +107,33 @@ Replace placeholders before executing bash commands:
 
 Example: 
 - Skill header states: `Base directory for this skill: /Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
-- `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit
+- `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
 - `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js"`
- 
-## 1. Stage and Analyze Changes
 
-### 1a. Stage changes
+## 1. Resolve SessionID
+
+IF the `SESSION_ID` as found, proceed immediately to Step 2.
+
+OTHERWISE if the `SESSION_ID` value was `NOT_CONFIGURED` resolve and save it as follows:
+  - Execute using Bash tool to get available sessions:
+    ```bash
+    node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
+    ```
+  - Parse JSON output to extract sessions array from `data.sessions`
+  - Build AskUserQuestion with dynamic options:
+    - For each session in first 4 from sessions array: Create option with label = sessionId
+  - If user picks a session:
+    - Save to config using save-config command:
+      ```bash
+      node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
+      ```
+    - Continue workflow.
+
+If you encounter an error in the above procedure, display the error to the user and IMMEDIATELY exit the Workflow.
+ 
+## 2. Stage and Analyze Changes
+
+### 2a. Stage changes
 
 **STEP_DESCRIPTION**: "Staging changes"
 
@@ -118,7 +142,7 @@ Example:
 git add -A
 ```
 
-### 1b. Analyze staged changes
+### 2b. Analyze staged changes
 
 **STEP_DESCRIPTION**: "Generating commit message"
 
@@ -127,17 +151,17 @@ git add -A
 git diff --cached
 ```
 
-## 2. Generate Commit Message
+## 3. Generate Commit Message
 
 DELEGATE_TO: `references/message_guidelines.md`
 
-Generate commit message following those guidelines.
+Generate commit message per the guidelines, stored as `COMMIT_SUBJECT` and `COMMIT_BODY`.
 
-**Silent generation:** Create message internally. First output must be "Proposed commit message:" in Step 3.
+**Silent generation:** Create message internally. First output must be "Proposed commit message:" in Step 4.
 
-## 3. Display Message to User for Approval
+## 4. Display Message to User for Approval
 
-BLOCKING: This step MUST complete with user approval before Step 4.
+BLOCKING: This step MUST complete with user approval before Step 5.
 
 DELEGATE_TO: `references/message_approval.md`
 
@@ -145,21 +169,23 @@ DELEGATE_TO: `references/message_approval.md`
 → Extract `COMMIT_SUBJECT` and `COMMIT_BODY` if approved  
 → Proceed to Step 4 only if approved by user  
 
-## 4. Fetch Cost Data
+## 5. Fetch Cost Data
 
 **STEP_DESCRIPTION**: "Fetching session cost metrics"
 
 DELEGATE_TO: `references/fetch_cost.md`
 
-⚠️  **NOTE:** Do NOT ever make a commit with missing or contrived cost metrics. If encountering errors with ccusage, IMMEDIATELY STOP and ask user for guidance.
+## 6. Create Commit
 
-## 5. Create Commit
+⚠️  **IMPORTANT:** STOP IMMEDIATELY and ask the user for guidance if:  
+- You did NOT get explicit approval for the commit message via AskUserQuestion in Step 4.
+- You did NOT get Cost Metrics, i.e. they are missing, or if you contrived them after encountering errors with ccusage, in step 5. 
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
 DELEGATE_TO: `references/create_commit.md`
 
-## 6. Summary
+## 7. Summary
 
 → Display success summary:
 ```

@@ -1,5 +1,4 @@
 {
-  "tools": {
     "cargo": { "configFile": "Cargo.toml" },
     "clojure": { "configFile": "deps.edn" },
     "dotnet": { "configFile": "*.csproj" },
@@ -13,5 +12,4 @@
     "sbt": { "configFile": "build.sbt" },
     "shunit2": { "configFile": "shunit2" },
     "vite": { "configFile": "vite.config.ts" }
-  }
 }

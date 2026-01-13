@@ -4,27 +4,12 @@ Guides Claude through building and testing your project with minimal token usage
 
 ## What It Does
 
-- Builds and tests your project using the appropriate build tool
+- Builds and tests your project with minimal console output, per configuration file: `.claude/settings.plugins.run-and-fix-tests.json`
 - Analyzes compilation errors using the `broken-build-analyzer` agent
 - Analyzes test failures using the `failed-test-analyzer` agent
-- Provides root cause analysis and fix recommendations
-- Optionally enters plan mode for implementing fixes
+- Provides root cause analysis and fix recommendations suitable for subsequent Plan mode
 - Supports single test execution: `/test MyTest`
 - Supports multi-module projects with different build tools (custom configuration required)
-
-## Quick Start
-
-```bash
-/test
-```
-
-The skill auto-detects your build tool and runs your tests. If tests fail, it analyzes failures and provides fix recommendations.
-
-## When to Use
-
-- After making code changes to verify they work
-- To get root cause analysis of compilation errors or test failures
-- When CI/CD tests are failing and you need to understand why
 
 ## Prerequisites
 
@@ -51,18 +36,6 @@ When you run `/test` for the first time, the plugin automatically:
 
 See [settings.plugins.run-and-fix-tests.json](./assets/defaults/settings.plugins.run-and-fix-tests.json) (reference file showing all supported build tools) and [assets/defaults/](./assets/defaults) for example default configurations. You can customize tool detection in your project or user-level plugin configuration. Configurations are merged with defaults.
 
-Note: The default `polyglot.json` serves as an example multi-module build (see next section).
-
-### Multi-Tool Projects
-
-If your project has multiple build tools detected (e.g., npm + maven), the plugin automatically generates a polyglot configuration that builds all tools in sequence:
-
-```
-🔧 Multiple build tools detected, creating polyglot configuration...
-```
-
-The generated config uses an array structure for `build` to run each tool in order.
-
 ### Placeholder Configuration
 
 If your build tool isn't recognized, the plugin creates a placeholder template.  You must edit the config before using the plugin. Replace the placeholders with your actual commands.
@@ -71,56 +44,11 @@ See the [`assets/defaults/TEMPLATE.json`](./assets/defaults/TEMPLATE.json) file 
 
 ### Customizing Configuration
 
-To customize after auto-config, edit `.claude/settings.plugins.run-and-fix-tests.json`:
-
-```json
-{
-  "logDir": "dist",
-  "build": {
-    "command": "yarn build"
-  },
-  "test": {
-    "all": {
-      "command": "yarn test:ci"
-    },
-    "single": {
-      "command": "yarn test {testFile}"
-    }
-  }
-}
-```
-
-For multi-module projects, use an array for `build`:
-
-```json
-{
-  "logDir": "build-logs",
-  "build": [
-    {
-      "tool": "npm",
-      "command": "npm run build",
-      "workingDir": "frontend"
-    },
-    {
-      "tool": "maven",
-      "command": "mvn clean install",
-      "workingDir": "backend"
-    }
-  ],
-  "test": {
-    "all": {
-      "command": "npm test"
-    },
-    "single": {
-      "command": "npm test -- {testFile}"
-    }
-  }
-}
-```
+To customize after auto-config, edit your project's configuration at:`.claude/settings.plugins.run-and-fix-tests.json`. 
 
 ### Starting Over
 
-To reset and re-detect your build tools, delete `.claude/settings.plugins.run-and-fix-tests.json` and run `/test` again.
+To reset and re-detect your build tools, delete your project's `.claude/settings.plugins.run-and-fix-tests.json` and run `/test` again.
 
 ## Agents
 

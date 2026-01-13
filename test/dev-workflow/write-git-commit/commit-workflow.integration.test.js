@@ -11,17 +11,11 @@ import {
   extractJsonFromOutput
 } from '../../lib/helpers.js';
 
-/**
- * write-git-commit test suite
- *
- * Tests use Node.js module mocking to inject a mock git implementation.
- * The mock maintains state in .mock-git-commits files within the test's temp directory.
- * No real git repositories or commits are created during testing.
- */
-
-describe('write-git-commit: commit-workflow.js', () => {
+/** Test commit-workflow.js against a temporary git repository. */
+describe('write-git-commit: commit-workflow.js integration tests', () => {
   let testEnv;
 
+  // Create a temporary directory and make it a git repo.
   beforeEach(() => {
     testEnv = setupTestEnv();
 
@@ -41,18 +35,12 @@ describe('write-git-commit: commit-workflow.js', () => {
   });
 
   it('prepare action returns "not_found" status when config does not exist', async () => {
-    // Note: t.mock.module() doesn't work in subprocesses, so we test with real ccusage
-    // The mocked ccusage tests in the "mocked ccusage" suite cover the case where
-    // session resolution fails with a proper error message
     const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
     const outputFile = join(testEnv.tmpDir, 'prepare-output.json');
 
     execNodeScript('dev-workflow', scriptPath, {
       args: ['prepare', testEnv.tmpDir, '', outputFile],
-      cwd: testEnv.tmpDir,
-      env: {
-        PATH: testEnv.mockPath
-      }
+      cwd: testEnv.tmpDir
     });
 
     let data;
@@ -72,10 +60,7 @@ describe('write-git-commit: commit-workflow.js', () => {
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['unknown-action', outputFile],
-      cwd: testEnv.tmpDir,
-      env: {
-        PATH: testEnv.mockPath
-      }
+      cwd: testEnv.tmpDir
     });
 
     assert.notEqual(result.exitCode, 0, 'Should fail with unknown action');
@@ -102,10 +87,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['commit', '--session-id', 'test-session-123', '--costs', JSON.stringify([])],
       cwd: testEnv.tmpDir,
-      input: 'Test commit message',
-      env: {
-        PATH: testEnv.mockPath
-      }
+      input: 'Test commit message'
     });
 
     const data = extractJsonFromOutput(result.stdout);
@@ -134,10 +116,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['commit', '--session-id', 'test-session-123', '--costs', invalidMetrics],
       cwd: testEnv.tmpDir,
-      input: 'Test commit message',
-      env: {
-        PATH: testEnv.mockPath
-      }
+      input: 'Test commit message'
     });
 
     const data = extractJsonFromOutput(result.stdout);
@@ -161,10 +140,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['commit', '--session-id', 'test-session-123', '--costs', validMetrics],
       cwd: testEnv.tmpDir,
-      input: 'Test commit message',
-      env: {
-        PATH: testEnv.mockPath
-      }
+      input: 'Test commit message'
     });
 
     const data = extractJsonFromOutput(result.stdout);
@@ -193,10 +169,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['commit', '--session-id', 'test-session-123', '--costs', validMetrics],
       cwd: testEnv.tmpDir,
-      input: 'Test commit message',
-      env: {
-        PATH: testEnv.mockPath
-      }
+      input: 'Test commit message'
     });
 
     const data = extractJsonFromOutput(result.stdout);
@@ -224,10 +197,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['commit', '--costs', validMetrics],
       cwd: testEnv.tmpDir,
-      input: 'Test commit message',
-      env: {
-        PATH: testEnv.mockPath
-      }
+      input: 'Test commit message'
     });
 
     const data = extractJsonFromOutput(result.stdout);
@@ -246,10 +216,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['commit', '--session-id', 'test-session-123'],
       cwd: testEnv.tmpDir,
-      input: 'Test commit message',
-      env: {
-        PATH: testEnv.mockPath
-      }
+      input: 'Test commit message'
     });
 
     const data = extractJsonFromOutput(result.stdout);
@@ -279,10 +246,7 @@ describe('write-git-commit: commit-workflow.js', () => {
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['commit', '--session-id', 'test-session-123', '--costs', validMetrics],
       cwd: testEnv.tmpDir,
-      input: messageWithBody,
-      env: {
-        PATH: testEnv.mockPath
-      }
+      input: messageWithBody
     });
 
     const data = extractJsonFromOutput(result.stdout);
@@ -301,10 +265,7 @@ describe('write-git-commit: commit-workflow.js', () => {
 
     const result = execNodeScript('dev-workflow', scriptPath, {
       args: ['prepare', testEnv.tmpDir, '-Users-noahlz-projects-claude-plugins'],
-      cwd: testEnv.tmpDir,
-      env: {
-        PATH: testEnv.mockPath
-      }
+      cwd: testEnv.tmpDir
     });
 
     const data = extractJsonFromOutput(result.stdout);
@@ -317,5 +278,4 @@ describe('write-git-commit: commit-workflow.js', () => {
       assert.ok(Array.isArray(data.data.current_cost), 'current_cost should be array');
     }
   });
-
 });

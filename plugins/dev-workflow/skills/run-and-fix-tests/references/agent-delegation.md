@@ -1,20 +1,17 @@
 # Agent Delegation Procedures
 
-Common procedures for delegating analysis to sub-agents (broken-build-analyzer, failed-test-analyzer).
+Contents:
+- HOWTO Delegate to the broken-build-analyzer
+- HOWTO Delegate to the failed-test-analyzer
 
-## DELEGATE_TO_BUILD_ANALYZER
 
-Procedure to delegate to broken-build-analyzer agent:
-
-→ Extract build errors from build log(s) (see build-procedures.md EXTRACT_BUILD_ERRORS)
+## HOWTO: DELEGATE_TO_BUILD_ANALYZER
 
 → Delegate to the `broken-build-analyzer` agent using Task tool:
   - `subagent_type: "broken-build-analyzer"`
-  - Pass config object as JSON in prompt
-  - Agent reads build errors from config.build[i].logFile
-  - Agent accesses config.build[i].command, config.build[i].workingDir, config.build[i].errorPattern, etc.
+  - Pass build config file content as literal JSON
 
-→ Agent analyzes errors and returns:
+→ Instruct the Agent to analyze build errors and return:
   - Root cause analysis
   - Recommended fixes with file locations
   - Next steps if solution unclear
@@ -25,17 +22,11 @@ Procedure to delegate to broken-build-analyzer agent:
   - Yes → Use EnterPlanMode tool, include analysis in context
   - No → Proceed to completion
 
-## DELEGATE_TO_TEST_ANALYZER
-
-Procedure to delegate to failed-test-analyzer agent (invoked from SKILL.md Section 6):
-
-→ Extract test failures from test results (see build-procedures.md EXTRACT_TEST_ERRORS)
+## HOWTO: DELEGATE_TO_TEST_ANALYZER
 
 → Delegate to the `failed-test-analyzer` agent using Task tool:
   - `subagent_type: "failed-test-analyzer"`
-  - Pass config object as JSON in prompt
-  - Agent reads test failures from config.test.all.resultsPath
-  - Agent accesses config.test.all.command, config.test.all.errorPattern, config.skipBuild, etc.
+  - Pass build config file content as literal JSON
 
 → Agent analyzes failures and returns:
   - Root cause analysis
