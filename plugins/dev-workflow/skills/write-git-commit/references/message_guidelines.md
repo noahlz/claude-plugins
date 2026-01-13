@@ -1,15 +1,14 @@
 # Commit Message Guidelines
 
-## Overview
-
-Generate a commit message with imperative mood subject line (stored as COMMIT_SUBJECT) and optional bullet point body (stored as COMMIT_BODY).
-
 **Contents:**
----
 - General Guidelines
 - Commit Subject Line
 - Commit Body
 - Examples
+
+---
+
+Generate a commit message with imperative mood subject line (stored as COMMIT_SUBJECT) and optional bullet point body (stored as COMMIT_BODY).
 
 ## General Guidelines
 

@@ -1,9 +1,10 @@
----
+# Obtain Commit Message APproval 
+
 **Contents:**
----
 - Message Display Instructions
 - User Approval Instructions
 - Response Processing
+
 ---
 
 ## Message Display Instructions

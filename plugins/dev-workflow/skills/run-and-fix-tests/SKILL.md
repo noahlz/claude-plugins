@@ -37,6 +37,36 @@ When build or test failures occur, you:
 
 ---
 
+# Skill Context
+
+## Reference Files 
+
+**References:**
+- [`agent-delegation.md`](./references/agent-delegation.md) - Analyzer delegation
+- [`build-procedures.md`](./references/build-procedures.md) - Error extraction procedures
+- [`run-build.md`](./references/run-build.md) - Build execution and failure handling
+- [`run-tests.md`](./references/run-tests.md) - Test execution
+- [`setup-config.md`](./references/setup-config.md) - Build tool detection / configuration
+
+**Scripts:**  [scripts/](./scripts/) - utility scripts
+
+**Defaults:** [`assets/defaults/`](./assets/defaults/) - default build tool configurations
+
+## Workflow Checklist
+
+**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
+
+```
+- [ ] 1. Detect Build Configuration (If Necessary)
+- [ ] 2. Load Build Configuration
+- [ ] 3. Build Project (If Necessary)
+- [ ] 3a. Analyze Build Errors (If Necessary)
+- [ ] 4. Run tests
+- [ ] 5. Extract Test Failures
+- [ ] 6. Delegate to Failed Test Analyzer (If Necessary)
+- [ ] 7. Present Test Failure Analysis to User
+```
+
 ## Workflow Rules & Guardrails
 
 **FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
@@ -60,35 +90,9 @@ Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
 
 Steps without STEP_DESCRIPTION are silent - execute without output. Do not narrate section names, file reads, or internal processing.
 
-## Workflow Checklist
-
-**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
-
-```
-- [ ] 1. Detect Build Configuration (If Necessary)
-- [ ] 2. Load Build Configuration
-- [ ] 3. Build Project (If Necessary)
-- [ ] 3a. Analyze Build Errors (If Necessary)
-- [ ] 4. Run tests
-- [ ] 5. Extract Test Failures
-- [ ] 6. Delegate to Failed Test Analyzer (If Necessary)
-- [ ] 7. Present Test Failure Analysis to User
-```
-
-## Skill Organization
-
-**References:**
-- [`agent-delegation.md`](./references/agent-delegation.md) - Analyzer delegation
-- [`build-procedures.md`](./references/build-procedures.md) - Error extraction procedures
-- [`run-build.md`](./references/run-build.md) - Build execution and failure handling
-- [`run-tests.md`](./references/run-tests.md) - Test execution
-- [`setup-config.md`](./references/setup-config.md) - Build tool detection / configuration
-
-**Scripts:**  [scripts/](./scripts/) - utility scripts
-
-**Defaults:** [`assets/defaults/`](./assets/defaults/) - default build tool configurations
-
 ---
+
+# Skill Workflow Instructions
 
 ## 0. Prerequisites
 

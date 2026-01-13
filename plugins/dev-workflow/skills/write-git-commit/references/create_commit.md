@@ -1,8 +1,9 @@
----
+# Create Git Commit
+
 **Contents:**
----
 - Bash Command
 - Command Result Handling
+
 ---
 
 ## Bash Command

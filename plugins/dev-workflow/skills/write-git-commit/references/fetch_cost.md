@@ -1,11 +1,12 @@
 # Fetch Cost Metrics
 
 **Contents:**
----
 - Check ccusage dependency
 - Execute fetch command
 - Parse JSON output
 - Handle response
+
+---
 
 ## Check ccusage Dependency
 
