@@ -31,8 +31,8 @@ This skill streamlines executing and analyzing project test suites, preserving c
 - Minimizes token usage by redirecting build/test output to files
 
 When build or test failures occur, you:
-  - Delegate to `broken-build-analyzer` to analyze compilation errors
-  - Delegate to `failed-test-analyzer` to analyze test failures
+  - Use `broken-build-analyzer` to analyze compilation errors
+  - Use `failed-test-analyzer` to analyze test failures
   - Pass the resulting agent analysis to Plan mode for the user to implement fixes
 
 ---
@@ -42,7 +42,6 @@ When build or test failures occur, you:
 ## Reference Files 
 
 **References:**
-- [`agent-delegation.md`](./references/agent-delegation.md) - Analyzer delegation
 - [`build-procedures.md`](./references/build-procedures.md) - Error extraction procedures
 - [`run-build.md`](./references/run-build.md) - Build execution and failure handling
 - [`run-tests.md`](./references/run-tests.md) - Test execution
@@ -172,16 +171,17 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 - **STEP_DESCRIPTION**: "Building project"
 - → Execute Build instructions from `references/run-build.md`
 
-## 3a. Analyze Build Errors and Exit
+## 3a. Analyze Build Errors with Sub-Agent
 
 **STEP_DESCRIPTION**: "Analyzing build errors"
 
-DELEGATE_TO: `references/agent-delegation.md` - DELEGATE_TO_BUILD_ANALYZER
-
 → Extract build errors (see `./references/build-procedures.md` - EXTRACT_BUILD_ERRORS)  
-→ Delegate to `broken-build-analyzer` agent with build failure context and config object  
-→ Receive analysis with root causes and fix recommendations  
-→ Display analysis summary to user  
+→ Use the `broken-build-analyzer` agent to analyze the root cause of the broken build and potential fixes. Provide the agent with the build log location and JSON build config data.  
+→ Receive from the agent its analysis with root causes and fix recommendations  
+
+## 3b. Fix Build Errors
+
+→ Display agent analysis to user  
 → Ask user: "Enter plan mode to implement fixes?"  
   - Yes → Use EnterPlanMode tool with analysis context
   - No → Proceed to step 7 (Completion)  
@@ -206,18 +206,19 @@ DELEGATE_TO: `references/build-procedures.md` - EXTRACT_TEST_FAILURES
 → If 0 failures detected: Display "All tests passed" and Exit Workflow  
 → If 1+ failures detected: Display count and proceed to step 6  
 
-## 6. Delegate to Failed Test Analyzer (If Necessary)
+## 6. Use to Failed Test Analyzer Sub-Agent (If Necessary)
 
-DELEGATE_TO: `references/agent-delegation.md`
-
-→ Delegate to `failed-test-analyzer` agent with test failure context  
-→ Receive analysis with root causes and fix recommendations  
+→ Use the `failed-test-analyzer` agent to analyze the failed tests root causes and potential fixes. Provide the agent with test results location and JSON build config data.  
+→ Receive from the agent its analysis with root causes and fix recommendations  
 
 ## 7. Present Test Failure Analysis to User
 
-When the `failed-test-analyzer` completes its analysis:
+Using the analysis received from `failed-test-analyzer`:
 
-→ Display analysis summary to user  
-→ Ask user: "Enter plan mode to implement fixes?"  
-  - Yes → Use EnterPlanMode tool with analysis context
-  - No → Exit workflow  
+→ Display analysis to user  
+→ If the analysis has a root cause analysis and/or proposed fixes:  
+  - → Ask user: "Enter plan mode to implement fixes?"
+    - Yes → Use EnterPlanMode tool with analysis context
+    - No → Exit workflow
+→ If the analysis does not have propsed fixes → Exit workflow
+

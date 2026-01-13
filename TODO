@@ -1,7 +1,2 @@
-Backlog:
-- Revise/improve sub-agent instructions per best practices
 - run-and-fix-tests test failure parsing should support both maven (surfire) and npm (tap)
-
-Nice-to-Have:
 - Improve test line coverage > 90%
-- Feature: Run and Fix tests needs CI/CD mode that skips build/test output and just analyzes the failures directly (assuming they're available)
