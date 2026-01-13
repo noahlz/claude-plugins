@@ -184,11 +184,17 @@ DELEGATE_TO: `references/fetch_cost.md`
 After fetch_cost.md completes:
 
 → Extract `FETCH_STATUS` from reference file execution.
-→ Extract `SESSION_ID` from reference file (extracted from JSON response).
-→ Extract `CURRENT_COST` from reference file (JSON array, extracted from response).
 
-→ If FETCH_STATUS = "success": Proceed to Step 6 with SESSION_ID and CURRENT_COST values.
-→ If FETCH_STATUS is not "success": Extract `ERROR_MESSAGE` from reference file. Display error message to user. Tell user "*** Session ID must be configured to accurately extract Claude Code cost metrics. Cannot create commit without cost metrics." HALT WORKFLOW - Do NOT proceed to Step 6 under any circumstances.
+→ If FETCH_STATUS = "success":
+  → Extract `SESSION_ID` from reference file.
+  → Extract `CURRENT_COST` from reference file (validated JSON array).
+  → Proceed to Step 6 with SESSION_ID and CURRENT_COST values.
+
+→ If FETCH_STATUS is not "success":
+  → Extract `ERROR_MESSAGE` from reference file.
+  → Display error message to user.
+  → Tell user "*** Session ID must be configured to accurately extract Claude Code cost metrics. Cannot create commit without valid cost metrics."
+  → HALT WORKFLOW - Do NOT proceed to Step 6 under any circumstances.
 
 ## 6. Create Commit
 
@@ -196,7 +202,7 @@ After fetch_cost.md completes:
 
 **IMPORTANT:** Before proceeding, verify:
 - APPROVAL_STATUS = "use_full" OR "use_subject_only" (from Step 4). If APPROVAL_STATUS has any other value: Exit workflow immediately.
-- CURRENT_COST is present, non-empty, and valid from Step 5. If CURRENT_COST is missing, empty, or invalid: Display error "Cannot proceed without valid cost metrics" and exit workflow immediately.
+- SESSION_ID and CURRENT_COST are present from Step 5. If either is missing: Display error "Cannot proceed without session ID and cost metrics" and exit workflow immediately.
 - Do NOT fabricate or estimate cost metrics under any circumstances.
 
 DELEGATE_TO: `references/create_commit.md`
@@ -204,11 +210,15 @@ DELEGATE_TO: `references/create_commit.md`
 After create_commit.md completes:
 
 → Extract `STATUS` from reference file execution.
-→ Extract `COMMIT_SHA` from reference file (if status = "success").
-→ Extract `ERROR_MESSAGE` from reference file (if status is not "success").
 
-→ If STATUS = "success": Proceed to Step 7 with COMMIT_SHA and SESSION_ID values.
-→ If STATUS is not "success": Display ERROR_MESSAGE from reference file. Exit workflow immediately.
+→ If STATUS = "success":
+  → Extract `COMMIT_SHA` from reference file.
+  → Proceed to Step 7 with COMMIT_SHA and SESSION_ID values.
+
+→ If STATUS is not "success":
+  → Extract `ERROR_MESSAGE` from reference file.
+  → Display ERROR_MESSAGE to user.
+  → Exit workflow immediately.
 
 ## 7. Summary
 

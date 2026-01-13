@@ -124,6 +124,18 @@ async function prepare(options = {}) {
       };
     }
 
+    // Validate costs before returning success
+    if (!ccusageOps.validateCostMetrics(costResult.costs)) {
+      return {
+        status: 'invalid_costs',
+        data: {
+          session_id: sessionId,
+          costs: costResult.costs
+        },
+        message: 'Cost metrics validation failed: metrics are empty, missing required fields, or all values are zero'
+      };
+    }
+
     return {
       status: 'success',
       data: {

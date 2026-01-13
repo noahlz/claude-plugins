@@ -105,7 +105,8 @@ describe('commit-workflow.js unit tests', () => {
         getSessionCosts: async () => ({
           success: true,
           costs: [{ model: 'claude-opus', cost: 0.015 }]
-        })
+        }),
+        validateCostMetrics: () => true
       };
 
       const result = await prepare({
@@ -177,6 +178,53 @@ describe('commit-workflow.js unit tests', () => {
 
       assert.equal(result.status, 'error');
       assert.match(result.message, /Unexpected error/);
+
+      cleanup();
+    });
+
+    it('returns invalid_costs when validation fails', async () => {
+      // Create test-specific mocks
+      const testCcusage = {
+        ...mockCcusage,
+        findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
+        getSessionCosts: async () => ({
+          success: true,
+          costs: [{ model: 'claude-opus', cost: 0 }] // All-zero cost
+        }),
+        validateCostMetrics: (costs) => false // Validation fails
+      };
+
+      const result = await prepare({
+        baseDir: '.',
+        deps: { ccusage: testCcusage }
+      });
+
+      assert.equal(result.status, 'invalid_costs');
+      assert.equal(result.data.session_id, 'abc123');
+      assert.ok(result.data.costs);
+      assert.match(result.message, /validation failed/);
+
+      cleanup();
+    });
+
+    it('returns invalid_costs when costs array is empty', async () => {
+      const testCcusage = {
+        ...mockCcusage,
+        findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
+        getSessionCosts: async () => ({
+          success: true,
+          costs: [] // Empty array
+        }),
+        validateCostMetrics: (costs) => false
+      };
+
+      const result = await prepare({
+        baseDir: '.',
+        deps: { ccusage: testCcusage }
+      });
+
+      assert.equal(result.status, 'invalid_costs');
+      assert.match(result.message, /validation failed/);
 
       cleanup();
     });
