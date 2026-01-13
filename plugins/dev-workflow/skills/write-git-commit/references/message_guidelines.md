@@ -2,7 +2,7 @@
 
 ## Overview
 
-Generate a commit message with imperative mood subject line and optional bullet point body.
+Generate a commit message with imperative mood subject line (stored as COMMIT_SUBJECT) and optional bullet point body (stored as COMMIT_BODY).
 
 Contents:
 - General Guidelines
@@ -18,6 +18,8 @@ Contents:
 
 ## Subject Line
 
+Compose and store COMMIT_SUBJECT per the following guidelines:
+
 **Format:** Action verb + brief description (imperative mood, max 72 chars)
 
 **Examples:**
@@ -26,6 +28,8 @@ Contents:
 - "Refactor user service"
 
 ## Body (Optional)
+
+Compose and store COMMIT_BODY per the following guidelines:
 
 **Default: No body** - Prefer summary-only commits when possible
 
@@ -71,4 +75,4 @@ Refactor error handling and update dependencies
 
 ## Next Step
 
-Return to workflow with generated message stored internally.
+Return to workflow with generated COMMIT_SUBJECT and COMMIT_BODY values stored internally for Step 4 (Message Approval).

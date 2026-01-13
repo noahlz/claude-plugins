@@ -46,12 +46,14 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 **Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
 
 ```
-- [ ] Load configuration
-- [ ] Build project (or skip)
-- [ ] Run tests
-- [ ] Extract failures (if any)
-- [ ] Delegate to analyzer
-- [ ] Exit with analysis
+- [ ] 1. Detect Build Configuration (If Necessary)
+- [ ] 2. Load Build Configuration
+- [ ] 3. Build Project (If Necessary)
+- [ ] 3a. Analyze Build Errors (If Necessary)
+- [ ] 4. Run tests
+- [ ] 5. Extract Test Failures
+- [ ] 6. Delegate to Failed Test Analyzer (If Necessary)
+- [ ] 7. Present Test Failure Analysis to User
 ```
 
 ## Skill Organization
@@ -78,8 +80,7 @@ This skill streamlines running unit tests in a project. It:
 When failures occur, the skill:
   - Delegates to `broken-build-analyzer` for compilation errors
   - Delegates to `failed-test-analyzer` for test failures
-  - Exits the workflow with analysis and fix recommendations
-  - Optionally enters plan mode for the user to implement fixes
+  - Optionally enters Plan mode for the user to implement fixes based on sub-agent analysis.
 
 Activate this skill proactively after making code changes to verify they work (suggest first: "Should I run the test suite to verify these changes?").
 
@@ -116,7 +117,7 @@ Example:
 - `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests`
 - `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
 
-## 1. Detect Build Configuration
+## 1. Detect Build Configuration (If Necessary)
 
 Execute ONLY if Step 0. Prerequisites has "SKILL_CONFIG: NOT_CONFIGURED".
 
@@ -193,7 +194,7 @@ DELEGATE_TO: `references/run-tests.md`
 → Follow test execution procedure  
 → Return to step 5 if tests fail, step 7 (Completion) if tests pass
 
-## 5. Extract Test Errors
+## 5. Extract Test Failures 
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
@@ -201,17 +202,22 @@ DELEGATE_TO: `references/run-tests.md`
   - Read the file at `config.test.all.resultsPath` (e.g., "dist/test-results.tap")
   - Extract failures using `config.test.all.errorPattern` regex (e.g., "(not ok|Bail out!)")
 
-→ For detailed extraction procedure, see `./references/build-procedures.md`
+→ For detailed extraction procedure, see `./references/build-procedures.md` - EXTRACT_TEST_FAILURES
 
-✓ 0 failures detected → Proceed to step 7 (Completion)  
-✗ 1+ failures → Display error summary, proceed to step 6  
+✓ 0 failures detected → Inform user and Exit Workflow.
+✗ 1+ failures → Display count of test failures, proceed to step 6  
 
-## 6. Delegate to Analyzer and Exit
+## 6. Delegate to Failed Test Analyzer (If Necessary)
 
 DELEGATE_TO: `references/agent-delegation.md`
 
 → Delegate to `failed-test-analyzer` agent with test failure context  
 → Receive analysis with root causes and fix recommendations  
+
+## 7. Present Test Failure Analysis to User
+
+When the `failed-test-analyzer` completes its analysis:
+
 → Display analysis summary to user  
 → Ask user: "Enter plan mode to implement fixes?"  
   - Yes → Use EnterPlanMode tool with analysis context

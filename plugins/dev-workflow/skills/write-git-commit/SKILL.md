@@ -27,7 +27,7 @@ Stage → Generate → [User Approval] → Fetch Costs → Commit → Summary
               (revision loop)
 ```
 
-Step 3 blocks until user approves the commit message.
+Step 4 **MUST** block until user approves the commit message. **Do NOT COMMIT without approval!**
 
 ---
 
@@ -39,7 +39,7 @@ Step 3 blocks until user approves the commit message.
 
 - Follow the Workflow instructions **EXACTLY** as written. 
 - **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
-- This Workflow is **interactive**. You must ALWAYS get user approval per Step 3 before proceeding to the next step.
+- This Workflow is **interactive**. You must ALWAYS get user approval per Step 4 before proceeding to the next step.
 
 ### B. Delegation Protocol
 
@@ -62,13 +62,13 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 **Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
 
 ```
-- [ ] Resolve and Save sessionId (if necessary)
-- [ ] Stage and analyze changes
-- [ ] Generate commit message
-- [ ] Get user approval
-- [ ] Fetch session costs
-- [ ] Create commit
-- [ ] Display summary
+- [ ] 1. Resolve and Save sessionId (if necessary)
+- [ ] 2. Stage and analyze changes
+- [ ] 3. Generate commit message
+- [ ] 4. Get user approval
+- [ ] 5. Fetch session costs
+- [ ] 6. Create commit
+- [ ] 7. Display summary
 ```
 
 ## Skill Organization
@@ -154,7 +154,7 @@ git diff --cached
 
 DELEGATE_TO: `references/message_guidelines.md`
 
-Generate commit message following those guidelines.
+Generate commit message per the guidelines, stored as `COMMIT_SUBJECT` and `COMMIT_BODY`.
 
 **Silent generation:** Create message internally. First output must be "Proposed commit message:" in Step 4.
 
@@ -174,9 +174,11 @@ DELEGATE_TO: `references/message_approval.md`
 
 DELEGATE_TO: `references/fetch_cost.md`
 
-⚠️  **NOTE:** Do NOT ever make a commit with missing or contrived cost metrics. If encountering errors with ccusage, IMMEDIATELY STOP and ask user for guidance.
-
 ## 6. Create Commit
+
+⚠️  **IMPORTANT:** STOP IMMEDIATELY and ask the user for guidance if:  
+- You did NOT get explicit approval for the commit message via AskUserQuestion in Step 4.
+- You did NOT get Cost Metrics, i.e. they are missing, or if you contrived them after encountering errors with ccusage, in step 5. 
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 

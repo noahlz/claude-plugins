@@ -23,7 +23,7 @@ Procedure to extract compilation errors from build log:
 
 → Display compilation error summary to user
 
-## EXTRACT_TEST_FAILURE
+## EXTRACT_TEST_FAILURES
 
 Procedure to extract failures from test results:
 
