@@ -8,18 +8,18 @@ on:
     branches:
       - main
     paths:
-      - '!**/*.md'
-      - '!**/*.sh'
-      - '!LICENSE'
-      - '!TODO'
-      - '!CHANGELOG'
+      - '**/*.js'
+      - '**/*.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
   pull_request:
     paths:
-      - '!**/*.md'
-      - '!**/*.sh'
-      - '!LICENSE'
-      - '!TODO'
-      - '!CHANGELOG'
+      - '**/*.js'
+      - '**/*.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
 
 jobs:
   build:
