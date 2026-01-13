@@ -6,36 +6,55 @@ Contents:
 
 ## EXTRACT_BUILD_ERRORS
 
-Procedure to extract compilation errors from build log:
+→ Execute build error parsing script:
+```bash
+node "{{SKILL_BASE_DIR}}/scripts/parse-build-errors.js" <<< "{{CONFIG_JSON}}"
+```
 
-→ Try to get language diagnostics from editor using available IDE MCP or LSP tools  
-✓ MCP or LSP tool available → Extract errors with precise locations  
-✗ Not available → Parse build logs using `config.build.errorPattern` regex  
+→ Check exit code:
 
-→ Per the failed build defined by `config.build`:
-  - Read log file at `config.build.logFile`
-  - Extract errors using `config.build.errorPattern` regex
+→ If exit code = 0 (success):  
+  → Parse JSON output  
+  → Extract errors from `errors` array 
+  → Extract `totalErrors` count  
+  → If `truncated` is true, note that only first 30 errors shown  
+  → Store errors for Step 4 (delegation to build analyzer)  
+  → Resume skill workflow 
 
-→ Extract up to 30 distinct compilation errors with:
-  - File paths
-  - Line numbers and column positions (if available)
-  - Error messages and error codes
+→ If exit code ≠ 0 (error):  
+  → Display error message to user  
+  → Detect the issue (missing log file, invalid regex, etc.) and recover or halt  
+  → Resume skill workflow with error context  
 
-→ Display compilation error summary to user
+**IMPORTANT:** Script handles all parsing logic. Do NOT interpret regex patterns or count errors manually.
 
 ## EXTRACT_TEST_FAILURES
 
-Procedure to extract failures from test results:
+→ Execute test failure parsing script:
+```bash
+node "{{SKILL_BASE_DIR}}/scripts/parse-test-failures.js" <<< "{{CONFIG_JSON}}"
+```
 
-→ Parse test results at `config.test.all.resultsPath` to identify failing tests  
-→ Extract error patterns from results using `config.test.all.errorPattern` regex  
-→ Identify failing tests (up to 30 distinct failures)  
+→ Check exit code:
 
-✓ 0 failures detected → No errors to extract  
-✗ 1-30 failures → Extract with test names, error messages, stack traces  
-✗ 30+ failures → Display count warning  
+→ If exit code = 0 (success):   
+  - → Parse JSON output  
+  - → Extract `totalFailures` count  
+  - → Extract failures from `failures` array  
+  - → If `truncated` is true, note that only first 30 failures shown   
 
-→ Display error summary to user with:
-  - List of failing test names/paths
-  - Error messages and relevant output from test log
-  - Stack traces (if available)
+  - → If `totalFailures` = 0:  
+    - → Display to user: "All tests passed"  
+    - → Return skill workflow with "no failures" indication   
+
+  - → If `totalFailures` > 0:   
+    - → Display count to user: Found [totalFailures] test failures"  
+    - → Store failures for Step 6 (delegation to test analyzer) 
+    - → Resume workflow with failure data
+
+→ If exit code ≠ 0 (error):
+  - → Display error message to user
+  - → Detect the issue (missing results file, invalid regex, etc.) and recover or halt
+  - → Resume skill workflow with error context
+
+**IMPORTANT:** Script handles all parsing and counting logic. Do NOT interpret regex patterns or count failures manually.

@@ -92,6 +92,11 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 
 ---
 
+⚠️ **SILENCE PROTOCOL**
+Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute silently - no explanatory text.
+
+---
+
 # Skill Workflow Instructions
 
 ## 0. Prerequisites
@@ -125,10 +130,10 @@ Execute ONLY if Step 0. Prerequisites has "SKILL_CONFIG: NOT_CONFIGURED".
 
 → Execute setup instructions from `./references/setup-config.md`
 
-**Result handling:**  
-✓ Exit 0 → Config created, proceed to step 2  
+**Result handling:**
+✓ Exit 0 → Display: "Configuration created at `.claude/settings.plugins.run-and-fix-tests.json`. Review the config and restart this skill to continue." Exit the Workflow.  
 ✗ Exit 1 → Display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually" and Exit the Workflow.  
-⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding" and Exit the Workflow.  
+⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding" and Exit the Workflow.   
 
 ## 2. Load Configuration
 
@@ -164,9 +169,9 @@ The script outputs JSON configuration for project build and test commands.
 
 → Check `config.skipBuild` from step 2 (Configuration)
 
-**If `config.skipBuild` is true:**
-→ Display: "Build step skipped (build command identical to test command)"
-→ Proceed directly to step 4 (Run Tests)
+**If `config.skipBuild` is true:**  
+→ Display: "Build step skipped (build command identical to test command)"  
+→ Proceed directly to step 4 (Run Tests)  
 
 **If `config.skipBuild` is false:**
 - **STEP_DESCRIPTION**: "Building project"
@@ -184,7 +189,8 @@ DELEGATE_TO: `references/agent-delegation.md` - DELEGATE_TO_BUILD_ANALYZER
 → Display analysis summary to user  
 → Ask user: "Enter plan mode to implement fixes?"  
   - Yes → Use EnterPlanMode tool with analysis context
-  - No → Proceed to step 7 (Completion)
+  - No → Proceed to step 7 (Completion)  
+
 → Exit workflow  
 
 ## 4. Run Tests
@@ -200,13 +206,12 @@ DELEGATE_TO: `references/run-tests.md`
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
-→ Parse test results file using config from step 2:
-  - Read the file at `config.test.all.resultsPath` (e.g., "dist/test-results.tap")
-  - Extract failures using `config.test.all.errorPattern` regex (e.g., "(not ok|Bail out!)")
+DELEGATE_TO: `references/build-procedures.md` - EXTRACT_TEST_FAILURES
 
-→ For detailed extraction procedure, see `./references/build-procedures.md` - EXTRACT_TEST_FAILURES  
-✓ 0 failures detected → Inform user and Exit Workflow.  
-✗ 1+ failures → Display count of test failures, proceed to step 6  
+**Result handling:**
+→ Reference file uses parse-test-failures.js script to extract failures  
+→ If 0 failures detected: Display "All tests passed" and Exit Workflow  
+→ If 1+ failures detected: Display count and proceed to step 6  
 
 ## 6. Delegate to Failed Test Analyzer (If Necessary)
 

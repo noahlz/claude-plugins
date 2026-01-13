@@ -23,12 +23,6 @@ node "{{SKILL_BASE_DIR}}/scripts/detect-and-resolve.js" "{{SKILL_BASE_DIR}}/../.
 
 ## Result Handling
 
-✓ Exit 0 → Config created at `.claude/settings.plugins.run-and-fix-tests.json`, proceed to step 2  
-✗ Exit 1 → No tools detected, display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually"  
+✓ Exit 0 → Config created at `.claude/settings.plugins.run-and-fix-tests.json`. Resume skill workflow.
+✗ Exit 1 → No tools detected, display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually"
 ⚠️ Exit 2 → Placeholder template used, display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding"  
-
-## Exit Codes
-
-- 0: Config successfully created
-- 1: No tools detected, user must create config manually
-- 2: Placeholder template used, user must customize

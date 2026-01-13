@@ -45,6 +45,6 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION
 → If FETCH_STATUS = "not_found" or "error":
   - → Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
 
-**IMPORTANT:** Do NOT proceed with missing cost data. Do NOT fabricate or estimate cost metrics. Return status to SKILL.md for error handling.
+**IMPORTANT:** Do NOT proceed with missing cost data. Do NOT fabricate or estimate cost metrics. Resume skill workflow with status for error handling.
 
 Execution complete. Values available: FETCH_STATUS, SESSION_ID, CURRENT_COST (if success) or ERROR_MESSAGE (if failed)
