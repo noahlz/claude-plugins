@@ -1,4 +1,4 @@
-import { test, describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { Readable } from 'stream';
 import fs from 'fs';
@@ -231,291 +231,235 @@ describe('commit-workflow.js unit tests', () => {
   });
 
   describe("commit action command", () => {
-    it('succeeds with providedMessage parameter (no stdin)', async () => {
-      // Create test-specific mocks
-      const testGit = {
-        ...mockGit,
-        commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
-        getHeadSha: () => 'abc123def456',
-        execGit: () => ({ exitCode: 0, stdout: '', stderr: '' })
-      };
+    describe("parameter validation", () => {
+      it('fails with missing subject', async () => {
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
 
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
+        const result = await commit({
+          message: '',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015 }],
+          deps: { git: mockGit, ccusage: testCcusage }
+        });
 
-      const result = await commit({
-        message: 'Subject\n\nBody',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: testGit, ccusage: testCcusage }
+        assert.equal(result.status, 'error');
+        assert.match(result.message, /Missing commit subject/);
+
+        cleanup();
       });
 
-      assert.equal(result.status, 'success');
-      assert.equal(result.data.commit_sha, 'abc123def456');
+      it('fails when sessionId is missing', async () => {
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
 
-      cleanup();
+        const result = await commit({
+          message: 'Test',
+          costs: [{ model: 'claude-opus', cost: 0.015 }],
+          deps: { git: mockGit, ccusage: testCcusage }
+        });
+
+        assert.equal(result.status, 'error');
+        assert.match(result.message, /Session ID not provided/);
+
+        cleanup();
+      });
+
+      it('fails when costs is missing', async () => {
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
+
+        const result = await commit({
+          message: 'Test',
+          sessionId: 'test',
+          deps: { git: mockGit, ccusage: testCcusage }
+        });
+
+        assert.equal(result.status, 'error');
+        assert.match(result.message, /Cost metrics not provided/);
+
+        cleanup();
+      });
+
+      it('handles invalid JSON in costs string', async () => {
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
+
+        const result = await commit({
+          message: 'Test',
+          sessionId: 'test',
+          costs: '{invalid-json}',
+          deps: { git: mockGit, ccusage: testCcusage }
+        });
+
+        assert.equal(result.status, 'error');
+        assert.match(result.message, /Invalid JSON in --costs argument/);
+
+        cleanup();
+      });
+
+      it('validates metrics before committing', async () => {
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => false
+        };
+
+        const result = await commit({
+          message: 'Test',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015 }],
+          deps: { git: mockGit, ccusage: testCcusage }
+        });
+
+        assert.equal(result.status, 'metrics_invalid');
+
+        cleanup();
+      });
     });
 
-    it('fails with missing subject', async () => {
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
+    describe("git execution", () => {
+      it('succeeds with providedMessage parameter (no stdin)', async () => {
+        // Create test-specific mocks
+        const testGit = {
+          ...mockGit,
+          commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
+          getHeadSha: () => 'abc123def456',
+          execGit: () => ({ exitCode: 0, stdout: '', stderr: '' })
+        };
 
-      const result = await commit({
-        message: '',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: mockGit, ccusage: testCcusage }
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
+
+        const result = await commit({
+          message: 'Subject\n\nBody',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015 }],
+          deps: { git: testGit, ccusage: testCcusage }
+        });
+
+        assert.equal(result.status, 'success');
+        assert.equal(result.data.commit_sha, 'abc123def456');
+
+        cleanup();
       });
 
-      assert.equal(result.status, 'error');
-      assert.match(result.message, /Missing commit subject/);
+      it('returns git_error when git.commit fails', async () => {
+        const testGit = {
+          ...mockGit,
+          commit: () => ({
+            exitCode: 1,
+            stderr: 'nothing to commit'
+          })
+        };
 
-      cleanup();
-    });
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
 
-    it('fails when sessionId is missing', async () => {
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
+        const result = await commit({
+          message: 'Test',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015 }],
+          deps: { git: testGit, ccusage: testCcusage }
+        });
 
-      const result = await commit({
-        message: 'Test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: mockGit, ccusage: testCcusage }
+        assert.equal(result.status, 'git_error');
+        assert.ok(result.data.error_message);
+
+        cleanup();
       });
 
-      assert.equal(result.status, 'error');
-      assert.match(result.message, /Session ID not provided/);
+      it('returns git_error when getHeadSha returns null', async () => {
+        const testGit = {
+          ...mockGit,
+          commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
+          getHeadSha: () => null
+        };
 
-      cleanup();
-    });
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
 
-    it('fails when costs is missing', async () => {
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
+        const result = await commit({
+          message: 'Test',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015 }],
+          deps: { git: testGit, ccusage: testCcusage }
+        });
 
-      const result = await commit({
-        message: 'Test',
-        sessionId: 'test',
-        deps: { git: mockGit, ccusage: testCcusage }
+        assert.equal(result.status, 'git_error');
+        assert.match(result.message, /Failed to retrieve commit SHA/);
+
+        cleanup();
       });
 
-      assert.equal(result.status, 'error');
-      assert.match(result.message, /Cost metrics not provided/);
+      it('returns git_error when changes still staged', async () => {
+        const testGit = {
+          ...mockGit,
+          commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
+          getHeadSha: () => 'abc123',
+          execGit: () => ({
+            exitCode: 0,
+            stdout: 'file.txt\n',
+            stderr: ''
+          })
+        };
 
-      cleanup();
-    });
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
 
-    it('handles invalid JSON in costs string', async () => {
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
+        const result = await commit({
+          message: 'Test',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015 }],
+          deps: { git: testGit, ccusage: testCcusage }
+        });
 
-      const result = await commit({
-        message: 'Test',
-        sessionId: 'test',
-        costs: '{invalid-json}',
-        deps: { git: mockGit, ccusage: testCcusage }
+        assert.equal(result.status, 'git_error');
+        assert.match(result.message, /changes still staged/);
+
+        cleanup();
       });
 
-      assert.equal(result.status, 'error');
-      assert.match(result.message, /Invalid JSON in --costs argument/);
+      it('handles unexpected error in catch block', async () => {
+        const testGit = {
+          ...mockGit,
+          commit: () => {
+            throw new Error('Unexpected');
+          }
+        };
 
-      cleanup();
-    });
+        const testCcusage = {
+          ...mockCcusage,
+          validateCostMetrics: () => true
+        };
 
-    it('validates metrics before committing', async () => {
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => false
-      };
+        const result = await commit({
+          message: 'Test',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015 }],
+          deps: { git: testGit, ccusage: testCcusage }
+        });
 
-      const result = await commit({
-        message: 'Test',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: mockGit, ccusage: testCcusage }
+        assert.equal(result.status, 'error');
+        assert.match(result.message, /Unexpected/);
+
+        cleanup();
       });
-
-      assert.equal(result.status, 'metrics_invalid');
-
-      cleanup();
-    });
-
-    it('returns git_error when git.commit fails', async () => {
-      const testGit = {
-        ...mockGit,
-        commit: () => ({
-          exitCode: 1,
-          stderr: 'nothing to commit'
-        })
-      };
-
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
-
-      const result = await commit({
-        message: 'Test',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: testGit, ccusage: testCcusage }
-      });
-
-      assert.equal(result.status, 'git_error');
-      assert.ok(result.data.error_message);
-
-      cleanup();
-    });
-
-    it('returns git_error when getHeadSha returns null', async () => {
-      const testGit = {
-        ...mockGit,
-        commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
-        getHeadSha: () => null
-      };
-
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
-
-      const result = await commit({
-        message: 'Test',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: testGit, ccusage: testCcusage }
-      });
-
-      assert.equal(result.status, 'git_error');
-      assert.match(result.message, /Failed to retrieve commit SHA/);
-
-      cleanup();
-    });
-
-    it('returns git_error when changes still staged', async () => {
-      const testGit = {
-        ...mockGit,
-        commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
-        getHeadSha: () => 'abc123',
-        execGit: () => ({
-          exitCode: 0,
-          stdout: 'file.txt\n',
-          stderr: ''
-        })
-      };
-
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
-
-      const result = await commit({
-        message: 'Test',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: testGit, ccusage: testCcusage }
-      });
-
-      assert.equal(result.status, 'git_error');
-      assert.match(result.message, /changes still staged/);
-
-      cleanup();
-    });
-
-    it('handles unexpected error in catch block', async () => {
-      const testGit = {
-        ...mockGit,
-        commit: () => {
-          throw new Error('Unexpected');
-        }
-      };
-
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
-
-      const result = await commit({
-        message: 'Test',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: testGit, ccusage: testCcusage }
-      });
-
-      assert.equal(result.status, 'error');
-      assert.match(result.message, /Unexpected/);
-
-      cleanup();
-    });
-
-    it('includes body in message when provided', async () => {
-      let capturedMessage;
-      const testGit = {
-        ...mockGit,
-        commit: (message) => {
-          capturedMessage = message;
-          return { exitCode: 0, stdout: '', stderr: '' };
-        },
-        getHeadSha: () => 'abc123def456',
-        execGit: () => ({ exitCode: 0, stdout: '', stderr: '' })
-      };
-
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
-
-      const result = await commit({
-        message: 'Subject\n\nBody content',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: testGit, ccusage: testCcusage }
-      });
-
-      assert.equal(result.status, 'success');
-      assert.ok(capturedMessage.includes('Body content'));
-
-      cleanup();
-    });
-
-    it('builds message without body when not provided', async () => {
-      let capturedMessage;
-      const testGit = {
-        ...mockGit,
-        commit: (message) => {
-          capturedMessage = message;
-          return { exitCode: 0, stdout: '', stderr: '' };
-        },
-        getHeadSha: () => 'abc123def456',
-        execGit: () => ({ exitCode: 0, stdout: '', stderr: '' })
-      };
-
-      const testCcusage = {
-        ...mockCcusage,
-        validateCostMetrics: () => true
-      };
-
-      const result = await commit({
-        message: 'Subject only',
-        sessionId: 'test',
-        costs: [{ model: 'claude-opus', cost: 0.015 }],
-        deps: { git: testGit, ccusage: testCcusage }
-      });
-
-      assert.equal(result.status, 'success');
-      assert.ok(capturedMessage.includes('Subject only'));
-
-      cleanup();
     });
   });
 

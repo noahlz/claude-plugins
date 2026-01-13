@@ -62,6 +62,22 @@ export function setupProjectTemplate(testEnv, pluginName, templateName) {
 }
 
 /**
+ * Create mock fs module for testing
+ * @param {string|Error} content - Content to return from readFileSync, or Error to throw
+ * @returns {Object} Mock fs module
+ */
+export function createMockFs(content) {
+  return {
+    readFileSync: () => {
+      if (content instanceof Error) {
+        throw content;
+      }
+      return content;
+    }
+  };
+}
+
+/**
  * Create a tool config object for testing
  * @param {string} toolName - Tool name (e.g., 'npm', 'maven', 'go')
  * @param {Object} overrides - Optional overrides for config properties

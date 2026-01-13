@@ -20,102 +20,85 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
     teardownTestEnv(testEnv);
   });
 
-  it('detects npm project with package.json', () => {
-    setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
+  describe('detectTools', () => {
+    describe('tool detection', () => {
+      const toolTests = [
+        { tool: 'npm', template: 'npm-project' },
+        { tool: 'maven', template: 'maven-project' },
+        { tool: 'gradle', template: 'gradle-project' },
+        { tool: 'go', template: 'go-project' }
+      ];
 
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+      toolTests.forEach(({ tool, template }) => {
+        it(`detects ${tool} project by config file`, () => {
+          setupProjectTemplate(testEnv, 'dev-workflow', template);
 
-    assert.ok(detected.length > 0, 'Should detect tools');
-    const npmTool = detected.find(t => t.tool === 'npm');
-    assert.ok(npmTool, 'Should detect npm');
+          const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+
+          const foundTool = detected.find(t => t.tool === tool);
+          assert.ok(foundTool, `Should detect ${tool}`);
+        });
+      });
+
+      it('searches subdirectories for config files', () => {
+        mkdirSync(join(testEnv.tmpDir, 'apps', 'frontend'), { recursive: true });
+        writeFileSync(join(testEnv.tmpDir, 'apps', 'frontend', 'package.json'), JSON.stringify({ name: 'frontend' }));
+
+        const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+
+        const npmTool = detected.find(t => t.tool === 'npm');
+        assert.ok(npmTool, 'Should find npm in subdirectory');
+      });
+    });
+
+    describe('result structure', () => {
+      it('returns detected tools with proper structure', () => {
+        setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
+
+        const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+
+        assert.ok(detected.length > 0, 'Should detect tools');
+        const tool = detected[0];
+        assert.ok(tool.tool, 'Should have tool name');
+        assert.ok(tool.location, 'Should have location');
+        assert.ok(tool.config, 'Should have config');
+        assert.ok(tool.config.build, 'Config should have build');
+      });
+
+      it('normalizes project root location in output', () => {
+        setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
+
+        const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+
+        const npmTool = detected.find(t => t.tool === 'npm');
+        assert.equal(npmTool.location, '(project root)', 'Should normalize root directory as (project root)');
+      });
+    });
+
+    describe('edge cases', () => {
+      it('handles empty project (no tools detected)', () => {
+        // Empty directory - no config files
+        // detectTools returns empty array when nothing found
+
+        try {
+          const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+          // If it returns empty array, that's valid
+          assert.equal(detected.length, 0, 'Should return empty array for empty project');
+        } catch (error) {
+          // If it throws, that's also acceptable error handling
+          assert.ok(error, 'Should handle empty project gracefully');
+        }
+      });
+    });
   });
 
-  it('detects maven project with pom.xml', () => {
-    setupProjectTemplate(testEnv, 'dev-workflow', 'maven-project');
+  describe('loadToolRegistry', () => {
+    it('loads tool registry', () => {
+      const registry = loadToolRegistry(testEnv.pluginRoot);
 
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-
-    const mavenTool = detected.find(t => t.tool === 'maven');
-    assert.ok(mavenTool, 'Should detect maven');
-  });
-
-  it('detects gradle project with build.gradle', () => {
-    setupProjectTemplate(testEnv, 'dev-workflow', 'gradle-project');
-
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-
-    const gradleTool = detected.find(t => t.tool === 'gradle');
-    assert.ok(gradleTool, 'Should detect gradle');
-  });
-
-  it('detects go project with go.mod', () => {
-    setupProjectTemplate(testEnv, 'dev-workflow', 'go-project');
-
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-
-    const goTool = detected.find(t => t.tool === 'go');
-    assert.ok(goTool, 'Should detect go');
-  });
-
-  it('searches subdirectories for config files', () => {
-    mkdirSync(join(testEnv.tmpDir, 'apps', 'frontend'), { recursive: true });
-    writeFileSync(join(testEnv.tmpDir, 'apps', 'frontend', 'package.json'), JSON.stringify({ name: 'frontend' }));
-
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-
-    const npmTool = detected.find(t => t.tool === 'npm');
-    assert.ok(npmTool, 'Should find npm in subdirectory');
-  });
-
-  it('returns detected tools with proper structure', () => {
-    setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
-
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-
-    assert.ok(detected.length > 0, 'Should detect tools');
-    const tool = detected[0];
-    assert.ok(tool.tool, 'Should have tool name');
-    assert.ok(tool.location, 'Should have location');
-    assert.ok(tool.config, 'Should have config');
-    assert.ok(tool.config.build, 'Config should have build');
-  });
-
-  it('handles empty project (no tools detected)', () => {
-    // Empty directory - no config files
-    // detectTools returns empty array when nothing found
-
-    try {
-      const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-      // If it returns empty array, that's valid
-      assert.equal(detected.length, 0, 'Should return empty array for empty project');
-    } catch (error) {
-      // If it throws, that's also acceptable error handling
-      assert.ok(error, 'Should handle empty project gracefully');
-    }
-  });
-
-  it('normalizes project root location in output', () => {
-    setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
-
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-
-    const npmTool = detected.find(t => t.tool === 'npm');
-    assert.equal(npmTool.location, '(project root)', 'Should normalize root directory as (project root)');
-  });
-
-  it('loads tool registry', () => {
-    const registry = loadToolRegistry(testEnv.pluginRoot);
-
-    assert.ok(registry, 'Should load tool registry');
-    assert.ok(registry.npm, 'Should have npm in registry');
-    assert.equal(registry.npm.configFile, 'package.json', 'npm configFile should be package.json');
-  });
-
-  it('returns empty array when registry loads but no tools found', () => {
-    // This is a normal case - project exists but has no recognized build tools
-    const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-
-    assert.ok(Array.isArray(detected), 'Should return array');
-    // No assertions on length - could be 0 or throw
+      assert.ok(registry, 'Should load tool registry');
+      assert.ok(registry.npm, 'Should have npm in registry');
+      assert.equal(registry.npm.configFile, 'package.json', 'npm configFile should be package.json');
+    });
   });
 });

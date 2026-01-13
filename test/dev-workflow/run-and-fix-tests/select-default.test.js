@@ -1,6 +1,5 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { join } from 'node:path';
 import {
   setupPluginTestEnv,
   teardownTestEnv,
@@ -20,108 +19,113 @@ describe('run-and-fix-tests: select-default.js', () => {
     teardownTestEnv(testEnv);
   });
 
-  it('handles single npm tool', () => {
-    const detectedTools = [createToolConfig('npm')];
+  describe('tool selection', () => {
+    it('handles single npm tool', () => {
+      const detectedTools = [createToolConfig('npm')];
 
-    const result = selectDefault({
-      detectedTools,
-      pluginRoot: testEnv.pluginRoot,
-      targetDir: testEnv.tmpDir
+      const result = selectDefault({
+        detectedTools,
+        pluginRoot: testEnv.pluginRoot,
+        targetDir: testEnv.tmpDir
+      });
+
+      assert.equal(result.source, 'npm.json', 'Should copy npm.json');
+      assert.ok(result.configPath.includes('.claude'), 'Should create in .claude directory');
     });
 
-    assert.equal(result.source, 'npm.json', 'Should copy npm.json');
-    assert.ok(result.configPath.includes('.claude'), 'Should create in .claude directory');
+    it('handles single maven tool', () => {
+      const detectedTools = [createToolConfig('maven')];
+
+      const result = selectDefault({
+        detectedTools,
+        pluginRoot: testEnv.pluginRoot,
+        targetDir: testEnv.tmpDir
+      });
+
+      assert.equal(result.source, 'maven.json', 'Should copy maven.json');
+      assert.ok(result.configPath.includes('.claude'), 'Should create in .claude directory');
+    });
+
+    it('handles single go tool', () => {
+      const detectedTools = [{
+        tool: 'go',
+        location: '(project root)',
+        configFile: 'go.mod',
+        config: {}
+      }];
+
+      const result = selectDefault({
+        detectedTools,
+        pluginRoot: testEnv.pluginRoot,
+        targetDir: testEnv.tmpDir
+      });
+
+      assert.ok(result.configPath.includes('.claude'), 'Should create config');
+      // May use template if no go.json default
+      assert.ok(result.source === 'go.json' || result.source === 'TEMPLATE.json', 'Should use go or template');
+    });
   });
 
-  it('handles single maven tool', () => {
-    const detectedTools = [createToolConfig('maven')];
+  describe('file creation', () => {
+    it('creates config file on disk', () => {
+      const detectedTools = [createToolConfig('npm')];
 
-    const result = selectDefault({
-      detectedTools,
-      pluginRoot: testEnv.pluginRoot,
-      targetDir: testEnv.tmpDir
+      const result = selectDefault({
+        detectedTools,
+        pluginRoot: testEnv.pluginRoot,
+        targetDir: testEnv.tmpDir
+      });
+
+      const config = readJsonFile(result.configPath);
+      assert.ok(config, 'Should create config file');
+      assert.ok(config.build, 'Config should have build property');
+      assert.ok(config.test, 'Config should have test property');
     });
 
-    assert.equal(result.source, 'maven.json', 'Should copy maven.json');
-    assert.ok(result.configPath.includes('.claude'), 'Should create in .claude directory');
+    it('creates .claude directory if missing', () => {
+      const detectedTools = [createToolConfig('npm')];
+
+      const result = selectDefault({
+        detectedTools,
+        pluginRoot: testEnv.pluginRoot,
+        targetDir: testEnv.tmpDir
+      });
+
+      const config = readJsonFile(result.configPath);
+      assert.ok(config, 'Should create config in .claude directory');
+    });
   });
 
-  it('handles single go tool', () => {
-    const detectedTools = [{
-      tool: 'go',
-      location: '(project root)',
-      configFile: 'go.mod',
-      config: {}
-    }];
+  describe('edge cases', () => {
+    it('handles empty detected tools with template', () => {
+      const detectedTools = [];
 
-    const result = selectDefault({
-      detectedTools,
-      pluginRoot: testEnv.pluginRoot,
-      targetDir: testEnv.tmpDir
+      const result = selectDefault({
+        detectedTools,
+        pluginRoot: testEnv.pluginRoot,
+        targetDir: testEnv.tmpDir
+      });
+
+      assert.equal(result.source, 'TEMPLATE.json', 'Should use template for empty tools');
+      assert.ok(result.warnings.length > 0, 'Should emit warnings');
     });
 
-    assert.ok(result.configPath.includes('.claude'), 'Should create config');
-    // May use template if no go.json default
-    assert.ok(result.source === 'go.json' || result.source === 'TEMPLATE.json', 'Should use go or template');
-  });
+    it('warns when tool has no default config', () => {
+      const detectedTools = [{
+        tool: 'unknown-tool',
+        location: '(project root)',
+        configFile: 'unknown.txt',
+        config: null // No config available
+      }];
 
-  it('creates config file on disk', () => {
-    const detectedTools = [createToolConfig('npm')];
+      const result = selectDefault({
+        detectedTools,
+        pluginRoot: testEnv.pluginRoot,
+        targetDir: testEnv.tmpDir
+      });
 
-    const result = selectDefault({
-      detectedTools,
-      pluginRoot: testEnv.pluginRoot,
-      targetDir: testEnv.tmpDir
+      // Should handle gracefully, either with template or warnings
+      assert.ok(result.configPath, 'Should create config path');
     });
-
-    const config = readJsonFile(result.configPath);
-    assert.ok(config, 'Should create config file');
-    assert.ok(config.build, 'Config should have build property');
-    assert.ok(config.test, 'Config should have test property');
-  });
-
-  it('handles empty detected tools with template', () => {
-    const detectedTools = [];
-
-    const result = selectDefault({
-      detectedTools,
-      pluginRoot: testEnv.pluginRoot,
-      targetDir: testEnv.tmpDir
-    });
-
-    assert.equal(result.source, 'TEMPLATE.json', 'Should use template for empty tools');
-    assert.ok(result.warnings.length > 0, 'Should emit warnings');
-  });
-
-  it('warns when tool has no default config', () => {
-    const detectedTools = [{
-      tool: 'unknown-tool',
-      location: '(project root)',
-      configFile: 'unknown.txt',
-      config: null // No config available
-    }];
-
-    const result = selectDefault({
-      detectedTools,
-      pluginRoot: testEnv.pluginRoot,
-      targetDir: testEnv.tmpDir
-    });
-
-    // Should handle gracefully, either with template or warnings
-    assert.ok(result.configPath, 'Should create config path');
-  });
-
-  it('creates .claude directory if missing', () => {
-    const detectedTools = [createToolConfig('npm')];
-
-    const result = selectDefault({
-      detectedTools,
-      pluginRoot: testEnv.pluginRoot,
-      targetDir: testEnv.tmpDir
-    });
-
-    const claudeDir = join(testEnv.tmpDir, '.claude');
-    const config = readJsonFile(result.configPath);
-    assert.ok(config, 'Should create config in .claude directory');
   });
 });
