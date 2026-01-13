@@ -65,25 +65,25 @@ Step 4 **MUST** block until user approves the commit message. **Do NOT COMMIT wi
 
 ### A. Workflow Order of Operations
 
-→ Follow the Workflow instructions **EXACTLY** as written.
-→ **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]".
-→ This Workflow is **interactive**. You must ALWAYS get user approval per Step 4 before proceeding.
+→ Follow the Workflow instructions **EXACTLY** as written.  
+→ **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]".  
+→ This Workflow is **interactive**. You must ALWAYS get user approval per Step 4 before proceeding.  
 
 ### B. Delegation Protocol
 
-When you see `DELEGATE_TO: [file]`:
-→ Read the referenced file.
-→ Execute its instructions exactly.
-→ Return to continue with navigation logic in this file.
+When you see `DELEGATE_TO: [file]`:  
+→ Read the referenced file.  
+→ Execute its instructions exactly.  
+→ Return to continue with navigation logic in this file.  
 
 Reference files contain detailed requirements. ALWAYS read them when cited.
 
 ### C. Narration Control
 
-→ Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
-→ Steps without STEP_DESCRIPTION are silent - execute without output.
+→ Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.  
+→ Steps without STEP_DESCRIPTION are silent - execute without output.  
 
-⚠️ **SILENCE PROTOCOL**
+⚠️ **SILENCE PROTOCOL**  
 Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute silently - no explanatory text.
 
 ---
@@ -160,10 +160,7 @@ git diff --cached
 
 DELEGATE_TO: `references/message_guidelines.md`
 
-After message_guidelines.md completes:
-
-→ Extract `COMMIT_SUBJECT` from reference file (stored during execution).  
-→ Extract `COMMIT_BODY` from reference file (stored during execution).  
+→ Extract COMMIT_SUBJECT and COMMIT_BODY from reference file output.
 → Proceed to Step 4.  
 
 ## 4. Display Message to User for Approval
@@ -172,15 +169,10 @@ BLOCKING: This step MUST complete with user approval before Step 5.
 
 DELEGATE_TO: `references/message_approval.md`
 
-After message_approval.md completes:
-
-→ Extract `APPROVAL_STATUS` from reference file execution.  
-→ Extract `COMMIT_SUBJECT` from reference file (may be modified).  
-→ Extract `COMMIT_BODY` from reference file (may be modified or empty).  
+→ Extract APPROVAL_STATUS, COMMIT_SUBJECT, and COMMIT_BODY from reference file output (subject and body may be modified).  
 
 → If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 5.  
 → If APPROVAL_STATUS = "request_revisions": Return to Step 3 to regenerate message.  
-→ If APPROVAL_STATUS = "cancelled": Exit workflow immediately.  
 
 ## 5. Fetch Cost Data
 
@@ -188,9 +180,7 @@ After message_approval.md completes:
 
 DELEGATE_TO: `references/fetch_cost.md`
 
-After fetch_cost.md completes:
-
-→ Extract `FETCH_STATUS` from reference file execution.
+→ Extract FETCH_STATUS from reference file output.
 
 → If FETCH_STATUS = "success":  
   - → Extract `SESSION_ID` from reference file.  
@@ -214,9 +204,7 @@ After fetch_cost.md completes:
 
 DELEGATE_TO: `references/create_commit.md`
 
-After create_commit.md completes:
-
-→ Extract `STATUS` from reference file execution.
+→ Extract STATUS from reference file output.
 
 → If STATUS = "success":
   - → Extract `COMMIT_SHA` from reference file.

@@ -73,4 +73,4 @@ Refactor error handling and update dependencies
 - Upgrade lodash to 4.17.21
 ```
 
-Execution complete. Values available: COMMIT_SUBJECT, COMMIT_BODY
+Return to SKILL.md with COMMIT_SUBJECT and COMMIT_BODY values.

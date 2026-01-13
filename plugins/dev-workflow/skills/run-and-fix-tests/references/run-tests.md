@@ -60,5 +60,5 @@ npm --silent test -- path/to/test.js
 ## Exit Code Handling
 
 → Execute test command and capture exit code:  
-✓ Exit 0 → All tests pass, inform the user and Exit Workflow.   
-✗ Exit non-zero → Tests failed, return to step 5 (Extract Test Errors)   
+✓ Exit 0 → All tests pass, inform the user and Exit Workflow.  
+✗ Exit non-zero → Tests failed, return to step 5 (Extract Test Failures)   

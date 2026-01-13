@@ -14,17 +14,17 @@ node "{{SKILL_BASE_DIR}}/scripts/parse-build-errors.js" <<< "{{CONFIG_JSON}}"
 → Check exit code:
 
 → If exit code = 0 (success):  
-  → Parse JSON output  
-  → Extract errors from `errors` array 
-  → Extract `totalErrors` count  
-  → If `truncated` is true, note that only first 30 errors shown  
-  → Store errors for Step 4 (delegation to build analyzer)  
-  → Resume skill workflow 
+  - → Parse JSON output  
+  - → Extract errors from `errors` array 
+  - → Extract `totalErrors` count  
+  - → If `truncated` is true, note that only first 30 errors shown  
+  - → Store errors for Step 4 (delegation to build analyzer)  
+  - → Resume skill workflow 
 
-→ If exit code ≠ 0 (error):  
-  → Display error message to user  
-  → Detect the issue (missing log file, invalid regex, etc.) and recover or halt  
-  → Resume skill workflow with error context  
+→ If exit code ≠ 0 (error):
+  - → Display error message to user
+  - → Analyze the error and either recover or halt the workflow
+  - → Resume skill workflow with error context  
 
 **IMPORTANT:** Script handles all parsing logic. Do NOT interpret regex patterns or count errors manually.
 

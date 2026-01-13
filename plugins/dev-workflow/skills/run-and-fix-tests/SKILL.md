@@ -26,7 +26,7 @@ Also activate this skill when the user requests testing using phrases like:
 - "build and test"
 - "verify changes"
 
-This skill streamlines executing and analyzing project test suites, preserving context while following a preciesely-defined workflow. It:
+This skill streamlines executing and analyzing project test suites, preserving context while following a precisely-defined workflow. It:
 - Resolves project build/test commands from configuration: `.claude/settings.plugins.run-and-fix-tests.json`
 - Minimizes token usage by redirecting build/test output to files
 
@@ -146,8 +146,6 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 
 **Parse the JSON output:**
 
-The script outputs JSON configuration for project build and test commands.
-
 → Parse the JSON output as the project configuration  
 → Reference values using paths like:  
   - `config.test.all.command` - test command
@@ -177,9 +175,9 @@ The script outputs JSON configuration for project build and test commands.
 - **STEP_DESCRIPTION**: "Building project"
 - → Execute Build instructions from `references/run-build.md`
 
-## 3a. Analyze Build Failures and Exit
+## 3a. Analyze Build Errors and Exit
 
-**STEP_DESCRIPTION**: "Analyzing build failures"
+**STEP_DESCRIPTION**: "Analyzing build errors"
 
 DELEGATE_TO: `references/agent-delegation.md` - DELEGATE_TO_BUILD_ANALYZER
 
@@ -208,7 +206,7 @@ DELEGATE_TO: `references/run-tests.md`
 
 DELEGATE_TO: `references/build-procedures.md` - EXTRACT_TEST_FAILURES
 
-**Result handling:**
+**Result handling:**  
 → Reference file uses parse-test-failures.js script to extract failures  
 → If 0 failures detected: Display "All tests passed" and Exit Workflow  
 → If 1+ failures detected: Display count and proceed to step 6  

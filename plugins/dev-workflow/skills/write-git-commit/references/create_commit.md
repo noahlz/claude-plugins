@@ -46,4 +46,4 @@ EOF
 → If STATUS is not "success":
   - → Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
 
-Execution complete. Values available: STATUS, COMMIT_SHA (if success) or ERROR_MESSAGE (if failed)
+Return to SKILL.md with STATUS and related values based on the commit result.

@@ -33,6 +33,9 @@ claude-plugins/
 
 ## Development Philosophy
 
+### Use Best Practices
+
+Follow the [best practices guide for skill authoring](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices).
 
 ### Move Fast and Break Things
 

@@ -1,4 +1,4 @@
-# Obtain Commit Message APproval 
+# Obtain Commit Message Approval 
 
 **Contents:**
 - Message Display Instructions
@@ -9,8 +9,7 @@
 
 ## Message Display Instructions
 
-→ Display the following template with commit message:
-
+ACTION: Display the following message to the user:
 ```
 Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -19,6 +18,8 @@ Proposed commit message:
 {{COMMIT_BODY}}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+**IMPORTANT:** Display the text exactly as shown above, replacing only {{COMMIT_SUBJECT}} and {{COMMIT_BODY}} with their values. Do NOT add additional formatting, labels, or markdown.
 
 ## User Approval Instructions
 
@@ -36,8 +37,6 @@ Proposed commit message:
 
 → If user selected "Use just the subject": Maintain current value in COMMIT_SUBJECT variable. Assign empty string `''` to COMMIT_BODY variable. Store "use_subject_only" in APPROVAL_STATUS variable.
 
-→ If user selected "Suggest revisions": Store "request_revisions" in APPROVAL_STATUS variable. Reference file will return control for message regeneration.
+→ If user selected "Suggest revisions": Store "request_revisions" in APPROVAL_STATUS variable. Return to the main workflow for message regeneration.
 
-→ If user selected "Stop/Cancel commit": Store "cancelled" in APPROVAL_STATUS variable. Reference file will return control for workflow termination.
-
-Execution complete. Values available: APPROVAL_STATUS, COMMIT_SUBJECT, COMMIT_BODY
+Return to SKILL.md with APPROVAL_STATUS, COMMIT_SUBJECT, and COMMIT_BODY values.
