@@ -1,6 +1,6 @@
 # Build and Test Failure Extraction 
 
-Contents:
+**Contents:**
 - Extracting build errors.
 - Extracting test failures.
 

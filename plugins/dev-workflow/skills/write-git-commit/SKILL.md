@@ -156,11 +156,13 @@ git add -A
 git diff --cached
 ```
 
+Use the output of this command  in generating the proposed commit message in step 3.
+
 ## 3. Generate Commit Message
 
 DELEGATE_TO: `references/message_guidelines.md`
 
-→ Extract COMMIT_SUBJECT and COMMIT_BODY from reference file output.
+→ Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.  
 → Proceed to Step 4.  
 
 ## 4. Display Message to User for Approval
@@ -169,7 +171,7 @@ BLOCKING: This step MUST complete with user approval before Step 5.
 
 DELEGATE_TO: `references/message_approval.md`
 
-→ Extract APPROVAL_STATUS, COMMIT_SUBJECT, and COMMIT_BODY from reference file output (subject and body may be modified).  
+→ Extract APPROVAL_STATUS and updated COMMIT_SUBJECT, and COMMIT_BODY per reference file instructions.  
 
 → If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 5.  
 → If APPROVAL_STATUS = "request_revisions": Return to Step 3 to regenerate message.  
@@ -180,12 +182,12 @@ DELEGATE_TO: `references/message_approval.md`
 
 DELEGATE_TO: `references/fetch_cost.md`
 
-→ Extract FETCH_STATUS from reference file output.
+→ Extract FETCH_STATUS per reference file instructions.
 
-→ If FETCH_STATUS = "success":  
-  - → Extract `SESSION_ID` from reference file.  
-  - → Extract `CURRENT_COST` from reference file (validated JSON array).  
-  - → Proceed to Step 6 with SESSION_ID and CURRENT_COST values.  
+→ If FETCH_STATUS = "success":
+  - → Extract `SESSION_ID` from reference file.
+  - → Extract `CURRENT_COST` from reference file (validated JSON array).
+  - → Proceed to Step 6 with SESSION_ID and CURRENT_COST values.
 
 → If FETCH_STATUS is not "success":
   - → Extract `ERROR_MESSAGE` from reference file.
@@ -204,7 +206,7 @@ DELEGATE_TO: `references/fetch_cost.md`
 
 DELEGATE_TO: `references/create_commit.md`
 
-→ Extract STATUS from reference file output.
+→ Extract STATUS per reference file instructions.
 
 → If STATUS = "success":
   - → Extract `COMMIT_SHA` from reference file.

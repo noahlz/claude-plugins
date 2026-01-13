@@ -112,7 +112,7 @@ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory fo
 ✓ If `SKILL_BASE_DIR` is present, display it  
 ✓ If `SKILL_CONFIG` is `CONFIGURED`, proceed with the workflow.  
 
-**NOTE:** If `SKILL_CONFIG` shows `NOT_CONFIGURED` above, it will be resolved and saved to configuration in a later step.
+**NOTE:** If `SKILL_CONFIG` shows `NOT_CONFIGURED` above, you will resolve and saved it to the configuration file in step 1, below.
 
 **Template Substitution:**
 
@@ -126,14 +126,11 @@ Example:
 
 ## 1. Detect Build Configuration (If Necessary)
 
-Execute ONLY if Step 0. Prerequisites has "SKILL_CONFIG: NOT_CONFIGURED".
-
-→ Execute setup instructions from `./references/setup-config.md`
-
-**Result handling:**
-✓ Exit 0 → Display: "Configuration created at `.claude/settings.plugins.run-and-fix-tests.json`. Review the config and restart this skill to continue." Exit the Workflow.  
-✗ Exit 1 → Display error: "No build tools found. Create `.claude/settings.plugins.run-and-fix-tests.json` manually" and Exit the Workflow.  
-⚠️ Exit 2 → Display warning: "Placeholder config created. Edit `.claude/settings.plugins.run-and-fix-tests.json` before proceeding" and Exit the Workflow.   
+→ Check SKILL_CONFIG value:
+  - ✓ SKILL_CONFIG: CONFIGURED → Proceed to step 2 (Load Configuration)
+  - ✗ SKILL_CONFIG: NOT_CONFIGURED 
+      - → Execute setup instructions from `./references/setup-config.md`
+      - → Exit workflow and return to user.
 
 ## 2. Load Configuration
 
@@ -147,7 +144,7 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 **Parse the JSON output:**
 
 → Parse the JSON output as the project configuration  
-→ Reference values using paths like:  
+→ Reference values using JSON attribute paths:  
   - `config.test.all.command` - test command
   - `config.build.logFile` - build log location
   - `config.build.workingDir` - build working directory
@@ -188,8 +185,6 @@ DELEGATE_TO: `references/agent-delegation.md` - DELEGATE_TO_BUILD_ANALYZER
 → Ask user: "Enter plan mode to implement fixes?"  
   - Yes → Use EnterPlanMode tool with analysis context
   - No → Proceed to step 7 (Completion)  
-
-→ Exit workflow  
 
 ## 4. Run Tests
 

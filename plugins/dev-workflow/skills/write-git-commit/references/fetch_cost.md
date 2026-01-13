@@ -47,4 +47,4 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION
 
 **IMPORTANT:** Do NOT proceed with missing cost data. Do NOT fabricate or estimate cost metrics. Resume skill workflow with status for error handling.
 
-Return to SKILL.md with FETCH_STATUS and related values based on the fetch result.
+Return to SKILL.md with FETCH_STATUS and related values stored mentally from the fetch result.

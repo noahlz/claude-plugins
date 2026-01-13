@@ -9,7 +9,8 @@
 
 ## Message Display Instructions
 
-ACTION: Display the following message to the user:
+**MANDATORY:** Display the below message, replacing {{COMMIT_SUBJECT}} and {{COMMIT_BODY}} with their stored values:
+
 ```
 Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -18,8 +19,6 @@ Proposed commit message:
 {{COMMIT_BODY}}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
-
-**IMPORTANT:** Display the text exactly as shown above, replacing only {{COMMIT_SUBJECT}} and {{COMMIT_BODY}} with their values. Do NOT add additional formatting, labels, or markdown.
 
 ## User Approval Instructions
 
@@ -31,8 +30,8 @@ Proposed commit message:
 
 ## Response Processing
 
-→ If user selected "Use full message": Maintain current value in COMMIT_SUBJECT variable. Maintain current value in COMMIT_BODY variable. Store "use_full" in APPROVAL_STATUS variable.
+→ If user selected "Use full message": Maintain current value in COMMIT_SUBJECT variable. Maintain current value in COMMIT_BODY variable. Store "use_full" in APPROVAL_STATUS variable.  
+→ If user selected "Use just the subject": Maintain current value in COMMIT_SUBJECT variable. Assign empty string `''` to COMMIT_BODY variable. Store "use_subject_only" in APPROVAL_STATUS variable.  
+→ If user typed something else (ad-hoc instructions): Maintain current value in COMMIT_SUBJECT variable. Maintain current value in COMMIT_BODY variable. Store "request_revisions" in APPROVAL_STATUS variable.  
 
-→ If user selected "Use just the subject": Maintain current value in COMMIT_SUBJECT variable. Assign empty string `''` to COMMIT_BODY variable. Store "use_subject_only" in APPROVAL_STATUS variable.
-
-Return to SKILL.md with APPROVAL_STATUS, COMMIT_SUBJECT, and COMMIT_BODY values.
+Return to SKILL.md with APPROVAL_STATUS, COMMIT_SUBJECT, and COMMIT_BODY values stored mentally.

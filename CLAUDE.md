@@ -43,34 +43,9 @@ Follow the [best practices guide for skill authoring](https://platform.claude.co
 
 ### Script-First Approach
 
-- Prefer writing and invoking pre-existing scripts over dynamic code generation or ad-hoc commands.
+- Prefer writing and orchestrating pre-existing scripts over dynamic code generation or ad-hoc commands.
 - When writing new scripts, keep code DRY with shared scripts under `plugins/dev-workflow/lib/` for use by all skills and agents
-- Skills and agents should orchestrate existing scripts, not generate or run improvised logic.
 - Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
-
-**IMPORTANT** Remember that environment variables (i.e. set via `export KEY=VALUE`) do not persist between Bash tool invocations. Therefore, Skills must store such values mentally and explicitly interpolate them into commands / script invocations *every time*.
-
-### Skill Script Execution
-
-Skills in this plugin execute scripts located at the plugin level using the skill base directory provided by Claude Code at invocation:
-
-**Base directory extraction:**
-- Skills extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" message at startup
-- Example: 
-  - Startup message: `Base directory for this skill: /Users/username/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
-  - Action: `/Users/username/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit` value stored in `SKILL_BASE_DIR` for template substitution in commands.
-
-**Script execution:**
-- Scripts are invoked using template commands. Example: `node "{{SKILL_BASE_DIR}}/scripts/script-name.js"`
-- Scripts use relative paths to access shared libraries: `require('../../../lib/common.js')`
-
-**Relative path structure:**
-
-```
-From: skills/write-git-commit/scripts/script.js
-To:   lib/common.js
-Path: ../../../lib/common.js
-```
 
 ### Dependencies
 
@@ -91,7 +66,7 @@ Changes do not take effect immediately. The user needs to exit the session, run 
 
 ### Use Dependency Injection and Lightweight Mocking
 
-**Use Dependency Injection for all mocking. Do NOT use external mocking libraries or experimental Node.js features.**
+**Use Dependency Injection for all mocking. Do NOT use external mocking libraries or the experimental Node.js mocking module.**
 
 Inject dependencies as a `deps` parameter in function options:
 - Pass `deps: { git: mockGit, ccusage: mockCcusage }` to functions in tests
@@ -116,7 +91,7 @@ If the tests fail (non-zero exit code) read the test results (tap report format)
 
 #### Hanging Tests: stdin/Stream Fallback
 
-**Problem:** Tests for the plugins should complete in *under 10 seconds*, but sometimes (due to a bug) tests hang indefinitely.
+**Problem:** Tests for the plugins should complete in *under 5 seconds*, but sometimes (due to a bug) tests hang indefinitely.
 
 **Root cause:** Functions that depend on reading from `stdin` may hang. If a function that is hanging accepts a `message` parameter falls back stdin, it will block waiting for input. Empty string (`''`) is falsy and triggers the fallback.
 

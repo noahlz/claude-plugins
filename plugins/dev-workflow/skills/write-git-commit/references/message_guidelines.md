@@ -8,7 +8,9 @@
 
 ---
 
-Generate a commit message with imperative mood subject line (stored as COMMIT_SUBJECT) and optional bullet point body (stored as COMMIT_BODY).
+Generate a commit message with imperative mood subject line (stored as COMMIT_SUBJECT) and optional bullet point body (stored as COMMIT_BODY) from the following inputs:
+- Output of the the most `git diff` in context
+- Any other relevant context from the current chat session, i.e. your user's intent / goal.
 
 ## General Guidelines
 
@@ -73,4 +75,4 @@ Refactor error handling and update dependencies
 - Upgrade lodash to 4.17.21
 ```
 
-Return to SKILL.md with COMMIT_SUBJECT and COMMIT_BODY values.
+Return to SKILL.md with COMMIT_SUBJECT and COMMIT_BODY values stored mentally.

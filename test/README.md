@@ -49,7 +49,7 @@ Tests use **dependency injection** to provide mock dependencies.
 
 Tests define lightweight, inline mock objects that are passed to functions-under-test via a `deps` parameter
 
-See [commit-workflow.test.js](./dev-workflow/write-git-commit/commit-workflow.test.js) for examples.
+See [commit-workflow.unit.test.js](./dev-workflow/write-git-commit/commit-workflow.unit.test.js) for examples.
 
 ### Fixtures
 

@@ -54,21 +54,21 @@ if (summaryStart === -1) {
   process.exit(result.status);
 }
 
-let summaryEnd = summaryStart;
-while (summaryEnd + 1 < lines.length && stripAnsi(lines[summaryEnd + 1]).trim().startsWith('ℹ')) {
-  summaryEnd++;
-}
-
-const reordered = [
-  ...lines.slice(0, summaryStart),
-  ...lines.slice(summaryEnd + 1),
-  '',
-  '======== TEST RESULTS ========',
-  '',
-  ...lines.slice(summaryStart, summaryEnd + 1)
-];
-
 if (!isSilent) {
+  let summaryEnd = summaryStart;
+  while (summaryEnd + 1 < lines.length && stripAnsi(lines[summaryEnd + 1]).trim().startsWith('ℹ')) {
+    summaryEnd++;
+  }
+
+  const reordered = [
+    ...lines.slice(0, summaryStart),
+    ...lines.slice(summaryEnd + 1),
+    '',
+    '======== TEST RESULTS ========',
+    '',
+    ...lines.slice(summaryStart, summaryEnd + 1)
+  ];
+
   console.log(reordered.join('\n'));
 }
 

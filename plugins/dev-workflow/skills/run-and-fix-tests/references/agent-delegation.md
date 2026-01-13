@@ -1,9 +1,8 @@
 # Agent Delegation Procedures
 
-Contents:
+** Contents:**
 - HOWTO Delegate to the broken-build-analyzer
 - HOWTO Delegate to the failed-test-analyzer
-
 
 ## HOWTO: DELEGATE_TO_BUILD_ANALYZER
 
