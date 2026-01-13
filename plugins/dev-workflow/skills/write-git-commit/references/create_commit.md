@@ -1,5 +1,6 @@
 ---
 **Contents:**
+---
 - Bash Command
 - Command Result Handling
 ---
@@ -15,14 +16,13 @@
 - `{{COMMIT_SUBJECT}}`: Subject line from Step 4
 - `{{COMMIT_BODY}}`: Body from Step 4 (omit blank line if empty)
 
-**Value Validation:**
+**Validate Before Executing:**
 
-Before executing:
-- Check `CURRENT_COST` is array with at least one entry
-- Check at least one model has cost > 0
-- If invalid: DO NOT execute below command. Return to Step 5 to re-fetch metrics
+→ Check that `CURRENT_COST` is an array with at least one entry.
+→ Check that at least one model has cost > 0.
+→ **IMPORTANT:** If validation fails: Do NOT execute bash command under any circumstances. Display error message: "Cost metrics validation failed. Cannot proceed with commit." HALT - return to SKILL.md which will exit workflow.
 
-**Command:**
+**Execute Command:**
 
 ```bash
 # Use {{SKILL_BASE_DIR}} (extracted from skill startup) and captured values
@@ -38,9 +38,8 @@ EOF
 
 ## Command Result Handling
 
-Extract from command JSON output:
-- `status` from `data.status` field
-- `COMMIT_SHA` from `data.commit_sha` field
+→ Extract value from JSON field `data.status` and store in STATUS variable.
+→ Extract value from JSON field `data.commit_sha` and store in COMMIT_SHA variable.
+→ If `status` is not "success": Extract value from JSON field `data.message` and store in ERROR_MESSAGE variable.
 
-✓ If `status` is "success": Continue to Step 7 with `COMMIT_SHA` value  
-✗ If `status` is NOT "success" → Display error from JSON `data.message` field and Exit Workflow immediately.  
+Execution complete. Values available: STATUS, COMMIT_SHA (if success) or ERROR_MESSAGE (if failed)

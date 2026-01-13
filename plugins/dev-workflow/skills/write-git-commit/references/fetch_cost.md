@@ -1,19 +1,15 @@
 # Fetch Cost Metrics
 
-Contents:
-- Action required
-- ccusage dependency check
-- Main bash command
-- JSON output parsing
-- Response handling and next steps
+**Contents:**
+---
+- Check ccusage dependency
+- Execute fetch command
+- Parse JSON output
+- Handle response
 
-## Action Required
+## Check ccusage Dependency
 
-Execute `scripts/commit-workflow.js` "prepare" command to fetch session cost metrics.
-
-## REQUIRED: Check that ccusage dependency installed
-
-Check if `ccusage` is installed in the plugin directory:
+→ Check if `ccusage` is installed in the plugin directory:
 
 ```bash
 # Use {{SKILL_BASE_DIR}} (extracted from skill startup)
@@ -24,7 +20,9 @@ if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
 fi
 ```
 
-## Bash Command
+## Execute Fetch Command
+
+→ Run the following command to fetch session cost metrics:
 
 ```bash
 # Use {{SKILL_BASE_DIR}} and {{SESSION_ID}} (extracted from skill startup)
@@ -33,29 +31,23 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION
 
 ## Parse JSON Output
 
-Extract these fields:
-- `status`: Result status ("success" or "error")
-- `data.session_id`: Resolved session ID (may differ from input if auto-detected)
-- `data.current_cost`: JSON array of cost objects
-- `data.method`: Detection method ("library" or "cli")
-- `message`: Error message (if status is "error")
+→ Extract value from JSON field `status` and store in FETCH_STATUS variable.
+→ Extract value from JSON field `data.session_id` and store in SESSION_ID variable.
+→ Extract JSON array from field `data.current_cost` and store in CURRENT_COST variable.
+→ If `status` is not "success": Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
 
-## Response Handling
+## Validate Parsed Values
 
-### ✓ If status is "success"
+→ Check that FETCH_STATUS is exactly "success" (string match).
+→ If FETCH_STATUS = "success": Check that CURRENT_COST is a non-empty array with at least one object.
+→ If FETCH_STATUS = "success": Check that at least one cost object has cost > 0.
+→ If any validation fails: Set FETCH_STATUS to "error" and store validation failure message in ERROR_MESSAGE.
 
-- Store `SESSION_ID` from data.session_id
-- Store `CURRENT_COST` from data.current_cost (as JSON array string)
-- Proceed to Step 6 (Create Commit) with these values
+## Handle Response
 
-### ✗ If status is NOT "success"
+→ If FETCH_STATUS = "success": Store SESSION_ID and CURRENT_COST values for Step 6.
+→ If FETCH_STATUS is not "success": Store ERROR_MESSAGE for display to user.
 
-- Display the error to the user 
-- Tell the user "*** Session ID must be configured to accurately extract Claude Code cost metrics."
-- Exit the workflow
+**IMPORTANT:** Do NOT proceed with missing cost data. Do NOT fabricate or estimate cost metrics. Return status to SKILL.md for error handling.
 
-**IMPORTANT:**
-- Do NOT proceed with missing cost data.
-- Do NOT fabricate or estimate cost metrics
-- If errors persist, HALT the workflow and ask user for guidance
-
+Execution complete. Values available: FETCH_STATUS, SESSION_ID, CURRENT_COST (if success) or ERROR_MESSAGE (if failed)

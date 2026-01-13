@@ -1,14 +1,15 @@
 ---
-**Contents**:
+**Contents:**
+---
 - Message Display Instructions
-- User Approval Options
-- Response Handling
-- Output Requirements
+- User Approval Instructions
+- Response Processing
 ---
 
-# Message Display Instructions
+## Message Display Instructions
 
-→ Display from template:
+→ Display the following template with commit message:
+
 ```
 Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -18,39 +19,24 @@ Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-# User Approval Instructions
+## User Approval Instructions
 
-## Action Required
+→ Use AskUserQuestion to ask "Approve this commit message?" with options:
+  1. "Use full message" (Recommended)
+  2. "Use just the subject"
+  3. "Suggest revisions"
+  4. "Stop/Cancel commit"
 
-**ALWAYS** Use AskUserQuestion to ask "Approve this commit message?" Options:
-1. "Use full message" (Recommended)
-2. "Use just the subject"
-3. "Suggest revisions"
-4. "Stop/Cancel commit"
+**IMPORTANT:** Block the workflow on AskUserQuestion. Do not assume approval by the user. The user must explicitly approve before proceeding.
 
-**IMPORTANT:**
-- You must block the workflow on the AskUserQuestion tool before proceeding.
-- Do not assume approval by the user. The user must **ALWAYS** explicitly approve before you create the git commit
+## Response Processing
 
-## Response Handling
+→ If user selected "Use full message": Maintain current value in COMMIT_SUBJECT variable. Maintain current value in COMMIT_BODY variable. Store "use_full" in APPROVAL_STATUS variable.
 
-### ✓ If "Use full message"
-- Keep both`COMMIT_SUBJECT` and `COMMIT_BODY` (remaining lines, may be empty)
-- Proceed to Step 5 (Fetch Cost Data)
+→ If user selected "Use just the subject": Maintain current value in COMMIT_SUBJECT variable. Assign empty string `''` to COMMIT_BODY variable. Store "use_subject_only" in APPROVAL_STATUS variable.
 
-### ✓ If "Use just the subject"
-- Keep `COMMIT_SUBJECT` (first line of message)
-- Set `COMMIT_BODY` empty.
-- Proceed to Step 5 (Fetch Cost Data)
+→ If user selected "Suggest revisions": Store "request_revisions" in APPROVAL_STATUS variable. Reference file will return control for message regeneration.
 
-### ✗ If "Suggest revisions"
-- Return to Step 3 (Generate Commit Message)
-- Regenerate message based on user feedback
-- Display new message per the Message Display Instructions
-- Obtain user approval per User Approval Instructions
-- Loop until approved or cancelled
+→ If user selected "Stop/Cancel commit": Store "cancelled" in APPROVAL_STATUS variable. Reference file will return control for workflow termination.
 
-### ✗ If "Stop/Cancel commit"
-- Exit workflow immediately
-- Do NOT proceed to Step 5
-- Return control to user
+Execution complete. Values available: APPROVAL_STATUS, COMMIT_SUBJECT, COMMIT_BODY

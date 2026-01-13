@@ -39,25 +39,23 @@ Step 4 **MUST** block until user approves the commit message. **Do NOT COMMIT wi
 
 ### A. Workflow Order of Operations
 
-- Follow the Workflow instructions **EXACTLY** as written. 
-- **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
-- This Workflow is **interactive**. You must ALWAYS get user approval per Step 4 before proceeding to the next step.
+→ Follow the Workflow instructions **EXACTLY** as written.
+→ **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]".
+→ This Workflow is **interactive**. You must ALWAYS get user approval per Step 4 before proceeding.
 
 ### B. Delegation Protocol
 
 When you see `DELEGATE_TO: [file]`:
-1. Read the referenced file
-2. Execute its instructions exactly
-3. Check any VERIFY checklists
-4. Return to continue the workflow
+→ Read the referenced file.
+→ Execute its instructions exactly.
+→ Return to continue with navigation logic in this file.
 
 Reference files contain detailed requirements. ALWAYS read them when cited.
 
 ### C. Narration Control
 
-Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
-
-Steps without STEP_DESCRIPTION are silent - execute without output. Do not narrate section names, file reads, or internal processing.
+→ Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
+→ Steps without STEP_DESCRIPTION are silent - execute without output.
 
 ## Workflow Checklist
 
@@ -79,7 +77,7 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 - [`create_commit.md`](./references/create_commit.md) - Git commit creation
 - [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
 - [`message_approval.md`](./references/message_approval.md) - User approval workflow
-- [`message_guidelines.md`](./references/message_guidelines.md)- Commit message format
+- [`message_guidelines.md`](./references/message_guidelines.md) - Commit message format
 
 **Scripts:**  [scripts/](./scripts/) - utility scripts
 
@@ -93,11 +91,10 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 
 ---
 
-At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" output message and store it for use in bash commands below.
+→ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" message and store it for use in bash commands.
+→ If `SKILL_BASE_DIR` is present, display it then proceed with Step 1.
 
-✓ If `SKILL_BASE_DIR` is present, display it then proceed with the workflow.
-
-**NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED" above, it will be resolved and saved to configuration in a later step.
+**NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED", it will be resolved in Step 1.
 
 **Template Substitution:**
 
@@ -105,32 +102,33 @@ Replace placeholders before executing bash commands:
 - `{{SKILL_BASE_DIR}}` → Literal path from "Base directory for this skill:"
 - `{{SESSION_ID}}` → Literal session ID value
 
-Example: 
+Example:
 - Skill header states: `Base directory for this skill: /Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
-- `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
-- `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js"`
+- `SKILL_BASE_DIR` stored as: `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
+- `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes: `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js"`
 
 ## 1. Resolve SessionID
 
-IF the `SESSION_ID` as found, proceed immediately to Step 2.
+→ If `SESSION_ID` is configured (not "NOT_CONFIGURED"): Skip to Step 2.
+→ If `SESSION_ID` is "NOT_CONFIGURED": Execute the following:
 
-OTHERWISE if the `SESSION_ID` value was `NOT_CONFIGURED` resolve and save it as follows:
-  - Execute using Bash tool to get available sessions:
-    ```bash
-    node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
-    ```
-  - Parse JSON output to extract sessions array from `data.sessions`
-  - Build AskUserQuestion with dynamic options:
-    - For each session in first 4 from sessions array: Create option with label = sessionId
-  - If user picks a session:
-    - Save to config using save-config command:
-      ```bash
-      node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
-      ```
-    - Continue workflow.
+→ Run Bash command to list available sessions:
+```bash
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
+```
 
-If you encounter an error in the above procedure, display the error to the user and IMMEDIATELY exit the Workflow.
- 
+→ Parse JSON output: Extract sessions array from `data.sessions` field.
+→ Use AskUserQuestion to ask user "Select a Claude Code session:" with options from first 4 sessions (each option label = sessionId).
+→ Extract selected session ID from user response and store in `SELECTED_SESSION_ID` variable.
+
+→ Run Bash command to save selected session to config:
+```bash
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
+```
+
+→ If save succeeds: Continue to Step 2.
+→ If error occurs: Display error message to user and exit workflow immediately.
+
 ## 2. Stage and Analyze Changes
 
 ### 2a. Stage changes
@@ -155,9 +153,11 @@ git diff --cached
 
 DELEGATE_TO: `references/message_guidelines.md`
 
-Generate commit message per the guidelines, stored as `COMMIT_SUBJECT` and `COMMIT_BODY`.
+After message_guidelines.md completes:
 
-**Silent generation:** Create message internally. First output must be "Proposed commit message:" in Step 4.
+→ Extract `COMMIT_SUBJECT` from reference file (stored during execution).
+→ Extract `COMMIT_BODY` from reference file (stored during execution).
+→ Proceed to Step 4.
 
 ## 4. Display Message to User for Approval
 
@@ -165,9 +165,15 @@ BLOCKING: This step MUST complete with user approval before Step 5.
 
 DELEGATE_TO: `references/message_approval.md`
 
-→ Handle user response per reference file instructions  
-→ Extract `COMMIT_SUBJECT` and `COMMIT_BODY` if approved  
-→ Proceed to Step 4 only if approved by user  
+After message_approval.md completes:
+
+→ Extract `APPROVAL_STATUS` from reference file execution.
+→ Extract `COMMIT_SUBJECT` from reference file (may be modified).
+→ Extract `COMMIT_BODY` from reference file (may be modified or empty).
+
+→ If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 5.
+→ If APPROVAL_STATUS = "request_revisions": Return to Step 3 to regenerate message.
+→ If APPROVAL_STATUS = "cancelled": Exit workflow immediately.
 
 ## 5. Fetch Cost Data
 
@@ -175,26 +181,46 @@ DELEGATE_TO: `references/message_approval.md`
 
 DELEGATE_TO: `references/fetch_cost.md`
 
-## 6. Create Commit
+After fetch_cost.md completes:
 
-⚠️  **IMPORTANT:** STOP IMMEDIATELY and ask the user for guidance if:  
-- You did NOT get explicit approval for the commit message via AskUserQuestion in Step 4.
-- You did NOT get Cost Metrics, i.e. they are missing, or if you contrived them after encountering errors with ccusage, in step 5. 
+→ Extract `FETCH_STATUS` from reference file execution.
+→ Extract `SESSION_ID` from reference file (extracted from JSON response).
+→ Extract `CURRENT_COST` from reference file (JSON array, extracted from response).
+
+→ If FETCH_STATUS = "success": Proceed to Step 6 with SESSION_ID and CURRENT_COST values.
+→ If FETCH_STATUS is not "success": Extract `ERROR_MESSAGE` from reference file. Display error message to user. Tell user "*** Session ID must be configured to accurately extract Claude Code cost metrics. Cannot create commit without cost metrics." HALT WORKFLOW - Do NOT proceed to Step 6 under any circumstances.
+
+## 6. Create Commit
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
+**IMPORTANT:** Before proceeding, verify:
+- APPROVAL_STATUS = "use_full" OR "use_subject_only" (from Step 4). If APPROVAL_STATUS has any other value: Exit workflow immediately.
+- CURRENT_COST is present, non-empty, and valid from Step 5. If CURRENT_COST is missing, empty, or invalid: Display error "Cannot proceed without valid cost metrics" and exit workflow immediately.
+- Do NOT fabricate or estimate cost metrics under any circumstances.
+
 DELEGATE_TO: `references/create_commit.md`
+
+After create_commit.md completes:
+
+→ Extract `STATUS` from reference file execution.
+→ Extract `COMMIT_SHA` from reference file (if status = "success").
+→ Extract `ERROR_MESSAGE` from reference file (if status is not "success").
+
+→ If STATUS = "success": Proceed to Step 7 with COMMIT_SHA and SESSION_ID values.
+→ If STATUS is not "success": Display ERROR_MESSAGE from reference file. Exit workflow immediately.
 
 ## 7. Summary
 
-→ Display success summary:
+→ Display success summary with the following format:
 ```
 ✅ Commit created with session cost metrics in footer
-   SHA: `COMMIT_SHA`
+   SHA: {COMMIT_SHA}
 
 📊 Session metrics:
-   ID: `SESSION_ID`
-   (for each model in `CURRENT_COST`): "   - {model}: {inputTokens} in + {outputTokens} out = ${cost}"
+   ID: {SESSION_ID}
+   (for each model in CURRENT_COST array):
+      - {model}: {inputTokens} in + {outputTokens} out = ${cost}
 ```
 
-✓ Done - Return to user
+→ Return to user.

@@ -4,7 +4,8 @@
 
 Generate a commit message with imperative mood subject line (stored as COMMIT_SUBJECT) and optional bullet point body (stored as COMMIT_BODY).
 
-Contents:
+**Contents:**
+---
 - General Guidelines
 - Commit Subject Line
 - Commit Body
@@ -13,8 +14,8 @@ Contents:
 ## General Guidelines
 
 - Follow any user direction / customizations from their prompt i.e. "write a git commit summarizing this refactoring."
-- *DO NOT* Include metrics obtainable from a git diff or CI/CD logs, such as files edited, count or % of lines of code added/removed, or count of passing tests
-- **Important: Incorporate user feedback** If this is revision of a previously-generated commit body, take into account any user feedback on the previous iteration.
+- **IMPORTANT:** Do NOT include metrics obtainable from a git diff or CI/CD logs, such as files edited, count or % of lines of code added/removed, or count of passing tests.
+- **IMPORTANT:** Incorporate user feedback. If this is revision of a previously-generated commit body, take into account any user feedback on the previous iteration.
 
 ## Subject Line
 
@@ -73,6 +74,4 @@ Refactor error handling and update dependencies
 - Upgrade lodash to 4.17.21
 ```
 
-## Next Step
-
-Return to workflow with generated COMMIT_SUBJECT and COMMIT_BODY values stored internally for Step 4 (Message Approval).
+Execution complete. Values available: COMMIT_SUBJECT, COMMIT_BODY
