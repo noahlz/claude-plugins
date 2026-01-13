@@ -21,7 +21,23 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 **DO NOT** use this skill autonomously - only activate it when requested or invoked by the user.
 
-## Workflow
+---
+
+# Skill Context 
+
+## Reference Files 
+
+**References:**
+- [`create_commit.md`](./references/create_commit.md) - Git commit creation
+- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
+- [`message_approval.md`](./references/message_approval.md) - User approval workflow
+- [`message_guidelines.md`](./references/message_guidelines.md) - Commit message format
+
+**Scripts:**  [scripts/](./scripts/) - utility scripts
+
+## Workflow Diagram and Checklist
+
+This skill follows a precise workflow:
 
 ```
 (1) Check SessionId → (2) Stage → (3) Generate → (4) [User Approval] → (5) Fetch Costs → (6) Commit → (7) Summary
@@ -31,7 +47,17 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 Step 4 **MUST** block until user approves the commit message. **Do NOT COMMIT without approval!**
 
----
+**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
+
+```
+- [ ] 1. Resolve and Save sessionId (if necessary)
+- [ ] 2. Stage and analyze changes
+- [ ] 3. Generate commit message
+- [ ] 4. Get user approval
+- [ ] 5. Fetch session costs
+- [ ] 6. Create commit
+- [ ] 7. Display summary
+```
 
 ## Workflow Rules & Guardrails
 
@@ -57,31 +83,12 @@ Reference files contain detailed requirements. ALWAYS read them when cited.
 → Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
 → Steps without STEP_DESCRIPTION are silent - execute without output.
 
-## Workflow Checklist
-
-**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
-
-```
-- [ ] 1. Resolve and Save sessionId (if necessary)
-- [ ] 2. Stage and analyze changes
-- [ ] 3. Generate commit message
-- [ ] 4. Get user approval
-- [ ] 5. Fetch session costs
-- [ ] 6. Create commit
-- [ ] 7. Display summary
-```
-
-## Skill Organization
-
-**References:**
-- [`create_commit.md`](./references/create_commit.md) - Git commit creation
-- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
-- [`message_approval.md`](./references/message_approval.md) - User approval workflow
-- [`message_guidelines.md`](./references/message_guidelines.md) - Commit message format
-
-**Scripts:**  [scripts/](./scripts/) - utility scripts
+⚠️ **SILENCE PROTOCOL**
+Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute silently - no explanatory text.
 
 ---
+
+# Skill Workflow Instructions
 
 ## 0. Prerequisites
 
@@ -91,8 +98,8 @@ Reference files contain detailed requirements. ALWAYS read them when cited.
 
 ---
 
-→ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" message and store it for use in bash commands.
-→ If `SKILL_BASE_DIR` is present, display it then proceed with Step 1.
+→ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" message and store it for use in bash commands.  
+→ If `SKILL_BASE_DIR` is present, display it then proceed with Step 1.  
 
 **NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED", it will be resolved in Step 1.
 
@@ -109,25 +116,25 @@ Example:
 
 ## 1. Resolve SessionID
 
-→ If `SESSION_ID` is configured (not "NOT_CONFIGURED"): Skip to Step 2.
-→ If `SESSION_ID` is "NOT_CONFIGURED": Execute the following:
+→ If `SESSION_ID` is configured (not "NOT_CONFIGURED"): Skip to Step 2.  
+→ If `SESSION_ID` is "NOT_CONFIGURED": Execute the following:  
 
 → Run Bash command to list available sessions:
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
 ```
 
-→ Parse JSON output: Extract sessions array from `data.sessions` field.
-→ Use AskUserQuestion to ask user "Select a Claude Code session:" with options from first 4 sessions (each option label = sessionId).
-→ Extract selected session ID from user response and store in `SELECTED_SESSION_ID` variable.
+→ Parse JSON output: Extract sessions array from `data.sessions` field.  
+→ Use AskUserQuestion to ask user "Select a Claude Code session:" with options from first 4 sessions (each option label = sessionId).  
+→ Extract selected session ID from user response and store in `SELECTED_SESSION_ID` variable.  
 
-→ Run Bash command to save selected session to config:
+→ Run Bash command to save selected session to config:  
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
 ```
 
-→ If save succeeds: Continue to Step 2.
-→ If error occurs: Display error message to user and exit workflow immediately.
+→ If save succeeds: Continue to Step 2.  
+→ If error occurs: Display error message to user and exit workflow immediately.  
 
 ## 2. Stage and Analyze Changes
 
@@ -155,9 +162,9 @@ DELEGATE_TO: `references/message_guidelines.md`
 
 After message_guidelines.md completes:
 
-→ Extract `COMMIT_SUBJECT` from reference file (stored during execution).
-→ Extract `COMMIT_BODY` from reference file (stored during execution).
-→ Proceed to Step 4.
+→ Extract `COMMIT_SUBJECT` from reference file (stored during execution).  
+→ Extract `COMMIT_BODY` from reference file (stored during execution).  
+→ Proceed to Step 4.  
 
 ## 4. Display Message to User for Approval
 
@@ -167,13 +174,13 @@ DELEGATE_TO: `references/message_approval.md`
 
 After message_approval.md completes:
 
-→ Extract `APPROVAL_STATUS` from reference file execution.
-→ Extract `COMMIT_SUBJECT` from reference file (may be modified).
-→ Extract `COMMIT_BODY` from reference file (may be modified or empty).
+→ Extract `APPROVAL_STATUS` from reference file execution.  
+→ Extract `COMMIT_SUBJECT` from reference file (may be modified).  
+→ Extract `COMMIT_BODY` from reference file (may be modified or empty).  
 
-→ If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 5.
-→ If APPROVAL_STATUS = "request_revisions": Return to Step 3 to regenerate message.
-→ If APPROVAL_STATUS = "cancelled": Exit workflow immediately.
+→ If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 5.  
+→ If APPROVAL_STATUS = "request_revisions": Return to Step 3 to regenerate message.  
+→ If APPROVAL_STATUS = "cancelled": Exit workflow immediately.  
 
 ## 5. Fetch Cost Data
 
@@ -185,16 +192,16 @@ After fetch_cost.md completes:
 
 → Extract `FETCH_STATUS` from reference file execution.
 
-→ If FETCH_STATUS = "success":
-  → Extract `SESSION_ID` from reference file.
-  → Extract `CURRENT_COST` from reference file (validated JSON array).
-  → Proceed to Step 6 with SESSION_ID and CURRENT_COST values.
+→ If FETCH_STATUS = "success":  
+  - → Extract `SESSION_ID` from reference file.  
+  - → Extract `CURRENT_COST` from reference file (validated JSON array).  
+  - → Proceed to Step 6 with SESSION_ID and CURRENT_COST values.  
 
 → If FETCH_STATUS is not "success":
-  → Extract `ERROR_MESSAGE` from reference file.
-  → Display error message to user.
-  → Tell user "*** Session ID must be configured to accurately extract Claude Code cost metrics. Cannot create commit without valid cost metrics."
-  → HALT WORKFLOW - Do NOT proceed to Step 6 under any circumstances.
+  - → Extract `ERROR_MESSAGE` from reference file.
+  - → Display error message to user.
+  - → Tell user "*** Session ID must be configured to accurately extract Claude Code cost metrics. Cannot create commit without valid cost metrics."
+  - → HALT WORKFLOW - Do NOT proceed to Step 6 under any circumstances.
 
 ## 6. Create Commit
 
@@ -212,13 +219,13 @@ After create_commit.md completes:
 → Extract `STATUS` from reference file execution.
 
 → If STATUS = "success":
-  → Extract `COMMIT_SHA` from reference file.
-  → Proceed to Step 7 with COMMIT_SHA and SESSION_ID values.
+  - → Extract `COMMIT_SHA` from reference file.
+  - → Proceed to Step 7 with COMMIT_SHA and SESSION_ID values.
 
 → If STATUS is not "success":
-  → Extract `ERROR_MESSAGE` from reference file.
-  → Display ERROR_MESSAGE to user.
-  → Exit workflow immediately.
+  - → Extract `ERROR_MESSAGE` from reference file.
+  - → Display ERROR_MESSAGE to user.
+  - → Exit workflow immediately.
 
 ## 7. Summary
 

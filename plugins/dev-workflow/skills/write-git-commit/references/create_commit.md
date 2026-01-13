@@ -37,12 +37,12 @@ EOF
 → Extract value from JSON field `status` and store in STATUS variable.
 
 → If STATUS = "success":
-  → Extract value from JSON field `data.commit_sha` and store in COMMIT_SHA variable.
+  - → Extract value from JSON field `data.commit_sha` and store in COMMIT_SHA variable.
 
 → If STATUS = "metrics_invalid":
-  → Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
+  - → Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
 
 → If STATUS is not "success":
-  → Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
+  - → Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
 
 Execution complete. Values available: STATUS, COMMIT_SHA (if success) or ERROR_MESSAGE (if failed)
