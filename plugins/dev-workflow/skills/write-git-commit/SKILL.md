@@ -19,12 +19,14 @@ Activate when the user explicitly requests a git commit using phrases like:
 - "save to git"
 - "git commit"
 
+**DO NOT** use this skill autonomously - only activate it when requested or invoked by the user.
+
 ## Workflow
 
 ```
-Stage → Generate → [User Approval] → Fetch Costs → Commit → Summary
-              ↑______________|
-              (revision loop)
+(1) Check SessionId → (2) Stage → (3) Generate → (4) [User Approval] → (5) Fetch Costs → (6) Commit → (7) Summary
+                                            ↑____________________|
+                                                (revision loop)
 ```
 
 Step 4 **MUST** block until user approves the commit message. **Do NOT COMMIT without approval!**
@@ -78,7 +80,6 @@ Steps without STEP_DESCRIPTION are silent - execute without output. Do not narra
 - [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
 - [`message_approval.md`](./references/message_approval.md) - User approval workflow
 - [`message_guidelines.md`](./references/message_guidelines.md)- Commit message format
-- [`session_recovery.md`](./references/session_recovery.md) - Session ID fallback
 
 **Scripts:**  [scripts/](./scripts/) - utility scripts
 
@@ -128,7 +129,7 @@ OTHERWISE if the `SESSION_ID` value was `NOT_CONFIGURED` resolve and save it as 
       ```
     - Continue workflow.
 
-If you encounter an error in the above procedure, exit the workflow.
+If you encounter an error in the above procedure, display the error to the user and IMMEDIATELY exit the Workflow.
  
 ## 2. Stage and Analyze Changes
 

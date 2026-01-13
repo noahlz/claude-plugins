@@ -1,4 +1,4 @@
-# Cost Data Fetch Instructions
+# Fetch Cost Metrics
 
 Contents:
 - Action required
@@ -54,12 +54,8 @@ Extract these fields:
 - Tell the user "*** Session ID must be configured to accurately extract Claude Code cost metrics."
 - Exit the workflow
 
-## Important Notes
-
-- Do NOT proceed with missing cost data
+**IMPORTANT:**
+- Do NOT proceed with missing cost data.
 - Do NOT fabricate or estimate cost metrics
-- If errors persist, stop workflow and ask user for guidance
+- If errors persist, HALT the workflow and ask user for guidance
 
-## Next Step
-
-If successful: Return to Step 6 with SESSION_ID and CURRENT_COST captured.

@@ -1,8 +1,10 @@
-## Contents
-- Display Message 
+---
+**Contents**:
+- Message Display Instructions
 - User Approval Options
 - Response Handling
 - Output Requirements
+---
 
 # Message Display Instructions
 
@@ -26,6 +28,10 @@ Proposed commit message:
 3. "Suggest revisions"
 4. "Stop/Cancel commit"
 
+**IMPORTANT:**
+- You must block the workflow on the AskUserQuestion tool before proceeding.
+- Do not assume approval by the user. The user must **ALWAYS** explicitly approve before you create the git commit
+
 ## Response Handling
 
 ### ✓ If "Use full message"
@@ -48,13 +54,3 @@ Proposed commit message:
 - Exit workflow immediately
 - Do NOT proceed to Step 5
 - Return control to user
-
-## Important Notes
-
-- This approval blocks all subsequent steps
-- User must explicitly approve before fetching cost data or creating commit
-- Do not proceed on assumed approval
-
-## Next Step
-
-If approved: Return to Step 5 with COMMIT_SUBJECT and COMMIT_BODY extracted.
