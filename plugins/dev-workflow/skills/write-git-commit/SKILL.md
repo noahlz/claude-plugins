@@ -72,11 +72,11 @@ Execute this skill following this EXACT workflow (details in following sections)
 
 ### A. Delegation Protocol
 
-When you see `DELEGATE_TO: [file]`:
-⛔ **STOP** - Do NOT proceed until you read the file
-→ Use Read tool on the referenced file path
-→ Execute its instructions exactly (bash commands, parsing, etc.)
-→ Return to SKILL.md only after completing reference file instructions
+When you see `DELEGATE_TO: [file]`:  
+⛔ **STOP** - Do NOT proceed until you read the file  
+→ Use Read tool on the referenced file path  
+→ Execute its instructions exactly (bash commands, parsing, etc.)  
+→ Return to SKILL.md only after completing reference file instructions  
 
 ⚠️ Reference files contain the ACTUAL bash commands. Never improvise or guess commands.
 
@@ -165,8 +165,8 @@ Use the output of this command to generate the proposed commit message, per step
 
 ## 3. Generate Commit Message
 
-DELEGATE_TO: `references/message_guidelines.md`
-⛔ READ FILE FIRST - do not improvise
+DELEGATE_TO: `references/message_guidelines.md`  
+⛔ READ FILE FIRST - do not improvise  
 
 → Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.  
 → Proceed to Step 4.  
@@ -175,8 +175,8 @@ DELEGATE_TO: `references/message_guidelines.md`
 
 BLOCKING: This step MUST complete with user approval before Step 5.
 
-DELEGATE_TO: `references/message_approval.md`
-⛔ READ FILE FIRST - do not improvise
+DELEGATE_TO: `references/message_approval.md`  
+⛔ READ FILE FIRST - do not improvise  
 
 → Extract APPROVAL_STATUS and updated COMMIT_SUBJECT, and COMMIT_BODY per reference file instructions.  
 
@@ -187,8 +187,8 @@ DELEGATE_TO: `references/message_approval.md`
 
 **STEP_DESCRIPTION**: "Fetching session cost metrics"
 
-DELEGATE_TO: `references/fetch_cost.md`
-⛔ READ FILE FIRST - contains the actual bash command to run
+DELEGATE_TO: `references/fetch_cost.md`  
+⛔ READ FILE FIRST - contains the actual bash command to run  
 
 → Extract FETCH_STATUS per reference file instructions.
 
@@ -213,8 +213,8 @@ DELEGATE_TO: `references/fetch_cost.md`
 
 **MANDATORY: DO NOT use a direct `git commit` command here.**
 
-DELEGATE_TO: `references/create_commit.md`
-⛔ READ FILE FIRST - contains the actual bash command to run
+DELEGATE_TO: `references/create_commit.md`  
+⛔ READ FILE FIRST - contains the actual bash command to run  
 
 → Extract STATUS per reference file instructions.
 
