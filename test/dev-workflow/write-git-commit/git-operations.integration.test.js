@@ -11,7 +11,6 @@ import {
   execGit as prodExecGit,
   commit,
   getHeadSha,
-  getStagedFiles
 } from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/git-operations.js';
 
 /**
@@ -155,46 +154,6 @@ describe('git-operations: integration tests', () => {
       const sha = getHeadSha({ cwd: testEnv.tmpDir });
 
       assert.match(sha, /^[0-9a-f]{40}$/, 'SHA should be 40 hex characters');
-    });
-  });
-
-  describe("getStagedFiles", () => {
-    it('returns empty array when nothing staged', () => {
-      const files = getStagedFiles({ cwd: testEnv.tmpDir });
-
-      assert.ok(Array.isArray(files), 'Should return an array');
-      assert.equal(files.length, 0, 'Should be empty when nothing staged');
-    });
-
-    it('returns staged file names', () => {
-      // Stage a single file
-      writeFileSync(join(testEnv.tmpDir, 'test1.txt'), 'content1');
-      execGit(['add', 'test1.txt'], { cwd: testEnv.tmpDir });
-
-      const files = getStagedFiles({ cwd: testEnv.tmpDir });
-
-      assert.ok(Array.isArray(files), 'Should return an array');
-      assert.equal(files.length, 1, 'Should have one staged file');
-      assert.equal(files[0], 'test1.txt', 'Should contain file name');
-    });
-
-    it('returns multiple files', () => {
-      // Stage multiple files
-      writeFileSync(join(testEnv.tmpDir, 'file1.txt'), 'content1');
-      writeFileSync(join(testEnv.tmpDir, 'file2.txt'), 'content2');
-      writeFileSync(join(testEnv.tmpDir, 'file3.txt'), 'content3');
-
-      execGit(['add', 'file1.txt'], { cwd: testEnv.tmpDir });
-      execGit(['add', 'file2.txt'], { cwd: testEnv.tmpDir });
-      execGit(['add', 'file3.txt'], { cwd: testEnv.tmpDir });
-
-      const files = getStagedFiles({ cwd: testEnv.tmpDir });
-
-      assert.ok(Array.isArray(files), 'Should return an array');
-      assert.equal(files.length, 3, 'Should have three staged files');
-      assert.ok(files.includes('file1.txt'), 'Should contain file1.txt');
-      assert.ok(files.includes('file2.txt'), 'Should contain file2.txt');
-      assert.ok(files.includes('file3.txt'), 'Should contain file3.txt');
     });
   });
 });

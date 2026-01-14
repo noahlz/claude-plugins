@@ -16,8 +16,7 @@ function createDefaultDeps() {
     git: {
       execGit: git.execGit,
       commit: git.commit,
-      getHeadSha: git.getHeadSha,
-      getStagedFiles: git.getStagedFiles
+      getHeadSha: git.getHeadSha
     },
     ccusage: {
       loadSessionData: ccusage.loadSessionData,

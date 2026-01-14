@@ -33,8 +33,3 @@ export function getHeadSha(options = {}) {
   const result = execGit(['rev-parse', 'HEAD'], options);
   return result.stdout.trim();
 }
-
-export function getStagedFiles(options = {}) {
-  const result = execGit(['diff', '--cached', '--name-only'], options);
-  return result.stdout.trim().split('\n').filter(f => f);
-}

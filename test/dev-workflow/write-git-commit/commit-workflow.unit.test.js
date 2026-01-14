@@ -30,8 +30,7 @@ describe('commit-workflow.js unit tests', () => {
     mockGit = {
       execGit: () => throwUnexpected('git.execGit'),
       commit: () => throwUnexpected('git.commit'),
-      getHeadSha: () => throwUnexpected('git.getHeadSha'),
-      getStagedFiles: () => throwUnexpected('git.getStagedFiles')
+      getHeadSha: () => throwUnexpected('git.getHeadSha')
     };
 
     mockCcusage = {
