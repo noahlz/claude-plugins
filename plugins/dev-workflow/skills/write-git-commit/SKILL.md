@@ -19,15 +19,22 @@ Activate when the user explicitly requests a git commit using phrases like:
 - "save to git"
 - "git commit"
 
-**DO NOT** use this skill autonomously - only activate it when requested or invoked by the user.
+**IMPORTANT RULES:**
+- **DO NOT** use this skill autonomously - only activate it when *explicitly* requested or invoked by the user.
+- **DO NOT** create a git commit without *first* displaying it to the user and obtaining approval using AskUserQuestion
+- **DO NOT** create a git commit without the Claude-Cost-Metrics a trailer that has *REAL* JSON-formatted cost data obtained the `ccusage-operations.js` script
+- **ALWAYS** follow the workflow and instructions EXACTLY as written in following sections.
 
 ---
 
 # Skill Context 
 
-## Reference Files 
+## Reference Files
 
-**References:**
+**Shared References:** (from dev-workflow plugin)
+- [`skill_base_dir.md`](../../references/skill_base_dir.md) - Extract and validate skill installation path
+
+**Skill References:**
 - [`create_commit.md`](./references/create_commit.md) - Git commit creation
 - [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
 - [`message_approval.md`](./references/message_approval.md) - User approval workflow
@@ -37,15 +44,13 @@ Activate when the user explicitly requests a git commit using phrases like:
 
 ## Workflow Diagram and Checklist
 
-This skill follows a precise workflow:
+Execute this skill following this EXACT workflow (details in following sections):
 
 ```
 (1) Check SessionId → (2) Stage → (3) Generate → (4) [User Approval] → (5) Fetch Costs → (6) Commit → (7) Summary
                                             ↑____________________|
                                                 (revision loop)
 ```
-
-Step 4 **MUST** block until user approves the commit message. **Do NOT COMMIT without approval!**
 
 **Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
 
@@ -59,17 +64,13 @@ Step 4 **MUST** block until user approves the commit message. **Do NOT COMMIT wi
 - [ ] 7. Display summary
 ```
 
+**IMPORTANT:** Step 4 **MUST** block until user approves the commit message. **Do NOT execute `git commit` without explicit user approval!**
+
 ## Workflow Rules & Guardrails
 
 **FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
 
-### A. Workflow Order of Operations
-
-→ Follow the Workflow instructions **EXACTLY** as written.  
-→ **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]".  
-→ This Workflow is **interactive**. You must ALWAYS get user approval per Step 4 before proceeding.  
-
-### B. Delegation Protocol
+### A. Delegation Protocol
 
 When you see `DELEGATE_TO: [file]`:  
 → Read the referenced file.  
@@ -78,7 +79,7 @@ When you see `DELEGATE_TO: [file]`:
 
 Reference files contain detailed requirements. ALWAYS read them when cited.
 
-### C. Narration Control
+### B. Narration Control
 
 → Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.  
 → Steps without STEP_DESCRIPTION are silent - execute without output.  
@@ -96,23 +97,26 @@ Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute s
 
 **SESSION_ID**: !`cat .claude/settings.plugins.write-git-commit.json 2>/dev/null | node -pe 'JSON.parse(require("fs").readFileSync(0, "utf-8")).sessionId' || echo "NOT_CONFIGURED"`
 
----
-
-→ At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" message and store it for use in bash commands.  
-→ If `SKILL_BASE_DIR` is present, display it then proceed with Step 1.  
-
 **NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED", it will be resolved in Step 1.
 
-**Template Substitution:**
+---
+
+### Extract SKILL_BASE_DIR
+
+**MANDATORY:** This skill depends on resolving the skill install directory - follow these steps exactly:
+
+DELEGATE_TO: `../../references/skill_base_dir.md`
+
+→ Extract and validate SKILL_BASE_DIR value from skill startup message.  
+→ Store SKILL_BASE_DIR for use in all subsequent bash commands.  
+
+---
+
+### Template Substitution
 
 Replace placeholders before executing bash commands:
-- `{{SKILL_BASE_DIR}}` → Literal path from "Base directory for this skill:"
-- `{{SESSION_ID}}` → Literal session ID value
-
-Example:
-- Skill header states: `Base directory for this skill: /Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
-- `SKILL_BASE_DIR` stored as: `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit`
-- `node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js"` becomes: `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/write-git-commit/scripts/commit-workflow.js"`
+- `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
+- `{{SESSION_ID}}` → Session ID value
 
 ## 1. Resolve SessionID
 
@@ -156,7 +160,7 @@ git add -A
 git diff --cached
 ```
 
-Use the output of this command  in generating the proposed commit message in step 3.
+Use the output of this command to generate the proposed commit message, per step 3.
 
 ## 3. Generate Commit Message
 

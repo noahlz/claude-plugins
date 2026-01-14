@@ -1,16 +1,17 @@
 # Obtain Commit Message Approval 
 
 **Contents:**
-- Message Display Instructions
-- User Approval Instructions
+- Mandatory Message Display Instructions
+- Mandatory User Approval Instructions
 - Response Processing
 
 ---
 
-## Message Display Instructions
+## Mandatory Message Display Instructions
 
-**MANDATORY:** Display the below message, replacing {{COMMIT_SUBJECT}} and {{COMMIT_BODY}} with their stored values:
+**MANDATORY:** Use the below template EXACTLY, replacing {{COMMIT_SUBJECT}} and {{COMMIT_BODY}} with their stored values:
 
+→ Template for message aproval:
 ```
 Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -20,13 +21,13 @@ Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-## User Approval Instructions
+## Mandatory User Approval Instructions
+
+**MANDATORY:** Obtain explicit approval for the commit message using AskUserQuestion as below - **NEVER** assume or infer approval by the user.
 
 → Use AskUserQuestion to ask "Approve this commit message?" with options:
   1. "Use full message" (Recommended)
   2. "Use just the subject"
-
-**IMPORTANT:** Block the workflow on AskUserQuestion. Do not assume approval by the user. The user must explicitly approve before proceeding.
 
 ## Response Processing
 

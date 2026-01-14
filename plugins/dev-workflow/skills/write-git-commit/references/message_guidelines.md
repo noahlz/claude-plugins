@@ -2,8 +2,8 @@
 
 **Contents:**
 - General Guidelines
-- Commit Subject Line
-- Commit Body
+- Subject Line
+- Body
 - Examples
 
 ---

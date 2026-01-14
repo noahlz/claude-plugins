@@ -35,13 +35,18 @@ When build or test failures occur:
   - Use `failed-test-analyzer` to analyze test failures
   - Pass the agent's analysis to Plan mode
 
+**IMPORTANT:** ALWAYS follow the workflow and instructions EXACTLY as written in following sections.
+
 ---
 
 # Skill Context
 
-## Reference Files 
+## Reference Files
 
-**References:**
+**Shared References:** (from dev-workflow plugin)
+- [`skill_base_dir.md`](../../references/skill_base_dir.md) - Extract and validate skill installation path
+
+**Skill References:**
 - [`extract-build-errors.md`](./references/extract-build-errors.md) - Build error extraction
 - [`extract-test-failures.md`](./references/extract-test-failures.md) - Test failure extraction
 - [`run-build.md`](./references/run-build.md) - Build execution and failure handling
@@ -54,7 +59,7 @@ When build or test failures occur:
 
 ## Workflow Checklist
 
-**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
+**Use this copyable checklist to EXACTLY follow ALL steps of this skill workflow:**
 
 ```
 - [ ] 1. Detect Build Configuration (If Necessary)
@@ -104,24 +109,25 @@ Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute s
 
 **SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.run-and-fix-tests.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
 
+**NOTE:** If `SKILL_CONFIG` shows `NOT_CONFIGURED` above, it will be resolved in Step 1.
+
 ---
 
-At skill startup, extract `SKILL_BASE_DIR` from Claude Code's "Base directory for this skill:" output message and store it for use in bash commands below.
+### Extract SKILL_BASE_DIR
 
-✓ If `SKILL_BASE_DIR` is present, display it  
-✓ If `SKILL_CONFIG` is `CONFIGURED`, proceed with the workflow.  
+**MANDATORY:** This skill depends on resolving the skill install directory - follow these steps exactly:
 
-**NOTE:** If `SKILL_CONFIG` shows `NOT_CONFIGURED` above, you will resolve and saved it to the configuration file in step 1, below.
+DELEGATE_TO: `../../references/skill_base_dir.md`
 
-**Template Substitution:**
+→ Extract and validate SKILL_BASE_DIR value from skill startup message.  
+→ Store SKILL_BASE_DIR for use in all subsequent bash commands.  
+
+---
+
+### Template Substitution
 
 Replace placeholders before executing bash commands:
-- `{{SKILL_BASE_DIR}}` → Literal path from "Base directory for this skill:"
-
-Example: 
-- Skill header states: `Base directory for this skill: /Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests`
-- `SKILL_BASE_DIR` stored as value `/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests`
-- `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"` becomes `node "/Users/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
+- `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
 
 ## 1. Detect Build Configuration (If Necessary)
 

@@ -4,7 +4,6 @@
 - Check ccusage dependency
 - Execute fetch command
 - Parse JSON output
-- Handle response
 
 ---
 

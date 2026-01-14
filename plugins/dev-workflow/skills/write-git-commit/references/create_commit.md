@@ -8,7 +8,7 @@
 
 ## Bash Command
 
-**IMPORTANT:** Do NOT improvise git commit logic - the script `scripts/commit-workflow.js` handles all git commit operations.
+**IMPORTANT:** Do NOT improvise `git commit` commands - the script `scripts/commit-workflow.js` handles all `git` operations - use that (see below).
 
 **Value Replacements:**
 
@@ -16,8 +16,6 @@
 - `{{CURRENT_COST}}`: Literal JSON array from Step 5
 - `{{COMMIT_SUBJECT}}`: Subject line from Step 4
 - `{{COMMIT_BODY}}`: Body from Step 4 (omit blank line if empty)
-
-**IMPORTANT:** The script will validate cost metrics before committing. Do NOT improvise git commit logic.
 
 **Execute Command:**
 
