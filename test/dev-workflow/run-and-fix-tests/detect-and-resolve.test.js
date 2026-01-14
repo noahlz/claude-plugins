@@ -100,5 +100,31 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
       assert.ok(registry.npm, 'Should have npm in registry');
       assert.equal(registry.npm.configFile, 'package.json', 'npm configFile should be package.json');
     });
+
+    it('returns null when tools.json is missing', () => {
+      const registry = loadToolRegistry('/nonexistent/path');
+      assert.equal(registry, null, 'Should return null when tools.json is missing');
+    });
+
+    it('throws error in detectTools when tool registry cannot be loaded', () => {
+      assert.throws(() => {
+        detectTools({ pluginRoot: '/nonexistent/path', rootDir: testEnv.tmpDir });
+      }, /Cannot load tool registry from plugin/);
+    });
+  });
+
+  describe('glob pattern matching', () => {
+    it('detects tools using glob patterns in configFile', () => {
+      // Create a subdirectory with a config file that would match a glob pattern
+      mkdirSync(join(testEnv.tmpDir, 'subdir'), { recursive: true });
+      writeFileSync(join(testEnv.tmpDir, 'subdir', 'package.json'), JSON.stringify({ name: 'test' }));
+
+      // The npm tool has configFile "package.json" in the registry
+      // detectTools searches subdirectories when the file is not at root
+      const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+
+      const npmTool = detected.find(t => t.tool === 'npm');
+      assert.ok(npmTool, 'Should detect npm tool using glob-style search in subdirectories');
+    });
   });
 });

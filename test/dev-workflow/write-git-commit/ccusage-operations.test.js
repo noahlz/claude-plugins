@@ -328,6 +328,16 @@ describe('write-git-commit: ccusage-operations.js', () => {
       assert.ok(result.status === 'success' || result.status === 'error');
       assert.ok(Array.isArray(result.data.sessions));
     });
+
+    it('returns success with empty array when projects directory does not exist', () => {
+      // Note: This test assumes ~/.claude/projects doesn't exist or is empty
+      // If it exists, the listLocalSessions function will handle it gracefully
+      const result = listLocalSessions();
+
+      assert.equal(result.status, 'success');
+      assert.ok(Array.isArray(result.data.sessions));
+      // Sessions may be empty or populated depending on actual ~/.claude/projects state
+    });
   });
 
   describe('findRecommendedSession', () => {

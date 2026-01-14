@@ -76,6 +76,14 @@ describe('commit-workflow.js unit tests', () => {
   });
 
   describe("prepare command", () => {
+    it('throws error when deps parameter is missing', async () => {
+      await assert.rejects(
+        async () => prepare({ baseDir: '.' }),
+        /deps parameter required/,
+        'Should throw error when deps is missing'
+      );
+    });
+
     it('succeeds with valid sessionId and ccusage match', async () => {
       const testCcusage = createMockCcusage({
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
@@ -204,6 +212,18 @@ describe('commit-workflow.js unit tests', () => {
 
   describe("commit action command", () => {
     describe("parameter validation", () => {
+      it('throws error when deps parameter is missing', async () => {
+        await assert.rejects(
+          async () => commit({
+            message: 'Test commit',
+            sessionId: 'test',
+            costs: [{ model: 'claude-opus', cost: 0.015 }]
+          }),
+          /deps parameter required/,
+          'Should throw error when deps is missing'
+        );
+      });
+
       it('fails with missing subject', async () => {
         const testCcusage = {
           ...mockCcusage,

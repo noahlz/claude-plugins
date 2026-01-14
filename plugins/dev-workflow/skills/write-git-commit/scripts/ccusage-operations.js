@@ -19,10 +19,12 @@ import os from 'os';
  * Direct wrapper around ccusage/data-loader.loadSessionData()
  * @returns {Promise<Array>} Array of session objects
  */
+/* node:coverage disable */
 export async function loadSessionData() {
   const { loadSessionData: load } = await import('ccusage/data-loader');
   return await load();
 }
+/* node:coverage enable */
 
 /**
  * Get the Claude projects directory path

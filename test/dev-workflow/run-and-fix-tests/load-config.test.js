@@ -146,6 +146,45 @@ describe('run-and-fix-tests: load-config.js', () => {
 
         assertConfigError(result, /resultsPath|logFile/);
       });
+
+      it('errors when config is null', () => {
+        // Manually call loadConfig with a baseDir that has no config
+        // This simulates a null config scenario
+        const result = loadConfig({ baseDir: '/nonexistent/path' });
+
+        assertConfigError(result, /No project configuration|Config is null or undefined/);
+      });
+
+      it('errors when test.all is missing', () => {
+        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
+          delete config.test.all;
+          return config;
+        });
+
+        const result = loadConfig({ baseDir: testEnv.tmpDir });
+        assertConfigError(result, /test.all is required/);
+      });
+
+      it('errors when test.single is missing', () => {
+        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
+          delete config.test.single;
+          return config;
+        });
+
+        const result = loadConfig({ baseDir: testEnv.tmpDir });
+        assertConfigError(result, /test.single is required/);
+      });
+
+      it('errors when build is missing and skipBuild is not true', () => {
+        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
+          delete config.build;
+          // skipBuild is undefined/false, so build is required
+          return config;
+        });
+
+        const result = loadConfig({ baseDir: testEnv.tmpDir });
+        assertConfigError(result, /build.*property.*skipBuild/);
+      });
     });
   });
 

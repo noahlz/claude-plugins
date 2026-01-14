@@ -252,5 +252,55 @@ ok 3 - test three
       assert.equal(result.mode, 'glob', 'Should return glob mode');
       assertParserResult(result, 0);
     });
+
+    it('throws error when glob mode regex is invalid', () => {
+      const files = {
+        'TEST-com.example.FooTest.xml': '<testcase><failure>Error 1</failure></testcase>'
+      };
+
+      assert.throws(
+        () => parseTestsWithGlob({
+          resultsPath: 'target/surefire-reports/TEST-*.xml',
+          errorPattern: '[invalid(regex'
+        }, files),
+        /Invalid regex pattern/,
+        'Should throw error when regex is invalid in glob mode'
+      );
+    });
+
+    it('truncates file list to 30 files in glob mode', () => {
+      // Create 35 files with failures to test truncation
+      const files = {};
+      for (let i = 0; i < 35; i++) {
+        files[`TEST-TestClass${i}.xml`] = '<testcase><failure>Error</failure></testcase>';
+      }
+
+      const result = parseTestsWithGlob({
+        resultsPath: 'target/surefire-reports/TEST-*.xml',
+        errorPattern: '<failure'
+      }, files);
+
+      assert.equal(result.mode, 'glob', 'Should return glob mode');
+      assert.equal(result.failures.length, 30, 'Should limit to 30 files');
+      assert.equal(result.truncated, true, 'Should set truncated flag');
+    });
+  });
+
+  describe('line number extraction', () => {
+    it('extracts line numbers from named groups', () => {
+      const resultsContent = 'test_login (test_auth.py:42) ... FAILED: AssertionError';
+
+      const result = parseTestsWithMock({
+        errorPattern: '(?<testName>\\w+)\\s+\\((?<file>[^:]+):(?<line>\\d+)\\).*FAILED:\\s+(?<message>.+)'
+      }, resultsContent);
+
+      assertParserResult(result, 1);
+      assertFailureDetails(result.failures[0], {
+        test: 'test_login',
+        file: 'test_auth.py',
+        line: 42,
+        message: 'AssertionError'
+      });
+    });
   });
 });

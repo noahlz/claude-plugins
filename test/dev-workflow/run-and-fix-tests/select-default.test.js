@@ -127,5 +127,32 @@ describe('run-and-fix-tests: select-default.js', () => {
       // Should handle gracefully, either with template or warnings
       assert.ok(result.configPath, 'Should create config path');
     });
+
+    it('throws error for polyglot projects (2+ tools)', () => {
+      const detectedTools = [
+        createToolConfig('npm'),
+        createToolConfig('maven')
+      ];
+
+      assert.throws(() => {
+        selectDefault({
+          detectedTools,
+          pluginRoot: testEnv.pluginRoot,
+          targetDir: testEnv.tmpDir
+        });
+      }, /Polyglot projects not yet supported/);
+    });
+
+    it('throws error when template file is missing', () => {
+      const detectedTools = [];
+
+      assert.throws(() => {
+        selectDefault({
+          detectedTools,
+          pluginRoot: '/nonexistent/path', // Invalid plugin root
+          targetDir: testEnv.tmpDir
+        });
+      }, /Template not found/);
+    });
   });
 });

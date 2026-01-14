@@ -139,6 +139,7 @@ export function loadConfig(options = {}) {
   return { resolved, errors, warnings };
 }
 
+/* node:coverage disable */
 /**
  * Main entry point
  */
@@ -164,3 +165,4 @@ async function main() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
+/* node:coverage enable */

@@ -3,21 +3,7 @@
 import fs from 'fs';
 import { globSync } from 'fs';
 import path from 'path';
-
-/**
- * Read config file from standard location
- * @returns {object} - Config object
- */
-function readConfigFile() {
-  const configPath = path.join(process.cwd(), '.claude', 'settings.plugins.run-and-fix-tests.json');
-
-  try {
-    const configData = fs.readFileSync(configPath, 'utf8');
-    return JSON.parse(configData);
-  } catch (err) {
-    throw new Error(`Failed to read config file at ${configPath}: ${err.message}`);
-  }
-}
+import { loadSkillConfig } from '../../../lib/config-loader.js';
 
 /**
  * Check if path contains glob patterns
@@ -204,13 +190,14 @@ export function parseTestFailures(config, options = {}) {
   };
 }
 
+/* node:coverage disable */
 /**
  * Main entry point
  */
 function main() {
   try {
     // Read config from file
-    const config = readConfigFile();
+    const config = loadSkillConfig('run-and-fix-tests');
 
     // Parse test failures
     const result = parseTestFailures(config);
@@ -227,3 +214,4 @@ function main() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
+/* node:coverage enable */

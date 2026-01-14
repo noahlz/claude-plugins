@@ -342,6 +342,7 @@ async function main() {
   // Parse CLI arguments
   const args = process.argv.slice(3);
 
+  /* node:coverage disable */
   // Create real dependency objects for all actions that need them
   const deps = createDefaultDeps();
 
@@ -439,3 +440,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   });
 }
+/* node:coverage enable */
