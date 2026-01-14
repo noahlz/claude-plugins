@@ -203,10 +203,11 @@ DELEGATE_TO: `references/fetch_cost.md`
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
-**IMPORTANT:** Before proceeding, verify:
+**MANDATORY:** CHECK PREREQUISITES BEFORE PREOCEEDING WITH COMMIT**
+- CONFIRM that you have values set for SESSION_ID and CURRENT_COST from Step 5 - if not, GO BACK TO STEP 5 (NEVER fabricate or estimate cost metrics)
 - APPROVAL_STATUS = "use_full" OR "use_subject_only" (from Step 4). If APPROVAL_STATUS has any other value: Exit workflow immediately.
-- SESSION_ID and CURRENT_COST are present from Step 5. If either is missing: Display error "Cannot proceed without session ID and cost metrics" and exit workflow immediately.
-- Do NOT fabricate or estimate cost metrics under any circumstances.
+
+**MANDATORY: DO NOT use a direct `git commit` command here.**
 
 DELEGATE_TO: `references/create_commit.md`
 
