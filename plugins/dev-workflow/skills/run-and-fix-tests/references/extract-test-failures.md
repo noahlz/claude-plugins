@@ -21,7 +21,10 @@ node "{{SKILL_BASE_DIR}}/scripts/parse-test-failures.js"
 
   - → If `totalFailures` > 0:
     - → Display count to user: "Found [totalFailures] test failures"
-    - → Pass script output to failed-test-analyzer agent
+    - → Invoke failed-test-analyzer agent with TWO inputs:
+      1. Pre-parsed failures JSON (script output)
+      2. Project configuration JSON (from step 2 of skill workflow)
+    - → Receive structured analysis per agent's Output Format (see ../../agents/failed-test-analyzer.md)
     - → Resume workflow with agent analysis
 
 → If exit code ≠ 0 (error):

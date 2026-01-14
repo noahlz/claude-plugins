@@ -12,9 +12,12 @@ node "{{SKILL_BASE_DIR}}/scripts/parse-build-errors.js"
 → Check exit code:
 
 → If exit code = 0 (success):
-  - → Parse JSON output
+  - → Parse JSON output (pre-parsed errors structure)
   - → Extract `totalErrors` count
-  - → Pass script output to broken-build-analyzer agent
+  - → Invoke broken-build-analyzer agent with TWO inputs:
+    1. Pre-parsed errors JSON (script output)
+    2. Project configuration JSON (from step 2 of skill workflow)
+  - → Receive structured analysis per agent's Output Format (see ../../agents/broken-build-analyzer.md)
   - → Resume skill workflow with agent analysis
 
 → If exit code ≠ 0 (error):

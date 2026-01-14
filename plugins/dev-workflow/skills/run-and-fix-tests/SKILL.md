@@ -33,7 +33,7 @@ This skill streamlines executing and analyzing project test suites, preserving c
 When build or test failures occur:
   - Use `broken-build-analyzer` to analyze compilation errors
   - Use `failed-test-analyzer` to analyze test failures
-  - Pass the resulting agent analysis to Plan mode for the user to implement fixes
+  - Pass the agent's analysis to Plan mode
 
 ---
 
@@ -62,9 +62,8 @@ When build or test failures occur:
 - [ ] 3. Build Project (If Necessary)
 - [ ] 3a. Analyze Build Errors (If Necessary)
 - [ ] 4. Run tests
-- [ ] 5. Extract Test Failures
-- [ ] 6. Delegate to Failed Test Analyzer (If Necessary)
-- [ ] 7. Present Test Failure Analysis to User
+- [ ] 5. Analyze Test Failures
+- [ ] 6. Present Test Failure Analysis to User
 ```
 
 ## Workflow Rules & Guardrails
@@ -178,15 +177,16 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 
 DELEGATE_TO: `references/extract-build-errors.md`
 
-→ Use the `broken-build-analyzer` agent to analyze the root cause of the broken build and potential fixes. Provide the agent with the build log location and JSON build config data.  
-→ Receive from the agent its analysis with root causes and fix recommendations  
+→ The extract-build-errors reference will parse errors and invoke the broken-build-analyzer agent  
+→ Receive structured analysis from agent  
+→ Proceed to step 3b to with analysis  
 
 ## 3b. Fix Build Errors
 
 → Display agent analysis to user  
 → Ask user: "Enter plan mode to implement fixes?"  
-  - Yes → Use EnterPlanMode tool with analysis context
-  - No → Proceed to step 7 (Completion)  
+  - Yes → Use EnterPlanMode tool with analysis context  
+  - No → Exit workflow  
 
 ## 4. Run Tests
 
@@ -195,25 +195,23 @@ DELEGATE_TO: `references/extract-build-errors.md`
 DELEGATE_TO: `references/run-tests.md`
 
 → Follow test execution procedure  
-→ Return to step 5 if tests fail, step 7 (Completion) if tests pass  
+→ If tests pass: Exit workflow  
+→ If tests fail: Proceed to step 5  
 
-## 5. Extract Test Failures
+## 5. Analyze Test Failures
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
 DELEGATE_TO: `references/extract-test-failures.md`
 
-**Result handling:**
-→ Read output from the extract-test-failures proecedure.  
-→ If 0 failures detected: Display "All tests passed" and Exit Workflow  
-→ If 1+ failures detected: Display count and proceed to step 6  
+→ The extract-test-failures reference will parse failures and invoke the failed-test-analyzer agent (if failures found)  
+→ Receive structured analysis from agent  
 
-## 6. Use to Failed Test Analyzer Sub-Agent (If Necessary)
+**Result handling:**  
+→ If 0 failures: Display "All tests passed" and exit workflow  
+→ If 1+ failures: Proceed to step 6 with analysis results  
 
-→ Use the `failed-test-analyzer` agent to analyze the failed tests root causes and potential fixes. Provide the agent with test results location and JSON build config data.  
-→ Receive from the agent its analysis with root causes and fix recommendations  
-
-## 7. Present Test Failure Analysis to User
+## 6. Present Test Failure Analysis to User
 
 Using the analysis received from `failed-test-analyzer`:
 
@@ -222,5 +220,5 @@ Using the analysis received from `failed-test-analyzer`:
   - → Ask user: "Enter plan mode to implement fixes?"
     - Yes → Use EnterPlanMode tool with analysis context
     - No → Exit workflow
-→ If the analysis does not have propsed fixes → Exit workflow
+→ If the analysis does not have propsed fixes → Exit workflow  
 
