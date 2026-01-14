@@ -5,8 +5,10 @@ import { join } from 'node:path';
 import {
   setupTestEnv,
   teardownTestEnv,
+  setupGitRepo,
+  stageFile,
   execGit
-} from '../../lib/helpers.js';
+} from './helpers.js';
 import {
   execGit as prodExecGit,
   commit,
@@ -25,16 +27,7 @@ describe('git-operations: integration tests', () => {
 
   beforeEach(() => {
     testEnv = setupTestEnv();
-
-    // Initialize real git repo for testing
-    execGit(['init'], { cwd: testEnv.tmpDir });
-    execGit(['config', 'user.email', 'test@example.com'], { cwd: testEnv.tmpDir });
-    execGit(['config', 'user.name', 'Test User'], { cwd: testEnv.tmpDir });
-
-    // Create initial commit
-    writeFileSync(join(testEnv.tmpDir, 'initial.txt'), 'initial');
-    execGit(['add', 'initial.txt'], { cwd: testEnv.tmpDir });
-    execGit(['commit', '-m', 'initial commit'], { cwd: testEnv.tmpDir });
+    setupGitRepo(testEnv);
   });
 
   afterEach(() => {
@@ -71,9 +64,7 @@ describe('git-operations: integration tests', () => {
 
   describe("commit", () => {
     it('creates commit with message', () => {
-      // Stage a file
-      writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
-      execGit(['add', 'test.txt'], { cwd: testEnv.tmpDir });
+      stageFile(testEnv, 'test.txt');
 
       const result = commit('Add test file', { cwd: testEnv.tmpDir });
 
@@ -85,9 +76,7 @@ describe('git-operations: integration tests', () => {
     });
 
     it('handles multi-line messages with body', () => {
-      // Stage a file
-      writeFileSync(join(testEnv.tmpDir, 'feature.txt'), 'feature');
-      execGit(['add', 'feature.txt'], { cwd: testEnv.tmpDir });
+      stageFile(testEnv, 'feature.txt', 'feature');
 
       const multilineMessage = 'Add new feature\n\n- Implemented core functionality\n- Added unit tests\n- Updated documentation';
       const result = commit(multilineMessage, { cwd: testEnv.tmpDir });

@@ -1,20 +1,18 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { parseTestFailures } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/parse-test-failures.js';
-import { createMockFs, createMockGlobDeps } from './helpers.js';
+import {
+  createMockFs,
+  parseTestsWithMock,
+  parseTestsWithGlob,
+  assertParserResult,
+  assertFailureDetails,
+  assertGlobResult
+} from './helpers.js';
 
 describe('run-and-fix-tests: parse-test-failures.js', () => {
   describe('parsing', () => {
     it('parses test results and counts failures', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'test-results.tap',
-            errorPattern: '^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$'
-          }
-        }
-      };
-
       const resultsContent = `
 TAP version 13
 1..5
@@ -25,28 +23,20 @@ ok 4 - another passing test
 not ok 5 - final failing test
 `;
 
-      const mockFs = createMockFs(resultsContent);
-      const result = parseTestFailures(config, { deps: { fs: mockFs } });
+      const result = parseTestsWithMock({
+        resultsPath: 'test-results.tap',
+        errorPattern: '^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$'
+      }, resultsContent);
 
       assert.equal(result.mode, 'file', 'Should return file mode');
-      assert.equal(result.failures.length, 3, 'Should extract 3 failures');
-      assert.equal(result.totalFailures, 3, 'Should count 3 total failures');
-      assert.equal(result.truncated, false, 'Should not be truncated');
-
-      assert.equal(result.failures[0].test, 'should validate input', 'Should extract test name');
-      assert.match(result.failures[0].message, /not ok 2/, 'Should include full failure text');
+      assertParserResult(result, 3);
+      assertFailureDetails(result.failures[0], {
+        test: 'should validate input',
+        message: /not ok 2/
+      });
     });
 
     it('returns zero count when all tests pass', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'test-results.tap',
-            errorPattern: '^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$'
-          }
-        }
-      };
-
       const resultsContent = `
 TAP version 13
 1..3
@@ -55,100 +45,71 @@ ok 2 - test two
 ok 3 - test three
 `;
 
-      const mockFs = createMockFs(resultsContent);
-      const result = parseTestFailures(config, { deps: { fs: mockFs } });
+      const result = parseTestsWithMock({
+        errorPattern: '^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$'
+      }, resultsContent);
 
       assert.equal(result.mode, 'file', 'Should return file mode');
-      assert.equal(result.failures.length, 0, 'Should return empty array');
-      assert.equal(result.totalFailures, 0, 'Should count 0 failures');
-      assert.equal(result.truncated, false, 'Should not be truncated');
+      assertParserResult(result, 0);
     });
   });
 
   describe('failure details extraction', () => {
     it('extracts failure details (test name, message) with named groups', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'results.tap',
-            errorPattern: '^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$'
-          }
-        }
-      };
-
       const resultsContent = 'not ok 1 - user authentication should work';
 
-      const mockFs = createMockFs(resultsContent);
-      const result = parseTestFailures(config, { deps: { fs: mockFs } });
+      const result = parseTestsWithMock({
+        errorPattern: '^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$'
+      }, resultsContent);
 
-      assert.equal(result.failures.length, 1, 'Should extract 1 failure');
-      assert.equal(result.failures[0].test, 'user authentication should work', 'Should extract test name from named group');
-      assert.match(result.failures[0].message, /not ok 1/, 'Should have full message');
+      assertParserResult(result, 1);
+      assertFailureDetails(result.failures[0], {
+        test: 'user authentication should work',
+        message: /not ok 1/
+      });
     });
 
     it('returns raw message when no named groups present', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'results.log',
-            errorPattern: 'FAILED:.*'
-          }
-        }
-      };
-
       const resultsContent = 'FAILED: Connection timeout error';
 
-      const mockFs = createMockFs(resultsContent);
-      const result = parseTestFailures(config, { deps: { fs: mockFs } });
+      const result = parseTestsWithMock({
+        errorPattern: 'FAILED:.*'
+      }, resultsContent);
 
-      assert.equal(result.failures.length, 1, 'Should extract 1 failure');
-      assert.equal(result.failures[0].message, 'FAILED: Connection timeout error', 'Should have raw message');
-      assert.equal(result.failures[0].test, undefined, 'Should not have test name without named group');
+      assertParserResult(result, 1);
+      assertFailureDetails(result.failures[0], {
+        message: 'FAILED: Connection timeout error',
+        test: undefined
+      });
     });
 
     it('extracts multiple named groups', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'results.log',
-            errorPattern: '(?<testClass>[\\w.]+)::(?<testName>\\w+)\\s+FAILED:\\s+(?<message>.+)'
-          }
-        }
-      };
-
       const resultsContent = 'com.example.AuthTest::testLogin FAILED: Expected 200 but got 401';
 
-      const mockFs = createMockFs(resultsContent);
-      const result = parseTestFailures(config, { deps: { fs: mockFs } });
+      const result = parseTestsWithMock({
+        errorPattern: '(?<testClass>[\\w.]+)::(?<testName>\\w+)\\s+FAILED:\\s+(?<message>.+)'
+      }, resultsContent);
 
-      assert.equal(result.failures.length, 1, 'Should extract 1 failure');
-      assert.equal(result.failures[0].testClass, 'com.example.AuthTest', 'Should extract test class');
-      assert.equal(result.failures[0].test, 'testLogin', 'Should extract test name');
-      assert.equal(result.failures[0].message, 'Expected 200 but got 401', 'Should extract custom message');
+      assertParserResult(result, 1);
+      assertFailureDetails(result.failures[0], {
+        testClass: 'com.example.AuthTest',
+        test: 'testLogin',
+        message: 'Expected 200 but got 401'
+      });
     });
   });
 
   describe('truncation', () => {
     it('limits to 30 failures and sets truncated flag', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'test-results.tap',
-            errorPattern: '^not ok\\s+\\d+\\s+-\\s+(?<testName>test.+)$'
-          }
-        }
-      };
-
       // Generate 40 failures
       const failures = Array.from({ length: 40 }, (_, i) => `not ok ${i + 1} - test${i + 1}`);
       const resultsContent = failures.join('\n');
 
-      const mockFs = createMockFs(resultsContent);
-      const result = parseTestFailures(config, { deps: { fs: mockFs } });
+      const result = parseTestsWithMock({
+        errorPattern: '^not ok\\s+\\d+\\s+-\\s+(?<testName>test.+)$'
+      }, resultsContent);
 
-      assert.equal(result.failures.length, 30, 'Should limit to 30 failures');
-      assert.equal(result.totalFailures, 40, 'Should count all 40 failures');
-      assert.equal(result.truncated, true, 'Should set truncated flag when > 30 failures');
+      assertParserResult(result, 30, { total: 40, truncated: true });
     });
   });
 
@@ -246,73 +207,50 @@ ok 3 - test three
 
   describe('glob mode', () => {
     it('detects glob pattern and returns filenames with failure counts', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'target/surefire-reports/TEST-*.xml',
-            errorPattern: '<failure'
-          }
-        }
-      };
-
       const files = {
         'TEST-com.example.FooTest.xml': '<testcase><failure>Error 1</failure></testcase><testcase><failure>Error 2</failure></testcase>',
         'TEST-com.example.BarTest.xml': '<testcase><failure>Error 3</failure></testcase>',
         'TEST-com.example.PassingTest.xml': '<testcase>All passed</testcase>'
       };
 
-      const mockDeps = createMockGlobDeps(files);
-      const result = parseTestFailures(config, { deps: mockDeps });
+      const result = parseTestsWithGlob({
+        resultsPath: 'target/surefire-reports/TEST-*.xml',
+        errorPattern: '<failure'
+      }, files);
 
-      assert.equal(result.mode, 'glob', 'Should return glob mode');
-      assert.equal(result.failures.length, 2, 'Should return 2 files with failures');
-      assert.equal(result.totalFailures, 3, 'Should count 3 total failures');
-      assert.equal(result.truncated, false, 'Should not be truncated');
-
-      assert.equal(result.failures[0].file, 'TEST-com.example.FooTest.xml', 'Should have filename');
-      assert.equal(result.failures[0].count, 2, 'Should count failures in file');
-      assert.equal(result.failures[1].file, 'TEST-com.example.BarTest.xml', 'Should have filename');
-      assert.equal(result.failures[1].count, 1, 'Should count failures in file');
+      assertGlobResult(result, 2, 3);
+      assertFailureDetails(result.failures[0], {
+        file: 'TEST-com.example.FooTest.xml',
+        count: 2
+      });
+      assertFailureDetails(result.failures[1], {
+        file: 'TEST-com.example.BarTest.xml',
+        count: 1
+      });
     });
 
     it('returns empty array when no files match glob', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'target/surefire-reports/TEST-*.xml',
-            errorPattern: '<failure'
-          }
-        }
-      };
-
-      const mockDeps = createMockGlobDeps({});
-      const result = parseTestFailures(config, { deps: mockDeps });
+      const result = parseTestsWithGlob({
+        resultsPath: 'target/surefire-reports/TEST-*.xml',
+        errorPattern: '<failure'
+      }, {});
 
       assert.equal(result.mode, 'glob', 'Should return glob mode');
-      assert.equal(result.failures.length, 0, 'Should return empty array');
-      assert.equal(result.totalFailures, 0, 'Should count 0 failures');
+      assertParserResult(result, 0);
     });
 
     it('returns empty array when files match but no failures found', () => {
-      const config = {
-        test: {
-          all: {
-            resultsPath: 'target/surefire-reports/TEST-*.xml',
-            errorPattern: '<failure'
-          }
-        }
-      };
-
       const files = {
         'TEST-com.example.PassingTest.xml': '<testcase>All passed</testcase>'
       };
 
-      const mockDeps = createMockGlobDeps(files);
-      const result = parseTestFailures(config, { deps: mockDeps });
+      const result = parseTestsWithGlob({
+        resultsPath: 'target/surefire-reports/TEST-*.xml',
+        errorPattern: '<failure'
+      }, files);
 
       assert.equal(result.mode, 'glob', 'Should return glob mode');
-      assert.equal(result.failures.length, 0, 'Should return empty array');
-      assert.equal(result.totalFailures, 0, 'Should count 0 failures');
+      assertParserResult(result, 0);
     });
   });
 });

@@ -3,7 +3,10 @@ import { strict as assert } from 'node:assert';
 import {
   setupPluginTestEnv,
   teardownTestEnv,
-  loadConfigFixture
+  loadConfigFixture,
+  loadAndAssertConfig,
+  assertNoConfigErrors,
+  assertConfigError
 } from './helpers.js';
 import { loadConfig, resolveConfig } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/load-config.js';
 
@@ -21,20 +24,20 @@ describe('run-and-fix-tests: load-config.js', () => {
   describe('loadConfig', () => {
     describe('basic loading', () => {
       it('loads single-build npm config', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json');
+        const result = loadAndAssertConfig(
+          testEnv,
+          'configs/single-build-npm.json',
+          null,
+          assertNoConfigErrors
+        );
 
-        const result = loadConfig({ baseDir: testEnv.tmpDir });
-
-        assert.equal(result.errors.length, 0, 'Should have no errors');
-        assert.ok(result.resolved, 'Should load config');
         assert.equal(result.resolved.build.command, 'npm run build', 'Should set build command');
       });
 
       it('errors when config file missing', () => {
         const result = loadConfig({ baseDir: testEnv.tmpDir });
 
-        assert.ok(result.errors.length > 0, 'Should error when config missing');
-        assert.match(result.errors[0], /No project configuration/, 'Error should mention missing config');
+        assertConfigError(result, /No project configuration/);
       });
     });
 
@@ -75,55 +78,63 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     describe('skipBuild behavior', () => {
       it('auto-detects skip when build command equals test command', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
-          // Make build and test commands identical (like test-only projects)
-          config.build.command = 'npm test';
-          config.test.all.command = 'npm test';
-          return config;
-        });
+        const result = loadAndAssertConfig(
+          testEnv,
+          'configs/single-build-npm.json',
+          (config) => {
+            // Make build and test commands identical (like test-only projects)
+            config.build.command = 'npm test';
+            config.test.all.command = 'npm test';
+            return config;
+          },
+          assertNoConfigErrors
+        );
 
-        const result = loadConfig({ baseDir: testEnv.tmpDir });
-
-        assert.equal(result.errors.length, 0, 'Should have no errors');
         assert.equal(result.resolved.skipBuild, true, 'Should auto-detect skipBuild=true when commands match');
       });
 
       it('respects explicit skipBuild=true flag', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
-          config.skipBuild = true;
-          // Can omit build array when skipBuild is true
-          config.build = null;
-          return config;
-        });
+        const result = loadAndAssertConfig(
+          testEnv,
+          'configs/single-build-npm.json',
+          (config) => {
+            config.skipBuild = true;
+            // Can omit build array when skipBuild is true
+            config.build = null;
+            return config;
+          },
+          assertNoConfigErrors
+        );
 
-        const result = loadConfig({ baseDir: testEnv.tmpDir });
-
-        assert.equal(result.errors.length, 0, 'Should allow null build when skipBuild=true');
         assert.equal(result.resolved.skipBuild, true, 'Should respect explicit skipBuild=true');
       });
 
       it('respects explicit skipBuild=false flag (no auto-skip)', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
-          // Set skipBuild explicitly to false to override auto-detection
-          config.skipBuild = false;
-          // Commands are still identical, but should not skip
-          config.build.command = 'npm test';
-          config.test.all.command = 'npm test';
-          return config;
-        });
+        const result = loadAndAssertConfig(
+          testEnv,
+          'configs/single-build-npm.json',
+          (config) => {
+            // Set skipBuild explicitly to false to override auto-detection
+            config.skipBuild = false;
+            // Commands are still identical, but should not skip
+            config.build.command = 'npm test';
+            config.test.all.command = 'npm test';
+            return config;
+          },
+          assertNoConfigErrors
+        );
 
-        const result = loadConfig({ baseDir: testEnv.tmpDir });
-
-        assert.equal(result.errors.length, 0, 'Should have no errors');
         assert.equal(result.resolved.skipBuild, false, 'Should respect explicit skipBuild=false');
       });
 
       it('sets skipBuild=false by default for single-build with different commands', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json');
+        const result = loadAndAssertConfig(
+          testEnv,
+          'configs/single-build-npm.json',
+          null,
+          assertNoConfigErrors
+        );
 
-        const result = loadConfig({ baseDir: testEnv.tmpDir });
-
-        assert.equal(result.errors.length, 0, 'Should have no errors');
         assert.equal(result.resolved.skipBuild, false, 'Should default to false when commands differ');
       });
     });
@@ -131,11 +142,9 @@ describe('run-and-fix-tests: load-config.js', () => {
     describe('validation', () => {
       it('validates required fields', () => {
         loadConfigFixture(testEnv, 'dev-workflow', 'configs/invalid-missing-logfile.json');
-
         const result = loadConfig({ baseDir: testEnv.tmpDir });
 
-        assert.ok(result.errors.length > 0, 'Should report validation errors');
-        assert.match(result.errors[0], /resultsPath|logFile/, 'Should mention missing resultsPath');
+        assertConfigError(result, /resultsPath|logFile/);
       });
     });
   });

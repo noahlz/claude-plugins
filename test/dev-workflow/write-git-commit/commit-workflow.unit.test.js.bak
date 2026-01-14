@@ -43,6 +43,7 @@ describe('commit-workflow.js unit tests', () => {
       const content = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       assert.equal(content.sessionId, 'test-123');
 
+      cleanup();
     });
 
     it('fails when sessionId is missing', async () => {
@@ -51,6 +52,7 @@ describe('commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'error');
       assert.match(result.message, /sessionId parameter required/);
 
+      cleanup();
     });
 
     it('creates .claude directory if missing', async () => {
@@ -64,6 +66,7 @@ describe('commit-workflow.js unit tests', () => {
       const configPath = path.join(claudeDir, 'settings.plugins.write-git-commit.json');
       assert.ok(fs.existsSync(configPath));
 
+      cleanup();
     });
 
     it ('saveConfig handles write errors gracefully', async () => {
@@ -72,30 +75,33 @@ describe('commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'error');
       assert.match(result.message, /Failed to save config/);
 
+      cleanup();
     });
   });
 
   describe("prepare command", () => {
     it('succeeds with valid sessionId and ccusage match', async () => {
-      const testCcusage = createMockCcusage({
+      // Create test-specific mocks - only override what this test uses
+      const testCcusage = {
+        ...mockCcusage,
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
         getSessionCosts: async () => ({
           success: true,
-          costs: createValidCosts()
+          costs: [{ model: 'claude-opus', cost: 0.015 }]
         }),
         validateCostMetrics: () => true
-      });
+      };
 
       const result = await prepare({
         baseDir: '.',
         deps: { ccusage: testCcusage }
       });
 
-      assertResultStatus(result, 'success', {
-        dataChecks: { session_id: 'abc123' }
-      });
+      assert.equal(result.status, 'success');
+      assert.equal(result.data.session_id, 'abc123');
       assert.ok(result.data.current_cost);
 
+      cleanup();
     });
 
     it('returns not_found when no session matches', async () => {
@@ -115,6 +121,7 @@ describe('commit-workflow.js unit tests', () => {
       assert.ok(result.data.calculated_session_id);
       assert.match(result.message, /Session not found/);
 
+      cleanup();
     });
 
     it('returns error when ccusage.getSessionCosts fails', async () => {
@@ -135,6 +142,7 @@ describe('commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'error');
       assert.equal(result.message, 'API error');
 
+      cleanup();
     });
 
     it('handles unexpected errors in catch block', async () => {
@@ -154,6 +162,7 @@ describe('commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'error');
       assert.match(result.message, /Unexpected error/);
 
+      cleanup();
     });
 
     it('returns invalid_costs when validation fails', async () => {
@@ -178,6 +187,7 @@ describe('commit-workflow.js unit tests', () => {
       assert.ok(result.data.costs);
       assert.match(result.message, /validation failed/);
 
+      cleanup();
     });
 
     it('returns invalid_costs when costs array is empty', async () => {
@@ -199,6 +209,7 @@ describe('commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'invalid_costs');
       assert.match(result.message, /validation failed/);
 
+      cleanup();
     });
   });
 
@@ -220,6 +231,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Missing commit subject/);
 
+        cleanup();
       });
 
       it('fails when sessionId is missing', async () => {
@@ -237,6 +249,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Session ID not provided/);
 
+        cleanup();
       });
 
       it('fails when costs is missing', async () => {
@@ -254,6 +267,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Cost metrics not provided/);
 
+        cleanup();
       });
 
       it('handles invalid JSON in costs string', async () => {
@@ -272,6 +286,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Invalid JSON in --costs argument/);
 
+        cleanup();
       });
 
       it('validates metrics before committing', async () => {
@@ -289,6 +304,7 @@ describe('commit-workflow.js unit tests', () => {
 
         assert.equal(result.status, 'metrics_invalid');
 
+        cleanup();
       });
     });
 
@@ -317,6 +333,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'success');
         assert.equal(result.data.commit_sha, 'abc123def456');
 
+        cleanup();
       });
 
       it('returns git_error when git.commit fails', async () => {
@@ -343,6 +360,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'git_error');
         assert.ok(result.data.error_message);
 
+        cleanup();
       });
 
       it('returns git_error when getHeadSha returns null', async () => {
@@ -367,6 +385,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'git_error');
         assert.match(result.message, /Failed to retrieve commit SHA/);
 
+        cleanup();
       });
 
       it('returns git_error when changes still staged', async () => {
@@ -396,6 +415,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'git_error');
         assert.match(result.message, /changes still staged/);
 
+        cleanup();
       });
 
       it('handles unexpected error in catch block', async () => {
@@ -421,6 +441,7 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Unexpected/);
 
+        cleanup();
       });
     });
   });
