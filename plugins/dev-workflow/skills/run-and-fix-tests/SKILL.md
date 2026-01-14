@@ -84,9 +84,12 @@ When build or test failures occur:
 ### B. Delegation Protocol
 
 When you see `DELEGATE_TO: [file]`:
-1. ALWAYS read the ENTIRE referenced file
-2. Execute its instructions EXACTLY
-3. After completing the file instructions, return to the main workflow and continue
+⛔ **STOP** - Do NOT proceed until you read the file
+→ Use Read tool on the referenced file path
+→ Execute its instructions exactly (bash commands, parsing, etc.)
+→ Return to SKILL.md only after completing reference file instructions
+
+⚠️ Reference files contain the ACTUAL bash commands. Never improvise or guess commands.
 
 ### C. Narration Control ("Silence is Golden")
 
@@ -118,6 +121,7 @@ Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute s
 **MANDATORY:** This skill depends on resolving the skill install directory - follow these steps exactly:
 
 DELEGATE_TO: `../../references/skill_base_dir.md`
+⛔ READ FILE FIRST - contains validation instructions
 
 → Extract and validate SKILL_BASE_DIR value from skill startup message.  
 → Store SKILL_BASE_DIR for use in all subsequent bash commands.  
@@ -173,15 +177,17 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 → Display: "Build step skipped (build command identical to test command)"  
 → Proceed directly to step 4 (Run Tests)  
 
-**If `config.skipBuild` is false:**  
+**If `config.skipBuild` is false:**
 - **STEP_DESCRIPTION**: "Building project"
-- → Execute Build instructions from `references/run-build.md`
+- DELEGATE_TO: `references/run-build.md`
+- ⛔ READ FILE FIRST - contains the actual build commands
 
 ## 3a. Analyze Build Errors with Sub-Agent
 
 **STEP_DESCRIPTION**: "Analyzing build errors"
 
 DELEGATE_TO: `references/extract-build-errors.md`
+⛔ READ FILE FIRST - contains error extraction and agent invocation
 
 → The extract-build-errors reference will parse errors and invoke the broken-build-analyzer agent  
 → Receive structured analysis from agent  
@@ -199,6 +205,7 @@ DELEGATE_TO: `references/extract-build-errors.md`
 **STEP_DESCRIPTION**: "Running tests"
 
 DELEGATE_TO: `references/run-tests.md`
+⛔ READ FILE FIRST - contains the actual test commands
 
 → Follow test execution procedure  
 → If tests pass: Exit workflow  
@@ -209,6 +216,7 @@ DELEGATE_TO: `references/run-tests.md`
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
 DELEGATE_TO: `references/extract-test-failures.md`
+⛔ READ FILE FIRST - contains failure extraction and agent invocation
 
 → The extract-test-failures reference will parse failures and invoke the failed-test-analyzer agent (if failures found)  
 → Receive structured analysis from agent  

@@ -22,7 +22,7 @@ Activate when the user explicitly requests a git commit using phrases like:
 **IMPORTANT RULES:**
 - **DO NOT** use this skill autonomously - only activate it when *explicitly* requested or invoked by the user.
 - **DO NOT** create a git commit without *first* displaying it to the user and obtaining approval using AskUserQuestion
-- **DO NOT** create a git commit without the Claude-Cost-Metrics a trailer that has *REAL* JSON-formatted cost data obtained the `ccusage-operations.js` script
+- **DO NOT** create a git commit without the Claude-Cost-Metrics trailer containing *REAL* JSON cost data (obtained via workflow scripts in reference files)
 - **ALWAYS** follow the workflow and instructions EXACTLY as written in following sections.
 
 ---
@@ -72,12 +72,13 @@ Execute this skill following this EXACT workflow (details in following sections)
 
 ### A. Delegation Protocol
 
-When you see `DELEGATE_TO: [file]`:  
-→ Read the referenced file.  
-→ Execute its instructions exactly.  
-→ Return to continue with navigation logic in this file.  
+When you see `DELEGATE_TO: [file]`:
+⛔ **STOP** - Do NOT proceed until you read the file
+→ Use Read tool on the referenced file path
+→ Execute its instructions exactly (bash commands, parsing, etc.)
+→ Return to SKILL.md only after completing reference file instructions
 
-Reference files contain detailed requirements. ALWAYS read them when cited.
+⚠️ Reference files contain the ACTUAL bash commands. Never improvise or guess commands.
 
 ### B. Narration Control
 
@@ -165,6 +166,7 @@ Use the output of this command to generate the proposed commit message, per step
 ## 3. Generate Commit Message
 
 DELEGATE_TO: `references/message_guidelines.md`
+⛔ READ FILE FIRST - do not improvise
 
 → Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.  
 → Proceed to Step 4.  
@@ -174,6 +176,7 @@ DELEGATE_TO: `references/message_guidelines.md`
 BLOCKING: This step MUST complete with user approval before Step 5.
 
 DELEGATE_TO: `references/message_approval.md`
+⛔ READ FILE FIRST - do not improvise
 
 → Extract APPROVAL_STATUS and updated COMMIT_SUBJECT, and COMMIT_BODY per reference file instructions.  
 
@@ -185,6 +188,7 @@ DELEGATE_TO: `references/message_approval.md`
 **STEP_DESCRIPTION**: "Fetching session cost metrics"
 
 DELEGATE_TO: `references/fetch_cost.md`
+⛔ READ FILE FIRST - contains the actual bash command to run
 
 → Extract FETCH_STATUS per reference file instructions.
 
@@ -210,6 +214,7 @@ DELEGATE_TO: `references/fetch_cost.md`
 **MANDATORY: DO NOT use a direct `git commit` command here.**
 
 DELEGATE_TO: `references/create_commit.md`
+⛔ READ FILE FIRST - contains the actual bash command to run
 
 → Extract STATUS per reference file instructions.
 
