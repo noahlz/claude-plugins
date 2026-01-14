@@ -1,24 +1,136 @@
 #!/usr/bin/env node
 
 import fs from 'fs';
-import readline from 'readline';
+import { globSync } from 'fs';
+import path from 'path';
 
 /**
- * Read input from stdin
- * @returns {Promise<string>} - Input string
+ * Read config file from standard location
+ * @returns {object} - Config object
  */
-async function readStdin() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-  });
+function readConfigFile() {
+  const configPath = path.join(process.cwd(), '.claude', 'settings.plugins.run-and-fix-tests.json');
 
-  let input = '';
-  for await (const line of rl) {
-    input += line + '\n';
+  try {
+    const configData = fs.readFileSync(configPath, 'utf8');
+    return JSON.parse(configData);
+  } catch (err) {
+    throw new Error(`Failed to read config file at ${configPath}: ${err.message}`);
   }
-  return input.trim();
+}
+
+/**
+ * Check if path contains glob patterns
+ * @param {string} resultsPath - Path to check
+ * @returns {boolean} - True if path contains glob characters
+ */
+function hasGlobPattern(resultsPath) {
+  return /[*?[\]]/.test(resultsPath);
+}
+
+/**
+ * Parse test failures from multiple files matching glob pattern
+ * @param {string} resultsPath - Glob pattern
+ * @param {string} errorPattern - Pattern to search for in files
+ * @param {object} deps - Dependencies { fs, path, globSync }
+ * @returns {object} - { mode, failures, totalFailures, truncated }
+ */
+function parseGlobResults(resultsPath, errorPattern, deps = {}) {
+  const fsModule = deps.fs || fs;
+  const pathModule = deps.path || path;
+  const globFn = deps.globSync || globSync;
+
+  // Find files matching glob pattern
+  const files = globFn(resultsPath);
+
+  if (files.length === 0) {
+    return {
+      mode: 'glob',
+      failures: [],
+      totalFailures: 0,
+      truncated: false
+    };
+  }
+
+  // Compile regex for presence check
+  let regex;
+  try {
+    regex = new RegExp(errorPattern, 'gm');
+  } catch (err) {
+    throw new Error(`Invalid regex pattern "${errorPattern}": ${err.message}`);
+  }
+
+  // Check each file for failures
+  const fileFailures = [];
+  const MAX_FAILURES = 30;
+
+  for (const filePath of files) {
+    const content = fsModule.readFileSync(filePath, 'utf8');
+
+    // Reset regex state
+    regex.lastIndex = 0;
+
+    // Count matches in this file
+    let count = 0;
+    while (regex.exec(content) !== null) {
+      count++;
+    }
+
+    if (count > 0) {
+      fileFailures.push({
+        file: pathModule.basename(filePath),
+        count
+      });
+    }
+
+    // Stop if we've hit the limit
+    if (fileFailures.length >= MAX_FAILURES) {
+      break;
+    }
+  }
+
+  const totalFailures = fileFailures.reduce((sum, f) => sum + f.count, 0);
+  const truncated = fileFailures.length >= MAX_FAILURES && files.length > fileFailures.length;
+
+  return {
+    mode: 'glob',
+    failures: fileFailures.slice(0, MAX_FAILURES),
+    totalFailures,
+    truncated
+  };
+}
+
+/**
+ * Build failure object from regex match
+ * @param {RegExpMatchArray} match - Regex match object
+ * @returns {object} - Failure object with extracted fields
+ */
+function buildFailureObject(match) {
+  const groups = match.groups || {};
+  const fullMatch = match[0].trim();
+
+  const failure = {
+    message: fullMatch  // Default to full matched text
+  };
+
+  // Extract named groups if present
+  if (groups.testName) {
+    failure.test = groups.testName.trim();
+  }
+  if (groups.testClass) {
+    failure.testClass = groups.testClass.trim();
+  }
+  if (groups.message) {
+    failure.message = groups.message.trim();
+  }
+  if (groups.file) {
+    failure.file = groups.file.trim();
+  }
+  if (groups.line) {
+    failure.line = parseInt(groups.line, 10);
+  }
+
+  return failure;
 }
 
 /**
@@ -47,7 +159,12 @@ export function parseTestFailures(config, options = {}) {
     throw new Error('test.all.errorPattern is required');
   }
 
-  // Read results file
+  // Check if resultsPath contains glob pattern
+  if (hasGlobPattern(resultsPath)) {
+    return parseGlobResults(resultsPath, errorPattern, deps);
+  }
+
+  // File mode: Read results file
   let resultsContent;
   try {
     resultsContent = fsModule.readFileSync(resultsPath, 'utf8');
@@ -67,7 +184,7 @@ export function parseTestFailures(config, options = {}) {
   const matches = [];
   let match;
   while ((match = regex.exec(resultsContent)) !== null) {
-    matches.push(match[0]);
+    matches.push(match);
   }
 
   // Limit to 30 failures
@@ -77,26 +194,10 @@ export function parseTestFailures(config, options = {}) {
   const limitedMatches = matches.slice(0, MAX_FAILURES);
 
   // Parse failure details from matches
-  const failures = limitedMatches.map(failureText => {
-    // Try to extract test name and message
-    // Common TAP pattern: "not ok 1 - test name"
-    const tapPattern = /^not ok\s+\d+\s+-\s+(.+)$/;
-    const tapMatch = failureText.match(tapPattern);
-
-    if (tapMatch) {
-      return {
-        test: tapMatch[1].trim(),
-        message: failureText.trim()
-      };
-    }
-
-    // Fallback: return raw failure text
-    return {
-      message: failureText.trim()
-    };
-  });
+  const failures = limitedMatches.map(match => buildFailureObject(match));
 
   return {
+    mode: 'file',
     failures,
     totalFailures,
     truncated
@@ -106,11 +207,10 @@ export function parseTestFailures(config, options = {}) {
 /**
  * Main entry point
  */
-async function main() {
+function main() {
   try {
-    // Read config from stdin
-    const input = await readStdin();
-    const config = JSON.parse(input);
+    // Read config from file
+    const config = readConfigFile();
 
     // Parse test failures
     const result = parseTestFailures(config);

@@ -20,14 +20,14 @@
   "test": {
     "all": {
       "command": "./gradlew test --quiet",
-      "resultsPath": "{outDir}/test-results",
-      "errorPattern": "FAILED|FAILURE",
+      "resultsPath": "{outDir}/test-results/test/TEST-*.xml",
+      "errorPattern": "<failure",
       "nativeOutputSupport": false
     },
     "single": {
       "command": "./gradlew test --tests {testFile} --quiet",
-      "resultsPath": "{outDir}/test-results",
-      "errorPattern": "FAILED|FAILURE",
+      "resultsPath": "{outDir}/test-results/test/TEST-*.xml",
+      "errorPattern": "<failure",
       "nativeOutputSupport": false
     }
   }

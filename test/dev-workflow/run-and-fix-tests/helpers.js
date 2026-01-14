@@ -78,6 +78,49 @@ export function createMockFs(content) {
 }
 
 /**
+ * Create mock dependencies for glob mode testing
+ * @param {Object<string, string>} files - Map of filename to content
+ * @returns {Object} Mock deps object { fs, path, globSync }
+ */
+export function createMockGlobDeps(files) {
+  const filenames = Object.keys(files);
+
+  return {
+    fs: {
+      readFileSync: (path) => {
+        // Extract filename from path
+        const filename = path.split('/').pop();
+        if (files[filename] !== undefined) {
+          return files[filename];
+        }
+        throw new Error(`ENOENT: no such file: ${path}`);
+      }
+    },
+    path: {
+      basename: (path) => path.split('/').pop()
+    },
+    globSync: (pattern) => {
+      // Extract directory and filename pattern from full path
+      const parts = pattern.split('/');
+      const filenamePattern = parts[parts.length - 1];
+      const dirPath = parts.slice(0, -1).join('/');
+
+      // Convert glob pattern to regex
+      const regexPattern = filenamePattern
+        .replace(/\./g, '\\.')
+        .replace(/\*/g, '.*')
+        .replace(/\?/g, '.');
+      const regex = new RegExp(`^${regexPattern}$`);
+
+      // Return full paths for matching filenames
+      return filenames
+        .filter(name => regex.test(name))
+        .map(name => `${dirPath}/${name}`);
+    }
+  };
+}
+
+/**
  * Create a tool config object for testing
  * @param {string} toolName - Tool name (e.g., 'npm', 'maven', 'go')
  * @param {Object} overrides - Optional overrides for config properties

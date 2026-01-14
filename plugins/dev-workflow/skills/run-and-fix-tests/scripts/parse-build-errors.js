@@ -1,24 +1,21 @@
 #!/usr/bin/env node
 
 import fs from 'fs';
-import readline from 'readline';
+import path from 'path';
 
 /**
- * Read input from stdin
- * @returns {Promise<string>} - Input string
+ * Read config file from standard location
+ * @returns {object} - Config object
  */
-async function readStdin() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-  });
+function readConfigFile() {
+  const configPath = path.join(process.cwd(), '.claude', 'settings.plugins.run-and-fix-tests.json');
 
-  let input = '';
-  for await (const line of rl) {
-    input += line + '\n';
+  try {
+    const configData = fs.readFileSync(configPath, 'utf8');
+    return JSON.parse(configData);
+  } catch (err) {
+    throw new Error(`Failed to read config file at ${configPath}: ${err.message}`);
   }
-  return input.trim();
 }
 
 /**
@@ -108,11 +105,10 @@ export function parseBuildErrors(config, options = {}) {
 /**
  * Main entry point
  */
-async function main() {
+function main() {
   try {
-    // Read config from stdin
-    const input = await readStdin();
-    const config = JSON.parse(input);
+    // Read config from file
+    const config = readConfigFile();
 
     // Parse build errors
     const result = parseBuildErrors(config);

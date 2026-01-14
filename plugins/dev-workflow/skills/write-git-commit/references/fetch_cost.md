@@ -18,6 +18,8 @@ if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
   echo "!!! Installing ccusage:"
   cd  "{{SKILL_BASE_DIR}}/../.."
   npm install
+else 
+  echo "✓ ccusage available"
 fi
 ```
 

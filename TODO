@@ -1,2 +1,1 @@
-- run-and-fix-tests test failure parsing should support both maven (surfire) and npm (tap)
 - Improve test line coverage > 90%

@@ -13,13 +13,13 @@
     "all": {
       "command": "go test ./...",
       "resultsPath": "{outDir}/test-results.txt",
-      "errorPattern": "(FAIL|RUN|--- FAIL|panic)",
+      "errorPattern": "--- FAIL:\\s+(?<testName>\\S+)",
       "nativeOutputSupport": false
     },
     "single": {
       "command": "go test -run {testFile} ./...",
       "resultsPath": "{outDir}/test-single-results.txt",
-      "errorPattern": "(FAIL|RUN|--- FAIL|panic)",
+      "errorPattern": "--- FAIL:\\s+(?<testName>\\S+)",
       "nativeOutputSupport": false
     }
   }

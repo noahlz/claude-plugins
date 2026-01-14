@@ -13,13 +13,13 @@
     "all": {
       "command": "cargo test",
       "resultsPath": "{outDir}/rust-test.txt",
-      "errorPattern": "test result:|failures:|FAILED",
+      "errorPattern": "test (?<testName>\\S+) \\.\\.\\.\\s+FAILED",
       "nativeOutputSupport": false
     },
     "single": {
       "command": "cargo test {testFile}",
       "resultsPath": "{outDir}/rust-test-single.txt",
-      "errorPattern": "test result:|failures:|FAILED",
+      "errorPattern": "test (?<testName>\\S+) \\.\\.\\.\\s+FAILED",
       "nativeOutputSupport": false
     }
   }

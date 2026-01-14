@@ -13,13 +13,13 @@
     "all": {
       "command": "npm test",
       "resultsPath": "{outDir}/test-results.tap",
-      "errorPattern": "(not ok|Bail out!)",
+      "errorPattern": "^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$",
       "nativeOutputSupport": false
     },
     "single": {
       "command": "npm test -- {testFile}",
       "resultsPath": "{outDir}/test-single-results.tap",
-      "errorPattern": "(not ok|Bail out!)",
+      "errorPattern": "^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$",
       "nativeOutputSupport": false
     }
   }

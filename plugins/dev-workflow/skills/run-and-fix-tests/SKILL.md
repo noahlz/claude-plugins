@@ -30,7 +30,7 @@ This skill streamlines executing and analyzing project test suites, preserving c
 - Resolves project build/test commands from configuration: `.claude/settings.plugins.run-and-fix-tests.json`
 - Minimizes token usage by redirecting build/test output to files
 
-When build or test failures occur, you:
+When build or test failures occur:
   - Use `broken-build-analyzer` to analyze compilation errors
   - Use `failed-test-analyzer` to analyze test failures
   - Pass the resulting agent analysis to Plan mode for the user to implement fixes
@@ -42,7 +42,8 @@ When build or test failures occur, you:
 ## Reference Files 
 
 **References:**
-- [`build-procedures.md`](./references/build-procedures.md) - Error extraction procedures
+- [`extract-build-errors.md`](./references/extract-build-errors.md) - Build error extraction
+- [`extract-test-failures.md`](./references/extract-test-failures.md) - Test failure extraction
 - [`run-build.md`](./references/run-build.md) - Build execution and failure handling
 - [`run-tests.md`](./references/run-tests.md) - Test execution
 - [`setup-config.md`](./references/setup-config.md) - Build tool detection / configuration
@@ -167,7 +168,7 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 → Display: "Build step skipped (build command identical to test command)"  
 → Proceed directly to step 4 (Run Tests)  
 
-**If `config.skipBuild` is false:**
+**If `config.skipBuild` is false:**  
 - **STEP_DESCRIPTION**: "Building project"
 - → Execute Build instructions from `references/run-build.md`
 
@@ -175,7 +176,8 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 
 **STEP_DESCRIPTION**: "Analyzing build errors"
 
-→ Extract build errors (see `./references/build-procedures.md` - EXTRACT_BUILD_ERRORS)  
+DELEGATE_TO: `references/extract-build-errors.md`
+
 → Use the `broken-build-analyzer` agent to analyze the root cause of the broken build and potential fixes. Provide the agent with the build log location and JSON build config data.  
 → Receive from the agent its analysis with root causes and fix recommendations  
 
@@ -195,14 +197,14 @@ DELEGATE_TO: `references/run-tests.md`
 → Follow test execution procedure  
 → Return to step 5 if tests fail, step 7 (Completion) if tests pass  
 
-## 5. Extract Test Failures 
+## 5. Extract Test Failures
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
-DELEGATE_TO: `references/build-procedures.md` - EXTRACT_TEST_FAILURES
+DELEGATE_TO: `references/extract-test-failures.md`
 
-**Result handling:**  
-→ Reference file uses parse-test-failures.js script to extract failures  
+**Result handling:**
+→ Read output from the extract-test-failures proecedure.  
 → If 0 failures detected: Display "All tests passed" and Exit Workflow  
 → If 1+ failures detected: Display count and proceed to step 6  
 

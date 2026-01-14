@@ -24,5 +24,18 @@
       "nativeOutputSupport": false
     }
   },
-  "_instructions": "REPLACE ALL __PLACEHOLDER_*__ VALUES WITH YOUR PROJECT'S BUILD/TEST COMMANDS AND ERROR PATTERNS. resultsPath must be a file or directory containing structured test results (e.g., TAP, XML, or JSON)."
+  "_instructions": {
+    "overview": "REPLACE ALL __PLACEHOLDER_*__ VALUES WITH YOUR PROJECT'S BUILD/TEST COMMANDS AND ERROR PATTERNS.",
+    "resultsPath": "Path to test results. Can be a single file or glob pattern (e.g., 'target/surefire-reports/TEST-*.xml'). Glob patterns enable multi-file mode.",
+    "errorPattern": {
+      "file_mode": "Regex pattern to match and extract test failures. Use named capture groups: (?<testName>...), (?<testClass>...), (?<message>...), (?<file>...), (?<line>...)",
+      "glob_mode": "Simple pattern for presence checking (e.g., '<failure'). Script counts occurrences and returns filenames with failure counts.",
+      "examples": {
+        "tap": "^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$",
+        "go": "--- FAIL:\\s+(?<testName>\\S+)",
+        "rust": "test (?<testName>\\S+) \\.\\.\\.\\s+FAILED",
+        "maven_glob": "<failure"
+      }
+    }
+  }
 }
