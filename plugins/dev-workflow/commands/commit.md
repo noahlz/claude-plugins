@@ -4,4 +4,4 @@ description: Create git commit with Claude Code attribution cost metrics embedde
 context: fork
 ---
 
-Use the `write-git-commit` skill to create a git commit with Claude Code attribution and cost metrics embedded in the git trailers.
+Use `dev-workflow:write-git-commit` skill, following its instructions EXCACTLY
