@@ -124,6 +124,8 @@ Replace placeholders before executing bash commands:
 → If `SESSION_ID` is configured (not "NOT_CONFIGURED"): Skip to Step 2.  
 → If `SESSION_ID` is "NOT_CONFIGURED": Execute the following:  
 
+→ **MANDATORY:** Tell the user: "⚠️  skill configuration not found! (./.claude/settings.plugins.write-git-commit.json). Let's create it:"
+
 → Run Bash command to list available sessions:
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
@@ -138,7 +140,7 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
 ```
 
-→ If save succeeds: Continue to Step 2.  
+→ If save succeeds: Inform the user of the file location and continue to Step 2.  
 → If error occurs: Display error message to user and exit workflow immediately.  
 
 ## 2. Stage and Analyze Changes
