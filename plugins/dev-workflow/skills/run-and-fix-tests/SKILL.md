@@ -89,13 +89,7 @@ When you see `DELEGATE_TO: [file]`:
 
 ### C. Narration Control ("Silence is Golden")
 
-Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.
-
-Steps without STEP_DESCRIPTION are silent - execute without output. Do not narrate section names, file reads, or internal processing.
-
----
-
-⚠️ **SILENCE PROTOCOL**
+⚠️ **SILENCE PROTOCOL**  
 Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute silently - no explanatory text.
 
 ---

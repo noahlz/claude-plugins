@@ -22,7 +22,7 @@ Activate when the user explicitly requests a git commit using phrases like:
 **IMPORTANT RULES:**
 - **DO NOT** use this skill autonomously - only activate it when *explicitly* requested or invoked by the user.
 - **DO NOT** create a git commit without *first* displaying it to the user and obtaining approval using AskUserQuestion
-- **DO NOT** create a git commit without the Claude-Cost-Metrics trailer containing *REAL* JSON cost data (obtained via workflow scripts in reference files)
+- **DO NOT** create a git commit without the `Claude-Cost-Metrics:` trailer containing *REAL* JSON cost data (obtained via workflow scripts in reference files)
 - **ALWAYS** follow the workflow and instructions EXACTLY as written in following sections.
 
 ---
@@ -55,7 +55,8 @@ Execute this skill following this EXACT workflow (details in following sections)
 **Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
 
 ```
-- [ ] 1. Resolve and Save sessionId (if necessary)
+- [ ] 1a. Check for existing configuration
+- [ ] 1b. Create new configuration (if needed)
 - [ ] 2. Stage and analyze changes
 - [ ] 3. Generate commit message
 - [ ] 4. Get user approval
@@ -82,11 +83,8 @@ When you see `DELEGATE_TO: [file]`:
 
 ### B. Narration Control
 
-→ Only narrate steps that have a `STEP_DESCRIPTION` field. Use that exact text.  
-→ Steps without STEP_DESCRIPTION are silent - execute without output.  
-
 ⚠️ **SILENCE PROTOCOL**  
-Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute silently - no explanatory text.
+Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute silently - no explanatory text.  
 
 ---
 
@@ -96,9 +94,11 @@ Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute s
 
 **SKILL_NAME**: write-git-commit
 
-**SESSION_ID**: !`cat .claude/settings.plugins.write-git-commit.json 2>/dev/null | node -pe 'JSON.parse(require("fs").readFileSync(0, "utf-8")).sessionId' || echo "NOT_CONFIGURED"`
+**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.write-git-commit.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
 
-**NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED", it will be resolved in Step 1.
+**Configuration Routing:**
+- If `SKILL_CONFIG` = `✓ Configuration found` → Proceed to Step 1a (Load Configuration)
+- If `SKILL_CONFIG` = `NOT_CONFIGURED` → Skip Step 1a, proceed to Step 1b (Create Configuration)
 
 ---
 
@@ -121,10 +121,20 @@ Replace placeholders before executing bash commands:
 
 ## 1. Resolve SessionID
 
-→ If `SESSION_ID` is configured (not "NOT_CONFIGURED"): Skip to Step 2.  
-→ If `SESSION_ID` is "NOT_CONFIGURED": Execute the following:  
+### 1a. Load existing configuration
 
-→ **MANDATORY:** Tell the user: "⚠️  skill configuration not found! (./.claude/settings.plugins.write-git-commit.json). Let's create it:"
+→ Execute using Bash tool:
+```bash
+cat .claude/settings.plugins.write-git-commit.json
+```
+
+→ Parse JSON output and extract `sessionId` field value  
+→ Store as SESSION_ID for use in subsequent steps  
+→ Proceed to Step 2  
+
+### 1b. Create new configuration
+
+→ **MANDATORY:** Tell the user: "⚠️  skill configuration not found! (./.claude/settings.plugins.write-git-commit.json). Let's create it:"  
 
 → Run Bash command to list available sessions:
 ```bash
@@ -135,7 +145,7 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
 → Use AskUserQuestion to ask user "Select a Claude Code session:" with options from first 4 sessions (each option label = sessionId).  
 → Extract selected session ID from user response and store in `SELECTED_SESSION_ID` variable.  
 
-→ Run Bash command to save selected session to config:  
+→ Run Bash command to save selected session to config:
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
 ```
