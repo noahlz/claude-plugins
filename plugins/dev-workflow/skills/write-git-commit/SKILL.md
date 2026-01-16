@@ -94,6 +94,14 @@ Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute s
 
 ## 0. Prerequisites
 
+**SKILL_NAME**: write-git-commit
+
+**SESSION_ID**: !`cat .claude/settings.plugins.write-git-commit.json 2>/dev/null | node -pe 'JSON.parse(require("fs").readFileSync(0, "utf-8")).sessionId' || echo "NOT_CONFIGURED"`
+
+**NOTE:** If `SESSION_ID` shows "NOT_CONFIGURED", it will be resolved in Step 1.
+
+---
+
 ### Extract SKILL_BASE_DIR
 
 **MANDATORY:** This skill depends on resolving the skill install directory - follow these steps exactly:
@@ -112,22 +120,6 @@ Replace placeholders before executing bash commands:
 - `{{SESSION_ID}}` → Session ID value
 
 ## 1. Resolve SessionID
-
-### 1a. Check for existing configuration
-
-→ Execute using Bash tool to check if config file exists and read sessionId:
-
-```bash
-if [ -f ".claude/settings.plugins.write-git-commit.json" ]; then
-  node -pe 'JSON.parse(require("fs").readFileSync(".claude/settings.plugins.write-git-commit.json", "utf-8")).sessionId || "NOT_CONFIGURED"'
-else
-  echo "NOT_CONFIGURED"
-fi
-```
-
-→ Store the output value in SESSION_ID variable.
-
-### 1b. Prompt user if not configured
 
 → If `SESSION_ID` is configured (not "NOT_CONFIGURED"): Skip to Step 2.  
 → If `SESSION_ID` is "NOT_CONFIGURED": Execute the following:  

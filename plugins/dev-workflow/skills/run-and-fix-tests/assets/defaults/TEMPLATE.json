@@ -1,15 +1,13 @@
 {
   "outDir": "__PLACEHOLDER_OUT_DIR__",
   "logFile": "{outDir}/__PLACEHOLDER_LOG_FILE__",
-  "build": [
-    {
-      "command": "__PLACEHOLDER_BUILD_COMMAND__",
-      "logFile": "{outDir}/__PLACEHOLDER_BUILD_LOG__",
-      "errorPattern": "__PLACEHOLDER_BUILD_ERROR_PATTERN__",
-      "workingDir": ".",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "__PLACEHOLDER_BUILD_COMMAND__",
+    "logFile": "{outDir}/__PLACEHOLDER_BUILD_LOG__",
+    "errorPattern": "__PLACEHOLDER_BUILD_ERROR_PATTERN__",
+    "workingDir": ".",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "__PLACEHOLDER_TEST_ALL_COMMAND__",

@@ -1,14 +1,12 @@
 {
   "outDir": "target",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "lein compile",
-      "logFile": "{outDir}/lein.log",
-      "errorPattern": "error|ERROR|Failed|Exception",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "lein compile",
+    "logFile": "{outDir}/lein.log",
+    "errorPattern": "error|ERROR|Failed|Exception",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "lein test",

@@ -1,14 +1,12 @@
 {
   "outDir": "bin",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "dotnet build",
-      "logFile": "{outDir}/dotnet.log",
-      "errorPattern": "error CS|FAILED",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "dotnet build",
+    "logFile": "{outDir}/dotnet.log",
+    "errorPattern": "error CS|FAILED",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "dotnet test",

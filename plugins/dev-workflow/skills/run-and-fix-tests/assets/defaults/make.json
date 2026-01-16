@@ -1,14 +1,12 @@
 {
   "outDir": "dist",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "make build",
-      "logFile": "{outDir}/make.log",
-      "errorPattern": "Error|error:",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "make build",
+    "logFile": "{outDir}/make.log",
+    "errorPattern": "Error|error:",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "make test",

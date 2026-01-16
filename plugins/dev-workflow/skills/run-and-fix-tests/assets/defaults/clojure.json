@@ -1,14 +1,12 @@
 {
   "outDir": "target",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "clojure -M:build",
-      "logFile": "{outDir}/clojure.log",
-      "errorPattern": "error|ERROR|Exception",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "clojure -M:build",
+    "logFile": "{outDir}/clojure.log",
+    "errorPattern": "error|ERROR|Exception",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "clojure -M:test",

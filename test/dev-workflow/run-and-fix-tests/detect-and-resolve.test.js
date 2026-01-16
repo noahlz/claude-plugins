@@ -62,7 +62,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
         assert.ok(tool.tool, 'Should have tool name');
         assert.ok(tool.location, 'Should have location');
         assert.ok(tool.config, 'Should have config');
-        assert.ok(tool.config.build, 'Config should have build');
+        assert.ok(tool.config.build || tool.config.skipBuild, 'Config should have build or skipBuild');
       });
 
       it('normalizes project root location in output', () => {

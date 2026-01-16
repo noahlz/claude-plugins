@@ -1,14 +1,12 @@
 {
   "outDir": "target",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "sbt clean compile",
-      "logFile": "{outDir}/sbt.log",
-      "errorPattern": "\\[error\\]|error:",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "sbt clean compile",
+    "logFile": "{outDir}/sbt.log",
+    "errorPattern": "\\[error\\]|error:",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "sbt test",

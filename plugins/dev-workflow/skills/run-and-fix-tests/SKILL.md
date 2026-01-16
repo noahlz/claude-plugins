@@ -104,11 +104,13 @@ Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute s
 
 ## 0. Prerequisites
 
-**SKILL_NAME**: run-and-fix-tests 
+**SKILL_NAME**: run-and-fix-tests
 
 **SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.run-and-fix-tests.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
 
-**NOTE:** If `SKILL_CONFIG` shows `NOT_CONFIGURED` above, it will be resolved in Step 1.
+**Configuration Routing:**
+- If `SKILL_CONFIG` = `NOT_CONFIGURED` → Proceed to Step 1 (Detect Build Configuration)
+- If `SKILL_CONFIG` = `✓ Configuration found` → Skip Step 1, proceed directly to Step 2 (Load Configuration)
 
 ---
 
@@ -129,13 +131,12 @@ DELEGATE_TO: `../../references/skill_base_dir.md`
 Replace placeholders before executing bash commands:
 - `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
 
-## 1. Detect Build Configuration (If Necessary)
+## 1. Detect Build Configuration
 
-→ Check SKILL_CONFIG value:
-  - ✓ SKILL_CONFIG: CONFIGURED → Proceed to step 2 (Load Configuration)
-  - ✗ SKILL_CONFIG: NOT_CONFIGURED 
-      - → Execute setup instructions from `./references/setup-config.md`
-      - → Exit workflow and return to user.
+**Only execute this step if SKILL_CONFIG = NOT_CONFIGURED (checked in Prerequisites)**
+
+→ Execute setup instructions from `./references/setup-config.md`
+→ Exit workflow and return to user after config creation
 
 ## 2. Load Configuration
 

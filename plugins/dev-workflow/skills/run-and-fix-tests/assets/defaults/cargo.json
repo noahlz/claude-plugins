@@ -1,14 +1,12 @@
 {
   "outDir": "target",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "cargo build --release",
-      "logFile": "{outDir}/cargo.log",
-      "errorPattern": "error\\[",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "cargo build --release",
+    "logFile": "{outDir}/cargo.log",
+    "errorPattern": "error\\[",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "cargo test",

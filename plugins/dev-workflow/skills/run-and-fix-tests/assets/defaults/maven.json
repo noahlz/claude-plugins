@@ -1,14 +1,12 @@
 {
   "outDir": "target",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "mvn clean install --quiet --log-file {outDir}/build.log",
-      "logFile": "{outDir}/build.log",
-      "errorPattern": "\\[ERROR\\]",
-      "nativeOutputSupport": true
-    }
-  ],
+  "build": {
+    "command": "mvn clean install --quiet --log-file {outDir}/build.log",
+    "logFile": "{outDir}/build.log",
+    "errorPattern": "\\[ERROR\\]",
+    "nativeOutputSupport": true
+  },
   "test": {
     "all": {
       "command": "mvn test --quiet --log-file {outDir}/test.log",

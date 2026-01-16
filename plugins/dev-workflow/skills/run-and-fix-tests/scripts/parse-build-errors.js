@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'fs';
-import { loadSkillConfig } from '../../../lib/config-loader.js';
+import { loadConfig } from './load-config.js';
 
 /**
  * Parse build errors from log file
@@ -93,8 +93,12 @@ export function parseBuildErrors(config, options = {}) {
  */
 function main() {
   try {
-    // Read config from file
-    const config = loadSkillConfig('run-and-fix-tests');
+    // Load and resolve config
+    const { resolved: config, errors } = loadConfig();
+
+    if (errors.length > 0) {
+      throw new Error(errors.join('; '));
+    }
 
     // Parse build errors
     const result = parseBuildErrors(config);

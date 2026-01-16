@@ -78,7 +78,7 @@ describe('run-and-fix-tests: select-default.js', () => {
 
       const config = readJsonFile(result.configPath);
       assert.ok(config, 'Should create config file');
-      assert.ok(config.build, 'Config should have build property');
+      assert.ok(config.build || config.skipBuild, 'Config should have build or skipBuild property');
       assert.ok(config.test, 'Config should have test property');
     });
 

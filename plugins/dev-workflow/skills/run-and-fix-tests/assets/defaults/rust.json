@@ -1,14 +1,12 @@
 {
   "outDir": "target",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "cargo build",
-      "logFile": "{outDir}/rust.log",
-      "errorPattern": "error\\[|error:",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "cargo build",
+    "logFile": "{outDir}/rust.log",
+    "errorPattern": "error\\[|error:",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "cargo test",

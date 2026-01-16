@@ -1,14 +1,12 @@
 {
   "outDir": "build",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "go build ./...",
-      "logFile": "{outDir}/go.log",
-      "errorPattern": "(error|cannot find|undefined)",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "go build ./...",
+    "logFile": "{outDir}/go.log",
+    "errorPattern": "(error|cannot find|undefined)",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "go test ./...",

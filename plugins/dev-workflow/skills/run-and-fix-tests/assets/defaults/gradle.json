@@ -1,22 +1,12 @@
 {
   "outDir": "build",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "./gradlew :api:build --quiet",
-      "workingDir": ".",
-      "logFile": "{outDir}/gradle-api.log",
-      "errorPattern": "FAILURE|error:",
-      "nativeOutputSupport": false
-    },
-    {
-      "command": "./gradlew :web:build --quiet",
-      "workingDir": ".",
-      "logFile": "{outDir}/gradle-web.log",
-      "errorPattern": "FAILURE|error:",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "./gradlew build --quiet",
+    "logFile": "{outDir}/gradle-build.log",
+    "errorPattern": "FAILURE|error:",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "./gradlew test --quiet",

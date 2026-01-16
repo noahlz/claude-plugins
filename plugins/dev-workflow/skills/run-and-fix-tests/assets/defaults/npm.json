@@ -1,14 +1,7 @@
 {
   "outDir": "dist",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "npm run build",
-      "logFile": "{outDir}/npm-build.log",
-      "errorPattern": "(error|Error|ERR!|failed)",
-      "nativeOutputSupport": false
-    }
-  ],
+  "skipBuild": true,
   "test": {
     "all": {
       "command": "npm test",

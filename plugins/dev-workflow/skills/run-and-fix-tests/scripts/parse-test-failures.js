@@ -3,7 +3,7 @@
 import fs from 'fs';
 import { globSync } from 'fs';
 import path from 'path';
-import { loadSkillConfig } from '../../../lib/config-loader.js';
+import { loadConfig } from './load-config.js';
 
 /**
  * Check if path contains glob patterns
@@ -196,8 +196,12 @@ export function parseTestFailures(config, options = {}) {
  */
 function main() {
   try {
-    // Read config from file
-    const config = loadSkillConfig('run-and-fix-tests');
+    // Load and resolve config
+    const { resolved: config, errors } = loadConfig();
+
+    if (errors.length > 0) {
+      throw new Error(errors.join('; '));
+    }
 
     // Parse test failures
     const result = parseTestFailures(config);

@@ -108,7 +108,16 @@ async function main() {
     const detected = parseDetectedTools(detectedJson);
     const result = selectDefault({ detectedTools: detected, pluginRoot, targetDir });
 
+    // JSON to stdout (for piping)
     console.log(JSON.stringify(result, null, 2));
+
+    // Human-readable output to stderr
+    console.error(`\n✓ Configuration created: ${result.configPath}`);
+    console.error(`  Source: ${result.source}`);
+    if (result.warnings.length > 0) {
+      result.warnings.forEach(w => console.error(`  ⚠️  ${w}`));
+      process.exit(2);
+    }
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);

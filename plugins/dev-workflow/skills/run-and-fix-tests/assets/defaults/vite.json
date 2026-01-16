@@ -1,14 +1,12 @@
 {
   "outDir": "dist",
   "logFile": "{outDir}/test.log",
-  "build": [
-    {
-      "command": "vite build",
-      "logFile": "{outDir}/vite.log",
-      "errorPattern": "(error|Error|✘|failed)",
-      "nativeOutputSupport": false
-    }
-  ],
+  "build": {
+    "command": "vite build",
+    "logFile": "{outDir}/vite.log",
+    "errorPattern": "(error|Error|✘|failed)",
+    "nativeOutputSupport": false
+  },
   "test": {
     "all": {
       "command": "jest",
