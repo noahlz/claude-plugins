@@ -4,6 +4,7 @@
 - Check ccusage dependency
 - Execute fetch command
 - Parse JSON output
+- Return to Main Workflow
 
 ---
 
@@ -46,6 +47,6 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION
 → If FETCH_STATUS = "not_found" or "error":
   - → Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
 
-**IMPORTANT:** Do NOT proceed with missing cost data. Do NOT fabricate or estimate cost metrics. Resume skill workflow with status for error handling.
+## Return to Main Workflow with Stored Values
 
-Return to SKILL.md with FETCH_STATUS and related values stored mentally from the fetch result.
+→ Return to SKILL.md with FETCH_STATUS, CURRENT_COST and related values from the fetch result stored mentally.

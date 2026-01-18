@@ -4,6 +4,7 @@
 - Mandatory Message Display Instructions
 - Mandatory User Approval Instructions
 - Response Processing
+- Return to Main Workflow
 
 ---
 
@@ -23,7 +24,7 @@ Proposed commit message:
 
 ## Mandatory User Approval Instructions
 
-**MANDATORY:** Obtain explicit approval for the commit message using AskUserQuestion as below - **NEVER** assume or infer approval by the user.
+**MANDATORY:** Obtain explicit approval for the commit message from the user (never "assume" approval - ALWAYS perform this step): 
 
 → Use AskUserQuestion to ask "Approve this commit message?" with options:
   1. "Use full message" (Recommended)
@@ -35,4 +36,6 @@ Proposed commit message:
 → If user selected "Use just the subject": Maintain current value in COMMIT_SUBJECT variable. Assign empty string `''` to COMMIT_BODY variable. Store "use_subject_only" in APPROVAL_STATUS variable.  
 → If user typed something else (ad-hoc instructions): Maintain current value in COMMIT_SUBJECT variable. Maintain current value in COMMIT_BODY variable. Store "request_revisions" in APPROVAL_STATUS variable.  
 
-Return to SKILL.md with APPROVAL_STATUS, COMMIT_SUBJECT, and COMMIT_BODY values stored mentally.
+## Return to Main Workflow with Stored Values
+
+→ Return to SKILL.md with APPROVAL_STATUS, COMMIT_SUBJECT, and COMMIT_BODY values stored mentally.

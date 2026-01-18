@@ -1,6 +1,6 @@
 ---
 name: write-git-commit
-description: Creates git commits with session cost metrics and Claude attribution as git trailers. Use when committing changes or saving work to git.
+description: Creates git commits with session cost metrics and Claude attribution as git trailers. Use when the user asks you to commit changes to git.
 user-invocable: true
 context: fork
 allowed-tools:
@@ -11,48 +11,21 @@ allowed-tools:
 
 ---
 
-You use this skill - with interactive input from the user - to create a git commit with a summary and optional body consisting of terse bullet points and git trailers for attribution and Claude cost metrics.
+Use this skill to create a git commit with a message summarizing changes and with trailers for attribution and cost metrics.
 
-Activate when the user explicitly requests a git commit using phrases like:
+**MANDATORY** only activate this skill when the user explicitly asks for a git commit. Examples:
 - "commit my changes"
 - "commit this"
 - "save to git"
 - "git commit"
 
-**IMPORTANT RULES:**
-- **DO NOT** use this skill autonomously - only activate it when *explicitly* requested or invoked by the user.
-- **DO NOT** create a git commit without *first* displaying it to the user and obtaining approval using AskUserQuestion
-- **DO NOT** create a git commit without the `Claude-Cost-Metrics:` trailer containing *REAL* JSON cost data (obtained via workflow scripts in reference files)
-- **ALWAYS** follow the workflow and instructions EXACTLY as written in following sections.
-
 ---
 
 # Skill Context 
 
-## Reference Files
+## Workflow Checklist
 
-**Shared References:** (from dev-workflow plugin)
-- [`skill_base_dir.md`](../../references/skill_base_dir.md) - Extract and validate skill installation path
-
-**Skill References:**
-- [`create_commit.md`](./references/create_commit.md) - Git commit creation
-- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
-- [`message_approval.md`](./references/message_approval.md) - User approval workflow
-- [`message_guidelines.md`](./references/message_guidelines.md) - Commit message format
-
-**Scripts:**  [scripts/](./scripts/) - utility scripts
-
-## Workflow Diagram and Checklist
-
-Execute this skill following this EXACT workflow (details in following sections):
-
-```
-(1) Check SessionId → (2) Stage → (3) Generate → (4) [User Approval] → (5) Fetch Costs → (6) Commit → (7) Summary
-                                            ↑____________________|
-                                                (revision loop)
-```
-
-**Use this copyable checklist to accurately follow ALL steps of this skill workflow:**
+**Use this copyable checklist to ensure you follow ALL steps of this skill workflow:**
 
 ```
 - [ ] 1a. Check for existing configuration
@@ -65,26 +38,53 @@ Execute this skill following this EXACT workflow (details in following sections)
 - [ ] 7. Display summary
 ```
 
-**IMPORTANT:** Step 4 **MUST** block until user approves the commit message. **Do NOT execute `git commit` without explicit user approval!**
+## SKILL_BASE_DIR value
+
+**MANDATORY:** This skill depends on resolving the skill install directory - follow these steps exactly:
+
+DELEGATE_TO: `../../references/skill_base_dir.md`
+
+→ Extract and validate SKILL_BASE_DIR value from skill startup message.  
+→ Store SKILL_BASE_DIR for use in all subsequent bash commands.  
+
+## Reference Files
+
+**Shared References:**
+- [`skill_base_dir.md`](../../references/skill_base_dir.md) - Extract and validate skill installation path
+
+**Skill References:**
+- [`create_commit.md`](./references/create_commit.md) - Git commit creation
+- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
+- [`message_approval.md`](./references/message_approval.md) - User approval workflow
+- [`message_guidelines.md`](./references/message_guidelines.md) - Commit message format
+
+**Scripts:**  [scripts/](./scripts/) - utility scripts
+
+---
 
 ## Workflow Rules & Guardrails
 
-**FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
+**MANDATORY:** FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW.
 
 ### A. Delegation Protocol
 
 When you see `DELEGATE_TO: [file]`:  
-⛔ **STOP** - Do NOT proceed until you read the file  
-→ Use Read tool on the referenced file path  
+⛔ **STOP** → Use Read tool on the reference file path  
 → Execute its instructions exactly (bash commands, parsing, etc.)  
 → Return to SKILL.md only after completing reference file instructions  
 
-⚠️ Reference files contain the ACTUAL bash commands. Never improvise or guess commands.
+⚠️  **IMPORTANT:** Reference files contain Bash tool commands - use them exactly as written - never improvise commands.
 
-### B. Narration Control
+### B. Template Substitution
 
-⚠️ **SILENCE PROTOCOL**  
-Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute silently - no explanatory text.  
+**MANDATORY**: Replace placeholders before executing bash commands:
+- `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
+- `{{SESSION_ID}}` → Session ID value, resolved from skill configuration (Step 1) 
+
+### C. Narration Control
+
+⚠️  **SILENCE PROTOCOL**  
+Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps silently - no explanatory text.  
 
 ---
 
@@ -99,25 +99,6 @@ Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute s
 **Configuration Routing:**
 - If `SKILL_CONFIG` = `✓ Configuration found` → Proceed to Step 1a (Load Configuration)
 - If `SKILL_CONFIG` = `NOT_CONFIGURED` → Skip Step 1a, proceed to Step 1b (Create Configuration)
-
----
-
-### Extract SKILL_BASE_DIR
-
-**MANDATORY:** This skill depends on resolving the skill install directory - follow these steps exactly:
-
-DELEGATE_TO: `../../references/skill_base_dir.md`
-
-→ Extract and validate SKILL_BASE_DIR value from skill startup message.  
-→ Store SKILL_BASE_DIR for use in all subsequent bash commands.  
-
----
-
-### Template Substitution
-
-Replace placeholders before executing bash commands:
-- `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
-- `{{SESSION_ID}}` → Session ID value
 
 ## 1. Resolve SessionID
 
@@ -134,7 +115,7 @@ cat .claude/settings.plugins.write-git-commit.json
 
 ### 1b. Create new configuration
 
-→ **MANDATORY:** Tell the user: "⚠️  skill configuration not found! (./.claude/settings.plugins.write-git-commit.json). Let's create it:"  
+→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! (./.claude/settings.plugins.write-git-commit.json). Let's create it:"  
 
 → Run Bash command to list available sessions:
 ```bash
@@ -151,7 +132,7 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SEL
 ```
 
 → If save succeeds: Inform the user of the file location and continue to Step 2.  
-→ If error occurs: Display error message to user and exit workflow immediately.  
+→ If error occurs: Display error message to user and then **exit workflow immediately**.  
 
 ## 2. Stage and Analyze Changes
 
@@ -178,17 +159,17 @@ Use the output of this command to generate the proposed commit message, per step
 ## 3. Generate Commit Message
 
 DELEGATE_TO: `references/message_guidelines.md`  
-⛔ READ FILE FIRST - do not improvise  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
 → Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.  
 → Proceed to Step 4.  
 
 ## 4. Display Message to User for Approval
 
-BLOCKING: This step MUST complete with user approval before Step 5.
+**BLOCKING:** This step MUST complete with user approval before Step 5. **THIS IS MANDATORY**
 
 DELEGATE_TO: `references/message_approval.md`  
-⛔ READ FILE FIRST - do not improvise  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
 → Extract APPROVAL_STATUS and updated COMMIT_SUBJECT, and COMMIT_BODY per reference file instructions.  
 
@@ -200,7 +181,7 @@ DELEGATE_TO: `references/message_approval.md`
 **STEP_DESCRIPTION**: "Fetching session cost metrics"
 
 DELEGATE_TO: `references/fetch_cost.md`  
-⛔ READ FILE FIRST - contains the actual bash command to run  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
 → Extract FETCH_STATUS per reference file instructions.
 
@@ -215,18 +196,21 @@ DELEGATE_TO: `references/fetch_cost.md`
   - → Tell user "*** Session ID must be configured to accurately extract Claude Code cost metrics. Cannot create commit without valid cost metrics."
   - → HALT WORKFLOW - Do NOT proceed to Step 6 under any circumstances.
 
+**IMPORTANT:** Cost must be present and accurate!
+- ⛔ NEVER fabricate or estimate cost metrics. 
+- ⛔ NEVER create a git commit with fake/estimated cost data.
+- ⚠️  ONLY use results from a successful use of `ccusage` (FETCH_STATUS = "success")
+
 ## 6. Create Commit
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
 **MANDATORY:** CHECK PREREQUISITES BEFORE PREOCEEDING WITH COMMIT**
-- CONFIRM that you have values set for SESSION_ID and CURRENT_COST from Step 5 - if not, GO BACK TO STEP 5 (NEVER fabricate or estimate cost metrics)
-- APPROVAL_STATUS = "use_full" OR "use_subject_only" (from Step 4). If APPROVAL_STATUS has any other value: Exit workflow immediately.
-
-**MANDATORY: DO NOT use a direct `git commit` command here.**
+- **VERIFY** that you have values set for SESSION_ID and CURRENT_COST from Step 5 - if not, GO BACK TO STEP 5 (NEVER fabricate or estimate cost metrics)
+- **VERIFY** that variable APPROVAL_STATUS is "use_full" OR "use_subject_only" (from Step 4). If APPROVAL_STATUS has any other value: **Exit workflow immediately.**
 
 DELEGATE_TO: `references/create_commit.md`  
-⛔ READ FILE FIRST - contains the actual bash command to run  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
 → Extract STATUS per reference file instructions.
 
