@@ -1,11 +1,13 @@
-# Build Configuration Setup - First Run Only
+# Instructions: Build Configuration Setup - First Run Only
 
-Execute ONLY if build configuration is missing (SKILL_CONFIG: NOT_CONFIGURED)
+Follow these instructions ONLY if build configuration is missing (SKILL_CONFIG: NOT_CONFIGURED)
 
 **Contents:**
 - Auto-Detection and Selection
 - Auto-Selection Rules
 - Result Handling
+
+**NOTE:** This skill does not yet support "polyglot" (multi-build language/build tool) projects. If you are inspecting such a project, inform the user of this limitation and exit the workflow immediately.
 
 ## Auto-Detection and Selection
 
@@ -34,7 +36,7 @@ node "{{SKILL_BASE_DIR}}/scripts/select-default.js" "{{SKILL_BASE_DIR}}/../.." "
 
 ## User Instructions (Display After Config Creation)
 
-**After successful config creation (Exit 0 or Exit 2), display this message to the user:**
+**→ After successful config creation (Exit 0 or Exit 2), display this message to the user:**
 
 ---
 
@@ -47,4 +49,4 @@ node "{{SKILL_BASE_DIR}}/scripts/select-default.js" "{{SKILL_BASE_DIR}}/../.." "
 
 ---
 
-**NOTE:** This skill does not yet support "polyglot" (multi-build language/build tool) projects. If you encounter this, inform the user of the limitation and exit the workflow.
+→ After displaying the message to the user, exit the workflow immediately.

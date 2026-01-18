@@ -23,45 +23,6 @@ Use this skill to create a git commit with a message summarizing changes and wit
 
 # Skill Context 
 
-## Workflow Checklist
-
-**Use this copyable checklist to ensure you follow ALL steps of this skill workflow:**
-
-```
-- [ ] 1a. Check for existing configuration
-- [ ] 1b. Create new configuration (if needed)
-- [ ] 2. Stage and analyze changes
-- [ ] 3. Generate commit message
-- [ ] 4. Get user approval
-- [ ] 5. Fetch session costs
-- [ ] 6. Create commit
-- [ ] 7. Display summary
-```
-
-## SKILL_BASE_DIR value
-
-**MANDATORY:** This skill depends on resolving the skill install directory - follow these steps exactly:
-
-DELEGATE_TO: `../../references/skill_base_dir.md`
-
-→ Extract and validate SKILL_BASE_DIR value from skill startup message.  
-→ Store SKILL_BASE_DIR for use in all subsequent bash commands.  
-
-## Reference Files
-
-**Shared References:**
-- [`skill_base_dir.md`](../../references/skill_base_dir.md) - Extract and validate skill installation path
-
-**Skill References:**
-- [`create_commit.md`](./references/create_commit.md) - Git commit creation
-- [`fetch_cost.md`](./references/fetch_cost.md) - Session cost retrieval
-- [`message_approval.md`](./references/message_approval.md) - User approval workflow
-- [`message_guidelines.md`](./references/message_guidelines.md) - Commit message format
-
-**Scripts:**  [scripts/](./scripts/) - utility scripts
-
----
-
 ## Workflow Rules & Guardrails
 
 **MANDATORY:** FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW.
@@ -84,11 +45,36 @@ When you see `DELEGATE_TO: [file]`:
 ### C. Narration Control
 
 ⚠️  **SILENCE PROTOCOL**  
-Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps silently - no explanatory text.  
+Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and tool calls silently - no explanatory text.  
+
+## SKILL_BASE_DIR value
+
+**MANDATORY:** This skill depends on resolving the skill base directory - follow these steps EXACTLY:
+
+DELEGATE_TO: `../../references/skill_base_dir.md`  
+⛔ READ FILE FIRST - contains instructions for resolving SKILL_BASE_DIR value  
+
+→ Store SKILL_BASE_DIR for use in all subsequent bash commands.  
 
 ---
 
 # Skill Workflow Instructions
+
+## Workflow Checklist
+
+**Use this copyable checklist to ensure you follow ALL steps of this skill workflow:**
+
+```
+- [ ] 0. Prerequisites
+- [ ] 1a. Check for existing configuration
+- [ ] 1b. Create new configuration (if needed)
+- [ ] 2. Stage and analyze changes
+- [ ] 3. Generate commit message
+- [ ] 4. Get user approval
+- [ ] 5. Fetch session costs
+- [ ] 6. Create commit
+- [ ] 7. Display summary
+```
 
 ## 0. Prerequisites
 
@@ -205,7 +191,7 @@ DELEGATE_TO: `references/fetch_cost.md`
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
-**MANDATORY:** CHECK PREREQUISITES BEFORE PREOCEEDING WITH COMMIT**
+**MANDATORY:** CHECK PREREQUISITES BEFORE PROCEEDING WITH COMMIT**
 - **VERIFY** that you have values set for SESSION_ID and CURRENT_COST from Step 5 - if not, GO BACK TO STEP 5 (NEVER fabricate or estimate cost metrics)
 - **VERIFY** that variable APPROVAL_STATUS is "use_full" OR "use_subject_only" (from Step 4). If APPROVAL_STATUS has any other value: **Exit workflow immediately.**
 

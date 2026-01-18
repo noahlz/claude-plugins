@@ -12,7 +12,7 @@
 
 **MANDATORY:** Use the below template EXACTLY, replacing {{COMMIT_SUBJECT}} and {{COMMIT_BODY}} with their stored values:
 
-→ Template for message aproval:
+→ Template for message approval:
 ```
 Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

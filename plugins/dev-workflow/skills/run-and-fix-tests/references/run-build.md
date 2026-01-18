@@ -1,4 +1,21 @@
-→ Check if config.build exists and has elements. If not, proceed to step 4 (Run Tests).
+# Instructions: Build Project
+
+Follow these instructions to run the project build:
+
+**Contents**
+- Procedure
+  - Check Build Config
+  - Execute Build
+
+## Procedure
+
+### Check Build Config
+
+→ Check if config.build exists and has elements:
+  - If so, continue to "Execute Build from Config" below.
+  - If not, return to SKILL.md and go to step 4 (Run Tests).
+
+### Execute Build
 
 → For each build in config.build:
   - Change to working directory using `build.workingDir`
