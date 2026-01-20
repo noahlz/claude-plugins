@@ -4,13 +4,13 @@
   "skipBuild": true,
   "test": {
     "all": {
-      "command": "npm test",
+      "command": "npm --silent test",
       "resultsPath": "{outDir}/test-results.tap",
       "errorPattern": "^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$",
       "nativeOutputSupport": false
     },
     "single": {
-      "command": "npm test -- {testFile}",
+      "command": "npm --silent test -- {testFile}",
       "resultsPath": "{outDir}/test-single-results.tap",
       "errorPattern": "^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$",
       "nativeOutputSupport": false
