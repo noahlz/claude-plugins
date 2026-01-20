@@ -43,7 +43,7 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     describe('variable resolution', () => {
       it('resolves {outDir} variable in paths', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
+        loadConfigFixture(testEnv, 'configs/single-build-npm.json', (config) => {
           config.outDir = 'build-logs';
           return config;
         });
@@ -55,7 +55,7 @@ describe('run-and-fix-tests: load-config.js', () => {
       });
 
       it('handles test single commands with variables', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json');
+        loadConfigFixture(testEnv, 'configs/single-build-npm.json');
 
         const result = loadConfig({ baseDir: testEnv.tmpDir });
 
@@ -65,7 +65,7 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     describe('working directory', () => {
       it('exports working directory for single build', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
+        loadConfigFixture(testEnv, 'configs/single-build-npm.json', (config) => {
           config.build.workingDir = 'frontend';
           return config;
         });
@@ -141,7 +141,7 @@ describe('run-and-fix-tests: load-config.js', () => {
 
     describe('validation', () => {
       it('validates required fields', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/invalid-missing-logfile.json');
+        loadConfigFixture(testEnv, 'configs/invalid-missing-logfile.json');
         const result = loadConfig({ baseDir: testEnv.tmpDir });
 
         assertConfigError(result, /resultsPath|logFile/);
@@ -156,7 +156,7 @@ describe('run-and-fix-tests: load-config.js', () => {
       });
 
       it('errors when test.all is missing', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
+        loadConfigFixture(testEnv, 'configs/single-build-npm.json', (config) => {
           delete config.test.all;
           return config;
         });
@@ -166,7 +166,7 @@ describe('run-and-fix-tests: load-config.js', () => {
       });
 
       it('errors when test.single is missing', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
+        loadConfigFixture(testEnv, 'configs/single-build-npm.json', (config) => {
           delete config.test.single;
           return config;
         });
@@ -176,7 +176,7 @@ describe('run-and-fix-tests: load-config.js', () => {
       });
 
       it('errors when build is missing and skipBuild is not true', () => {
-        loadConfigFixture(testEnv, 'dev-workflow', 'configs/single-build-npm.json', (config) => {
+        loadConfigFixture(testEnv, 'configs/single-build-npm.json', (config) => {
           delete config.build;
           // skipBuild is undefined/false, so build is required
           return config;

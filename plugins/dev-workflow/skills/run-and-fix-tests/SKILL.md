@@ -19,8 +19,10 @@ allowed-tools:
 ---
 
 Activate this skill when:
-- you think phrases like "Now I should run tests to verify my changes"
-- the user requests test execution, using phrases like:
+- You say or think phrases like
+  - "Running tests to verify changes" 
+  - "Now I should run tests to verify my changes"
+- The user requests test execution, using phrases like:
   - "test"
   - "run tests"
   - "test the changes"

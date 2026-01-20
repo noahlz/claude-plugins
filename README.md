@@ -88,7 +88,7 @@ Run tests with this plugin's `dev-workflow:run-and-fix-tests` skill ("eat your o
 npm test
 ```
 
-See the [test/README.md](./test/README.md) for detailed testing documentation.
+See [test/CLAUDE.md](./test/CLAUDE.md) for testing methodology, patterns, and examples.
 
 ## Author
 

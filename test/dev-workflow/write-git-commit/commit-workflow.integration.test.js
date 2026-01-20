@@ -39,7 +39,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
       const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
       const outputFile = join(testEnv.tmpDir, 'prepare-output.json');
 
-      execNodeScript('dev-workflow', scriptPath, {
+      execNodeScript(scriptPath, {
         args: ['prepare', testEnv.tmpDir, '', outputFile],
         cwd: testEnv.tmpDir
       });
@@ -58,7 +58,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
     it('with explicit valid sessionId succeeds', () => {
       const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
-      const result = execNodeScript('dev-workflow', scriptPath, {
+      const result = execNodeScript(scriptPath, {
         args: ['prepare', testEnv.tmpDir, '-Users-noahlz-projects-claude-plugins'],
         cwd: testEnv.tmpDir
       });
@@ -78,7 +78,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
       const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
       const outputFile = join(testEnv.tmpDir, 'unknown-action-output.json');
 
-      const result = execNodeScript('dev-workflow', scriptPath, {
+      const result = execNodeScript(scriptPath, {
         args: ['unknown-action', outputFile],
         cwd: testEnv.tmpDir
       });
@@ -115,7 +115,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
           }
         ]);
 
-        const result = execNodeScript('dev-workflow', scriptPath, {
+        const result = execNodeScript(scriptPath, {
           args: ['commit', '--session-id', 'test-session-123', '--costs', validMetrics],
           cwd: testEnv.tmpDir,
           input: 'Test commit message'
@@ -143,7 +143,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
           }
         ]);
 
-        const result = execNodeScript('dev-workflow', scriptPath, {
+        const result = execNodeScript(scriptPath, {
           args: ['commit', '--costs', validMetrics],
           cwd: testEnv.tmpDir,
           input: 'Test commit message'
@@ -162,7 +162,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
 
         const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
-        const result = execNodeScript('dev-workflow', scriptPath, {
+        const result = execNodeScript(scriptPath, {
           args: ['commit', '--session-id', 'test-session-123'],
           cwd: testEnv.tmpDir,
           input: 'Test commit message'
@@ -184,7 +184,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
         const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
         // Pass invalid metrics via CLI args (empty array)
-        const result = execNodeScript('dev-workflow', scriptPath, {
+        const result = execNodeScript(scriptPath, {
           args: ['commit', '--session-id', 'test-session-123', '--costs', JSON.stringify([])],
           cwd: testEnv.tmpDir,
           input: 'Test commit message'
@@ -213,7 +213,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
           }
         ]);
 
-        const result = execNodeScript('dev-workflow', scriptPath, {
+        const result = execNodeScript(scriptPath, {
           args: ['commit', '--session-id', 'test-session-123', '--costs', invalidMetrics],
           cwd: testEnv.tmpDir,
           input: 'Test commit message'
@@ -239,7 +239,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
           }
         ]);
 
-        const result = execNodeScript('dev-workflow', scriptPath, {
+        const result = execNodeScript(scriptPath, {
           args: ['commit', '--session-id', 'test-session-123', '--costs', validMetrics],
           cwd: testEnv.tmpDir,
           input: 'Test commit message'
@@ -268,7 +268,7 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
 
         const messageWithBody = 'Add new feature\n\n- Implemented core functionality\n- Added unit tests';
 
-        const result = execNodeScript('dev-workflow', scriptPath, {
+        const result = execNodeScript(scriptPath, {
           args: ['commit', '--session-id', 'test-session-123', '--costs', validMetrics],
           cwd: testEnv.tmpDir,
           input: messageWithBody

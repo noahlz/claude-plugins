@@ -31,7 +31,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
 
       toolTests.forEach(({ tool, template }) => {
         it(`detects ${tool} project by config file`, () => {
-          setupProjectTemplate(testEnv, 'dev-workflow', template);
+          setupProjectTemplate(testEnv, template);
 
           const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
@@ -53,7 +53,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
 
     describe('result structure', () => {
       it('returns detected tools with proper structure', () => {
-        setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
+        setupProjectTemplate(testEnv, 'npm-project');
 
         const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 
@@ -66,7 +66,7 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
       });
 
       it('normalizes project root location in output', () => {
-        setupProjectTemplate(testEnv, 'dev-workflow', 'npm-project');
+        setupProjectTemplate(testEnv, 'npm-project');
 
         const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
 

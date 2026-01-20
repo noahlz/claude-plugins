@@ -142,7 +142,7 @@ export function stageFile(testEnv, filename, content = 'test content') {
 export function execCommitWorkflow(testEnv, action, options = {}) {
   const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
 
-  const result = execNodeScript('dev-workflow', scriptPath, {
+  const result = execNodeScript(scriptPath, {
     args: [action, ...(options.args || [])],
     cwd: testEnv.tmpDir,
     input: options.input
