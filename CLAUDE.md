@@ -62,54 +62,13 @@ When modifying or debugging scripts **prompt the user to re-install the plugin**
 
 Changes do not take effect immediately. The user needs to exit the session, run the provided `./reinstall.sh` script, and restart the session.
 
-## Testing Approach
+## Testing
 
-### Use Dependency Injection and Lightweight Mocking
+### Adding / Updating Tests
 
-**Use Dependency Injection for all mocking. Do NOT use external mocking libraries or the experimental Node.js mocking module.**
+If you need to add new or update existing tests, see: [test/CLAUDE.md](./test/CLAUDE.md) 
 
-Inject dependencies as a `deps` parameter in function options:
-- Pass `deps: { git: mockGit, ccusage: mockCcusage }` to functions in tests
-- For each test, create new base mocks that selectively override functions under test and throw errors for unexpected calls
-- Example: `await prepare({ baseDir: '.', deps: { ccusage: testCcusage } })`
+### Running Tests
 
-**Test Helper Pattern:**
-- Create reusable mock factories in `test/dev-workflow/<skill>/helpers.js`
-- Export functions like `createMockX(data)` that return mock implementations
-- Keep helpers simple: return async functions or objects with predictable behavior
-- Example: `createMockLoadSessionData(sessions)` returns `async () => sessions`
+**ALWAYS** use the `dev-workflow:run-and-fix-tests` skill to run tests, such as after making changes to Node / JavaScript code. 
 
-See the [testing README.md](./test/README.md) for additional context on writing tests effectively.
-
-### Running Tests: Silence is Golden
-
-Use the `dev-workflow:run-and-fix-tests` skill to test changes to this project.
-
-Example test command, which you should derive from the build configuration `.claude/settings.plugins.run-and-fix-tests.json`:
-
-```bash
-npm --silent test && echo "✓ Tests Passed!" || echo "✗ Tests FAILED"  
-```
-
-**NOTE: Do NOT use `tee`.** You'll obtain context for test failures from build and tests log files, if needed.
-
-If the tests fail (non-zero exit code) read the test results (tap report format) under `dist/`
-
-### Troubleshooting Tests
-
-#### Hanging Tests: stdin/Stream Fallback
-
-**Problem:** Tests for the plugins should complete in *under 5 seconds*, but sometimes (due to a bug) tests hang indefinitely.
-
-**Root cause:** Functions that depend on reading from `stdin` may hang. If a function that is hanging accepts a `message` parameter falls back stdin, it will block waiting for input. Empty string (`''`) is falsy and triggers the fallback.
-
-**Fix in code:** Use explicit nullish checks, not truthiness checks:
-```javascript
-// WRONG - empty string triggers stdin fallback
-if (providedMessage) { inputStream = ... }
-
-// CORRECT - distinguishes between null/undefined vs empty string
-if (providedMessage !== null && providedMessage !== undefined) { inputStream = ... }
-```
-
-**Fix in tests:** Always provide complete mock input or proper null checks in code.

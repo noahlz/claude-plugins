@@ -95,12 +95,11 @@ export function readFixture(pluginName, fixtureName) {
 
 /**
  * Execute a Node.js script with given options
- * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
  * @param {string} scriptPath - Path to Node.js script
  * @param {object} options - Options { cwd, env, input, args }
  * @returns {object} Result object { exitCode, stdout, stderr, output }
  */
-export function execNodeScript(pluginName, scriptPath, options = {}) {
+export function execNodeScript(scriptPath, options = {}) {
   const {
     cwd = process.cwd(),
     input = '',

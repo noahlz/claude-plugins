@@ -29,15 +29,14 @@ export function setupPluginTestEnv(pluginName) {
 }
 
 /**
- * Load a config fixture and write to test environment
+ * Load a config fixture from run-and-fix-tests and write to test environment
  * @param {Object} testEnv - Test environment from setupTestEnv
- * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
  * @param {string} fixtureName - Fixture name (e.g., 'configs/single-build-npm.json')
  * @param {Function} modifyFn - Optional function to modify config before writing
  * @returns {Object} The loaded (and possibly modified) config object
  */
-export function loadConfigFixture(testEnv, pluginName, fixtureName, modifyFn) {
-  const fixtureData = readFixture(pluginName, fixtureName);
+export function loadConfigFixture(testEnv, fixtureName, modifyFn) {
+  const fixtureData = readFixture('dev-workflow/run-and-fix-tests', fixtureName);
   let config = JSON.parse(fixtureData);
 
   if (modifyFn) {
@@ -55,13 +54,12 @@ export function loadConfigFixture(testEnv, pluginName, fixtureName, modifyFn) {
 }
 
 /**
- * Copy a project template to the test environment
+ * Copy a project template from run-and-fix-tests fixtures to the test environment
  * @param {Object} testEnv - Test environment from setupTestEnv
- * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
  * @param {string} templateName - Template directory name
  */
-export function setupProjectTemplate(testEnv, pluginName, templateName) {
-  const templatePath = join(TESTS_ROOT, pluginName, 'fixtures', 'project-templates', templateName);
+export function setupProjectTemplate(testEnv, templateName) {
+  const templatePath = join(TESTS_ROOT, 'dev-workflow', 'run-and-fix-tests', 'fixtures', 'project-templates', templateName);
   cpSync(templatePath, testEnv.tmpDir, { recursive: true });
 }
 
@@ -164,7 +162,7 @@ export function createToolConfig(toolName, overrides = {}) {
   let config = null;
   if (toolName === 'npm' || toolName === 'maven') {
     try {
-      const fixtureData = readFixture('dev-workflow', 'configs/single-build-npm.json');
+      const fixtureData = readFixture('dev-workflow/run-and-fix-tests', 'configs/single-build-npm.json');
       config = JSON.parse(fixtureData);
     } catch (e) {
       config = {};
@@ -350,7 +348,7 @@ export function parseTestsWithGlob(configOverrides, files) {
  * @returns {Object} loadConfig result
  */
 export function loadAndAssertConfig(testEnv, fixtureName, modifyFn, assertFn) {
-  loadConfigFixture(testEnv, 'dev-workflow', fixtureName, modifyFn);
+  loadConfigFixture(testEnv, fixtureName, modifyFn);
   const result = loadConfig({ baseDir: testEnv.tmpDir });
 
   if (assertFn) {

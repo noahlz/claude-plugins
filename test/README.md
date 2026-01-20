@@ -1,62 +1,61 @@
 # Claude Plugins Test Suite
 
-Comprehensive test coverage for skill node scripts using minimal Node.js, the [built-in](https://nodejs.org/api/test.html) `node:test` module and simple dependency injection for mocking. 
+> **Testing Methodology** See [CLAUDE.md](./CLAUDE.md) for dependency injection patterns, mock creation, assertion helpers, fixture loading, and troubleshooting.
 
 ## Running Tests
 
-**Run all tests**
+Use this plugin's own `dev-workflow:run-and-fix-tests` skill to run tests.
 
+To run tests manually:
+
+**All tests:**
 ```bash
 npm test
 ```
 
-**Run a single test**
-
+**Single test:**
 ```bash
 npm test -- test/path/to/test.js
 ```
 
-**Run tests matching a pattern**
-
+**Tests matching pattern:**
 ```bash
-npm test -- test/dev-workflow/lib/*.test.js
+npm test -- test/dev-workflow/run-and-fix-tests/*.test.js
 ```
 
-**Run with coverage report**
-
+**With coverage:**
 ```bash
 npm run coverage
 ```
 
 ## Adding a Test
 
-1. Create test file in `test/dev-workflow/{plugin-name}/`
-2. Use `describe()` and `it()` from `node:test`
-3. Use `setupTestEnv()` in `beforeEach()` to initialize test directories
-4. Use `readFixture()` to load pre-built test data from `fixtures/`
+1. Create test file in `test/dev-workflow/{skill-name}/` with pattern `*.test.js`
+2. Import from `node:test` and `node:assert`
+3. Use `setupTestEnv()` from helpers in `beforeEach()` and `teardownTestEnv()` in `afterEach()`
+4. Use existing helpers or add new ones to `helpers.js` for reusable mocks and assertions
 
 See existing tests in [`test/dev-workflow/`](test/dev-workflow/) for examples.
 
 ## Test Infrastructure
 
-### Test Helpers
+Common utilities in [`lib/helpers.js`](./lib/helpers.js) provide:
+- `setupTestEnv()` / `teardownTestEnv()` - Test directory lifecycle
+- `readFixture()` - Load pre-built test data
+- `setupGitRepo()`, `stageFile()`, `execGit()` - Git test helpers
+- Helper re-export shortcuts for convenience
 
-Common utilities in [`lib/helpers.js`](./lib/helpers.js) support test setup, fixture loading, and script execution. See the file for available functions.
+Skill-specific helpers in `{skill}/helpers.js` provide:
+- Mock factories (`createMockX()`)
+- Assertion helpers
+- Test setup wrappers
 
-### Dependency Injection for Mocking
+## Fixtures
 
-Tests use **dependency injection** to provide mock dependencies. 
+Some tests use fixtures (template/example files). 
 
-Tests define lightweight, inline mock objects that are passed to functions-under-test via a `deps` parameter
+See `test/dev-workflow/run-and-fix-tests/fixtures/`:
+- `configs/` - Configuration files for build and commit tests
+- `project-templates/` - Minimal project structures for tool detection tests
 
-See [commit-workflow.unit.test.js](./dev-workflow/write-git-commit/commit-workflow.unit.test.js) for examples.
-
-### Fixtures
-
-Pre-built test data in `test/dev-workflow/fixtures/`:
-
-- [`configs/`](./dev-workflow/fixtures/configs/) - Configuration files for build and commit tests
-- [`project-templates/`](./dev-workflow/fixtures/project-templates/) - Minimal project structures for tool detection tests
-
-Use the helper function `readFixture()` to load fixtures in tests and modify them inline rather than creating additional fixture files.
-
+Load with `readFixture()` and modify inline rather than creating fixture variants.
