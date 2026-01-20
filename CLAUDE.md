@@ -73,6 +73,12 @@ Inject dependencies as a `deps` parameter in function options:
 - For each test, create new base mocks that selectively override functions under test and throw errors for unexpected calls
 - Example: `await prepare({ baseDir: '.', deps: { ccusage: testCcusage } })`
 
+**Test Helper Pattern:**
+- Create reusable mock factories in `test/dev-workflow/<skill>/helpers.js`
+- Export functions like `createMockX(data)` that return mock implementations
+- Keep helpers simple: return async functions or objects with predictable behavior
+- Example: `createMockLoadSessionData(sessions)` returns `async () => sessions`
+
 ### Running Tests: Silence is Golden
 
 Use the `dev-workflow:run-and-fix-tests` skill to test changes to this project.
