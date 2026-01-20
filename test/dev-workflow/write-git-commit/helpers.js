@@ -58,6 +58,15 @@ export function createMockGit(overrides = {}) {
   };
 }
 
+/**
+ * Create a mock loadSessionData function that returns specified sessions
+ * @param {Array} sessions - Array of session objects to return
+ * @returns {Function} Async mock function that returns the sessions
+ */
+export function createMockLoadSessionData(sessions) {
+  return async () => sessions;
+}
+
 // ============================================================================
 // Result Assertion Helpers
 // ============================================================================

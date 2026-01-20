@@ -41,11 +41,15 @@ export function getProjectsDir() {
  * with Claude Code's session storage structure (it expects {sessionId}.jsonl files,
  * but Claude Code stores sessions in project/{sessionId}/ directories with multiple files).
  * @param {string} sessionId - Session ID
+ * @param {Object} deps - Dependencies for testing
+ * @param {Function} deps.loadSessionData - Function to load session data
  * @returns {Promise<{success: boolean, costs: Array, error?: string}>}
  */
-export async function getSessionCosts(sessionId) {
+export async function getSessionCosts(sessionId, deps = {}) {
+  const loadData = deps.loadSessionData || loadSessionData;
+
   try {
-    const sessions = await loadSessionData();
+    const sessions = await loadData();
     const session = sessions.find(s => s.sessionId === sessionId);
 
     if (!session) {
@@ -56,7 +60,10 @@ export async function getSessionCosts(sessionId) {
       };
     }
 
-    const costs = extractCostMetrics(session);
+    // Find subagent sessions and aggregate costs
+    const subagentSessions = findSubagentSessions(sessions, sessionId);
+    const allSessions = [session, ...subagentSessions];
+    const costs = aggregateModelBreakdowns(allSessions);
 
     if (costs.length === 0) {
       return {
@@ -167,6 +174,47 @@ export function extractCostMetrics(session) {
     inputTokens: m.inputTokens || 0,
     outputTokens: m.outputTokens || 0,
     cost: Math.round((m.cost || 0) * 100) / 100
+  }));
+}
+
+/**
+ * Find subagent sessions belonging to a main session
+ * Subagents have sessionId "subagents" and projectPath starting with mainSessionId/
+ * @param {Array} sessions - All sessions from ccusage
+ * @param {string} mainSessionId - The main session ID
+ * @returns {Array} - Array of subagent session objects
+ */
+export function findSubagentSessions(sessions, mainSessionId) {
+  return sessions.filter(s =>
+    s.sessionId === 'subagents' &&
+    s.projectPath &&
+    s.projectPath.startsWith(mainSessionId + '/')
+  );
+}
+
+/**
+ * Aggregate model breakdowns from multiple sessions
+ * Sums tokens and costs by model name
+ * @param {Array} sessionsList - Array of session objects
+ * @returns {Array} - Aggregated cost metrics by model
+ */
+export function aggregateModelBreakdowns(sessionsList) {
+  const aggregated = new Map();
+
+  for (const session of sessionsList) {
+    for (const m of session.modelBreakdowns || []) {
+      const model = m.model || m.modelName || 'unknown';
+      const existing = aggregated.get(model) || { model, inputTokens: 0, outputTokens: 0, cost: 0 };
+      existing.inputTokens += m.inputTokens || 0;
+      existing.outputTokens += m.outputTokens || 0;
+      existing.cost += m.cost || 0;
+      aggregated.set(model, existing);
+    }
+  }
+
+  return Array.from(aggregated.values()).map(c => ({
+    ...c,
+    cost: Math.round(c.cost * 100) / 100
   }));
 }
 
