@@ -1,6 +1,6 @@
 ---
 name: run-and-fix-tests
-description: Builds projects and runs test suites. When failures occur, delegates to analyzer agents to diagnose root causes and provide fix recommendations. Use for running tests or verifying changes.
+description: Builds and run project tests, delegating to sub-agents for fix recommendations upon failure.
 user-invocable: true
 allowed-tools:
   - Bash(npm *)
@@ -18,47 +18,67 @@ allowed-tools:
 
 ---
 
-You use this skill proactively to verify your code changes. For example, when you think "Now I should run tests to verify my changes" - activate this skill. 
+Activate this skill when:
+- you think phrases like "Now I should run tests to verify my changes"
+- the user requests test execution, using phrases like:
+  - "test"
+  - "run tests"
+  - "test the changes"
+  - "build and test"
 
-Also activate this skill when the user requests testing using phrases like:
-- "run tests"
-- "test the changes"
-- "build and test"
-- "verify changes"
-
-When build or test failures occur:
-  - Use `broken-build-analyzer` to analyze compilation errors
-  - Use `failed-test-analyzer` to analyze test failures
-  - Display the agent's analysis and ask the user to enter Plan mode using that analysis
-
-**IMPORTANT:** ALWAYS follow the workflow and instructions EXACTLY as written in following sections.
+The skill workflow guides you through running the project build and test suite, and analyzing any failures using sub-agents to devise a break-fix plan.
 
 ---
 
 # Skill Context
 
-## Reference Files
+## SKILL_BASE_DIR Resolution
 
-**Shared References:** (from dev-workflow plugin)
-- [`skill_base_dir.md`](../../references/skill_base_dir.md) - Extract and validate skill installation path
+**MANDATORY:** Extract SKILL_BASE_DIR from the startup message:
+- Look for: "Base directory for this skill: /path/to/skill"
+- Verify the path contains `.claude/plugins/cache/`
+- Store the exact *path* value as SKILL_BASE_DIR
 
-**Skill References:**
-- [`extract-build-errors.md`](./references/extract-build-errors.md) - Build error extraction
-- [`extract-test-failures.md`](./references/extract-test-failures.md) - Test failure extraction
-- [`run-build.md`](./references/run-build.md) - Build execution and failure handling
-- [`run-tests.md`](./references/run-tests.md) - Test execution
-- [`setup-config.md`](./references/setup-config.md) - Build tool detection / configuration
+**Usage:** Replace `{{SKILL_BASE_DIR}}` with the extracted path in all bash commands.
 
-**Scripts:**  [scripts/](./scripts/) - utility scripts
+**Example:**
+- Template: `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"`
+- Actual: `node "/Users/user/.claude/plugins/cache/org-name/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
 
-**Defaults:** [`assets/defaults/`](./assets/defaults/) - default build tool configurations
+## Workflow Rules & Guardrails
+
+**MANDATORY:** FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW.
+
+### A. Delegation Protocol
+
+When you see `DELEGATE_TO: [file]`:  
+⛔ **STOP** → Use Read tool on the reference file path  
+→ Execute its instructions exactly (bash commands, parsing, etc.)  
+→ Return to SKILL.md only after completing reference file instructions  
+
+⚠️  **IMPORTANT:** Reference files contain Bash tool commands - use them exactly as written - never improvise commands.
+
+### B. Template Substitution
+
+**MANDATORY**: Replace placeholders before executing bash commands:
+- `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
+
+### C. Narration Control
+
+⚠️  **SILENCE PROTOCOL**
+Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and tool calls silently - no explanatory text.  
+
+---
+
+# Skill Workflow Instructions
 
 ## Workflow Checklist
 
 **Use this copyable checklist to EXACTLY follow ALL steps of this skill workflow:**
 
 ```
-- [ ] 1. Detect Build Configuration (If Necessary)
+- [ ] 0. Prerequisites
+- [ ] 1. Generate Build Configuration (If Necessary)
 - [ ] 2. Load Build Configuration
 - [ ] 3. Build Project (If Necessary)
 - [ ] 3a. Analyze Build Errors (If Necessary)
@@ -66,35 +86,6 @@ When build or test failures occur:
 - [ ] 5. Analyze Test Failures
 - [ ] 6. Present Test Failure Analysis to User
 ```
-
-## Workflow Rules & Guardrails
-
-**FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW. Violations break the workflow.**
-
-### A. Workflow Order of Operations
-
-- Follow the Workflow instructions **EXACTLY** as written.
-- **DO NOT SKIP** any section unless the instructions explicitly state "Go to Step [X]" or "Skip to Step [X]".
-- This Workflow includes decision points - follow conditional logic precisely.
-
-### B. Delegation Protocol
-
-When you see `DELEGATE_TO: [file]`:  
-⛔ **STOP** - Do NOT proceed until you read the file  
-→ Use Read tool on the referenced file path  
-→ Execute its instructions exactly (bash commands, parsing, etc.)  
-→ Return to SKILL.md only after completing reference file instructions  
-
-⚠️ Reference files contain the ACTUAL bash commands. Never improvise or guess commands.
-
-### C. Narration Control ("Silence is Golden")
-
-⚠️ **SILENCE PROTOCOL**  
-Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute silently - no explanatory text.
-
----
-
-# Skill Workflow Instructions
 
 ## 0. Prerequisites
 
@@ -108,29 +99,13 @@ Only narrate steps with a STEP_DESCRIPTION field. All other tool calls execute s
 
 ---
 
-### Extract SKILL_BASE_DIR
-
-**MANDATORY:** This skill depends on resolving the skill install directory - follow these steps exactly:
-
-DELEGATE_TO: `../../references/skill_base_dir.md`  
-⛔ READ FILE FIRST - contains validation instructions  
-
-→ Extract and validate SKILL_BASE_DIR value from skill startup message.  
-→ Store SKILL_BASE_DIR for use in all subsequent bash commands.  
-
----
-
-### Template Substitution
-
-Replace placeholders before executing bash commands:
-- `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
-
-## 1. Detect Build Configuration
+## 1. Generate Build Configuration
 
 **Only execute this step if SKILL_CONFIG = NOT_CONFIGURED (checked in Prerequisites)**
 
-→ Execute setup instructions from `./references/setup-config.md`
-→ Exit workflow and return to user after config creation
+→ DELEGATE_TO: `references/setup-config.md`  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
+→ Exit workflow and return to user after config creation  
 
 ## 2. Load Configuration
 
@@ -169,24 +144,22 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 → Proceed directly to step 4 (Run Tests)  
 
 **If `config.skipBuild` is false:**  
-- **STEP_DESCRIPTION**: "Building project"  
-- DELEGATE_TO: `references/run-build.md`  
-- ⛔ READ FILE FIRST - contains the actual build commands  
+→ DELEGATE_TO: `references/run-build.md`  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
 ## 3a. Analyze Build Errors with Sub-Agent
 
 **STEP_DESCRIPTION**: "Analyzing build errors"
 
-DELEGATE_TO: `references/extract-build-errors.md`  
-⛔ READ FILE FIRST - contains error extraction and agent invocation  
+→ DELEGATE_TO: `references/extract-build-errors.md`  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
-→ The extract-build-errors reference will parse errors and invoke the broken-build-analyzer agent  
-→ Receive structured analysis from agent  
-→ Proceed to step 3b to with analysis  
+→ Receive structured analysis from sub-agent  
+→ Proceed to step 3b with analysis  
 
 ## 3b. Fix Build Errors
 
-→ Display agent analysis to user  
+→ Display sub-agent analysis to user  
 → Ask user: "Enter plan mode to implement fixes?"  
   - Yes → Use EnterPlanMode tool with analysis context  
   - No → Exit workflow  
@@ -195,10 +168,9 @@ DELEGATE_TO: `references/extract-build-errors.md`
 
 **STEP_DESCRIPTION**: "Running tests"
 
-DELEGATE_TO: `references/run-tests.md`  
-⛔ READ FILE FIRST - contains the actual test commands  
+→ DELEGATE_TO: `references/run-tests.md`  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
-→ Follow test execution procedure  
 → If tests pass: Exit workflow  
 → If tests fail: Proceed to step 5  
 
@@ -206,11 +178,10 @@ DELEGATE_TO: `references/run-tests.md`
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
-DELEGATE_TO: `references/extract-test-failures.md`  
-⛔ READ FILE FIRST - contains failure extraction and agent invocation  
+→ DELEGATE_TO: `references/extract-test-failures.md`  
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
-→ The extract-test-failures reference will parse failures and invoke the failed-test-analyzer agent (if failures found)  
-→ Receive structured analysis from agent  
+→ Receive structured analysis from sub-agent  
 
 **Result handling:**  
 → If 0 failures: Display "All tests passed" and exit workflow  
@@ -218,12 +189,12 @@ DELEGATE_TO: `references/extract-test-failures.md`
 
 ## 6. Present Test Failure Analysis to User
 
-Using the analysis received from `failed-test-analyzer`:
+Using the test-failure analysis received from the sub-agent:
 
 → Display analysis to user  
 → If the analysis has a root cause analysis and/or proposed fixes:  
   - → Ask user: "Enter plan mode to implement fixes?"
     - Yes → Use EnterPlanMode tool with analysis context
     - No → Exit workflow
-→ If the analysis does not have propsed fixes → Exit workflow  
+→ If the analysis does not have proposed fixes → Exit workflow  
 

@@ -59,6 +59,10 @@ This skill delegates to specialized analyzer agents for root cause analysis:
 
 Both agents provide fix recommendations without making edits. The user implements fixes via plan mode.
 
+## Known Limitations
+
+This skill does not yet support "polyglot" projects - multi-language / framework projects with different build/test commands in the same working directory.
+
 ## Author
 
 [@noahlz](https://github.com/noahlz)

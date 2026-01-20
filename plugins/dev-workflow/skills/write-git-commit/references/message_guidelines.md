@@ -5,6 +5,7 @@
 - Subject Line
 - Body
 - Examples
+- Return to Main Workflow
 
 ---
 
@@ -75,4 +76,6 @@ Refactor error handling and update dependencies
 - Upgrade lodash to 4.17.21
 ```
 
-Return to SKILL.md with COMMIT_SUBJECT and COMMIT_BODY values stored mentally.
+## Return to Main Workflow with Stored Values
+
+→ Return to SKILL.md with COMMIT_SUBJECT and COMMIT_BODY values stored mentally.

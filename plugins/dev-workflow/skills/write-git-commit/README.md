@@ -74,6 +74,14 @@ ls ~/.claude/projects
 ccusage session --json
 ```
 
+## Known Issues
+
+### Eager Claude
+
+Despite the copious "guardrails" in the skill instructions, Claude sometimes charges ahead with the git commit before obtaining approval for the git commit, or without gathering cost metrics from `ccusage`.
+
+If this happens, tell Claude something like `Please redo that commit using the dev-workflow:write-git-commit skill, following its instructions EXACTLY`. Typically, Claude will comply.
+
 ## Author
 
 [@noahlz](https://github.com/noahlz)

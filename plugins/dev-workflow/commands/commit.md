@@ -1,7 +1,6 @@
 ---
 name: commit
-description: Use the write-git-commit skill to commit with Claude Code attribution cost metrics embedded as git trailers.
-context: fork
+description: Activate the dev-workflow:write-git-commit skill
 ---
 
-Use `dev-workflow:write-git-commit` skill, following its instructions **EXCACTLY**.
+Activate the skill `dev-workflow:write-git-commit`, following its instructions **EXCACTLY**.

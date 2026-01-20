@@ -1,7 +1,9 @@
 ---
 name: test
-description: Use the run-and-fix-tests skill to run the project test suite (or a single test) and analyze any failures.
+description: Activate the dev-workflow:run-and-fix-tests skill
 argument-hint: "[testName]"
 ---
 
-Use the `dev-workflow:run-and-fix-tests` skill, following its instructions **EXACTLY**.
+Activate the skill `dev-workflow:run-and-fix-tests`, following its instructions **EXACTLY**.
+
+Pass $1 as the `testName` argument, if provided.

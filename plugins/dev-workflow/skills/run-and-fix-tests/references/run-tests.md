@@ -1,17 +1,23 @@
-# Run Tests Procedure
+# Instructions: Execute Test Suite
 
-## Prerequisites
+Follow these instructions to run the project tests:
 
-- Configuration values loaded from step 2 (parsed JSON config)
-- Build completed (or skipped if `config.skipBuild=true`)
-
-Contents:
-
-- Test Execution: All Tests Mode
-- Test Execution: Single Test Mode
+**Contents:**
+- Prerequisites
+- Test Execution
+  - All Tests Mode
+  - Single Test Mode
 - Exit Code Handling
 
 ---
+
+## Prerequisites
+
+You should have:
+- JSON configuration loaded from step 2
+- A successful build (or skipped if `config.skipBuild=true`)
+
+**If either are missing, do not improvise. Tell the user and exit the workflow immediately**.
 
 ## Test Execution
 
@@ -55,7 +61,6 @@ Example bash command with native output support:
 ```bash
 npm --silent test -- path/to/test.js
 ```
-
 
 ## Exit Code Handling
 

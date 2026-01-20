@@ -1,14 +1,15 @@
 # Create Git Commit
 
 **Contents:**
-- Bash Command
+- Bash Command Instructions
 - Command Result Handling
+- Return to Main Workflow
 
----
+**IMPORTANT:** NEVER use `git` commands directly for creating a commit - ALWAYS use the scripts referenced in the below instructions.
 
-## Bash Command
+--- 
 
-**IMPORTANT:** Do NOT improvise `git commit` commands - the script `scripts/commit-workflow.js` handles all `git` operations - use that (see below).
+## Bash Command Instructions
 
 **Value Replacements:**
 
@@ -44,4 +45,6 @@ EOF
 → If STATUS is not "success":
   - → Extract value from JSON field `message` and store in ERROR_MESSAGE variable.
 
-Return to SKILL.md with STATUS and related values stored mentally from the commit result.
+## Return to Main Workflow with Stored Values
+
+→ Return to SKILL.md with STATUS and related values stored mentally from the commit result.
