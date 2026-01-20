@@ -79,6 +79,8 @@ Inject dependencies as a `deps` parameter in function options:
 - Keep helpers simple: return async functions or objects with predictable behavior
 - Example: `createMockLoadSessionData(sessions)` returns `async () => sessions`
 
+See the [testing README.md](./test/README.md) for additional context on writing tests effectively.
+
 ### Running Tests: Silence is Golden
 
 Use the `dev-workflow:run-and-fix-tests` skill to test changes to this project.
