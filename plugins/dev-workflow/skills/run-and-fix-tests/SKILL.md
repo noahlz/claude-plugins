@@ -26,11 +26,24 @@ Activate this skill when:
   - "test the changes"
   - "build and test"
 
-The skill guides you through running the project build and test suite, and analyzing any failures using sub-agents to devise a break-fix plan.
+The skill workflow guides you through running the project build and test suite, and analyzing any failures using sub-agents to devise a break-fix plan.
 
 ---
 
 # Skill Context
+
+## SKILL_BASE_DIR Resolution
+
+**MANDATORY:** Extract SKILL_BASE_DIR from the startup message:
+- Look for: "Base directory for this skill: /path/to/skill"
+- Verify the path contains `.claude/plugins/cache/`
+- Store the exact *path* value as SKILL_BASE_DIR
+
+**Usage:** Replace `{{SKILL_BASE_DIR}}` with the extracted path in all bash commands.
+
+**Example:**
+- Template: `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"`
+- Actual: `node "/Users/user/.claude/plugins/cache/org-name/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
 
 ## Workflow Rules & Guardrails
 
@@ -54,15 +67,6 @@ When you see `DELEGATE_TO: [file]`:
 
 ⚠️  **SILENCE PROTOCOL**
 Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and tool calls silently - no explanatory text.  
-
-## SKILL_BASE_DIR value
-
-**MANDATORY:** This skill depends on resolving the skill base directory - follow these steps EXACTLY:
-
-DELEGATE_TO: `../../references/skill_base_dir.md`  
-⛔ READ FILE FIRST - contains instructions for resolving SKILL_BASE_DIR value  
-
-→ Store SKILL_BASE_DIR for use in all subsequent bash commands.  
 
 ---
 
