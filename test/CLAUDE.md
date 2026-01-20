@@ -102,9 +102,8 @@ Reduce boilerplate by wrapping common test setup patterns.
 ### Test Failures
 
 If tests fail:
-1. Read output from `dist/test.log`
-2. Look for TAP report format showing failed tests
-3. Check assertion messages for context
+1. Look for TAP report format showing failed tests
+2. Check assertion messages for context
 
 ### Mock Not Being Called
 
