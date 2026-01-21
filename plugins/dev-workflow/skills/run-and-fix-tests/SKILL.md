@@ -47,6 +47,12 @@ The skill workflow guides you through running the project build and test suite, 
 - Template: `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"`
 - Actual: `node "/Users/user/.claude/plugins/cache/org-name/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
 
+Before proceeding, run this Bash command to confirm:
+```bash
+# Use {{SKILL_BASE_DIR}} value (extracted from skill startup message)
+echo SKILL_BASE_DIR: {{SKILL_BASE_DIR}}
+```
+
 ## Workflow Rules & Guardrails
 
 **MANDATORY:** FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW.

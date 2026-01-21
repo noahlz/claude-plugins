@@ -12,14 +12,12 @@
 
 → Check if `ccusage` is installed in the plugin directory:
 
-```bash
-# Navigate to plugin root (2 levels up from SKILL_BASE_DIR)
-PLUGIN_ROOT="{{SKILL_BASE_DIR}}/../.."
 
-if [ ! -d "$PLUGIN_ROOT/node_modules/ccusage" ]; then
+```bash
+# Use {{SKILL_BASE_DIR}} value (extracted from skill startup)
+if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
   echo "!!! Installing ccusage:"
-  cd "$PLUGIN_ROOT"
-  npm install
+  npm install --prefix "{{SKILL_BASE_DIR}}/../.."
 else
   echo "✓ ccusage available"
 fi
@@ -30,7 +28,7 @@ fi
 → Run the following command to fetch session cost metrics:
 
 ```bash
-# Use {{SKILL_BASE_DIR}} and {{SESSION_ID}} (extracted from skill startup)
+# Use {{SKILL_BASE_DIR}} and {{SESSION_ID}} values (extracted from skill startup)
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION_ID}}"
 ```
 
