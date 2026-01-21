@@ -36,6 +36,7 @@ export function createMockCcusage(overrides = {}) {
     pwdToSessionId: () => throwUnexpected('pwdToSessionId'),
     extractCostMetrics: () => throwUnexpected('extractCostMetrics'),
     validateCostMetrics: () => throwUnexpected('validateCostMetrics'),
+    filterZeroUsageCosts: (costsArray) => ({ filtered: costsArray, removed: [] }),
     ...overrides
   };
 }

@@ -9,6 +9,7 @@ import {
   findRecommendedSession,
   findSubagentSessions,
   aggregateModelBreakdowns,
+  filterZeroUsageCosts,
   getSessionCosts
 } from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/ccusage-operations.js';
 import { createMockLoadSessionData } from './helpers.js';
@@ -484,6 +485,73 @@ describe('write-git-commit: ccusage-operations.js', () => {
     });
   });
 
+  describe('filterZeroUsageCosts', () => {
+    it('filters out entries with all zeros', () => {
+      const costs = [
+        { model: 'claude-sonnet-4', inputTokens: 100, outputTokens: 50, cost: 0.10 },
+        { model: 'claude-haiku-3.5', inputTokens: 0, outputTokens: 0, cost: 0 }
+      ];
+
+      const result = filterZeroUsageCosts(costs);
+
+      assert.equal(result.filtered.length, 1);
+      assert.equal(result.filtered[0].model, 'claude-sonnet-4');
+      assert.equal(result.removed.length, 1);
+      assert.equal(result.removed[0].model, 'claude-haiku-3.5');
+    });
+
+    it('keeps entries with any non-zero value', () => {
+      const costs = [
+        { model: 'model-1', inputTokens: 100, outputTokens: 0, cost: 0 },
+        { model: 'model-2', inputTokens: 0, outputTokens: 50, cost: 0 },
+        { model: 'model-3', inputTokens: 0, outputTokens: 0, cost: 0.05 }
+      ];
+
+      const result = filterZeroUsageCosts(costs);
+
+      assert.equal(result.filtered.length, 3);
+      assert.equal(result.removed.length, 0);
+    });
+
+    it('returns empty filtered array when all entries are zero', () => {
+      const costs = [
+        { model: 'model-1', inputTokens: 0, outputTokens: 0, cost: 0 },
+        { model: 'model-2', inputTokens: 0, outputTokens: 0, cost: 0 }
+      ];
+
+      const result = filterZeroUsageCosts(costs);
+
+      assert.equal(result.filtered.length, 0);
+      assert.equal(result.removed.length, 2);
+    });
+
+    it('handles empty array', () => {
+      const result = filterZeroUsageCosts([]);
+
+      assert.deepStrictEqual(result.filtered, []);
+      assert.deepStrictEqual(result.removed, []);
+    });
+
+    it('handles non-array input', () => {
+      const result = filterZeroUsageCosts(null);
+
+      assert.deepStrictEqual(result.filtered, []);
+      assert.deepStrictEqual(result.removed, []);
+    });
+
+    it('preserves all valid entries when none are zero', () => {
+      const costs = [
+        { model: 'claude-sonnet-4', inputTokens: 100, outputTokens: 50, cost: 0.10 },
+        { model: 'claude-haiku-3.5', inputTokens: 500, outputTokens: 200, cost: 0.02 }
+      ];
+
+      const result = filterZeroUsageCosts(costs);
+
+      assert.equal(result.filtered.length, 2);
+      assert.equal(result.removed.length, 0);
+    });
+  });
+
   describe('getSessionCosts', () => {
     it('aggregates costs from main session and subagents', async () => {
       const result = await getSessionCosts('test-session', {
@@ -566,7 +634,7 @@ describe('write-git-commit: ccusage-operations.js', () => {
 
       assert.equal(result.success, false);
       assert.equal(result.costs.length, 0);
-      assert.ok(result.error.includes('No model breakdowns'));
+      assert.ok(result.error.includes('No valid model breakdowns'));
     });
 
     it('handles loadSessionData error', async () => {
@@ -603,6 +671,46 @@ describe('write-git-commit: ccusage-operations.js', () => {
       assert.equal(result.success, true);
       assert.equal(result.costs[0].inputTokens, 100);
       assert.equal(result.costs[0].cost, 0.10);
+    });
+
+    it('filters out models with zero usage from aggregation', async () => {
+      const result = await getSessionCosts('test-session', {
+        loadSessionData: createMockLoadSessionData([
+          {
+            sessionId: 'test-session',
+            modelBreakdowns: [
+              { model: 'claude-sonnet-4', inputTokens: 100, outputTokens: 50, cost: 0.10 },
+              { model: 'claude-haiku-3.5', inputTokens: 0, outputTokens: 0, cost: 0 }
+            ]
+          }
+        ])
+      });
+
+      assert.equal(result.success, true);
+      assert.equal(result.costs.length, 1);
+      assert.equal(result.costs[0].model, 'claude-sonnet-4');
+      assert.ok(result.metadata);
+      assert.equal(result.metadata.zeroUsageModels.length, 1);
+      assert.equal(result.metadata.zeroUsageModels[0].model, 'claude-haiku-3.5');
+    });
+
+    it('returns error when all models have zero usage after filtering', async () => {
+      const result = await getSessionCosts('test-session', {
+        loadSessionData: createMockLoadSessionData([
+          {
+            sessionId: 'test-session',
+            modelBreakdowns: [
+              { model: 'claude-haiku-3.5', inputTokens: 0, outputTokens: 0, cost: 0 }
+            ]
+          }
+        ])
+      });
+
+      assert.equal(result.success, false);
+      assert.equal(result.costs.length, 0);
+      assert.ok(result.error.includes('No valid model breakdowns'));
+      assert.ok(result.error.includes('1 entries had zero usage'));
+      assert.equal(result.metadata.zeroUsageModels.length, 1);
     });
   });
 

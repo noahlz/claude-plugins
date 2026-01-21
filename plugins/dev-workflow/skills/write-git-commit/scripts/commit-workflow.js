@@ -26,7 +26,8 @@ function createDefaultDeps() {
       findRecommendedSession: ccusage.findRecommendedSession,
       pwdToSessionId: ccusage.pwdToSessionId,
       extractCostMetrics: ccusage.extractCostMetrics,
-      validateCostMetrics: ccusage.validateCostMetrics
+      validateCostMetrics: ccusage.validateCostMetrics,
+      filterZeroUsageCosts: ccusage.filterZeroUsageCosts
     }
   };
 }
@@ -264,10 +265,13 @@ async function commit(options = {}) {
     // Validate metrics before commit
     const costsArray = Array.isArray(currentCost) ? currentCost : [currentCost];
 
-    if (!ccusageOps.validateCostMetrics(costsArray)) {
+    // Filter out zero-usage entries before validation
+    const { filtered } = ccusageOps.filterZeroUsageCosts(costsArray);
+
+    if (!ccusageOps.validateCostMetrics(filtered)) {
       return {
         status: 'metrics_invalid',
-        data: { session_id: sessionId, attempted_costs: costsArray },
+        data: { session_id: sessionId, attempted_costs: filtered },
         message: 'Cost metrics validation failed'
       };
     }
@@ -275,7 +279,7 @@ async function commit(options = {}) {
     // Build cost footer JSON (single line, no pretty-print)
     const costFooter = JSON.stringify({
       sessionId,
-      cost: Array.isArray(currentCost) ? currentCost : [currentCost]
+      cost: filtered
     });
 
     // Build full commit message with git trailer format

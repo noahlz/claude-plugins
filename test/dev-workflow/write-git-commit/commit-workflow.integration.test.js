@@ -223,6 +223,42 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
         assert.ok(data, `Output should contain valid JSON`);
         assert.equal(data.status, 'metrics_invalid', 'Status should be metrics_invalid for all-zero metrics');
       });
+
+      it('succeeds when some metrics are zero (filtered out)', () => {
+        // Create a test file to stage
+        writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
+        execGit(['add', 'test.txt'], { cwd: testEnv.tmpDir });
+
+        const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+
+        const mixedMetrics = JSON.stringify([
+          {
+            model: 'valid-model',
+            inputTokens: 100,
+            outputTokens: 50,
+            cost: 0.05
+          },
+          {
+            model: 'zero-model',
+            inputTokens: 0,
+            outputTokens: 0,
+            cost: 0
+          }
+        ]);
+
+        const result = execNodeScript(scriptPath, {
+          args: ['commit', '--session-id', 'test-session-123', '--costs', mixedMetrics],
+          cwd: testEnv.tmpDir,
+          input: 'Test commit message'
+        });
+
+        const data = extractJsonFromOutput(result.stdout);
+        assert.ok(data, `Output should contain valid JSON`);
+
+        // After filtering, this should now succeed (zero entries filtered before validation)
+        assert.equal(data.status, 'success', 'Should succeed with mixed data after filtering');
+        assert.ok(data.data.commit_sha, 'Should return commit SHA');
+      });
     });
 
     describe("git integration", () => {

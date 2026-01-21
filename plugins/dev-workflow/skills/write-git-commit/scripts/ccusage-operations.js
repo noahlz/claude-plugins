@@ -63,19 +63,24 @@ export async function getSessionCosts(sessionId, deps = {}) {
     // Find subagent sessions and aggregate costs
     const subagentSessions = findSubagentSessions(sessions, sessionId);
     const allSessions = [session, ...subagentSessions];
-    const costs = aggregateModelBreakdowns(allSessions);
+    const aggregatedCosts = aggregateModelBreakdowns(allSessions);
 
-    if (costs.length === 0) {
+    // Filter out zero-usage models (can occur in multi-session aggregation)
+    const { filtered, removed } = filterZeroUsageCosts(aggregatedCosts);
+
+    if (filtered.length === 0) {
       return {
         success: false,
         costs: [],
-        error: `No model breakdowns found for session '${sessionId}'`
+        error: `No valid model breakdowns found for session '${sessionId}' (${aggregatedCosts.length} entries had zero usage)`,
+        metadata: { zeroUsageModels: removed }
       };
     }
 
     return {
       success: true,
-      costs
+      costs: filtered,
+      metadata: { zeroUsageModels: removed }
     };
   } catch (error) {
     return {
@@ -216,6 +221,34 @@ export function aggregateModelBreakdowns(sessionsList) {
     ...c,
     cost: Math.round(c.cost * 100) / 100
   }));
+}
+
+/**
+ * Filter out cost entries with zero usage (no tokens and no cost)
+ * @param {Array} costsArray - Array of cost objects
+ * @returns {Object} - { filtered, removed }
+ */
+export function filterZeroUsageCosts(costsArray) {
+  if (!Array.isArray(costsArray)) {
+    return { filtered: [], removed: [] };
+  }
+
+  const filtered = [];
+  const removed = [];
+
+  for (const cost of costsArray) {
+    const hasInputTokens = typeof cost.inputTokens === 'number' && cost.inputTokens > 0;
+    const hasOutputTokens = typeof cost.outputTokens === 'number' && cost.outputTokens > 0;
+    const hasCost = typeof cost.cost === 'number' && cost.cost > 0;
+
+    if (hasInputTokens || hasOutputTokens || hasCost) {
+      filtered.push(cost);
+    } else {
+      removed.push(cost);
+    }
+  }
+
+  return { filtered, removed };
 }
 
 /**
