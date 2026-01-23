@@ -90,9 +90,10 @@ npm test
 
 See [test/CLAUDE.md](./test/CLAUDE.md) for testing methodology, patterns, and examples.
 
-## Author
+## Authors
 
-[@noahlz](https://github.com/noahlz)
+[@noahlz](https://github.com/noahlz)  
+[Claude](https://claude.com/product/claude-code)
 
 ## License
 
