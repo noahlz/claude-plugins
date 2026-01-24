@@ -1,6 +1,6 @@
 ---
 name: run-and-fix-tests
-description: Builds and run project tests, delegating to sub-agents for fix recommendations upon failure.
+description: Builds and test the project following a precise workflow. Uses sub-agents to analyze build and test failures and plan fixes.
 user-invocable: true
 allowed-tools:
   - Bash(npm *)
@@ -28,7 +28,7 @@ Activate this skill when:
   - "test the changes"
   - "build and test"
 
-The skill workflow guides you through running the project build and test suite, and analyzing any failures using sub-agents to devise a break-fix plan.
+**IMPORTANT:** The skill workflow provides detailed steps for building and testing the project, and analyzing any failures using sub-agents to devise a break-fix plan. Follow the workflow steps EXACTLY as written.
 
 ---
 
@@ -38,7 +38,6 @@ The skill workflow guides you through running the project build and test suite, 
 
 **MANDATORY:** Extract SKILL_BASE_DIR from the startup message:
 - Look for: "Base directory for this skill: /path/to/skill"
-- Verify the path contains `.claude/plugins/cache/`
 - Store the exact *path* value as SKILL_BASE_DIR
 
 **Usage:** Replace `{{SKILL_BASE_DIR}}` with the extracted path in all bash commands.

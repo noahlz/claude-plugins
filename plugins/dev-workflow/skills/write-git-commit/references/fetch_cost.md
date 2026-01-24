@@ -8,11 +8,16 @@
 
 ---
 
-## Check ccusage Dependency
+## Execute Fetch Command
 
-→ Check if `ccusage` is installed in the plugin directory:
+→ Run the following command to fetch session cost metrics:
 
+```bash
+# Use {{SKILL_BASE_DIR}} and {{SESSION_ID}} values (extracted from skill startup)
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION_ID}}"
+```
 
+**NOTE:** If the above command fails, execute this script and try again: 
 ```bash
 # Use {{SKILL_BASE_DIR}} value (extracted from skill startup)
 if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
@@ -21,15 +26,6 @@ if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
 else
   echo "✓ ccusage available"
 fi
-```
-
-## Execute Fetch Command
-
-→ Run the following command to fetch session cost metrics:
-
-```bash
-# Use {{SKILL_BASE_DIR}} and {{SESSION_ID}} values (extracted from skill startup)
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION_ID}}"
 ```
 
 ## Parse JSON Output

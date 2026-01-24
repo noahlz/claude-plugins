@@ -1,6 +1,6 @@
 ---
 name: write-git-commit
-description: Creates git commits with session cost metrics and Claude attribution as git trailers. Use when the user asks you to commit changes to git.
+  description: Follows a precise, user-interactive workflow to write a git commit with trailers for session cost metrics and Claude attribution. Use when the user asks you to commit changes to git.
 user-invocable: true
 context: fork
 allowed-tools:
@@ -11,7 +11,7 @@ allowed-tools:
 
 ---
 
-Use this skill to create a git commit with a message summarizing changes and with trailers for attribution and cost metrics.
+Use this skill to create a git commit with a message summarizing changes and trailers for attribution and cost metrics.
 
 **MANDATORY** only activate this skill when the user explicitly asks for a git commit. Examples:
 - "commit my changes"
@@ -19,7 +19,7 @@ Use this skill to create a git commit with a message summarizing changes and wit
 - "save to git"
 - "git commit"
 
-The skill workflow guides you through composing a git message that includes Claude cost metrics and attribution.
+**IMPORTANT:** The skill workflow provides detailed steps for composing the git commit with user input. Follow the workflow steps EXACTLY as written.
 
 ---
 
@@ -29,7 +29,6 @@ The skill workflow guides you through composing a git message that includes Clau
 
 **MANDATORY:** Extract SKILL_BASE_DIR from the startup message:
 - Look for: "Base directory for this skill: /path/to/skill"
-- Verify the path contains `.claude/plugins/cache/`
 - Store the exact *path* value as SKILL_BASE_DIR
 
 **Usage:** Replace `{{SKILL_BASE_DIR}}` with the extracted path in all bash commands.
@@ -133,6 +132,8 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SEL
 → If error occurs: Display error message to user and then **exit workflow immediately**.  
 
 ## 2. Stage and Analyze Changes
+
+**IMPORTANT:** Only run the git commands below. Do **NOT** run other git command such as "git log --online" (previous commits are irrelevant).
 
 ### 2a. Stage changes
 
