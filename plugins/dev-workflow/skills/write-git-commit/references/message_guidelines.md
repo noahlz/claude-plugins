@@ -51,6 +51,8 @@ Compose and store COMMIT_BODY per the following guidelines:
 - Each bullet: focus on "what changed" and "why" - not "how"
 - Each bullet should add meaningful context not obvious from subject
 
+---
+
 ## Examples
 
 **Feature:**
@@ -75,7 +77,3 @@ Refactor error handling and update dependencies
 - Standardize error response format
 - Upgrade lodash to 4.17.21
 ```
-
-## Return to Main Workflow with Stored Values
-
-→ Return to SKILL.md with COMMIT_SUBJECT and COMMIT_BODY values stored mentally.
