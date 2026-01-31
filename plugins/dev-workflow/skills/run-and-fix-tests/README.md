@@ -8,7 +8,7 @@ Guides Claude through building and testing your project with minimal token usage
 - Analyzes compilation errors using the `broken-build-analyzer` agent
 - Analyzes test failures using the `failed-test-analyzer` agent
 - Provides root cause analysis and fix recommendations suitable for subsequent Plan mode
-- Supports single test execution: `/test MyTest`
+- Supports single test execution: `/run-and-fix-tests MyTest`
 - Supports multi-module projects with different build tools (custom configuration required)
 
 ## Prerequisites
@@ -17,18 +17,20 @@ Guides Claude through building and testing your project with minimal token usage
 
 ## Usage
 
+Slash command:
+
 ```bash
-/test              # Run all tests
-/test MyTest       # Run a single test
+/run-and-fix-tests              # Run all tests
+/run-and-fix-tests MyTest       # Run a single test
 ```
 
-Or say: "run tests", "test", "build and test", "fix tests", "make test"
+Or tell Claude: "run tests", "test", "build and test", "fix tests", etc.
 
 ## Configuration
 
 ### Auto-Configuration
 
-When you run `/test` for the first time, the plugin automatically:
+When you run `/run-and-fix-tests` for the first time, the plugin automatically:
 
 1. **Detects** your project's build tools by scanning for standard config files
 2. **Selects** the appropriate default configuration from the `assets/defaults/` directory
@@ -48,7 +50,7 @@ To customize after auto-config, edit your project's configuration at:`.claude/se
 
 ### Starting Over
 
-To reset and re-detect your build tools, delete your project's `.claude/settings.plugins.run-and-fix-tests.json` and run `/test` again.
+To reset and re-detect your build tools, delete your project's `.claude/settings.plugins.run-and-fix-tests.json` and run `/run-and-fix-tests` again.
 
 ## Agents
 

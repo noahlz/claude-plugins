@@ -20,13 +20,15 @@ Using this skill, Claude:
 
 ## Usage
 
-Command:
+Slash command:
 
 ```bash
-/commit
+/write-git-commit
 ```
 
 Or tell Claude: "commit", "write commit", "create commit", "git commit", etc.
+
+**Important:** This skill overrides Claude Code's default system "commit" skill, providing enhanced functionality with cost tracking and attribution.
 
 ## Cost Metrics in Commits
 

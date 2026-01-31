@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.4.0
+
+- Removed legacy command wrappers (`/commit` and `/test`) now that Claude Code properly recognizes plugin skills as slash commands
+- Updated all documentation to use full skill names (`/write-git-commit` and `/run-and-fix-tests`)
+- Clarified that `write-git-commit` skill overrides the system commit functionality
+
 # 0.3.0
 
 - Yet more revisions to skills and commands to ensure consistent activation and successful execution.

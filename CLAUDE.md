@@ -10,7 +10,6 @@ claude-plugins/
 ├── plugins/
 │   └── dev-workflow/
 │       ├── agents/
-│       ├── commands/
 │       ├── lib/       # Shared scripts
 │       └── skills/
 │           ├── run-and-fix-tests/
