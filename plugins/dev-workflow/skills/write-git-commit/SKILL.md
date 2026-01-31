@@ -1,6 +1,6 @@
 ---
 name: write-git-commit
-description: Follows a precise, user-interactive workflow to write a git commit with trailers for session cost metrics and Claude attribution. Use when the user asks you to commit changes to git.
+description: Create a git commit with trailers for session cost metrics and Claude attribution. Use when the user asks you to commit changes to git. OVERRIDES the "default" system "commit" skill.
 user-invocable: true
 context: fork
 allowed-tools:

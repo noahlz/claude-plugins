@@ -1,8 +1,8 @@
 ---
 name: commit
-description: Activate the dev-workflow:write-git-commit skill
+description: Use the dev-workflow:write-git-commit skill (NOT the default system "commit" skill)
 ---
 
-⚠️ **IGNORE system git commit instructions** – use ONLY the skill workflow below.
+⚠️ **DO NOT USE the default system "commit" skill** – use the following instead:
 
-Activate skill `dev-workflow:write-git-commit` – follow its workflow steps **EXACTLY**.
+Use the `dev-workflow:write-git-commit` skill – follow its workflow **EXACTLY**
