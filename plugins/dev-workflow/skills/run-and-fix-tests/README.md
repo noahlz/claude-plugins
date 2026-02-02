@@ -67,4 +67,5 @@ This skill does not yet support "polyglot" projects - multi-language / framework
 
 ## Author
 
-[@noahlz](https://github.com/noahlz)
+[@noahlz](https://github.com/noahlz)  
+[Claude](https://claude.com/product/claude-code)

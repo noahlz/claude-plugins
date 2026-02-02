@@ -78,16 +78,23 @@ ccusage session --json
 
 ## Known Issues
 
-### Eager Claude
+### Data Loss
 
-Despite the copious "guardrails" in the skill instructions, Claude sometimes charges ahead with the git commit before obtaining approval for the git commit, or without gathering cost metrics from `ccusage`.
+By default, Claude logs roll every 30 days. As such, usage cost metrics will appear to decrease periodically.
 
-If this happens, tell Claude something like `Please redo that commit using the dev-workflow:write-git-commit skill, following its instructions EXACTLY`. Typically, Claude will comply. If not, start a new chat session and try again.
+WORKAROUND: set a larger retention period in global `~/.claude/settings.json`:
+
+```json
+{
+  "cleanupPeriodDays": 99999
+}
+```
 
 ### SubAgent Sessions
 
-For some reason, `ccusage` tracks all subagent costs with a sessionId named "SubAgent." Fortunately, each cost object has an attribute `projectPath` that allows us to relate the subagent costs back to the parent project.
+For some reason, `ccusage` tracks all subagent costs with a sessionId named "SubAgent." Fortunately, each cost object has an attribute `projectPath`. This allows us to relate the subagent costs back to the parent project.
 
 ## Author
 
-[@noahlz](https://github.com/noahlz)
+[@noahlz](https://github.com/noahlz)  
+[Claude](https://claude.com/product/claude-code)
