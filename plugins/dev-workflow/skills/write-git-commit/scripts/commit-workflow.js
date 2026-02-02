@@ -358,6 +358,7 @@ async function main() {
         break;
       }
 
+      case 'fetch-cost':
       case 'prepare': {
         const baseDir = args[0] || '.';
         const sessionId = args[1] || null;

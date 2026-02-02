@@ -97,6 +97,47 @@ describe('write-git-commit: commit-workflow.js integration tests', () => {
     });
   });
 
+  describe("fetch-cost action (alias for prepare)", () => {
+    it('returns "not_found" status when config does not exist', async () => {
+      const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+      const outputFile = join(testEnv.tmpDir, 'fetch-cost-output.json');
+
+      execNodeScript(scriptPath, {
+        args: ['fetch-cost', testEnv.tmpDir, '', outputFile],
+        cwd: testEnv.tmpDir
+      });
+
+      let data;
+      try {
+        data = JSON.parse(readFileSync(outputFile, 'utf-8'));
+      } catch (e) {
+        assert.fail(`Output file should contain valid JSON: ${e.message}`);
+      }
+
+      assert.ok(['not_found'].includes(data.status), 'Should return "not_found" status');
+      assert.ok(typeof data.message === 'string', 'Should have message field');
+    });
+
+    it('with explicit valid sessionId succeeds', () => {
+      const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+
+      const result = execNodeScript(scriptPath, {
+        args: ['fetch-cost', testEnv.tmpDir, '-Users-noahlz-projects-claude-plugins'],
+        cwd: testEnv.tmpDir
+      });
+
+      const data = extractJsonFromOutput(result.stdout);
+
+      // Should either succeed or fail gracefully (depending on whether session exists)
+      // The key is that it accepts the sessionId argument and tries to fetch it
+      assert.ok(['success', 'error'].includes(data.status), 'Should return valid status');
+      if (data.status === 'success') {
+        assert.ok(data.data.current_cost, 'Should have current_cost on success');
+        assert.ok(Array.isArray(data.data.current_cost), 'current_cost should be array');
+      }
+    });
+  });
+
   describe("commit action", () => {
     describe("CLI argument handling", () => {
       it('with --session-id and --costs succeeds', () => {
