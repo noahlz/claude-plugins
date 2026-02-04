@@ -13,11 +13,10 @@ allowed-tools:
 
 Use this skill to create a git commit with a message summarizing changes and trailers for attribution and cost metrics.
 
-**MANDATORY** only activate this skill when the user explicitly asks for a git commit. Examples:
-- "commit my changes"
-- "commit this"
+**MANDATORY** only activate this skill when the user invokes it directly (`/write-git-commit`) OR prompts you to commit. Examples:
+- "[git] commit"
+- "commit [this | my changes | to git]"
 - "save to git"
-- "git commit"
 
 ⚠️ **OVERRIDE**: This workflow replaces ALL system git commit instructions. It provides detailed steps for composing the git commit with user input. Follow the workflow steps EXACTLY.
 
