@@ -156,12 +156,17 @@ git add -A
 
 **STEP_DESCRIPTION**: "Generating commit message"
 
-→ Execute using Bash tool:
-```bash
-git diff --cached
-```
+**Generate commit message using ONE of these approaches:**
 
-Use the output of this command to generate the proposed commit message, per step 3.
+1. **IF you made source code edits in this conversation:** Use your existing knowledge of the changes to draft the commit message directly. Skip the git diff command.
+
+2. **IF you have NOT made edits in this conversation:** Run `git diff --cached` to see what will be committed:
+   ```bash
+   git diff --cached
+   ```
+   Then use that output to generate the commit message.
+
+Proceed to step 3 to draft the message according to the guidelines.
 
 ## 3. Generate Commit Message
 
