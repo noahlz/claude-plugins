@@ -10,7 +10,9 @@ import {
   findSubagentSessions,
   aggregateModelBreakdowns,
   filterZeroUsageCosts,
-  getSessionCosts
+  getSessionCosts,
+  parseClaudeModelFamily,
+  filterStaleCosts
 } from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/ccusage-operations.js';
 import { createMockLoadSessionData } from './helpers.js';
 
@@ -760,6 +762,161 @@ describe('write-git-commit: ccusage-operations.js', () => {
       if (result.sessionId) {
         assert.ok(result.sessionId.includes('-'));
       }
+    });
+  });
+
+  describe('parseClaudeModelFamily', () => {
+    it('parses sonnet 4.5 with date suffix', () => {
+      const result = parseClaudeModelFamily('claude-sonnet-4-5-20250929');
+      assert.deepEqual(result, { family: 'claude-sonnet', version: 4.5 });
+    });
+
+    it('parses sonnet 4.6 without date suffix', () => {
+      const result = parseClaudeModelFamily('claude-sonnet-4-6');
+      assert.deepEqual(result, { family: 'claude-sonnet', version: 4.6 });
+    });
+
+    it('parses opus 4.5 with date suffix', () => {
+      const result = parseClaudeModelFamily('claude-opus-4-5-20251101');
+      assert.deepEqual(result, { family: 'claude-opus', version: 4.5 });
+    });
+
+    it('parses opus 4.6 without date suffix', () => {
+      const result = parseClaudeModelFamily('claude-opus-4-6');
+      assert.deepEqual(result, { family: 'claude-opus', version: 4.6 });
+    });
+
+    it('parses haiku 4.5 with date suffix', () => {
+      const result = parseClaudeModelFamily('claude-haiku-4-5-20251001');
+      assert.deepEqual(result, { family: 'claude-haiku', version: 4.5 });
+    });
+
+    it('returns null for non-Claude models', () => {
+      assert.equal(parseClaudeModelFamily('minimax-m2.1:cloud'), null);
+    });
+
+    it('returns null for unknown model string', () => {
+      assert.equal(parseClaudeModelFamily('unknown'), null);
+    });
+
+    it('returns null for empty string', () => {
+      assert.equal(parseClaudeModelFamily(''), null);
+    });
+
+    it('returns null for null/undefined', () => {
+      assert.equal(parseClaudeModelFamily(null), null);
+      assert.equal(parseClaudeModelFamily(undefined), null);
+    });
+  });
+
+  describe('filterStaleCosts', () => {
+    const previousCosts = [
+      { model: 'claude-sonnet-4-5-20250929', inputTokens: 85279, outputTokens: 21657, cost: 87.34 },
+      { model: 'claude-haiku-4-5-20251001', inputTokens: 238771, outputTokens: 20401, cost: 38.89 },
+      { model: 'claude-opus-4-5-20251101', inputTokens: 9040, outputTokens: 904, cost: 15.97 },
+      { model: 'minimax-m2.1:cloud', inputTokens: 1011247, outputTokens: 8212, cost: 0.01 }
+    ];
+
+    it('filters old sonnet 4.5 when sonnet 4.6 exists and metrics unchanged', () => {
+      const current = [
+        { model: 'claude-sonnet-4-5-20250929', inputTokens: 85279, outputTokens: 21657, cost: 87.34 },
+        { model: 'claude-sonnet-4-6', inputTokens: 30, outputTokens: 1304, cost: 1.05 }
+      ];
+      const { filtered, removed } = filterStaleCosts(current, previousCosts);
+      assert.equal(filtered.length, 1);
+      assert.equal(filtered[0].model, 'claude-sonnet-4-6');
+      assert.equal(removed.length, 1);
+      assert.equal(removed[0].model, 'claude-sonnet-4-5-20250929');
+    });
+
+    it('keeps old sonnet 4.5 when metrics have changed', () => {
+      const current = [
+        { model: 'claude-sonnet-4-5-20250929', inputTokens: 85303, outputTokens: 21663, cost: 87.39 },
+        { model: 'claude-sonnet-4-6', inputTokens: 30, outputTokens: 1304, cost: 1.05 }
+      ];
+      const { filtered, removed } = filterStaleCosts(current, previousCosts);
+      assert.equal(filtered.length, 2);
+      assert.equal(removed.length, 0);
+    });
+
+    it('keeps old model when no newer version exists', () => {
+      const current = [
+        { model: 'claude-haiku-4-5-20251001', inputTokens: 238771, outputTokens: 20401, cost: 38.89 }
+      ];
+      const { filtered, removed } = filterStaleCosts(current, previousCosts);
+      assert.equal(filtered.length, 1);
+      assert.equal(removed.length, 0);
+    });
+
+    it('keeps non-Claude models unconditionally', () => {
+      const current = [
+        { model: 'minimax-m2.1:cloud', inputTokens: 1011247, outputTokens: 8212, cost: 0.01 },
+        { model: 'claude-sonnet-4-6', inputTokens: 30, outputTokens: 1304, cost: 1.05 }
+      ];
+      const { filtered, removed } = filterStaleCosts(current, previousCosts);
+      assert.equal(filtered.length, 2);
+      assert.equal(removed.length, 0);
+    });
+
+    it('returns all entries when previousCosts is empty', () => {
+      const current = [
+        { model: 'claude-sonnet-4-5-20250929', inputTokens: 85279, outputTokens: 21657, cost: 87.34 },
+        { model: 'claude-sonnet-4-6', inputTokens: 30, outputTokens: 1304, cost: 1.05 }
+      ];
+      const { filtered, removed } = filterStaleCosts(current, []);
+      assert.equal(filtered.length, 2);
+      assert.equal(removed.length, 0);
+    });
+
+    it('returns all entries when previousCosts is null', () => {
+      const current = [
+        { model: 'claude-sonnet-4-5-20250929', inputTokens: 85279, outputTokens: 21657, cost: 87.34 },
+        { model: 'claude-sonnet-4-6', inputTokens: 30, outputTokens: 1304, cost: 1.05 }
+      ];
+      const { filtered, removed } = filterStaleCosts(current, null);
+      assert.equal(filtered.length, 2);
+      assert.equal(removed.length, 0);
+    });
+
+    it('filters multiple stale entries at once', () => {
+      const current = [
+        { model: 'claude-sonnet-4-5-20250929', inputTokens: 85279, outputTokens: 21657, cost: 87.34 },
+        { model: 'claude-opus-4-5-20251101', inputTokens: 9040, outputTokens: 904, cost: 15.97 },
+        { model: 'claude-sonnet-4-6', inputTokens: 30, outputTokens: 1304, cost: 1.05 },
+        { model: 'claude-opus-4-6', inputTokens: 14, outputTokens: 242, cost: 0.81 }
+      ];
+      const { filtered, removed } = filterStaleCosts(current, previousCosts);
+      assert.equal(filtered.length, 2);
+      assert.equal(removed.length, 2);
+      assert.ok(filtered.some(e => e.model === 'claude-sonnet-4-6'));
+      assert.ok(filtered.some(e => e.model === 'claude-opus-4-6'));
+    });
+
+    it('real-world scenario: 6 entry trailer with 2 stale entries', () => {
+      const current = [
+        { model: 'claude-sonnet-4-5-20250929', inputTokens: 85279, outputTokens: 21657, cost: 87.34 },
+        { model: 'claude-haiku-4-5-20251001', inputTokens: 238771, outputTokens: 20401, cost: 38.89 },
+        { model: 'claude-opus-4-5-20251101', inputTokens: 9040, outputTokens: 904, cost: 15.97 },
+        { model: 'claude-sonnet-4-6', inputTokens: 30, outputTokens: 1304, cost: 1.05 },
+        { model: 'claude-opus-4-6', inputTokens: 14, outputTokens: 242, cost: 0.81 },
+        { model: 'minimax-m2.1:cloud', inputTokens: 1011247, outputTokens: 8212, cost: 0.01 }
+      ];
+      const { filtered, removed } = filterStaleCosts(current, previousCosts);
+      // sonnet-4-5 and opus-4-5 should be removed (unchanged, superseded)
+      // haiku-4-5 kept (no newer haiku)
+      // sonnet-4-6, opus-4-6, minimax kept
+      assert.equal(filtered.length, 4);
+      assert.equal(removed.length, 2);
+      assert.ok(filtered.some(e => e.model === 'claude-haiku-4-5-20251001'));
+      assert.ok(filtered.some(e => e.model === 'claude-sonnet-4-6'));
+      assert.ok(filtered.some(e => e.model === 'claude-opus-4-6'));
+      assert.ok(filtered.some(e => e.model === 'minimax-m2.1:cloud'));
+    });
+
+    it('returns empty filtered when currentCosts is not an array', () => {
+      const { filtered, removed } = filterStaleCosts(null, previousCosts);
+      assert.equal(filtered.length, 0);
+      assert.equal(removed.length, 0);
     });
   });
 });

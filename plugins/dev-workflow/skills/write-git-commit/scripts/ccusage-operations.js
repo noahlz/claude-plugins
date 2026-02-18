@@ -252,6 +252,89 @@ export function filterZeroUsageCosts(costsArray) {
 }
 
 /**
+ * Parse a Claude model name into family and version components
+ * @param {string} modelName - e.g. "claude-sonnet-4-5-20250929", "claude-opus-4-6", "minimax-m2.1:cloud"
+ * @returns {{family: string, version: number} | null} - null for non-Claude models
+ */
+export function parseClaudeModelFamily(modelName) {
+  if (!modelName || typeof modelName !== 'string') {
+    return null;
+  }
+  const match = modelName.match(/^(claude-(?:sonnet|opus|haiku))-(\d+)-(\d+)/);
+  if (!match) {
+    return null;
+  }
+  const family = match[1];
+  const version = parseInt(match[2]) + parseInt(match[3]) / 10;
+  return { family, version };
+}
+
+/**
+ * Filter out stale old-model cost entries superseded by newer versions
+ * An entry is filtered when:
+ *   1. A newer version of the same Claude model family exists in currentCosts
+ *   2. The entry's metrics exactly match those in previousCosts
+ * @param {Array} currentCosts - Current session cost entries
+ * @param {Array} previousCosts - Cost entries from the most recent prior commit (or empty array)
+ * @returns {{filtered: Array, removed: Array}}
+ */
+export function filterStaleCosts(currentCosts, previousCosts) {
+  if (!Array.isArray(currentCosts)) {
+    return { filtered: [], removed: [] };
+  }
+  if (!Array.isArray(previousCosts) || previousCosts.length === 0) {
+    return { filtered: currentCosts, removed: [] };
+  }
+
+  // Build map of family -> max version from current costs
+  const familyMaxVersion = new Map();
+  for (const entry of currentCosts) {
+    const parsed = parseClaudeModelFamily(entry.model);
+    if (!parsed) continue;
+    const existing = familyMaxVersion.get(parsed.family) || 0;
+    if (parsed.version > existing) {
+      familyMaxVersion.set(parsed.family, parsed.version);
+    }
+  }
+
+  const filtered = [];
+  const removed = [];
+
+  for (const entry of currentCosts) {
+    const parsed = parseClaudeModelFamily(entry.model);
+
+    // Non-Claude models always kept
+    if (!parsed) {
+      filtered.push(entry);
+      continue;
+    }
+
+    const maxVersion = familyMaxVersion.get(parsed.family) || 0;
+
+    // Keep if this is the newest version of its family
+    if (parsed.version >= maxVersion) {
+      filtered.push(entry);
+      continue;
+    }
+
+    // Check if metrics exactly match the previous commit
+    const prev = previousCosts.find(p => p.model === entry.model);
+    if (
+      prev &&
+      entry.inputTokens === prev.inputTokens &&
+      entry.outputTokens === prev.outputTokens &&
+      entry.cost === prev.cost
+    ) {
+      removed.push(entry);
+    } else {
+      filtered.push(entry);
+    }
+  }
+
+  return { filtered, removed };
+}
+
+/**
  * Validate that cost metrics are real and complete
  * Rejects empty arrays, all-zero costs, missing fields, or invalid data
  * @param {Array} costsArray - Array of cost objects to validate
