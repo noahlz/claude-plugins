@@ -1,7 +1,6 @@
 ---
 name: run-and-fix-tests
 description: Builds and test the project following a precise workflow. Uses sub-agents to analyze build and test failures and plan fixes.
-user-invocable: true
 allowed-tools:
   - Bash(npm *)
   - Bash(yarn *)
@@ -178,20 +177,23 @@ node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
 → DELEGATE_TO: `references/run-tests.md`  
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
-→ If tests pass: Exit workflow  
-→ If tests fail: Proceed to step 5  
+→ **IMPORTANT**: Store the test exit code — it must be passed to step 5  
+→ If exit code = 0: Exit workflow  
+→ If exit code ≠ 0: Proceed to step 5 with the exit code value  
 
 ## 5. Analyze Test Failures
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
+→ **IMPORTANT**: Carry the test exit code from step 4 into this step  
 → DELEGATE_TO: `references/extract-test-failures.md`  
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
 
-→ Receive structured analysis from sub-agent  
+→ Receive structured analysis from sub-agent
 
-**Result handling:**  
-→ If 0 failures: Display "All tests passed" and exit workflow  
+**Result handling:**
+→ If 0 failures AND exit code was 0: Display "All tests passed" and exit workflow  
+→ If 0 failures AND exit code was non-zero: Proceed to step 6 with format-mismatch analysis  
 → If 1+ failures: Proceed to step 6 with analysis results  
 
 ## 6. Present Test Failure Analysis to User

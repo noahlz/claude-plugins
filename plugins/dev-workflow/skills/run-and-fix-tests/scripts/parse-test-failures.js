@@ -182,12 +182,19 @@ export function parseTestFailures(config, options = {}) {
   // Parse failure details from matches
   const failures = limitedMatches.map(match => buildFailureObject(match));
 
-  return {
+  // Warn if file has content but pattern matched nothing (format mismatch)
+  const result = {
     mode: 'file',
     failures,
     totalFailures,
     truncated
   };
+
+  if (totalFailures === 0 && resultsContent.trim().length > 10) {
+    result.warning = 'Results file has content but errorPattern matched nothing. Output format may not match configured pattern.';
+  }
+
+  return result;
 }
 
 /* node:coverage disable */

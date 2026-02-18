@@ -38,11 +38,14 @@ npm test --silent -- --test-reporter=tap --test-reporter-destination=dist/test-r
 
 **If `config.test.all.nativeOutputSupport=false`:**  
 → Tool requires stdout/stderr redirection  
-→ Redirect output to `config.test.all.resultsPath`  
+→ Wrap the command in a subshell and redirect output to `config.test.all.resultsPath`  
+→ Using a subshell `(command)` ensures the redirect applies only to the test runner process, not to any surrounding shell constructs  
+
+⚠️ **Note**: If the test command uses `-- <args>` to pass flags to an underlying tool (e.g., `npm test -- --reporter=tap`), those flags may not reach the tool if it is wrapped in a shell script. In that case, prefer setting `nativeOutputSupport=true` and embedding the output flag directly in the command (e.g., `vitest run --reporter=tap --outputFile=dist/test-results.tap`).
 
 Example bash command:
 ```bash
-npm test > dist/test-results.tap 2>&1
+(npm test) > dist/test-results.tap 2>&1
 ```
 
 ### Single Test Mode
@@ -55,7 +58,7 @@ npm test > dist/test-results.tap 2>&1
 → Execute command WITHOUT stdout/stderr redirection
 
 **If `config.test.single.nativeOutputSupport=false`:**  
-→ Redirect output to `config.test.single.resultsPath`
+→ Wrap the command in a subshell and redirect output to `config.test.single.resultsPath`  
 
 Example bash command with native output support:
 ```bash

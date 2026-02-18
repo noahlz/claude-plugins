@@ -11,5 +11,6 @@
     "rust": { "configFile": "Cargo.toml" },
     "sbt": { "configFile": "build.sbt" },
     "shunit2": { "configFile": "shunit2" },
-    "vite": { "configFile": "vite.config.ts" }
+    "vite": { "configFile": "vite.config.ts" },
+    "vitest": { "configFile": "vitest.config.ts" }
 }

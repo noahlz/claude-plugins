@@ -1,0 +1,19 @@
+{
+  "outDir": "dist",
+  "logFile": "{outDir}/test.log",
+  "skipBuild": true,
+  "test": {
+    "all": {
+      "command": "npx vitest run --reporter=tap-flat",
+      "resultsPath": "{outDir}/test-results.tap",
+      "errorPattern": "^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$",
+      "nativeOutputSupport": false
+    },
+    "single": {
+      "command": "npx vitest run --reporter=tap-flat",
+      "resultsPath": "{outDir}/test-single-results.tap",
+      "errorPattern": "^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$",
+      "nativeOutputSupport": false
+    }
+  }
+}
