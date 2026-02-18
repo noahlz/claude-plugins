@@ -13,6 +13,7 @@ import {
   execGit as prodExecGit,
   commit,
   getHeadSha,
+  getPreviousCostMetrics,
 } from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/git-operations.js';
 
 /**
@@ -143,6 +144,65 @@ describe('git-operations: integration tests', () => {
       const sha = getHeadSha({ cwd: testEnv.tmpDir });
 
       assert.match(sha, /^[0-9a-f]{40}$/, 'SHA should be 40 hex characters');
+    });
+  });
+
+  describe("getPreviousCostMetrics", () => {
+    it('returns empty array when no commits have trailer', () => {
+      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
+      assert.deepEqual(result, []);
+    });
+
+    it('returns cost array from most recent commit with trailer', () => {
+      const costs = [
+        { model: 'claude-sonnet-4-6', inputTokens: 100, outputTokens: 50, cost: 1.05 }
+      ];
+      // Use two trailer lines (like real commits) to ensure git recognizes the trailer block
+      const trailers = `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId: 'test', cost: costs })}`;
+      stageFile(testEnv, 'file1.txt');
+      commit(`Add file\n\n${trailers}`, { cwd: testEnv.tmpDir });
+
+      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
+      assert.deepEqual(result, costs);
+    });
+
+    it('skips commits with malformed JSON and returns empty array', () => {
+      stageFile(testEnv, 'file1.txt');
+      commit('Add file\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: not-valid-json', { cwd: testEnv.tmpDir });
+
+      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
+      assert.deepEqual(result, []);
+    });
+
+    it('skips JSON without cost array and returns empty array', () => {
+      stageFile(testEnv, 'file1.txt');
+      commit('Add file\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: {"sessionId":"x","other":"field"}', { cwd: testEnv.tmpDir });
+
+      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
+      assert.deepEqual(result, []);
+    });
+
+    it('finds trailer in older commit when most recent has none', () => {
+      const costs = [
+        { model: 'claude-opus-4-6', inputTokens: 10, outputTokens: 5, cost: 0.50 }
+      ];
+      const trailers = `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId: 'test', cost: costs })}`;
+
+      // First commit: has trailer
+      stageFile(testEnv, 'file1.txt');
+      commit(`First\n\n${trailers}`, { cwd: testEnv.tmpDir });
+
+      // Second commit: no trailer
+      stageFile(testEnv, 'file2.txt');
+      commit('Second commit without trailer', { cwd: testEnv.tmpDir });
+
+      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
+      assert.deepEqual(result, costs);
+    });
+
+    it('returns empty array when cwd is not a git repo', () => {
+      const result = getPreviousCostMetrics({ cwd: '/tmp' });
+      assert.deepEqual(result, []);
     });
   });
 });

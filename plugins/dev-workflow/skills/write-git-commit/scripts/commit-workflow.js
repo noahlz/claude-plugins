@@ -16,7 +16,8 @@ function createDefaultDeps() {
     git: {
       execGit: git.execGit,
       commit: git.commit,
-      getHeadSha: git.getHeadSha
+      getHeadSha: git.getHeadSha,
+      getPreviousCostMetrics: git.getPreviousCostMetrics
     },
     ccusage: {
       loadSessionData: ccusage.loadSessionData,
@@ -27,7 +28,8 @@ function createDefaultDeps() {
       pwdToSessionId: ccusage.pwdToSessionId,
       extractCostMetrics: ccusage.extractCostMetrics,
       validateCostMetrics: ccusage.validateCostMetrics,
-      filterZeroUsageCosts: ccusage.filterZeroUsageCosts
+      filterZeroUsageCosts: ccusage.filterZeroUsageCosts,
+      filterStaleCosts: ccusage.filterStaleCosts
     }
   };
 }
@@ -268,10 +270,14 @@ async function commit(options = {}) {
     // Filter out zero-usage entries before validation
     const { filtered } = ccusageOps.filterZeroUsageCosts(costsArray);
 
-    if (!ccusageOps.validateCostMetrics(filtered)) {
+    // Filter out stale old-model entries superseded by newer versions
+    const previousCosts = gitOps.getPreviousCostMetrics({ cwd: baseDir });
+    const { filtered: freshFiltered } = ccusageOps.filterStaleCosts(filtered, previousCosts);
+
+    if (!ccusageOps.validateCostMetrics(freshFiltered)) {
       return {
         status: 'metrics_invalid',
-        data: { session_id: sessionId, attempted_costs: filtered },
+        data: { session_id: sessionId, attempted_costs: freshFiltered },
         message: 'Cost metrics validation failed'
       };
     }
@@ -279,7 +285,7 @@ async function commit(options = {}) {
     // Build cost footer JSON (single line, no pretty-print)
     const costFooter = JSON.stringify({
       sessionId,
-      cost: filtered
+      cost: freshFiltered
     });
 
     // Build full commit message with git trailer format

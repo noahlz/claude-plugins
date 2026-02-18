@@ -37,6 +37,7 @@ export function createMockCcusage(overrides = {}) {
     extractCostMetrics: () => throwUnexpected('extractCostMetrics'),
     validateCostMetrics: () => throwUnexpected('validateCostMetrics'),
     filterZeroUsageCosts: (costsArray) => ({ filtered: costsArray, removed: [] }),
+    filterStaleCosts: (costs) => ({ filtered: costs, removed: [] }),
     ...overrides
   };
 }
@@ -55,6 +56,7 @@ export function createMockGit(overrides = {}) {
     execGit: () => throwUnexpected('execGit'),
     commit: () => throwUnexpected('commit'),
     getHeadSha: () => throwUnexpected('getHeadSha'),
+    getPreviousCostMetrics: () => [],
     ...overrides
   };
 }
