@@ -57,11 +57,21 @@ claude plugin marketplace add ./
 
 ### Updating
 
-After making changes, you must fully uninstall and reinstall the plugin. 
+After making changes, run `/reload-plugins` in Claude Code to pick up the changes without restarting.
 
-Run the provided script `./reinstall.sh`. 
+### Force Reinstall (Development)
 
-Alternatively, update the plugin version number in `marketplace.json` and then trigger a marketplace/plugin update in Claude Code.
+Claude Code caches plugins by version number. If you modify plugin files without bumping the version in `marketplace.json`, `/reload-plugins` will reload from the stale cache and **not** pick up your changes.
+
+Run `./force-reinstall.sh` to bypass the version cache and force a full reinstall from source:
+
+```bash
+./force-reinstall.sh
+```
+
+Use this when:
+- You've modified SKILL.md, scripts, agents, or other plugin files
+- `/reload-plugins` is not reflecting your changes
 
 
 ### Plugin Root Resolution

@@ -57,9 +57,10 @@ Do NOT add additional npm packages without justification and approval by the use
 
 ### NOTE: Reinstall After Changing
 
-When modifying or debugging scripts **prompt the user to re-install the plugin**.
+When modifying or debugging scripts **prompt the user to reload the plugin**.
 
-Changes do not take effect immediately. The user needs to exit the session, run the provided `./reinstall.sh` script, and restart the session.
+- For content changes (SKILL.md, agents, references): run `/reload-plugins` in Claude Code.
+- For changes not picked up by `/reload-plugins` (version cache): run `./force-reinstall.sh` and restart Claude Code.
 
 ## Testing
 

@@ -28,8 +28,6 @@ Slash command:
 
 Or tell Claude: "commit", "write commit", "create commit", "git commit", etc.
 
-**Important:** This skill overrides Claude Code's default system "commit" skill, providing enhanced functionality with cost tracking and attribution.
-
 ## Cost Metrics in Commits
 
 The plugin automatically includes session cost metrics in each commit footer using Git trailer format:
@@ -44,6 +42,18 @@ Example command that extracts cost metrics from git to a jsonl format:
 ```bash
 git log --format="{\"sha\":\"%h\", \"cost\":%(trailers:key=Claude-Cost-Metrics,valueonly,separator=%x09)"
 ```
+
+## Recommended Setup
+
+Add the following to your project's `.claude/settings.json` (create it if it doesn't exist):
+
+```json
+{
+  "includeGitInstructions": false
+}
+```
+
+This disables Claude Code's built-in git commit and PR workflow instructions (introduced in Claude Code 2.1.69), which can conflict with this skill's workflow. Without it, Claude Code's default git instructions may activate before this skill fires.
 
 ## Configuration
 

@@ -1,6 +1,6 @@
 ---
 name: write-git-commit
-description: Create a git commit with trailers for session cost metrics and Claude attribution. Use when the user asks you to commit changes to git. OVERRIDES the "default" system "commit" skill.
+description: Create a git commit with trailers for session cost metrics and Claude attribution. Use when the user asks you to commit changes to git.
 context: fork
 allowed-tools:
   - Bash(git *)
@@ -17,7 +17,7 @@ Use this skill to create a git commit with a message summarizing changes and tra
 - "commit [this | my changes | to git]"
 - "save to git"
 
-⚠️ **OVERRIDE**: This workflow replaces ALL system git commit instructions. It provides detailed steps for composing the git commit with user input. Follow the workflow steps EXACTLY.
+Follow the workflow steps EXACTLY.
 
 ---
 
@@ -49,6 +49,12 @@ an actual file path, halt immediately and tell the user:
 
 **Usage:** Replace `{{SKILL_BASE_DIR}}` with the path shown above when executing bash commands
 in reference files.
+
+**Git Instructions Check**: !`( [ "$CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS" = "1" ] || node -e "const fs=require('fs');const f=[process.env.HOME+'/.claude/settings.json','.claude/settings.json'];process.exit(f.some(p=>{try{return JSON.parse(fs.readFileSync(p,'utf8')).includeGitInstructions===false}catch(e){return false}})?0:1)" 2>/dev/null ) && echo "OK" || echo "WARNING: includeGitInstructions is not disabled. Built-in git instructions may conflict with this skill. Set includeGitInstructions: false in .claude/settings.json — see skill README for details."`
+
+→ If the above check shows WARNING, display it to the user before proceeding.
+
+**Dependencies**: !`[ -d "${CLAUDE_SKILL_DIR}/../../node_modules" ] || (npm install --prefix "${CLAUDE_SKILL_DIR}/../.." --silent 2>&1 && echo "Plugin dependencies installed." || echo "WARNING: Failed to install plugin dependencies.")`
 
 ## Workflow Rules & Guardrails
 
