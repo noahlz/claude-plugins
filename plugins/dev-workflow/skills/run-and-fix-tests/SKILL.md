@@ -33,14 +33,9 @@ Activate this skill when:
 
 # Skill Context
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
+**VERSION CHECK**: !`[ -n "$CLAUDE_SKILL_DIR" ] && echo "OK" || echo "ERROR: CLAUDE_SKILL_DIR not set. This skill requires Claude Code 2.1.69 or higher."`
 
-⛔ **VERSION CHECK**: If the line above shows the literal text `${CLAUDE_SKILL_DIR}` instead of
-an actual file path, halt immediately and tell the user:
-"This skill requires Claude Code 2.1.69 or higher."
-
-**Usage:** Replace `{{SKILL_BASE_DIR}}` with the path shown above when executing bash commands
-in reference files.
+⛔ **HALT** if VERSION CHECK shows `ERROR`.
 
 **Node.js Check**: !`node -e "process.exit(parseInt(process.version.slice(1)) >= 22 ? 0 : 1)" 2>/dev/null && echo "✓ Node.js $(node -v)" || echo "ERROR: Node.js 22+ required (found: $(node -v 2>/dev/null || echo 'not installed')). Install: https://nodejs.org/"`
 
@@ -61,12 +56,7 @@ When you see `DELEGATE_TO: [file]`:
 
 ⚠️  **IMPORTANT:** Reference files contain Bash tool commands - use them exactly as written - never improvise commands.
 
-### B. Template Substitution
-
-**MANDATORY**: Replace placeholders before executing bash commands:
-- `{{SKILL_BASE_DIR}}` → Path shown in "Skill Context > SKILL_BASE_DIR" above
-
-### C. Narration Control
+### B. Narration Control
 
 ⚠️  **SILENCE PROTOCOL**
 Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and tool calls silently - no explanatory text.  
@@ -116,7 +106,7 @@ Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and to
 
 → Execute load-config script to output configuration as JSON:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/load-config.js"
+node "$CLAUDE_SKILL_DIR/scripts/load-config.js"
 ```
 
 **Parse the JSON output:**

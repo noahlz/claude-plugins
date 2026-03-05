@@ -11,14 +11,14 @@
 ## Execute Fetch Command
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION_ID}}"
+node "$CLAUDE_SKILL_DIR/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION_ID}}"
 ```
 
 **NOTE:** If the above command fails, execute this script and try again:
 ```bash
-if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
+if [ ! -d "$CLAUDE_SKILL_DIR/../../node_modules/ccusage" ]; then
   echo "!!! Installing ccusage:"
-  npm install --prefix "{{SKILL_BASE_DIR}}/../.."
+  npm install --prefix "$CLAUDE_SKILL_DIR/../.."
 else
   echo "✓ ccusage available"
 fi

@@ -18,7 +18,7 @@
 - `{{COMMIT_BODY}}`: Body from Step 4 (omit blank line if empty)
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" commit \
+node "$CLAUDE_SKILL_DIR/scripts/commit-workflow.js" commit \
   --session-id "{{SESSION_ID}}" \
   --costs "{{CURRENT_COST}}" \
   <<'EOF'
