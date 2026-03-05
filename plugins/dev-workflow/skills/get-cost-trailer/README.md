@@ -2,6 +2,10 @@
 
 Display current session cost metrics without creating a commit.
 
+## Terminology
+
+**Terminology note:** ccusage refers to a project directory as a "session" (keyed by its filesystem path). Claude Code calls these "projects" (stored in `~/.claude/projects/`). The skill config field `sessionId` is therefore a project path identifier, not a Claude Code session UUID.
+
 ## What It Does
 
 Using this skill, Claude fetches and displays the incremental cost incurred since the last git commit for the current Claude Code session, broken down by model.

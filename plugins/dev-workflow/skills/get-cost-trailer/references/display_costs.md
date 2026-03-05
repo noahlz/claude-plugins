@@ -9,6 +9,7 @@
   - `data.current_cost` → CURRENT_COST (JSON array)
   - `data.method` → COST_METHOD ("incremental" or "cumulative")
   - `data.since` → COST_SINCE (ISO date string or null)
+  - `data.cleanup_period_days` → CLEANUP_PERIOD_DAYS
 
 → If DISPLAY_STATUS = "invalid_costs" or "not_found" or "error":
   - `message` → ERROR_MESSAGE
@@ -18,9 +19,13 @@
 
 Display costs in this format:
 ```
-📊 Session cost metrics:
-   ID: {SESSION_ID}
-   Method: {COST_METHOD} (since: {COST_SINCE if incremental, else "session start"})
+📊 Project cost metrics:
+   Project: {SESSION_ID}
+   (if COST_METHOD = "incremental"):
+      Cost since previous commit (since {COST_SINCE}):
+   (if COST_METHOD = "cumulative"):
+      Cost total, last {CLEANUP_PERIOD_DAYS} days:
+   Total: ${sum of all cost values}
 
    (for each model in CURRENT_COST array):
       - {model}: {inputTokens} in + {outputTokens} out = ${cost}

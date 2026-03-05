@@ -31,7 +31,8 @@ function createDefaultDeps() {
       findRecommendedSession: ccusage.findRecommendedSession,
       pwdToSessionId: ccusage.pwdToSessionId,
       validateCostMetrics: ccusage.validateCostMetrics,
-      filterZeroUsageCosts: ccusage.filterZeroUsageCosts
+      filterZeroUsageCosts: ccusage.filterZeroUsageCosts,
+      getCleanupPeriodDays: ccusage.getCleanupPeriodDays
     }
   };
 }
@@ -139,7 +140,8 @@ async function prepare(options = {}) {
         session_id: sessionId,
         method: costResult.method,
         since: costResult.since,
-        current_cost: costResult.costs
+        current_cost: costResult.costs,
+        cleanup_period_days: ccusageOps.getCleanupPeriodDays()
       },
       message: 'Session costs resolved'
     };

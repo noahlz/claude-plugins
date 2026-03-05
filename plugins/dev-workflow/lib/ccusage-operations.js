@@ -12,6 +12,13 @@ import os from 'os';
  * ==================
  * This module wraps the ccusage library with a stable API for dev-workflow skills.
  * Filesystem-based session discovery replaces ccusage API calls for better performance.
+ *
+ * TERMINOLOGY NOTE:
+ * ==================
+ * ccusage calls a project directory a "session" (keyed by filesystem path, e.g. "-Users-foo-bar").
+ * Claude Code calls the same thing a "project" (stored in ~/.claude/projects/).
+ * The skill config field `sessionId` is therefore a project path identifier (ccusage terminology),
+ * NOT a Claude Code session UUID (which identifies an individual conversation).
  */
 
 /**
@@ -133,6 +140,38 @@ export function filterZeroUsageCosts(costsArray) {
   }
 
   return { filtered, removed };
+}
+
+/**
+ * Get the cleanup period in days from Claude settings.
+ * Reads cleanupPeriodDays from ~/.claude/settings.json, with project-level
+ * .claude/settings.json taking precedence. Defaults to 30 if unset or unparseable.
+ * @returns {number} - Cleanup period in days
+ */
+export function getCleanupPeriodDays() {
+  const DEFAULT_DAYS = 30;
+
+  const settingsFiles = [
+    path.join(os.homedir(), '.claude', 'settings.json'),
+    path.join('.claude', 'settings.json')
+  ];
+
+  let result = DEFAULT_DAYS;
+
+  for (const filePath of settingsFiles) {
+    try {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      const value = parsed.cleanupPeriodDays;
+      if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+        result = value;
+      }
+    } catch {
+      // File missing or unparseable — skip
+    }
+  }
+
+  return result;
 }
 
 /**

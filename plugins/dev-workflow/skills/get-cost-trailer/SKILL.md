@@ -2,6 +2,7 @@
 name: get-cost-trailer
 description: Display current session cost metrics. Use when the user asks to see current costs, cost usage, or how much the session has cost so far.
 context: fork
+argument-hint: "[incremental|inc|cumulative|cum]"
 allowed-tools:
   - Bash(node *)
   - Read
@@ -61,6 +62,8 @@ All script outputs return JSON. Extract fields and store in variables.
 
 **SKILL_NAME**: get-cost-trailer
 
+**MODE**: Determine from `$ARGUMENTS`: if it contains "cumulative" or "cum" → `cumulative`; otherwise → `incremental` (default, also matches "incremental" or "inc")
+
 **SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.get-cost-trailer.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
 
 **Configuration Routing:**
@@ -106,7 +109,7 @@ echo '{"sessionId":"{{SESSION_ID}}"}' > .claude/settings.plugins.get-cost-traile
 
 → Execute using Bash tool:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" fetch-cost "$(pwd)" "{{SESSION_ID}}"
+node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" fetch-cost "$(pwd)" "{{SESSION_ID}}" --mode {{MODE}}
 ```
 
 → Parse JSON output.

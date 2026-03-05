@@ -63,8 +63,8 @@ Do NOT add additional npm packages without justification and approval by the use
 
 When modifying or debugging scripts **prompt the user to reload the plugin**.
 
-- For content changes (SKILL.md, agents, references): run `/reload-plugins` in Claude Code.
-- For changes not picked up by `/reload-plugins` (version cache): run `./force-reinstall.sh` and restart Claude Code.
+- For **any local development changes** (scripts, SKILL.md, agents, references): run `./force-reinstall.sh` and restart Claude Code.
+- `/reload-plugins` only works for plugins installed from a remote registry URL, not local development.
 
 ## Testing
 

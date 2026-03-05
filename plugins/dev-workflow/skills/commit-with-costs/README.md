@@ -2,6 +2,10 @@
 
 Create git commits with Claude Code attribution and incremental session cost metrics embedded in commit footers.
 
+## Terminology
+
+**Terminology note:** ccusage refers to a project directory as a "session" (keyed by its filesystem path). Claude Code calls these "projects" (stored in `~/.claude/projects/`). The skill config field `sessionId` is therefore a project path identifier, not a Claude Code session UUID.
+
 ## What It Does
 
 Using this skill, Claude:

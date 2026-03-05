@@ -34,6 +34,7 @@ export function createMockCcusage(overrides = {}) {
     pwdToSessionId: () => throwUnexpected('pwdToSessionId'),
     validateCostMetrics: () => throwUnexpected('validateCostMetrics'),
     filterZeroUsageCosts: (costsArray) => ({ filtered: costsArray, removed: [] }),
+    getCleanupPeriodDays: () => 30,
     ...overrides
   };
 }

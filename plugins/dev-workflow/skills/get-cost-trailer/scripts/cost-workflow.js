@@ -20,18 +20,20 @@ function createDefaultDeps() {
       listLocalSessions: ccusage.listLocalSessions,
       findRecommendedSession: ccusage.findRecommendedSession,
       pwdToSessionId: ccusage.pwdToSessionId,
-      validateCostMetrics: ccusage.validateCostMetrics
+      validateCostMetrics: ccusage.validateCostMetrics,
+      getCleanupPeriodDays: ccusage.getCleanupPeriodDays
     }
   };
 }
 
 /**
  * Fetch and compute costs for a session
- * @param {object} options - { baseDir, sessionId, deps }
+ * @param {object} options - { baseDir, sessionId, mode, deps }
+ *   mode: 'incremental' (default) = costs since last commit; 'cumulative' = all-time session costs
  * @returns {Promise<object>} - { status, data, message }
  */
 async function fetchCost(options = {}) {
-  const { baseDir = '.', sessionId: providedSessionId, deps } = options;
+  const { baseDir = '.', sessionId: providedSessionId, mode = 'incremental', deps } = options;
   if (!deps) throw new Error('deps parameter required');
 
   const { ccusage: ccusageOps, git: gitOps, cost: costOps } = deps;
@@ -52,8 +54,9 @@ async function fetchCost(options = {}) {
       }
     }
 
-    const lastCommitDate = gitOps.getLastCommitDate({ cwd: baseDir });
-    const costResult = await costOps.computeCosts(sessionId, lastCommitDate);
+    // Cumulative mode ignores last commit date and returns all-time session costs
+    const sinceDate = mode === 'cumulative' ? null : gitOps.getLastCommitDate({ cwd: baseDir });
+    const costResult = await costOps.computeCosts(sessionId, sinceDate);
 
     if (!costResult.success) {
       return {
@@ -77,7 +80,8 @@ async function fetchCost(options = {}) {
         session_id: sessionId,
         method: costResult.method,
         since: costResult.since,
-        current_cost: costResult.costs
+        current_cost: costResult.costs,
+        cleanup_period_days: ccusageOps.getCleanupPeriodDays()
       },
       message: 'Session costs resolved'
     };
@@ -105,8 +109,11 @@ async function main() {
       case 'fetch-cost': {
         const baseDir = args[0] || '.';
         const sessionId = args[1] || null;
-        outputFile = args[2];
-        result = await fetchCost({ baseDir, sessionId, deps });
+        // Parse optional --mode flag; remaining positional arg is outputFile
+        const modeIdx = args.indexOf('--mode');
+        const mode = modeIdx !== -1 ? args[modeIdx + 1] : 'incremental';
+        outputFile = args.find((a, i) => i >= 2 && !a.startsWith('--') && args[i - 1] !== '--mode');
+        result = await fetchCost({ baseDir, sessionId, mode, deps });
         break;
       }
 

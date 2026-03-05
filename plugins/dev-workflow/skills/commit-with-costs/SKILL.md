@@ -197,7 +197,8 @@ DELEGATE_TO: `references/fetch_cost.md`
   - → Extract `CURRENT_COST` from reference file (validated JSON array).
   - → Extract `COST_METHOD` from reference file.
   - → Extract `COST_SINCE` from reference file.
-  - → Proceed to Step 6 with SESSION_ID, CURRENT_COST, COST_METHOD, and COST_SINCE values.
+  - → Extract `CLEANUP_PERIOD_DAYS` from reference file.
+  - → Proceed to Step 6 with SESSION_ID, CURRENT_COST, COST_METHOD, COST_SINCE, and CLEANUP_PERIOD_DAYS values.
 
 → If FETCH_STATUS is not "success":
   - → Extract `ERROR_MESSAGE` from reference file.
@@ -236,13 +237,15 @@ DELEGATE_TO: `references/create_commit.md`
 
 → Display success summary with the following format:
 ```
-✅ Commit created with session cost metrics in footer
+✅ Commit created with project cost metrics in footer
    SHA: {COMMIT_SHA}
 
-📊 Session metrics:
-   ID: {SESSION_ID}
-   Method: {COST_METHOD}
-   Since: {COST_SINCE}
+📊 Project cost metrics:
+   Project: {SESSION_ID}
+   (if COST_METHOD = "incremental"):
+      Cost since previous commit (since {COST_SINCE}):
+   (if COST_METHOD = "cumulative"):
+      Cost total, last {CLEANUP_PERIOD_DAYS} days:
    (for each model in CURRENT_COST array):
       - {model}: {inputTokens} in + {outputTokens} out = ${cost}
 ```
