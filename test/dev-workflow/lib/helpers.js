@@ -5,8 +5,8 @@ export {
   execGit
 } from '../../lib/helpers.js';
 
-// Re-export git integration helpers from write-git-commit
+// Re-export git integration helpers from commit-with-costs
 export {
   setupGitRepo,
   stageFile
-} from '../write-git-commit/helpers.js';
+} from '../commit-with-costs/helpers.js';

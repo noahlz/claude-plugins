@@ -17,7 +17,10 @@ claude-plugins/
 │           │   │   └── defaults/     # Default configs for build tools
 │           │   ├── references/
 │           │   └── scripts/
-│           └── write-git-commit/
+│           ├── commit-with-costs/
+│           │   ├── references/
+│           │   └── scripts/
+│           └── get-cost-trailer/
 │               ├── references/
 │               └── scripts/
 └── test/
@@ -26,7 +29,8 @@ claude-plugins/
     │   │   ├── configs/
     │   │   └── project-templates/
     │   ├── run-and-fix-tests/
-    │   └── write-git-commit/
+    │   ├── commit-with-costs/
+    │   └── lib/
     └── lib/                     # Cross-module test utilities
 ```
 
@@ -53,7 +57,7 @@ Follow the [best practices guide for skill authoring](https://platform.claude.co
 Do NOT add additional npm packages without justification and approval by the user.
 
 **Runtime**: `ccusage` (in `plugins/dev-workflow/package.json`)
-  - Used by `write-git-commit` skill to fetch and embed cost metrics in git commits
+  - Used by `commit-with-costs` and `get-cost-trailer` skills to fetch and embed cost metrics in git commits
 
 ### NOTE: Reinstall After Changing
 

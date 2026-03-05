@@ -1,5 +1,5 @@
 ---
-name: cost-tracker
+name: get-cost-trailer
 description: Display current session cost metrics. Use when the user asks to see current costs, cost usage, or how much the session has cost so far.
 context: fork
 allowed-tools:
@@ -11,7 +11,7 @@ allowed-tools:
 
 Use this skill to display current session cost metrics without creating a commit.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/cost-tracker`) OR asks about current session costs.
+**MANDATORY** only activate this skill when the user invokes it directly (`/get-cost-trailer`) OR asks about current session costs.
 
 Follow the workflow steps EXACTLY.
 
@@ -59,9 +59,9 @@ All script outputs return JSON. Extract fields and store in variables.
 
 ## 0. Prerequisites
 
-**SKILL_NAME**: cost-tracker
+**SKILL_NAME**: get-cost-trailer
 
-**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.cost-tracker.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
+**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.get-cost-trailer.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
 
 **Configuration Routing:**
 - If `SKILL_CONFIG` = `✓ Configuration found` → Proceed to Step 1a (Load Configuration)
@@ -73,7 +73,7 @@ All script outputs return JSON. Extract fields and store in variables.
 
 → Execute using Bash tool:
 ```bash
-cat .claude/settings.plugins.cost-tracker.json
+cat .claude/settings.plugins.get-cost-trailer.json
 ```
 
 → Parse JSON output and extract `sessionId` field value
@@ -82,7 +82,7 @@ cat .claude/settings.plugins.cost-tracker.json
 
 ### 1b. Create new configuration
 
-→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! (./.claude/settings.plugins.cost-tracker.json). Let's create it:"
+→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! (./.claude/settings.plugins.get-cost-trailer.json). Let's create it:"
 
 → Run Bash command to list available sessions:
 ```bash
@@ -95,7 +95,7 @@ node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" list-sessions
 
 → Write config file:
 ```bash
-echo '{"sessionId":"{{SESSION_ID}}"}' > .claude/settings.plugins.cost-tracker.json
+echo '{"sessionId":"{{SESSION_ID}}"}' > .claude/settings.plugins.get-cost-trailer.json
 ```
 
 → Inform the user of the file location and continue to Step 2.

@@ -124,7 +124,7 @@ export function execGit(args, options = {}) {
 /**
  * Get the path to a plugin script
  * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
- * @param {string} skillName - Skill name (e.g., 'write-git-commit')
+ * @param {string} skillName - Skill name (e.g., 'commit-with-costs')
  * @param {string} scriptName - Script name (e.g., 'load-config.sh' or 'load-config.js')
  * @returns {string} Full path to script
  */
