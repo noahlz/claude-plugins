@@ -1,6 +1,6 @@
-# Testing Methodology: write-git-commit
+# Testing Methodology: commit-with-costs
 
-Tips on writing and running tests for the write-git-commit script suite:
+Tips on writing and running tests for the commit-with-costs script suite.
 
 ## Test Environment Lifecycle
 

@@ -3,13 +3,14 @@
 import fs from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
-import * as git from './git-operations.js';
-import * as ccusage from './ccusage-operations.js';
+import * as git from '../../../lib/git-operations.js';
+import * as ccusage from '../../../lib/ccusage-operations.js';
+import { computeCosts, createDefaultDeps as createCostDeps } from '../../../lib/cost-computation.js';
 
 
 /**
  * Create default dependency objects for production use
- * @returns {object} Dependencies object with git and ccusage operations
+ * @returns {object} Dependencies object with git, cost, and ccusage operations
  */
 function createDefaultDeps() {
   return {
@@ -17,19 +18,21 @@ function createDefaultDeps() {
       execGit: git.execGit,
       commit: git.commit,
       getHeadSha: git.getHeadSha,
-      getPreviousCostMetrics: git.getPreviousCostMetrics
+      getPreviousCostMetrics: git.getPreviousCostMetrics,
+      getLastCommitDate: git.getLastCommitDate
+    },
+    cost: {
+      computeCosts,
+      ...createCostDeps()
     },
     ccusage: {
-      loadSessionData: ccusage.loadSessionData,
       getProjectsDir: ccusage.getProjectsDir,
-      getSessionCosts: ccusage.getSessionCosts,
       listLocalSessions: ccusage.listLocalSessions,
       findRecommendedSession: ccusage.findRecommendedSession,
       pwdToSessionId: ccusage.pwdToSessionId,
-      extractCostMetrics: ccusage.extractCostMetrics,
       validateCostMetrics: ccusage.validateCostMetrics,
       filterZeroUsageCosts: ccusage.filterZeroUsageCosts,
-      filterStaleCosts: ccusage.filterStaleCosts
+      getCleanupPeriodDays: ccusage.getCleanupPeriodDays
     }
   };
 }
@@ -51,7 +54,7 @@ function saveConfig({ baseDir = '.', sessionId } = {}) {
   }
 
   try {
-    const configPath = path.join(baseDir, '.claude/settings.plugins.write-git-commit.json');
+    const configPath = path.join(baseDir, '.claude/settings.plugins.commit-with-costs.json');
     const configDir = path.dirname(configPath);
 
     // Create .claude directory if needed
@@ -78,7 +81,7 @@ function saveConfig({ baseDir = '.', sessionId } = {}) {
 }
 
 /**
- * Prepare for commit: fetch costs for a given session ID
+ * Prepare for commit: fetch costs for a given session ID using incremental mode when possible
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
  * @param {string} options.sessionId - Session ID to fetch costs for (required if no config)
@@ -87,36 +90,32 @@ function saveConfig({ baseDir = '.', sessionId } = {}) {
  */
 async function prepare(options = {}) {
   const { baseDir = '.', sessionId: providedSessionId, deps } = options;
+  if (!deps) throw new Error('deps parameter required');
 
-  // Validate deps parameter
-  if (!deps) {
-    throw new Error('deps parameter required');
-  }
-
-  const { ccusage: ccusageOps } = deps;
+  const { ccusage: ccusageOps, git: gitOps, cost: costOps } = deps;
 
   try {
     let sessionId = providedSessionId;
 
-    // If no sessionId provided or "NOT_CONFIGURED", try to find recommendation
+    // Resolve session ID
     if (!sessionId || sessionId === 'NOT_CONFIGURED') {
       const recommendation = ccusageOps.findRecommendedSession(baseDir);
-
       if (recommendation.match) {
         sessionId = recommendation.sessionId;
       } else {
         return {
           status: 'not_found',
-          data: {
-            calculated_session_id: ccusageOps.pwdToSessionId(path.resolve(baseDir))
-          },
+          data: { calculated_session_id: ccusageOps.pwdToSessionId(path.resolve(baseDir)) },
           message: 'Session not found for current directory'
         };
       }
     }
 
-    // Fetch costs for the session using ccusage library
-    const costResult = await ccusageOps.getSessionCosts(sessionId);
+    // Get last commit date for incremental mode
+    const lastCommitDate = gitOps.getLastCommitDate({ cwd: baseDir });
+
+    // Compute costs (incremental if lastCommitDate exists, cumulative if null)
+    const costResult = await costOps.computeCosts(sessionId, lastCommitDate);
 
     if (!costResult.success) {
       return {
@@ -130,10 +129,7 @@ async function prepare(options = {}) {
     if (!ccusageOps.validateCostMetrics(costResult.costs)) {
       return {
         status: 'invalid_costs',
-        data: {
-          session_id: sessionId,
-          costs: costResult.costs
-        },
+        data: { session_id: sessionId, costs: costResult.costs },
         message: 'Cost metrics validation failed: metrics are empty, missing required fields, or all values are zero'
       };
     }
@@ -142,16 +138,15 @@ async function prepare(options = {}) {
       status: 'success',
       data: {
         session_id: sessionId,
-        current_cost: costResult.costs
+        method: costResult.method,
+        since: costResult.since,
+        current_cost: costResult.costs,
+        cleanup_period_days: ccusageOps.getCleanupPeriodDays()
       },
       message: 'Session costs resolved'
     };
   } catch (error) {
-    return {
-      status: 'error',
-      data: {},
-      message: error.message
-    };
+    return { status: 'error', data: {}, message: error.message };
   }
 }
 
@@ -189,9 +184,13 @@ async function readCommitMessage(inputStream = null) {
 
 /**
  * Create a git commit with cost metrics footer
- * Note: SESSION_ID and CURRENT_COST are expected to be provided by skill orchestration
+ * Note: SESSION_ID, CURRENT_COST, method, and since are expected to be provided by skill orchestration
  * @param {object} options - Options
  * @param {string} options.baseDir - Base directory
+ * @param {string} options.sessionId - Session ID
+ * @param {string|Array} options.costs - Cost metrics JSON
+ * @param {string} options.method - Cost method ('incremental' or 'cumulative')
+ * @param {string|null} options.since - ISO date string or null
  * @param {object} options.deps - Dependencies object (required)
  * @returns {Promise<object>} - { status, data, message }
  */
@@ -200,6 +199,8 @@ async function commit(options = {}) {
     baseDir = '.',
     sessionId: providedSessionId = null,
     costs: providedCosts = null,
+    method = 'cumulative',
+    since = null,
     message: providedMessage = null,
     deps
   } = options;
@@ -268,11 +269,7 @@ async function commit(options = {}) {
     const costsArray = Array.isArray(currentCost) ? currentCost : [currentCost];
 
     // Filter out zero-usage entries before validation
-    const { filtered } = ccusageOps.filterZeroUsageCosts(costsArray);
-
-    // Filter out stale old-model entries superseded by newer versions
-    const previousCosts = gitOps.getPreviousCostMetrics({ cwd: baseDir });
-    const { filtered: freshFiltered } = ccusageOps.filterStaleCosts(filtered, previousCosts);
+    const { filtered: freshFiltered } = ccusageOps.filterZeroUsageCosts(costsArray);
 
     if (!ccusageOps.validateCostMetrics(freshFiltered)) {
       return {
@@ -283,17 +280,21 @@ async function commit(options = {}) {
     }
 
     // Build cost footer JSON (single line, no pretty-print)
-    const costFooter = JSON.stringify({
+    // Omit 'since' field when null/undefined (not applicable in cumulative mode)
+    const trailerObj = {
+      method,
       sessionId,
-      cost: freshFiltered
-    });
+      cost: freshFiltered,
+      ...(since ? { since } : {})
+    };
+    const costFooter = JSON.stringify(trailerObj);
 
     // Build full commit message with git trailer format
     let fullMessage;
     if (body) {
-      fullMessage = `${subject}\n\n${body}\n\nCo-Authored-By: 🤖 Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${costFooter}`;
+      fullMessage = `${subject}\n\n${body}\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${costFooter}`;
     } else {
-      fullMessage = `${subject}\n\nCo-Authored-By: 🤖 Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${costFooter}`;
+      fullMessage = `${subject}\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${costFooter}`;
     }
 
     // Execute git commit with better error handling
@@ -382,19 +383,17 @@ async function main() {
       }
 
       case 'commit': {
-        // Parse --session-id and --costs from args
         const sessionIdIndex = args.indexOf('--session-id');
         const costsIndex = args.indexOf('--costs');
+        const methodIndex = args.indexOf('--method');
+        const sinceIndex = args.indexOf('--since');
 
         const sessionId = sessionIdIndex !== -1 ? args[sessionIdIndex + 1] : null;
         const costs = costsIndex !== -1 ? args[costsIndex + 1] : null;
+        const method = methodIndex !== -1 ? args[methodIndex + 1] : 'cumulative';
+        const since = sinceIndex !== -1 ? args[sinceIndex + 1] : null;
 
-        result = await commit({
-          baseDir: '.',
-          sessionId,
-          costs,
-          deps
-        });
+        result = await commit({ baseDir: '.', sessionId, costs, method, since, deps });
         break;
       }
 
@@ -438,7 +437,7 @@ async function main() {
 }
 
 // Export functions for testing
-export { createDefaultDeps, saveConfig, prepare, commit, readCommitMessage };
+export { saveConfig, prepare, commit, readCommitMessage };
 
 // CLI entry guard
 if (import.meta.url === `file://${process.argv[1]}`) {

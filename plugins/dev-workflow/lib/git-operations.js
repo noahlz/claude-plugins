@@ -81,3 +81,14 @@ export function getPreviousCostMetrics(options = {}) {
     return [];
   }
 }
+
+/**
+ * Get the ISO 8601 date of the most recent git commit
+ * @param {Object} options - { cwd }
+ * @returns {string|null} ISO 8601 date string (e.g. "2026-03-05T10:22:00-05:00") or null if no commits
+ */
+export function getLastCommitDate(options = {}) {
+  const result = execGit(['log', '-1', '--format=%aI'], options);
+  if (result.exitCode !== 0 || !result.stdout.trim()) return null;
+  return result.stdout.trim();
+}

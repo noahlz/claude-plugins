@@ -4,25 +4,24 @@ import { Readable } from 'stream';
 import fs from 'fs';
 import path from 'path';
 import { saveConfig, prepare, commit, readCommitMessage }
-  from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/commit-workflow.js';
+  from '../../../plugins/dev-workflow/skills/commit-with-costs/scripts/commit-workflow.js';
 import {
   setupTestEnv,
   teardownTestEnv,
   createMockCcusage,
   createMockGit,
+  createMockCost,
   assertResultStatus,
   createValidCosts
 } from './helpers.js';
 
-describe('commit-workflow.js unit tests', () => {
+describe('commit-with-costs: commit-workflow.js unit tests', () => {
   let testEnv;
   let mockGit;
-  let mockCcusage;
 
   beforeEach(() => {
     testEnv = setupTestEnv();
     mockGit = createMockGit();
-    mockCcusage = createMockCcusage();
   });
 
   afterEach(() => {
@@ -37,13 +36,12 @@ describe('commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'success');
       assert.equal(result.data.session_id, 'test-123');
 
-      const configPath = path.join(testEnv.tmpDir, '.claude/settings.plugins.write-git-commit.json');
+      const configPath = path.join(testEnv.tmpDir, '.claude/settings.plugins.commit-with-costs.json');
       assert.ok(fs.existsSync(configPath));
 
       const content = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       assert.equal(content.sessionId, 'test-123');
 
-      cleanup();
     });
 
     it('fails when sessionId is missing', async () => {
@@ -52,7 +50,6 @@ describe('commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'error');
       assert.match(result.message, /sessionId parameter required/);
 
-      cleanup();
     });
 
     it('creates .claude directory if missing', async () => {
@@ -63,123 +60,141 @@ describe('commit-workflow.js unit tests', () => {
       const claudeDir = path.join(testEnv.tmpDir, '.claude');
       assert.ok(fs.existsSync(claudeDir));
 
-      const configPath = path.join(claudeDir, 'settings.plugins.write-git-commit.json');
+      const configPath = path.join(claudeDir, 'settings.plugins.commit-with-costs.json');
       assert.ok(fs.existsSync(configPath));
 
-      cleanup();
     });
 
-    it ('saveConfig handles write errors gracefully', async () => {
+    it('saveConfig handles write errors gracefully', async () => {
       const result = saveConfig({ baseDir: '/invalid/nonexistent/path/that/does/not/exist', sessionId: 'test' });
 
       assert.equal(result.status, 'error');
       assert.match(result.message, /Failed to save config/);
 
-      cleanup();
     });
   });
 
   describe("prepare command", () => {
-    it('succeeds with valid sessionId and ccusage match', async () => {
-      // Create test-specific mocks - only override what this test uses
-      const testCcusage = {
-        ...mockCcusage,
+    it('throws error when deps parameter is missing', async () => {
+      await assert.rejects(
+        async () => prepare({ baseDir: '.' }),
+        /deps parameter required/,
+        'Should throw error when deps is missing'
+      );
+    });
+
+    it('succeeds with valid sessionId and session match', async () => {
+      const testCcusage = createMockCcusage({
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
-        getSessionCosts: async () => ({
-          success: true,
-          costs: [{ model: 'claude-opus', cost: 0.015 }]
-        }),
         validateCostMetrics: () => true
-      };
+      });
+      const testGit = createMockGit({
+        getLastCommitDate: () => null
+      });
+      const testCost = createMockCost({
+        computeCosts: async () => ({
+          success: true,
+          method: 'cumulative',
+          since: null,
+          costs: createValidCosts()
+        })
+      });
 
       const result = await prepare({
         baseDir: '.',
-        deps: { ccusage: testCcusage }
+        deps: { ccusage: testCcusage, git: testGit, cost: testCost }
       });
 
-      assert.equal(result.status, 'success');
-      assert.equal(result.data.session_id, 'abc123');
+      assertResultStatus(result, 'success', {
+        dataChecks: { session_id: 'abc123' }
+      });
       assert.ok(result.data.current_cost);
+      assert.equal(result.data.method, 'cumulative');
+      assert.equal(result.data.since, null);
 
-      cleanup();
     });
 
     it('returns not_found when no session matches', async () => {
-      // Create test-specific mocks
-      const testCcusage = {
-        ...mockCcusage,
+      const testCcusage = createMockCcusage({
         findRecommendedSession: () => ({ match: false, sessionId: null }),
         pwdToSessionId: () => 'calculated-session-id'
-      };
+      });
+      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testCost = createMockCost();
 
       const result = await prepare({
         baseDir: '.',
-        deps: { ccusage: testCcusage }
+        deps: { ccusage: testCcusage, git: testGit, cost: testCost }
       });
 
       assert.equal(result.status, 'not_found');
       assert.ok(result.data.calculated_session_id);
       assert.match(result.message, /Session not found/);
 
-      cleanup();
     });
 
-    it('returns error when ccusage.getSessionCosts fails', async () => {
-      // Create test-specific mocks
-      const testCcusage = {
-        ...mockCcusage,
-        getSessionCosts: async () => ({
+    it('returns error when computeCosts fails', async () => {
+      const testCcusage = createMockCcusage({
+        findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
+        validateCostMetrics: () => true
+      });
+      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testCost = createMockCost({
+        computeCosts: async () => ({
           success: false,
           error: 'API error'
         })
-      };
+      });
 
       const result = await prepare({
         sessionId: 'test-123',
-        deps: { ccusage: testCcusage }
+        deps: { ccusage: testCcusage, git: testGit, cost: testCost }
       });
 
       assert.equal(result.status, 'error');
       assert.equal(result.message, 'API error');
 
-      cleanup();
     });
 
     it('handles unexpected errors in catch block', async () => {
-      // Create test-specific mocks
-      const testCcusage = {
-        ...mockCcusage,
-        getSessionCosts: async () => {
+      const testCcusage = createMockCcusage({
+        findRecommendedSession: () => ({ match: true, sessionId: 'abc123' })
+      });
+      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testCost = createMockCost({
+        computeCosts: async () => {
           throw new Error('Unexpected error');
         }
-      };
+      });
 
       const result = await prepare({
         sessionId: 'test-123',
-        deps: { ccusage: testCcusage }
+        deps: { ccusage: testCcusage, git: testGit, cost: testCost }
       });
 
       assert.equal(result.status, 'error');
       assert.match(result.message, /Unexpected error/);
 
-      cleanup();
     });
 
     it('returns invalid_costs when validation fails', async () => {
-      // Create test-specific mocks
-      const testCcusage = {
-        ...mockCcusage,
+      const testCcusage = createMockCcusage({
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
-        getSessionCosts: async () => ({
+        validateCostMetrics: () => false  // Validation fails
+      });
+      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testCost = createMockCost({
+        computeCosts: async () => ({
           success: true,
-          costs: [{ model: 'claude-opus', cost: 0 }] // All-zero cost
-        }),
-        validateCostMetrics: (costs) => false // Validation fails
-      };
+          method: 'cumulative',
+          since: null,
+          costs: [{ model: 'claude-opus', cost: 0 }]  // All-zero cost
+        })
+      });
 
       const result = await prepare({
         baseDir: '.',
-        deps: { ccusage: testCcusage }
+        deps: { ccusage: testCcusage, git: testGit, cost: testCost }
       });
 
       assert.equal(result.status, 'invalid_costs');
@@ -187,39 +202,81 @@ describe('commit-workflow.js unit tests', () => {
       assert.ok(result.data.costs);
       assert.match(result.message, /validation failed/);
 
-      cleanup();
     });
 
     it('returns invalid_costs when costs array is empty', async () => {
-      const testCcusage = {
-        ...mockCcusage,
+      const testCcusage = createMockCcusage({
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
-        getSessionCosts: async () => ({
+        validateCostMetrics: () => false
+      });
+      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testCost = createMockCost({
+        computeCosts: async () => ({
           success: true,
-          costs: [] // Empty array
-        }),
-        validateCostMetrics: (costs) => false
-      };
+          method: 'cumulative',
+          since: null,
+          costs: []  // Empty array
+        })
+      });
 
       const result = await prepare({
         baseDir: '.',
-        deps: { ccusage: testCcusage }
+        deps: { ccusage: testCcusage, git: testGit, cost: testCost }
       });
 
       assert.equal(result.status, 'invalid_costs');
       assert.match(result.message, /validation failed/);
 
-      cleanup();
+    });
+
+    it('uses incremental mode when getLastCommitDate returns a date', async () => {
+      const lastCommitDate = '2026-03-05T10:00:00Z';
+      const testCcusage = createMockCcusage({
+        findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
+        validateCostMetrics: () => true
+      });
+      const testGit = createMockGit({
+        getLastCommitDate: () => lastCommitDate
+      });
+      const testCost = createMockCost({
+        computeCosts: async (_sessionId, sinceDate) => ({
+          success: true,
+          method: sinceDate ? 'incremental' : 'cumulative',
+          since: sinceDate,
+          costs: createValidCosts()
+        })
+      });
+
+      const result = await prepare({
+        baseDir: '.',
+        deps: { ccusage: testCcusage, git: testGit, cost: testCost }
+      });
+
+      assert.equal(result.status, 'success');
+      assert.equal(result.data.method, 'incremental');
+      assert.equal(result.data.since, lastCommitDate);
+
     });
   });
 
   describe("commit action command", () => {
     describe("parameter validation", () => {
+      it('throws error when deps parameter is missing', async () => {
+        await assert.rejects(
+          async () => commit({
+            message: 'Test commit',
+            sessionId: 'test',
+            costs: [{ model: 'claude-opus', cost: 0.015 }]
+          }),
+          /deps parameter required/,
+          'Should throw error when deps is missing'
+        );
+      });
+
       it('fails with missing subject', async () => {
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: '',
@@ -231,14 +288,12 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Missing commit subject/);
 
-        cleanup();
       });
 
       it('fails when sessionId is missing', async () => {
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: 'Test',
@@ -249,14 +304,12 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Session ID not provided/);
 
-        cleanup();
       });
 
       it('fails when costs is missing', async () => {
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: 'Test',
@@ -267,14 +320,12 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Cost metrics not provided/);
 
-        cleanup();
       });
 
       it('handles invalid JSON in costs string', async () => {
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: 'Test',
@@ -286,14 +337,12 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Invalid JSON in --costs argument/);
 
-        cleanup();
       });
 
       it('validates metrics before committing', async () => {
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => false
-        };
+        });
 
         const result = await commit({
           message: 'Test',
@@ -304,24 +353,20 @@ describe('commit-workflow.js unit tests', () => {
 
         assert.equal(result.status, 'metrics_invalid');
 
-        cleanup();
       });
     });
 
     describe("git execution", () => {
       it('succeeds with providedMessage parameter (no stdin)', async () => {
-        // Create test-specific mocks
-        const testGit = {
-          ...mockGit,
+        const testGit = createMockGit({
           commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
           getHeadSha: () => 'abc123def456',
           execGit: () => ({ exitCode: 0, stdout: '', stderr: '' })
-        };
+        });
 
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: 'Subject\n\nBody',
@@ -333,22 +378,84 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'success');
         assert.equal(result.data.commit_sha, 'abc123def456');
 
-        cleanup();
+      });
+
+      it('includes method and since in trailer when provided', async () => {
+        let capturedMessage = '';
+        const testGit = createMockGit({
+          commit: (msg) => {
+            capturedMessage = msg;
+            return { exitCode: 0, stdout: '', stderr: '' };
+          },
+          getHeadSha: () => 'abc123def456',
+          execGit: () => ({ exitCode: 0, stdout: '', stderr: '' })
+        });
+
+        const testCcusage = createMockCcusage({
+          validateCostMetrics: () => true
+        });
+
+        await commit({
+          message: 'Subject',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015, inputTokens: 10, outputTokens: 5 }],
+          method: 'incremental',
+          since: '2026-03-05T10:00:00Z',
+          deps: { git: testGit, ccusage: testCcusage }
+        });
+
+        assert.ok(capturedMessage.includes('Claude-Cost-Metrics:'), 'Should include cost trailer');
+        const trailerMatch = capturedMessage.match(/Claude-Cost-Metrics: (.+)/);
+        assert.ok(trailerMatch, 'Should find trailer line');
+        const trailerObj = JSON.parse(trailerMatch[1]);
+        assert.equal(trailerObj.method, 'incremental');
+        assert.equal(trailerObj.since, '2026-03-05T10:00:00Z');
+        assert.equal(trailerObj.sessionId, 'test');
+
+      });
+
+      it('omits since field when null (cumulative mode)', async () => {
+        let capturedMessage = '';
+        const testGit = createMockGit({
+          commit: (msg) => {
+            capturedMessage = msg;
+            return { exitCode: 0, stdout: '', stderr: '' };
+          },
+          getHeadSha: () => 'abc123def456',
+          execGit: () => ({ exitCode: 0, stdout: '', stderr: '' })
+        });
+
+        const testCcusage = createMockCcusage({
+          validateCostMetrics: () => true
+        });
+
+        await commit({
+          message: 'Subject',
+          sessionId: 'test',
+          costs: [{ model: 'claude-opus', cost: 0.015, inputTokens: 10, outputTokens: 5 }],
+          method: 'cumulative',
+          since: null,
+          deps: { git: testGit, ccusage: testCcusage }
+        });
+
+        const trailerMatch = capturedMessage.match(/Claude-Cost-Metrics: (.+)/);
+        const trailerObj = JSON.parse(trailerMatch[1]);
+        assert.equal(trailerObj.method, 'cumulative');
+        assert.equal('since' in trailerObj, false, 'since should be omitted when null');
+
       });
 
       it('returns git_error when git.commit fails', async () => {
-        const testGit = {
-          ...mockGit,
+        const testGit = createMockGit({
           commit: () => ({
             exitCode: 1,
             stderr: 'nothing to commit'
           })
-        };
+        });
 
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: 'Test',
@@ -360,20 +467,17 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'git_error');
         assert.ok(result.data.error_message);
 
-        cleanup();
       });
 
       it('returns git_error when getHeadSha returns null', async () => {
-        const testGit = {
-          ...mockGit,
+        const testGit = createMockGit({
           commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
           getHeadSha: () => null
-        };
+        });
 
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: 'Test',
@@ -385,12 +489,10 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'git_error');
         assert.match(result.message, /Failed to retrieve commit SHA/);
 
-        cleanup();
       });
 
       it('returns git_error when changes still staged', async () => {
-        const testGit = {
-          ...mockGit,
+        const testGit = createMockGit({
           commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
           getHeadSha: () => 'abc123',
           execGit: () => ({
@@ -398,12 +500,11 @@ describe('commit-workflow.js unit tests', () => {
             stdout: 'file.txt\n',
             stderr: ''
           })
-        };
+        });
 
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: 'Test',
@@ -415,21 +516,18 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'git_error');
         assert.match(result.message, /changes still staged/);
 
-        cleanup();
       });
 
       it('handles unexpected error in catch block', async () => {
-        const testGit = {
-          ...mockGit,
+        const testGit = createMockGit({
           commit: () => {
             throw new Error('Unexpected');
           }
-        };
+        });
 
-        const testCcusage = {
-          ...mockCcusage,
+        const testCcusage = createMockCcusage({
           validateCostMetrics: () => true
-        };
+        });
 
         const result = await commit({
           message: 'Test',
@@ -441,7 +539,6 @@ describe('commit-workflow.js unit tests', () => {
         assert.equal(result.status, 'error');
         assert.match(result.message, /Unexpected/);
 
-        cleanup();
       });
     });
   });

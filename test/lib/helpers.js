@@ -124,12 +124,22 @@ export function execGit(args, options = {}) {
 /**
  * Get the path to a plugin script
  * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
- * @param {string} skillName - Skill name (e.g., 'write-git-commit')
+ * @param {string} skillName - Skill name (e.g., 'commit-with-costs')
  * @param {string} scriptName - Script name (e.g., 'load-config.sh' or 'load-config.js')
  * @returns {string} Full path to script
  */
 export function getPluginScriptPath(pluginName, skillName, scriptName) {
   return join(PLUGIN_ROOT, pluginName, 'skills', skillName, 'scripts', scriptName);
+}
+
+/**
+ * Get the path to a shared lib script
+ * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
+ * @param {string} scriptName - Script name (e.g., 'cost-computation.js')
+ * @returns {string} Full path to lib script
+ */
+export function getPluginLibPath(pluginName, scriptName) {
+  return join(PLUGIN_ROOT, pluginName, 'lib', scriptName);
 }
 
 /**

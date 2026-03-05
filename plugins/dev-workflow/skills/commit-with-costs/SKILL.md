@@ -1,5 +1,5 @@
 ---
-name: write-git-commit
+name: commit-with-costs
 description: Create a git commit with trailers for session cost metrics and Claude attribution. Use when the user asks you to commit changes to git.
 context: fork
 allowed-tools:
@@ -12,7 +12,7 @@ allowed-tools:
 
 Use this skill to create a git commit with a message summarizing changes and trailers for attribution and cost metrics.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/write-git-commit`) OR prompts you to commit. Examples:
+**MANDATORY** only activate this skill when the user invokes it directly (`/commit-with-costs`) OR prompts you to commit. Examples:
 - "[git] commit"
 - "commit [this | my changes | to git]"
 - "save to git"
@@ -61,10 +61,10 @@ Follow the workflow steps EXACTLY.
 
 ### A. Delegation Protocol
 
-When you see `DELEGATE_TO: [file]`:  
-⛔ **STOP** → Use Read tool on the reference file path  
-→ Execute its instructions exactly (bash commands, parsing, etc.)  
-→ Return to SKILL.md only after completing reference file instructions  
+When you see `DELEGATE_TO: [file]`:
+⛔ **STOP** → Use Read tool on the reference file path
+→ Execute its instructions exactly (bash commands, parsing, etc.)
+→ Return to SKILL.md only after completing reference file instructions
 
 ⚠️  **IMPORTANT:** Reference files contain Bash tool commands - use them exactly as written - never improvise commands.
 
@@ -87,14 +87,14 @@ All script outputs return JSON. Extract fields and store in variables:
 
 ## 0a. Pre-Flight Check
 
-⛔ **HALT if TRUE**: Already ran `git status/diff/log` in parallel OR drafted commit message OR executing system git workflow. STOP skill immediately.  
+⛔ **HALT if TRUE**: Already ran `git status/diff/log` in parallel OR drafted commit message OR executing system git workflow. STOP skill immediately.
 ✅ **CONTINUE if TRUE**: No git commands executed yet. Continue.
 
 ## 0b. Check for Config
 
-**SKILL_NAME**: write-git-commit
+**SKILL_NAME**: commit-with-costs
 
-**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.write-git-commit.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
+**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.commit-with-costs.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
 
 **Configuration Routing:**
 - If `SKILL_CONFIG` = `✓ Configuration found` → Proceed to Step 1a (Load Configuration)
@@ -106,33 +106,33 @@ All script outputs return JSON. Extract fields and store in variables:
 
 → Execute using Bash tool:
 ```bash
-cat .claude/settings.plugins.write-git-commit.json
+cat .claude/settings.plugins.commit-with-costs.json
 ```
 
-→ Parse JSON output and extract `sessionId` field value  
-→ Store as SESSION_ID for use in subsequent steps  
-→ Proceed to Step 2  
+→ Parse JSON output and extract `sessionId` field value
+→ Store as SESSION_ID for use in subsequent steps
+→ Proceed to Step 2
 
 ### 1b. Create new configuration
 
-→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! (./.claude/settings.plugins.write-git-commit.json). Let's create it:"  
+→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! (./.claude/settings.plugins.commit-with-costs.json). Let's create it:"
 
 → Run Bash command to list available sessions:
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
 ```
 
-→ Parse JSON output: Extract sessions array from `data.sessions` field.  
-→ Use AskUserQuestion to ask user "Select a Claude Code session:" with options from first 4 sessions (each option label = sessionId).  
-→ Extract selected session ID from user response and store in `SELECTED_SESSION_ID` variable.  
+→ Parse JSON output: Extract sessions array from `data.sessions` field.
+→ Use AskUserQuestion to ask user "Select a Claude Code session:" with options from first 4 sessions (each option label = sessionId).
+→ Extract selected session ID from user response and store in `SELECTED_SESSION_ID` variable.
 
 → Run Bash command to save selected session to config:
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
 ```
 
-→ If save succeeds: Inform the user of the file location and continue to Step 2.  
-→ If error occurs: Display error message to user and then **exit workflow immediately**.  
+→ If save succeeds: Inform the user of the file location and continue to Step 2.
+→ If error occurs: Display error message to user and then **exit workflow immediately**.
 
 ## 2. Stage and Analyze Changes
 
@@ -165,37 +165,40 @@ Proceed to step 3 to draft the message according to the guidelines.
 
 ## 3. Generate Commit Message
 
-DELEGATE_TO: `references/message_guidelines.md`  
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
+DELEGATE_TO: `references/message_guidelines.md`
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
-→ Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.  
-→ Proceed to Step 4.  
+→ Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.
+→ Proceed to Step 4.
 
 ## 4. Display Message to User for Approval
 
 **BLOCKING:** Requires user approval before Step 5.
 
-DELEGATE_TO: `references/message_approval.md`  
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
+DELEGATE_TO: `references/message_approval.md`
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
-→ Extract APPROVAL_STATUS and updated COMMIT_SUBJECT, and COMMIT_BODY per reference file instructions.  
+→ Extract APPROVAL_STATUS and updated COMMIT_SUBJECT, and COMMIT_BODY per reference file instructions.
 
-→ If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 5.  
-→ If APPROVAL_STATUS = "request_revisions": Return to Step 3 to regenerate message.  
+→ If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 5.
+→ If APPROVAL_STATUS = "request_revisions": Return to Step 3 to regenerate message.
 
 ## 5. Fetch Cost Data
 
 **STEP_DESCRIPTION**: "Fetching session cost metrics"
 
-DELEGATE_TO: `references/fetch_cost.md`  
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
+DELEGATE_TO: `references/fetch_cost.md`
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 → Extract FETCH_STATUS per reference file instructions.
 
 → If FETCH_STATUS = "success":
   - → Extract `SESSION_ID` from reference file.
   - → Extract `CURRENT_COST` from reference file (validated JSON array).
-  - → Proceed to Step 6 with SESSION_ID and CURRENT_COST values.
+  - → Extract `COST_METHOD` from reference file.
+  - → Extract `COST_SINCE` from reference file.
+  - → Extract `CLEANUP_PERIOD_DAYS` from reference file.
+  - → Proceed to Step 6 with SESSION_ID, CURRENT_COST, COST_METHOD, COST_SINCE, and CLEANUP_PERIOD_DAYS values.
 
 → If FETCH_STATUS is not "success":
   - → Extract `ERROR_MESSAGE` from reference file.
@@ -204,7 +207,7 @@ DELEGATE_TO: `references/fetch_cost.md`
   - → HALT WORKFLOW - Do NOT proceed to Step 6 under any circumstances.
 
 **IMPORTANT:** Cost must be present and accurate!
-- ⛔ NEVER fabricate or estimate cost metrics. 
+- ⛔ NEVER fabricate or estimate cost metrics.
 - ⛔ NEVER create a git commit with fake/estimated cost data.
 - ⚠️  ONLY use results from a successful use of `ccusage` (FETCH_STATUS = "success")
 
@@ -216,8 +219,8 @@ DELEGATE_TO: `references/fetch_cost.md`
 - **VERIFY** SESSION_ID and CURRENT_COST exist from Step 5 - if not, GO BACK TO STEP 5
 - **VERIFY** APPROVAL_STATUS is "use_full" OR "use_subject_only" (from Step 4). If not: **Exit workflow immediately.**
 
-DELEGATE_TO: `references/create_commit.md`  
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE  
+DELEGATE_TO: `references/create_commit.md`
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 → Extract STATUS per reference file instructions.
 
@@ -234,11 +237,15 @@ DELEGATE_TO: `references/create_commit.md`
 
 → Display success summary with the following format:
 ```
-✅ Commit created with session cost metrics in footer
+✅ Commit created with project cost metrics in footer
    SHA: {COMMIT_SHA}
 
-📊 Session metrics:
-   ID: {SESSION_ID}
+📊 Project cost metrics:
+   Project: {SESSION_ID}
+   (if COST_METHOD = "incremental"):
+      Cost since previous commit (since {COST_SINCE}):
+   (if COST_METHOD = "cumulative"):
+      Cost total, last {CLEANUP_PERIOD_DAYS} days:
    (for each model in CURRENT_COST array):
       - {model}: {inputTokens} in + {outputTokens} out = ${cost}
 ```

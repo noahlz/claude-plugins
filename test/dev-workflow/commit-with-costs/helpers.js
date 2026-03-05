@@ -28,16 +28,27 @@ export function createMockCcusage(overrides = {}) {
   };
 
   return {
-    loadSessionData: async () => throwUnexpected('loadSessionData'),
     getProjectsDir: () => throwUnexpected('getProjectsDir'),
-    getSessionCosts: async () => throwUnexpected('getSessionCosts'),
     listLocalSessions: () => throwUnexpected('listLocalSessions'),
     findRecommendedSession: () => throwUnexpected('findRecommendedSession'),
     pwdToSessionId: () => throwUnexpected('pwdToSessionId'),
-    extractCostMetrics: () => throwUnexpected('extractCostMetrics'),
     validateCostMetrics: () => throwUnexpected('validateCostMetrics'),
     filterZeroUsageCosts: (costsArray) => ({ filtered: costsArray, removed: [] }),
-    filterStaleCosts: (costs) => ({ filtered: costs, removed: [] }),
+    getCleanupPeriodDays: () => 30,
+    ...overrides
+  };
+}
+
+/**
+ * Create a mock cost computation object with specified overrides
+ * @param {Object} overrides - Methods to override
+ * @returns {Object} Mock cost ops with sensible defaults
+ */
+export function createMockCost(overrides = {}) {
+  return {
+    computeCosts: async () => ({ success: true, method: 'cumulative', since: null, costs: [] }),
+    loadBlockData: async () => [],
+    filterZeroUsageCosts: (costs) => ({ filtered: costs, removed: [] }),
     ...overrides
   };
 }
@@ -57,6 +68,7 @@ export function createMockGit(overrides = {}) {
     commit: () => throwUnexpected('commit'),
     getHeadSha: () => throwUnexpected('getHeadSha'),
     getPreviousCostMetrics: () => [],
+    getLastCommitDate: () => null,  // default: no previous commits
     ...overrides
   };
 }
@@ -136,14 +148,14 @@ export function stageFile(testEnv, filename, content = 'test content') {
 }
 
 /**
- * Execute commit-workflow.js script and parse JSON result
+ * Execute commit-workflow.js script (commit-with-costs version) and parse JSON result
  * @param {Object} testEnv - Test environment
  * @param {string} action - Action to execute (prepare, commit, save-config)
  * @param {Object} options - { args, input }
  * @returns {Object} Parsed JSON result
  */
 export function execCommitWorkflow(testEnv, action, options = {}) {
-  const scriptPath = getPluginScriptPath('dev-workflow', 'write-git-commit', 'commit-workflow.js');
+  const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
   const result = execNodeScript(scriptPath, {
     args: [action, ...(options.args || [])],

@@ -10,5 +10,17 @@
     "clean": "rm -rf dist/",
     "test": "node test/run-tests.js",
     "coverage": "node --experimental-test-coverage --test test/**/*.test.js"
+  },
+  "devDependencies": {
+    "knip": "^5.85.0"
+  },
+  "knip": {
+    "entry": [
+      "plugins/dev-workflow/skills/get-cost-trailer/scripts/cost-workflow.js",
+      "plugins/dev-workflow/skills/commit-with-costs/scripts/commit-workflow.js"
+    ],
+    "ignoreDependencies": [
+      "ccusage"
+    ]
   }
 }

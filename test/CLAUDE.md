@@ -19,7 +19,7 @@ test/
 │   │   └── fixtures/
 │   │       ├── configs/            # Configuration fixtures
 │   │       └── project-templates/  # Project structure fixtures
-│   └── write-git-commit/
+│   └── commit-with-costs/
 │       └── CLAUDE.md           # Suite-specific instructions
 ```
 
@@ -32,7 +32,7 @@ test/
 
 ### Standard Structure
 
-See [`commit-workflow.unit.test.js`](./dev-workflow/write-git-commit/commit-workflow.unit.test.js) for the standard pattern:
+See [`commit-workflow.unit.test.js`](./dev-workflow/commit-with-costs/commit-workflow.unit.test.js) for the standard pattern:
 - Import `describe`, `it`, `beforeEach`, `afterEach` from `node:test`
 - Import `assert` from `node:assert`
 - Use `setupTestEnv()` / `teardownTestEnv()` lifecycle
@@ -43,15 +43,15 @@ See [`commit-workflow.unit.test.js`](./dev-workflow/write-git-commit/commit-work
 
 **Key concept:** Pass all external dependencies via a `deps` parameter.
 
-**Example implementation:** See [`commit-workflow.js`](../plugins/dev-workflow/skills/write-git-commit/scripts/commit-workflow.js) for examples of how functions accept `deps`.
+**Example implementation:** See [`commit-workflow.js`](../plugins/dev-workflow/skills/commit-with-costs/scripts/commit-workflow.js) for examples of how functions accept `deps`.
 
-**Example usage in tests:** See [`commit-workflow.unit.test.js`](./dev-workflow/write-git-commit/commit-workflow.unit.test.js) for examples of passing `{ deps: { ccusage: testCcusage } }`.
+**Example usage in tests:** See [`commit-workflow.unit.test.js`](./dev-workflow/commit-with-costs/commit-workflow.unit.test.js) for examples of passing `{ deps: { ccusage: testCcusage } }`.
 
 ### Mock Creation Pattern
 
 **Key concept:** Mock factories with throwing defaults prevent silent test failures.
 
-**Example implementation:** See functions in [`write-git-commit/helpers.js`](./dev-workflow/write-git-commit/helpers.js):
+**Example implementation:** See functions in [`commit-with-costs/helpers.js`](./dev-workflow/commit-with-costs/helpers.js):
 - `createMockCcusage()`
 - `createMockGit()`
 - `createMockLoadSessionData()`
@@ -61,7 +61,7 @@ See [`commit-workflow.unit.test.js`](./dev-workflow/write-git-commit/commit-work
 2. Tests override only methods they need
 3. Unexpected calls fail immediately with clear error
 
-**Example usage:** See [`commit-workflow.unit.test.js`](./dev-workflow/write-git-commit/commit-workflow.unit.test.js) for examples of selective overrides.
+**Example usage:** See [`commit-workflow.unit.test.js`](./dev-workflow/commit-with-costs/commit-workflow.unit.test.js) for examples of selective overrides.
 
 ### Assertion Helpers
 
@@ -69,7 +69,7 @@ Create custom helpers to encapsulate complex assertions and reduce test duplicat
 
 **Examples:**
 - [`run-and-fix-tests/helpers.js`](./dev-workflow/run-and-fix-tests/helpers.js) functions: `assertParserResult()`, `assertErrorDetails()`, `assertFailureDetails()`
-- [`write-git-commit/helpers.js`](./dev-workflow/write-git-commit/helpers.js) functions: `assertResultStatus()`, `assertCommitMessage()`
+- [`commit-with-costs/helpers.js`](./dev-workflow/commit-with-costs/helpers.js) functions: `assertResultStatus()`, `assertCommitMessage()`
 
 ### Wrapper Functions
 
@@ -77,7 +77,7 @@ Reduce boilerplate by wrapping common test setup patterns.
 
 **Examples:**
 - [`run-and-fix-tests/helpers.js`](./dev-workflow/run-and-fix-tests/helpers.js) functions: `parseBuildWithMock()`, `parseTestsWithMock()`, `parseTestsWithGlob()`
-- [`write-git-commit/helpers.js`](./dev-workflow/write-git-commit/helpers.js) functions: `execCommitWorkflow()`
+- [`commit-with-costs/helpers.js`](./dev-workflow/commit-with-costs/helpers.js) functions: `execCommitWorkflow()`
 
 ## Test Environment Lifecycle
 

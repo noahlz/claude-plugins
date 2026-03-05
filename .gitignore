@@ -19,3 +19,5 @@ node_modules/
 # Plugin configurations (meant to be per-user not per-project - do not commit)
 .claude/settings.plugins.run-and-fix-tests.json
 .claude/settings.plugins.write-git-commit.json
+.claude/settings.plugins.commit-with-costs.json
+.claude/settings.plugins.get-cost-trailer.json

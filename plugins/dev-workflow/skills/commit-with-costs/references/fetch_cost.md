@@ -31,6 +31,9 @@ fi
 → If FETCH_STATUS = "success":
   - `data.session_id` → SESSION_ID
   - `data.current_cost` → CURRENT_COST (JSON array)
+  - `data.method` → COST_METHOD
+  - `data.since` → COST_SINCE (may be null)
+  - `data.cleanup_period_days` → CLEANUP_PERIOD_DAYS
 
 → If FETCH_STATUS = "invalid_costs" or "not_found" or "error":
   - `message` → ERROR_MESSAGE

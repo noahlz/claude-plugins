@@ -1,7 +1,8 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import {
   setupTestEnv,
   teardownTestEnv,
@@ -14,7 +15,8 @@ import {
   commit,
   getHeadSha,
   getPreviousCostMetrics,
-} from '../../../plugins/dev-workflow/skills/write-git-commit/scripts/git-operations.js';
+  getLastCommitDate
+} from '../../../plugins/dev-workflow/lib/git-operations.js';
 
 /**
  * git-operations integration tests
@@ -23,7 +25,7 @@ import {
  * Each test initializes a real git repository with proper setup/teardown.
  */
 
-describe('git-operations: integration tests', () => {
+describe('lib/git-operations: integration tests', () => {
   let testEnv;
 
   beforeEach(() => {
@@ -53,10 +55,8 @@ describe('git-operations: integration tests', () => {
     });
 
     it('respects cwd option', () => {
-      // Create a file in the test directory
       writeFileSync(join(testEnv.tmpDir, 'test.txt'), 'test content');
 
-      // Verify cwd is respected by checking file exists
       const resultWithCwd = prodExecGit(['ls-files'], { cwd: testEnv.tmpDir });
       assert.equal(resultWithCwd.exitCode, 0, 'Should succeed with specified cwd');
       assert.ok(resultWithCwd.stdout.includes('initial.txt'), 'Should list files from cwd');
@@ -71,7 +71,6 @@ describe('git-operations: integration tests', () => {
 
       assert.equal(result.exitCode, 0, 'Should succeed with valid staged changes');
 
-      // Verify commit was created
       const logResult = execGit(['log', '-1', '--format=%B'], { cwd: testEnv.tmpDir });
       assert.ok(logResult.stdout.includes('Add test file'), 'Commit message should be present');
     });
@@ -84,7 +83,6 @@ describe('git-operations: integration tests', () => {
 
       assert.equal(result.exitCode, 0, 'Should succeed with multi-line message');
 
-      // Verify full message is preserved
       const logResult = execGit(['log', '-1', '--format=%B'], { cwd: testEnv.tmpDir });
       assert.ok(logResult.stdout.includes('Add new feature'), 'Should contain subject');
       assert.ok(logResult.stdout.includes('- Implemented core functionality'), 'Should contain first bullet');
@@ -99,11 +97,9 @@ describe('git-operations: integration tests', () => {
     });
 
     it('respects cwd option', () => {
-      // Create two test directories with git repos
       const dir2 = join(testEnv.tmpDir, 'dir2');
       mkdirSync(dir2, { recursive: true });
 
-      // Initialize second repo
       execGit(['init'], { cwd: dir2 });
       execGit(['config', 'user.email', 'test@example.com'], { cwd: dir2 });
       execGit(['config', 'user.name', 'Test User'], { cwd: dir2 });
@@ -111,15 +107,12 @@ describe('git-operations: integration tests', () => {
       execGit(['add', 'initial.txt'], { cwd: dir2 });
       execGit(['commit', '-m', 'initial'], { cwd: dir2 });
 
-      // Stage file in dir2
       writeFileSync(join(dir2, 'test.txt'), 'test');
       execGit(['add', 'test.txt'], { cwd: dir2 });
 
-      // Commit in dir2
       const result = commit('Test commit in dir2', { cwd: dir2 });
       assert.equal(result.exitCode, 0, 'Should succeed in specified cwd');
 
-      // Verify commit is in dir2, not testEnv.tmpDir
       const logDir1 = execGit(['log', '--oneline'], { cwd: testEnv.tmpDir });
       const logDir2 = execGit(['log', '--oneline'], { cwd: dir2 });
 
@@ -135,7 +128,6 @@ describe('git-operations: integration tests', () => {
       assert.ok(typeof sha === 'string', 'Should return SHA as string');
       assert.ok(sha.length > 0, 'SHA should not be empty');
 
-      // Verify it matches git log
       const logResult = execGit(['log', '-1', '--format=%H'], { cwd: testEnv.tmpDir });
       assert.equal(sha, logResult.stdout.trim(), 'Should match git log output');
     });
@@ -188,11 +180,9 @@ describe('git-operations: integration tests', () => {
       ];
       const trailers = `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId: 'test', cost: costs })}`;
 
-      // First commit: has trailer
       stageFile(testEnv, 'file1.txt');
       commit(`First\n\n${trailers}`, { cwd: testEnv.tmpDir });
 
-      // Second commit: no trailer
       stageFile(testEnv, 'file2.txt');
       commit('Second commit without trailer', { cwd: testEnv.tmpDir });
 
@@ -203,6 +193,30 @@ describe('git-operations: integration tests', () => {
     it('returns empty array when cwd is not a git repo', () => {
       const result = getPreviousCostMetrics({ cwd: '/tmp' });
       assert.deepEqual(result, []);
+    });
+  });
+
+  describe("getLastCommitDate", () => {
+    it('returns ISO 8601 date string after first commit', () => {
+      const result = getLastCommitDate({ cwd: testEnv.tmpDir });
+      assert.ok(typeof result === 'string', 'Should return a string');
+      // ISO 8601 format: starts with 4-digit year, dash, 2-digit month, dash, 2-digit day, T
+      assert.match(result, /^\d{4}-\d{2}-\d{2}T/, 'Should be ISO 8601 format');
+    });
+
+    it('returns null for empty repository with no commits', () => {
+      const emptyDir = mkdtempSync(join(tmpdir(), 'empty-repo-'));
+      execGit(['init'], { cwd: emptyDir });
+
+      const result = getLastCommitDate({ cwd: emptyDir });
+      assert.equal(result, null, 'Should return null when no commits exist');
+
+      rmSync(emptyDir, { recursive: true, force: true });
+    });
+
+    it('returns null when cwd is not a git repo', () => {
+      const result = getLastCommitDate({ cwd: '/tmp' });
+      assert.equal(result, null, 'Should return null for non-git directory');
     });
   });
 });
