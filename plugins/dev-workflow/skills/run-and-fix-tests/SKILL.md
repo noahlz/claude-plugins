@@ -33,23 +33,15 @@ Activate this skill when:
 
 # Skill Context
 
-## SKILL_BASE_DIR Resolution
+**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
 
-**MANDATORY:** Extract SKILL_BASE_DIR from the startup message:
-- Look for: "Base directory for this skill: /path/to/skill"
-- Store the exact *path* value as SKILL_BASE_DIR
+⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
 
-**Usage:** Replace `{{SKILL_BASE_DIR}}` with the extracted path in all bash commands.
+**Node.js Check**: !`node -e "process.exit(parseInt(process.version.slice(1)) >= 22 ? 0 : 1)" 2>/dev/null && echo "✓ Node.js $(node -v)" || echo "ERROR: Node.js 22+ required (found: $(node -v 2>/dev/null || echo 'not installed')). Install: https://nodejs.org/"`
 
-**Example:**
-- Template: `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"`
-- Actual: `node "/Users/user/.claude/plugins/cache/org-name/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
+⛔ **HALT** if Node.js Check shows `ERROR`.
 
-Before proceeding, run this Bash command to confirm:
-```bash
-# Use {{SKILL_BASE_DIR}} value (extracted from skill startup message)
-echo SKILL_BASE_DIR: {{SKILL_BASE_DIR}}
-```
+**Dependencies**: !`[ -d "${CLAUDE_SKILL_DIR}/../../node_modules" ] || (npm install --prefix "${CLAUDE_SKILL_DIR}/../.." --silent 2>&1 && echo "Plugin dependencies installed." || echo "WARNING: Failed to install plugin dependencies.")`
 
 ## Workflow Rules & Guardrails
 
@@ -64,12 +56,7 @@ When you see `DELEGATE_TO: [file]`:
 
 ⚠️  **IMPORTANT:** Reference files contain Bash tool commands - use them exactly as written - never improvise commands.
 
-### B. Template Substitution
-
-**MANDATORY**: Replace placeholders before executing bash commands:
-- `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
-
-### C. Narration Control
+### B. Narration Control
 
 ⚠️  **SILENCE PROTOCOL**
 Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and tool calls silently - no explanatory text.  

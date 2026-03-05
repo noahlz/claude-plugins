@@ -14,10 +14,10 @@ Follow these instructions ONLY if build configuration is missing (SKILL_CONFIG: 
 → Execute detection and config creation:
 ```bash
 # Step 1: Detect build tools
-DETECTED=$(node "{{SKILL_BASE_DIR}}/scripts/detect-and-resolve.js" "{{SKILL_BASE_DIR}}/../..")
+DETECTED=$(node "{{SKILL_BASE_DIR}}/scripts/detect-and-resolve.js")
 
 # Step 2: Create config file in project's .claude/ directory
-node "{{SKILL_BASE_DIR}}/scripts/select-default.js" "{{SKILL_BASE_DIR}}/../.." "$DETECTED" "$(pwd)"
+node "{{SKILL_BASE_DIR}}/scripts/select-default.js" "$DETECTED" "$(pwd)"
 ```
 
 ## Auto-Selection Rules

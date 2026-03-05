@@ -1,6 +1,6 @@
 # Claude Code Plugins
 
-Productivity plugins for Claude Code.
+Developer workflow and productivity plugins for Claude Code.
 
 See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-marketplaces)
 
@@ -12,13 +12,7 @@ See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-m
 
 AI-assisted workflows for common development tasks.
 
-**Quick Install:**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/noahlz/claude-plugins/refs/heads/main/plugins/dev-workflow/install.sh | sh
-```
-
-Or manually add the marketplace to your Claude Code settings:
+**Install:**
 
 ```bash
 claude plugin marketplace add noahlz/claude-plugins
@@ -57,24 +51,30 @@ claude plugin marketplace add ./
 
 ### Updating
 
-After making changes, you must fully uninstall and reinstall the plugin. 
+After making changes, run `/reload-plugins` in Claude Code to pick up the changes without restarting.
 
-Run the provided script `./reinstall.sh`. 
+### Force Reinstall (Development)
 
-Alternatively, update the plugin version number in `marketplace.json` and then trigger a marketplace/plugin update in Claude Code.
+Claude Code caches plugins by version number. If you modify plugin files without bumping the version in `marketplace.json`, `/reload-plugins` will reload from the stale cache and **not** pick up your changes.
+
+Solution: run `./force-reinstall.sh` to bypass the version cache and force a full reinstall from source:
+
+```bash
+./force-reinstall.sh
+```
+
+Use this when:
+- You've modified SKILL.md, scripts, agents, or other plugin files
+- `/reload-plugins` is not reflecting your changes
 
 
 ### Plugin Root Resolution
 
-In order to run packaged scripts, skills need to know their install directory. Fortunately, when a skill activates, Claude receives the skill source location as a message like the following:
+Skills use the `${CLAUDE_SKILL_DIR}` environment variable (introduced in Claude Code 2.1.69) to locate their packaged scripts. Claude Code substitutes this variable in SKILL.md content at load time with the skill's installed directory path.
 
-```
-Base directory for this skill: /User/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.4.0/skills/write-git-commit
-```
+**Minimum required version: Claude Code 2.1.69**
 
-The skills in this plugin rely on this message to locate scripts. Of course, things will break if Anthropic changes this behavior.
-
-Related: [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https://github.com/anthropics/claude-code/issues/9354)
+Skills will halt and display an error if run on an older version.
 
 ## Testing
 

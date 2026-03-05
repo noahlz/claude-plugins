@@ -2,6 +2,13 @@
 
 import { copyFile, fileExists, ensureClaudeDir } from '../../../lib/file-utils.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Use CLAUDE_SKILL_DIR env var (set by Claude Code) or fall back to import.meta.url for non-skill contexts
+// scripts/ -> run-and-fix-tests/ -> skills/ -> dev-workflow/ (pluginRoot)
+const DEFAULT_PLUGIN_ROOT = process.env.CLAUDE_SKILL_DIR
+  ? path.resolve(process.env.CLAUDE_SKILL_DIR, '../..')
+  : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 /**
  * Select and apply default configuration based on detected tools
@@ -12,7 +19,7 @@ import path from 'path';
  * @returns {object} - { configPath, source, tools, warnings }
  */
 export function selectDefault(options = {}) {
-  const { detectedTools, pluginRoot, targetDir = '.' } = options;
+  const { detectedTools, pluginRoot = DEFAULT_PLUGIN_ROOT, targetDir = '.' } = options;
   const warnings = [];
 
   // Create .claude directory
@@ -94,19 +101,18 @@ function parseDetectedTools(detectedJson) {
  * Main entry point
  */
 async function main() {
-  const pluginRoot = process.argv[2];
-  const detectedJson = process.argv[3];
-  const targetDir = process.argv[4] || '.';
+  const detectedJson = process.argv[2];
+  const targetDir = process.argv[3] || '.';
 
-  if (!pluginRoot || !detectedJson) {
-    console.error('Error: plugin root and detected tools JSON required');
-    console.error('Usage: node select-default.js <plugin-root> <detected-json> [target-dir]');
+  if (!detectedJson) {
+    console.error('Error: detected tools JSON required');
+    console.error('Usage: node select-default.js <detected-json> [target-dir]');
     process.exit(1);
   }
 
   try {
     const detected = parseDetectedTools(detectedJson);
-    const result = selectDefault({ detectedTools: detected, pluginRoot, targetDir });
+    const result = selectDefault({ detectedTools: detected, targetDir });
 
     // JSON to stdout (for piping)
     console.log(JSON.stringify(result, null, 2));

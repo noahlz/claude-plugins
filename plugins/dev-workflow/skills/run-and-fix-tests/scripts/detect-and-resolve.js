@@ -3,13 +3,20 @@
 import { parseJsonFile } from '../../../lib/config-loader.js';
 import { findFiles, fileExists, getNormalizedDir } from '../../../lib/file-utils.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Use CLAUDE_SKILL_DIR env var (set by Claude Code) or fall back to import.meta.url for non-skill contexts
+// scripts/ -> run-and-fix-tests/ -> skills/ -> dev-workflow/ (pluginRoot)
+const DEFAULT_PLUGIN_ROOT = process.env.CLAUDE_SKILL_DIR
+  ? path.resolve(process.env.CLAUDE_SKILL_DIR, '../..')
+  : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 /**
  * Load tool registry from plugin default config
  * @param {string} pluginRoot - Plugin root directory (specific plugin, e.g., /path/to/plugins/dev-workflow)
  * @returns {object|null} - Tools registry
  */
-export function loadToolRegistry(pluginRoot) {
+export function loadToolRegistry(pluginRoot = DEFAULT_PLUGIN_ROOT) {
   const registryPath = path.join(pluginRoot, 'skills/run-and-fix-tests/assets/defaults/tools.json');
   return parseJsonFile(registryPath);
 }
@@ -20,7 +27,7 @@ export function loadToolRegistry(pluginRoot) {
  * @param {string} pluginRoot - Plugin root directory
  * @returns {object|null} - Tool default config
  */
-export function loadToolDefaultConfig(toolName, pluginRoot) {
+export function loadToolDefaultConfig(toolName, pluginRoot = DEFAULT_PLUGIN_ROOT) {
   const defaultPath = path.join(pluginRoot, `skills/run-and-fix-tests/assets/defaults/${toolName}.json`);
   return parseJsonFile(defaultPath);
 }
@@ -33,7 +40,7 @@ export function loadToolDefaultConfig(toolName, pluginRoot) {
  * @returns {array} - Array of detected tool objects
  */
 export function detectTools(options = {}) {
-  const { pluginRoot, rootDir = '.' } = options;
+  const { pluginRoot = DEFAULT_PLUGIN_ROOT, rootDir = '.' } = options;
 
   // Load tool registry
   const toolRegistry = loadToolRegistry(pluginRoot);
@@ -94,17 +101,10 @@ export function detectTools(options = {}) {
  * Main entry point
  */
 async function main() {
-  const pluginRoot = process.argv[2];
-  const rootDir = process.argv[3] || '.';
-
-  if (!pluginRoot) {
-    console.error('Error: Plugin root path required as first argument');
-    console.error('Usage: node detect-and-resolve.js <plugin-root> [root-dir]');
-    process.exit(1);
-  }
+  const rootDir = process.argv[2] || '.';
 
   try {
-    const detected = detectTools({ pluginRoot, rootDir });
+    const detected = detectTools({ rootDir });
 
     if (detected.length === 0) {
       console.error('Error: No build tools detected in project');
