@@ -1,5 +1,13 @@
 # Changelog
 
+# 0.5.0
+
+- Replaced `write-git-commit` skill with `commit-with-costs`
+- Added `get-cost-trailer` skill for displaying session cost metrics without committing
+- Cost metrics now track incremental cost since the last git commit (falls back to cumulative for first commit of a session)
+- Refactored cost fetching, git operations, and cost computation into shared lib modules under `plugins/dev-workflow/lib/`
+- Migrated all tests to new structure under `test/dev-workflow/lib/` and `test/dev-workflow/commit-with-costs/`
+
 # 0.4.0
 
 - Removed legacy command wrappers (`/commit` and `/test`) now that Claude Code properly recognizes plugin skills as slash commands
