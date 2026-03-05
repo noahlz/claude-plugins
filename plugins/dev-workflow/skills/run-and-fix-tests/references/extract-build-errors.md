@@ -6,7 +6,7 @@ Follow these instructions to extract errors from build logs:
 
 → Execute build error parsing script:
 ```bash
-node "$CLAUDE_SKILL_DIR/scripts/parse-build-errors.js"
+node "{{SKILL_BASE_DIR}}/scripts/parse-build-errors.js"
 ```
 
 → Check exit code:

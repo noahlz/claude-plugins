@@ -41,9 +41,9 @@ Follow the workflow steps EXACTLY.
 
 # Skill Context
 
-**VERSION CHECK**: !`[ -n "$CLAUDE_SKILL_DIR" ] && echo "OK" || echo "ERROR: CLAUDE_SKILL_DIR not set. This skill requires Claude Code 2.1.69 or higher."`
+**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
 
-⛔ **HALT** if VERSION CHECK shows `ERROR`.
+⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
 
 **Node.js Check**: !`node -e "process.exit(parseInt(process.version.slice(1)) >= 22 ? 0 : 1)" 2>/dev/null && echo "✓ Node.js $(node -v)" || echo "ERROR: Node.js 22+ required (found: $(node -v 2>/dev/null || echo 'not installed')). Install: https://nodejs.org/"`
 
@@ -119,7 +119,7 @@ cat .claude/settings.plugins.write-git-commit.json
 
 → Run Bash command to list available sessions:
 ```bash
-node "$CLAUDE_SKILL_DIR/scripts/commit-workflow.js" list-sessions
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
 ```
 
 → Parse JSON output: Extract sessions array from `data.sessions` field.  
@@ -128,7 +128,7 @@ node "$CLAUDE_SKILL_DIR/scripts/commit-workflow.js" list-sessions
 
 → Run Bash command to save selected session to config:
 ```bash
-node "$CLAUDE_SKILL_DIR/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
 ```
 
 → If save succeeds: Inform the user of the file location and continue to Step 2.  

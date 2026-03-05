@@ -1,6 +1,6 @@
 # Claude Code Plugins
 
-Productivity plugins for Claude Code.
+Developer workflow and productivity plugins for Claude Code.
 
 See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-marketplaces)
 
@@ -57,7 +57,7 @@ After making changes, run `/reload-plugins` in Claude Code to pick up the change
 
 Claude Code caches plugins by version number. If you modify plugin files without bumping the version in `marketplace.json`, `/reload-plugins` will reload from the stale cache and **not** pick up your changes.
 
-Run `./force-reinstall.sh` to bypass the version cache and force a full reinstall from source:
+Solution: run `./force-reinstall.sh` to bypass the version cache and force a full reinstall from source:
 
 ```bash
 ./force-reinstall.sh
@@ -70,9 +70,7 @@ Use this when:
 
 ### Plugin Root Resolution
 
-Skills use the `${CLAUDE_SKILL_DIR}` environment variable (introduced in Claude Code 2.1.69)
-to locate their packaged scripts. Claude Code substitutes this variable in SKILL.md content
-at load time with the skill's installed directory path.
+Skills use the `${CLAUDE_SKILL_DIR}` environment variable (introduced in Claude Code 2.1.69) to locate their packaged scripts. Claude Code substitutes this variable in SKILL.md content at load time with the skill's installed directory path.
 
 **Minimum required version: Claude Code 2.1.69**
 

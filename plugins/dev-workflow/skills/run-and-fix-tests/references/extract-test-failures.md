@@ -6,7 +6,7 @@ Follow these instructions to extract failure information from test results:
 
 → Execute test failure parsing script:
 ```bash
-node "$CLAUDE_SKILL_DIR/scripts/parse-test-failures.js"
+node "{{SKILL_BASE_DIR}}/scripts/parse-test-failures.js"
 ```
 
 → Check exit code:
