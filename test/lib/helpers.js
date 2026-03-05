@@ -133,6 +133,16 @@ export function getPluginScriptPath(pluginName, skillName, scriptName) {
 }
 
 /**
+ * Get the path to a shared lib script
+ * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
+ * @param {string} scriptName - Script name (e.g., 'cost-computation.js')
+ * @returns {string} Full path to lib script
+ */
+export function getPluginLibPath(pluginName, scriptName) {
+  return join(PLUGIN_ROOT, pluginName, 'lib', scriptName);
+}
+
+/**
  * Extract JSON from output that may have npm audit or other non-JSON text before it
  * @param {string} output - Output string that may contain JSON
  * @returns {Object|null} Parsed JSON object or null if no JSON found
