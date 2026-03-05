@@ -24,7 +24,7 @@
 
 set -e
 
-echo "Force reinstalling dev-workflow plugin..."
+echo "Forcing reinstallation of dev-workflow plugin..."
 echo ""
 
 # Uninstall plugin and marketplace
