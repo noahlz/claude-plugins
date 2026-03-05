@@ -33,23 +33,14 @@ Activate this skill when:
 
 # Skill Context
 
-## SKILL_BASE_DIR Resolution
+**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
 
-**MANDATORY:** Extract SKILL_BASE_DIR from the startup message:
-- Look for: "Base directory for this skill: /path/to/skill"
-- Store the exact *path* value as SKILL_BASE_DIR
+⛔ **VERSION CHECK**: If the line above shows the literal text `${CLAUDE_SKILL_DIR}` instead of
+an actual file path, halt immediately and tell the user:
+"This skill requires Claude Code 2.1.69 or higher."
 
-**Usage:** Replace `{{SKILL_BASE_DIR}}` with the extracted path in all bash commands.
-
-**Example:**
-- Template: `node "{{SKILL_BASE_DIR}}/scripts/load-config.js"`
-- Actual: `node "/Users/user/.claude/plugins/cache/org-name/dev-workflow/0.2.0/skills/run-and-fix-tests/scripts/load-config.js"`
-
-Before proceeding, run this Bash command to confirm:
-```bash
-# Use {{SKILL_BASE_DIR}} value (extracted from skill startup message)
-echo SKILL_BASE_DIR: {{SKILL_BASE_DIR}}
-```
+**Usage:** Replace `{{SKILL_BASE_DIR}}` with the path shown above when executing bash commands
+in reference files.
 
 ## Workflow Rules & Guardrails
 
@@ -67,7 +58,7 @@ When you see `DELEGATE_TO: [file]`:
 ### B. Template Substitution
 
 **MANDATORY**: Replace placeholders before executing bash commands:
-- `{{SKILL_BASE_DIR}}` → Installed plugin path (from skill startup message)
+- `{{SKILL_BASE_DIR}}` → Path shown in "Skill Context > SKILL_BASE_DIR" above
 
 ### C. Narration Control
 

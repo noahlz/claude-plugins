@@ -66,15 +66,13 @@ Alternatively, update the plugin version number in `marketplace.json` and then t
 
 ### Plugin Root Resolution
 
-In order to run packaged scripts, skills need to know their install directory. Fortunately, when a skill activates, Claude receives the skill source location as a message like the following:
+Skills use the `${CLAUDE_SKILL_DIR}` environment variable (introduced in Claude Code 2.1.69)
+to locate their packaged scripts. Claude Code substitutes this variable in SKILL.md content
+at load time with the skill's installed directory path.
 
-```
-Base directory for this skill: /User/noahlz/.claude/plugins/cache/noahlz-github-io/dev-workflow/0.4.0/skills/write-git-commit
-```
+**Minimum required version: Claude Code 2.1.69**
 
-The skills in this plugin rely on this message to locate scripts. Of course, things will break if Anthropic changes this behavior.
-
-Related: [GitHub Issue #9354: Claude Code Plugin Environment Variable Bug](https://github.com/anthropics/claude-code/issues/9354)
+Skills will halt and display an error if run on an older version.
 
 ## Testing
 
