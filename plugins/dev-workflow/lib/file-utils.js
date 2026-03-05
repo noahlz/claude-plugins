@@ -48,7 +48,7 @@ export function findFiles(pattern, searchDir = '.', maxDepth = 3) {
  * @param {string} pattern - Pattern (e.g., "*.json", "Makefile")
  * @returns {boolean}
  */
-export function matchesPattern(filename, pattern) {
+function matchesPattern(filename, pattern) {
   if (pattern.startsWith('*.')) {
     // Extension pattern
     const ext = pattern.substring(1); // e.g., ".json"

@@ -27,7 +27,7 @@ export function loadToolRegistry(pluginRoot = DEFAULT_PLUGIN_ROOT) {
  * @param {string} pluginRoot - Plugin root directory
  * @returns {object|null} - Tool default config
  */
-export function loadToolDefaultConfig(toolName, pluginRoot = DEFAULT_PLUGIN_ROOT) {
+function loadToolDefaultConfig(toolName, pluginRoot = DEFAULT_PLUGIN_ROOT) {
   const defaultPath = path.join(pluginRoot, `skills/run-and-fix-tests/assets/defaults/${toolName}.json`);
   return parseJsonFile(defaultPath);
 }

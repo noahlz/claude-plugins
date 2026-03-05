@@ -28,7 +28,6 @@ export function createMockCcusage(overrides = {}) {
   };
 
   return {
-    loadSessionData: async () => throwUnexpected('loadSessionData'),
     getProjectsDir: () => throwUnexpected('getProjectsDir'),
     listLocalSessions: () => throwUnexpected('listLocalSessions'),
     findRecommendedSession: () => throwUnexpected('findRecommendedSession'),

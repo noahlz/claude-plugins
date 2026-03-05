@@ -15,18 +15,6 @@ import os from 'os';
  */
 
 /**
- * Load all sessions from ccusage
- * Direct wrapper around ccusage/data-loader.loadSessionData()
- * @returns {Promise<Array>} Array of session objects
- */
-/* node:coverage disable */
-export async function loadSessionData() {
-  const { loadSessionData: load } = await import('ccusage/data-loader');
-  return await load();
-}
-/* node:coverage enable */
-
-/**
  * Load block data for a session from ccusage
  * Direct wrapper around ccusage/data-loader.loadSessionBlockData()
  * @param {string} sessionId - Session ID (project path)
