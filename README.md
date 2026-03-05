@@ -32,12 +32,12 @@ claude plugin install dev-workflow@noahlz.github.io
 
 #### Agents
 
-Because reading build and test failures quickly use up context, the `run-and-fix-tests` skill delegates failure analysis to specialized agents:
-
 | Agent | Description |
 |-------|-------------|
-| [`broken-build-analyzer`](./plugins/dev-workflow/agents/broken-build-analyzer.md) | Analyzes build/compilation failures and provides diagnosis suitable for creating a plan to fix the build. |
-| [`failed-test-analyzer`](./plugins/dev-workflow/agents/failed-test-analyzer.md) | Analyzes test failures and provides diagnosis suitable for creating a plan to fix the tests. |
+| [`broken-build-analyzer`](./plugins/dev-workflow/agents/broken-build-analyzer.md) | Analyzes build/compilation failures and provides diagnosis suitable for creating a plan to fix the build. Used by `run-and-fix-tests`. |
+| [`failed-test-analyzer`](./plugins/dev-workflow/agents/failed-test-analyzer.md) | Analyzes test failures and provides diagnosis suitable for creating a plan to fix the tests. Used by `run-and-fix-tests`. |
+| [`react-code-reviewer`](./plugins/dev-workflow/agents/react-code-reviewer.md) | Reviews React/TypeScript code changes for quality, maintainability, and best practices. Reports findings by priority with concrete fixes. |
+| [`test-quality-reviewer`](./plugins/dev-workflow/agents/test-quality-reviewer.md) | Reviews written or modified tests for assertion quality, mock validity, and clean test structure. Reports findings by severity. |
 
 ## Development
 
