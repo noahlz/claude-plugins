@@ -42,4 +42,5 @@ rm -rf "$CACHE_PATH"
 echo ""
 
 # Reinstall from local source
-./plugins/dev-workflow/install.sh $PWD
+claude plugin marketplace add ./
+claude plugin install dev-workflow@noahlz.github.io

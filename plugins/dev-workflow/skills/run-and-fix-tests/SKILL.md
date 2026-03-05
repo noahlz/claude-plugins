@@ -42,6 +42,12 @@ an actual file path, halt immediately and tell the user:
 **Usage:** Replace `{{SKILL_BASE_DIR}}` with the path shown above when executing bash commands
 in reference files.
 
+**Node.js Check**: !`node -e "process.exit(parseInt(process.version.slice(1)) >= 22 ? 0 : 1)" 2>/dev/null && echo "✓ Node.js $(node -v)" || echo "ERROR: Node.js 22+ required (found: $(node -v 2>/dev/null || echo 'not installed')). Install: https://nodejs.org/"`
+
+⛔ **HALT** if Node.js Check shows `ERROR`.
+
+**Dependencies**: !`[ -d "${CLAUDE_SKILL_DIR}/../../node_modules" ] || (npm install --prefix "${CLAUDE_SKILL_DIR}/../.." --silent 2>&1 && echo "Plugin dependencies installed." || echo "WARNING: Failed to install plugin dependencies.")`
+
 ## Workflow Rules & Guardrails
 
 **MANDATORY:** FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW.

@@ -12,13 +12,7 @@ See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-m
 
 AI-assisted workflows for common development tasks.
 
-**Quick Install:**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/noahlz/claude-plugins/refs/heads/main/plugins/dev-workflow/install.sh | sh
-```
-
-Or manually add the marketplace to your Claude Code settings:
+**Install:**
 
 ```bash
 claude plugin marketplace add noahlz/claude-plugins
