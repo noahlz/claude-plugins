@@ -98,7 +98,13 @@ ccusage session --json
 
 ### SubAgent Sessions
 
-`ccusage` tracks all subagent costs under a sessionId named "SubAgent." Each cost entry includes a `projectPath` attribute used to correlate subagent costs back to the parent project.
+Claude Code stores subagent JSONL files within the parent project's directory:
+
+```
+~/.claude/projects/<project-id>/<session-uuid>/subagents/agent-*.jsonl
+```
+
+Because ccusage's `loadSessionBlockData` uses a recursive `**/*.jsonl` glob and filters by the top-level project directory name, subagent costs are automatically included when fetching costs for the parent project. No special handling is required.
 
 ## Author
 
