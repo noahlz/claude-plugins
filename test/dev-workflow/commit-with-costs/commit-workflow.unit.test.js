@@ -89,7 +89,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         validateCostMetrics: () => true
       });
       const testGit = createMockGit({
-        getLastCommitDate: () => null
+        getLastCostCommitDate: () => null
       });
       const testCost = createMockCost({
         computeCosts: async () => ({
@@ -119,7 +119,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         findRecommendedSession: () => ({ match: false, sessionId: null }),
         pwdToSessionId: () => 'calculated-session-id'
       });
-      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testGit = createMockGit({ getLastCostCommitDate: () => null });
       const testCost = createMockCost();
 
       const result = await prepare({
@@ -138,7 +138,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
         validateCostMetrics: () => true
       });
-      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testGit = createMockGit({ getLastCostCommitDate: () => null });
       const testCost = createMockCost({
         computeCosts: async () => ({
           success: false,
@@ -160,7 +160,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
       const testCcusage = createMockCcusage({
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' })
       });
-      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testGit = createMockGit({ getLastCostCommitDate: () => null });
       const testCost = createMockCost({
         computeCosts: async () => {
           throw new Error('Unexpected error');
@@ -182,7 +182,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
         validateCostMetrics: () => false  // Validation fails
       });
-      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testGit = createMockGit({ getLastCostCommitDate: () => null });
       const testCost = createMockCost({
         computeCosts: async () => ({
           success: true,
@@ -199,7 +199,8 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
 
       assert.equal(result.status, 'invalid_costs');
       assert.equal(result.data.session_id, 'abc123');
-      assert.ok(result.data.costs);
+      assert.ok(Array.isArray(result.data.costs), 'costs should be an array');
+      assert.ok(result.data.costs.length > 0, 'costs array should not be empty');
       assert.match(result.message, /validation failed/);
 
     });
@@ -209,7 +210,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
         validateCostMetrics: () => false
       });
-      const testGit = createMockGit({ getLastCommitDate: () => null });
+      const testGit = createMockGit({ getLastCostCommitDate: () => null });
       const testCost = createMockCost({
         computeCosts: async () => ({
           success: true,
@@ -229,14 +230,15 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
 
     });
 
-    it('uses incremental mode when getLastCommitDate returns a date', async () => {
+    it('uses incremental mode when getLastCostCommitDate returns a date', async () => {
       const lastCommitDate = '2026-03-05T10:00:00Z';
       const testCcusage = createMockCcusage({
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
         validateCostMetrics: () => true
       });
+      let capturedSessionId;
       const testGit = createMockGit({
-        getLastCommitDate: () => lastCommitDate
+        getLastCostCommitDate: (sessionId) => { capturedSessionId = sessionId; return lastCommitDate; }
       });
       const testCost = createMockCost({
         computeCosts: async (_sessionId, sinceDate) => ({
@@ -255,6 +257,8 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'success');
       assert.equal(result.data.method, 'incremental');
       assert.equal(result.data.since, lastCommitDate);
+      // Verify getLastCostCommitDate was called with the session ID found by findRecommendedSession
+      assert.equal(capturedSessionId, 'abc123', 'Should call getLastCostCommitDate with the matched session ID');
 
     });
   });

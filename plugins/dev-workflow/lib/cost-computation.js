@@ -18,8 +18,9 @@ export function aggregateEntriesByModel(entries) {
     }
 
     const agg = byModel.get(key);
-    agg.inputTokens += entry.inputTokens ?? 0;
-    agg.outputTokens += entry.outputTokens ?? 0;
+    // Token counts are nested under entry.usage; costUSD is at the top level
+    agg.inputTokens += entry.usage?.inputTokens ?? 0;
+    agg.outputTokens += entry.usage?.outputTokens ?? 0;
     agg.costUSD += entry.costUSD ?? 0;
   }
 

@@ -6,8 +6,8 @@ describe('lib/cost-computation.js', () => {
   describe('aggregateEntriesByModel', () => {
     it('aggregates entries by model name', () => {
       const entries = [
-        { model: 'claude-sonnet-4-6', inputTokens: 100, outputTokens: 50, costUSD: 0.10 },
-        { model: 'claude-sonnet-4-6', inputTokens: 200, outputTokens: 100, costUSD: 0.20 }
+        { model: 'claude-sonnet-4-6', usage: { inputTokens: 100, outputTokens: 50 }, costUSD: 0.10 },
+        { model: 'claude-sonnet-4-6', usage: { inputTokens: 200, outputTokens: 100 }, costUSD: 0.20 }
       ];
       const result = aggregateEntriesByModel(entries);
       assert.equal(result.length, 1);
@@ -19,16 +19,22 @@ describe('lib/cost-computation.js', () => {
 
     it('keeps different models separate', () => {
       const entries = [
-        { model: 'claude-sonnet-4-6', inputTokens: 100, outputTokens: 50, costUSD: 0.10 },
-        { model: 'claude-haiku-4-5', inputTokens: 500, outputTokens: 200, costUSD: 0.02 }
+        { model: 'claude-sonnet-4-6', usage: { inputTokens: 100, outputTokens: 50 }, costUSD: 0.10 },
+        { model: 'claude-haiku-4-5', usage: { inputTokens: 500, outputTokens: 200 }, costUSD: 0.02 }
       ];
       const result = aggregateEntriesByModel(entries);
       assert.equal(result.length, 2);
+      const sonnet = result.find(r => r.model === 'claude-sonnet-4-6');
+      const haiku = result.find(r => r.model === 'claude-haiku-4-5');
+      assert.ok(sonnet, 'Should have sonnet entry');
+      assert.equal(sonnet.inputTokens, 100);
+      assert.ok(haiku, 'Should have haiku entry');
+      assert.equal(haiku.inputTokens, 500);
     });
 
     it('uses "unknown" for entries with no model', () => {
       const entries = [
-        { inputTokens: 100, outputTokens: 50, costUSD: 0.10 }
+        { usage: { inputTokens: 100, outputTokens: 50 }, costUSD: 0.10 }
       ];
       const result = aggregateEntriesByModel(entries);
       assert.equal(result[0].model, 'unknown');
@@ -36,7 +42,7 @@ describe('lib/cost-computation.js', () => {
 
     it('rounds cost to 2 decimal places', () => {
       const entries = [
-        { model: 'test', inputTokens: 1, outputTokens: 1, costUSD: 0.125 }
+        { model: 'test', usage: { inputTokens: 1, outputTokens: 1 }, costUSD: 0.125 }
       ];
       const result = aggregateEntriesByModel(entries);
       assert.equal(result[0].cost, 0.13);
@@ -50,8 +56,8 @@ describe('lib/cost-computation.js', () => {
 
   describe('computeCosts', () => {
     const mockEntries = [
-      { model: 'claude-sonnet-4-6', inputTokens: 100, outputTokens: 50, costUSD: 0.10, timestamp: '2026-03-05T10:00:00Z' },
-      { model: 'claude-sonnet-4-6', inputTokens: 200, outputTokens: 100, costUSD: 0.20, timestamp: '2026-03-05T11:00:00Z' }
+      { model: 'claude-sonnet-4-6', usage: { inputTokens: 100, outputTokens: 50 }, costUSD: 0.10, timestamp: '2026-03-05T10:00:00Z' },
+      { model: 'claude-sonnet-4-6', usage: { inputTokens: 200, outputTokens: 100 }, costUSD: 0.20, timestamp: '2026-03-05T11:00:00Z' }
     ];
 
     const mockBlocks = [{ entries: mockEntries }];
@@ -59,7 +65,8 @@ describe('lib/cost-computation.js', () => {
     function createTestDeps(blocks = mockBlocks) {
       return {
         loadBlockData: async () => blocks,
-        filterZeroUsageCosts: (costs) => ({ filtered: costs.filter(c => c.inputTokens > 0 || c.outputTokens > 0 || c.cost > 0), removed: [] })
+        // Identity passthrough — filterZeroUsageCosts behavior is tested separately
+        filterZeroUsageCosts: (costs) => ({ filtered: costs, removed: [] })
       };
     }
 

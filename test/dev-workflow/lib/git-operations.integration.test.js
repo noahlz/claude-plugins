@@ -1,8 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import {
   setupTestEnv,
   teardownTestEnv,
@@ -15,7 +14,7 @@ import {
   commit,
   getHeadSha,
   getPreviousCostMetrics,
-  getLastCommitDate
+  getLastCostCommitDate
 } from '../../../plugins/dev-workflow/lib/git-operations.js';
 
 /**
@@ -196,27 +195,97 @@ describe('lib/git-operations: integration tests', () => {
     });
   });
 
-  describe("getLastCommitDate", () => {
-    it('returns ISO 8601 date string after first commit', () => {
-      const result = getLastCommitDate({ cwd: testEnv.tmpDir });
+  describe("getLastCostCommitDate", () => {
+    // Session IDs are path-derived with a leading dash, e.g. /Users/test/project → -Users-test-project
+    const SESSION = '-Users-test-project';
+    const OTHER_SESSION = '-Users-other-project';
+
+    function makeTrailer(sessionId, costs = [{ model: 'claude-sonnet-4-6', inputTokens: 10, outputTokens: 5, cost: 0.10 }]) {
+      return `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId, cost: costs })}`;
+    }
+
+    it('returns ISO 8601 date of most recent commit with matching sessionId', () => {
+      stageFile(testEnv, 'file1.txt');
+      commit(`Add file\n\n${makeTrailer(SESSION)}`, { cwd: testEnv.tmpDir });
+
+      const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
       assert.ok(typeof result === 'string', 'Should return a string');
-      // ISO 8601 format: starts with 4-digit year, dash, 2-digit month, dash, 2-digit day, T
-      assert.match(result, /^\d{4}-\d{2}-\d{2}T/, 'Should be ISO 8601 format');
+      // Full ISO 8601 datetime with timezone, as produced by git %aI format.
+      // Accepts both 'Z' (UTC, as seen in CI) and '±HH:MM' offset (local timezone).
+      assert.match(result, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)$/, 'Should be full ISO 8601 datetime with timezone');
     });
 
-    it('returns null for empty repository with no commits', () => {
-      const emptyDir = mkdtempSync(join(tmpdir(), 'empty-repo-'));
-      execGit(['init'], { cwd: emptyDir });
+    it('skips commits without cost trailer and returns date of older matching commit', () => {
+      stageFile(testEnv, 'file1.txt');
+      commit(`First\n\n${makeTrailer(SESSION)}`, { cwd: testEnv.tmpDir });
 
-      const result = getLastCommitDate({ cwd: emptyDir });
-      assert.equal(result, null, 'Should return null when no commits exist');
+      const dateAfterFirst = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
 
-      rmSync(emptyDir, { recursive: true, force: true });
+      stageFile(testEnv, 'file2.txt');
+      commit('Ad-hoc commit without trailer', { cwd: testEnv.tmpDir });
+
+      const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+      assert.equal(result, dateAfterFirst, 'Should return date of older trailered commit, not the ad-hoc one');
+    });
+
+    it('skips commits with a different sessionId and returns date of matching commit', () => {
+      stageFile(testEnv, 'file1.txt');
+      commit(`Session A commit\n\n${makeTrailer(SESSION)}`, { cwd: testEnv.tmpDir });
+
+      const dateAfterSessionA = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+
+      stageFile(testEnv, 'file2.txt');
+      commit(`Session B commit\n\n${makeTrailer(OTHER_SESSION)}`, { cwd: testEnv.tmpDir });
+
+      const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+      assert.equal(result, dateAfterSessionA, 'Should ignore commits from other session IDs');
+
+      // Verify the inverse: OTHER_SESSION finds its own commit
+      // Capture Session B's date directly — don't use notEqual, since git timestamps have
+      // 1-second precision and both commits may land in the same second in a fast test env
+      const sessionBLog = execGit(['log', '-1', '--format=%aI'], { cwd: testEnv.tmpDir });
+      const sessionBDate = sessionBLog.stdout.trim();
+
+      const resultOther = getLastCostCommitDate(OTHER_SESSION, { cwd: testEnv.tmpDir });
+      assert.ok(resultOther !== null, 'OTHER_SESSION should find its commit');
+      assert.equal(resultOther, sessionBDate, 'OTHER_SESSION should return its own commit date');
+    });
+
+    it('returns null when no commits have a matching trailer', () => {
+      const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+      assert.equal(result, null, 'Should return null when no matching trailer found');
     });
 
     it('returns null when cwd is not a git repo', () => {
-      const result = getLastCommitDate({ cwd: '/tmp' });
+      const result = getLastCostCommitDate(SESSION, { cwd: '/tmp' });
       assert.equal(result, null, 'Should return null for non-git directory');
+    });
+
+    it('skips commits with malformed JSON and continues searching', () => {
+      stageFile(testEnv, 'file1.txt');
+      commit(`Good commit\n\n${makeTrailer(SESSION)}`, { cwd: testEnv.tmpDir });
+
+      const dateAfterGood = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+
+      stageFile(testEnv, 'file2.txt');
+      commit('Bad JSON commit\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: not-valid-json', { cwd: testEnv.tmpDir });
+
+      const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+      assert.equal(result, dateAfterGood, 'Should skip malformed JSON and find older valid commit');
+    });
+
+    it('skips commits with valid JSON but missing sessionId field', () => {
+      stageFile(testEnv, 'file1.txt');
+      commit(`Good commit\n\n${makeTrailer(SESSION)}`, { cwd: testEnv.tmpDir });
+
+      const dateAfterGood = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+
+      stageFile(testEnv, 'file2.txt');
+      // Valid JSON but no sessionId key — distinct from wrong session and malformed JSON
+      commit('No sessionId commit\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: {"cost":[{"model":"claude-sonnet-4-6","cost":0.10}]}', { cwd: testEnv.tmpDir });
+
+      const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+      assert.equal(result, dateAfterGood, 'Should skip trailer with no sessionId and find older valid commit');
     });
   });
 });

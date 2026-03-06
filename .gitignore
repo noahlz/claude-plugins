@@ -15,3 +15,6 @@ node_modules/
 
 # Claude Code - IDE settings (local user configurations, not project-level)
 .claude/settings*.json
+
+# Git worktrees
+.worktrees/
