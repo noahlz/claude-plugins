@@ -8,17 +8,16 @@
 - Added `run-command.js` script to capture all test/build output to file
 
 **Architecture & Code Quality**
-- Removed 14 default config assets (`assets/defaults/`) and config detection/loading scripts
-- Removed `detect-and-resolve.js`, `load-config.js`, `select-default.js` scripts
 - Refactored `parse-test-failures.js` and `parse-build-errors.js` to CLI-arg interface with built-in format registries
-- Removed `common.js`, `config-loader.js`, and `file-utils.js` from shared lib (no longer needed)
-- Removed references: `setup-config.md`, `run-build.md`, `run-tests.md`
+- Removed:
+  - Scripts for detecting build configuration (no longer needed)
+  - Default config assets (`assets/defaults/`) and config detection/loading scripts
+  - Shared lib scripts and reference files (no longer needed)
 
 **Testing**
-- Removed obsolete test files: `detect-and-resolve.test.js`, `load-config.test.js`, `select-default.test.js`
-- Removed test fixtures: `configs/` and `project-templates/` directories
 - Added `run-command.test.js` integration tests for the new command runner script
 - Updated `parse-build-errors.test.js` and `parse-test-failures.test.js` for new CLI-arg interface
+- Removed obsolete test files, fixtures and directories.
 
 # 0.5.0
 
