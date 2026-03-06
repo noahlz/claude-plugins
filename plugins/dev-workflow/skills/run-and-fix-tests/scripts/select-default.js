@@ -80,7 +80,7 @@ export function selectDefault(options = {}) {
       };
     }
   } else {
-    throw new Error("Polyglot projects not yet supported.")
+    throw new Error("Polyglot projects not yet supported.");
   }
 }
 

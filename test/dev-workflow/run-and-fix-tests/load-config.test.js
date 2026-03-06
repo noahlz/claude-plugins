@@ -185,6 +185,31 @@ describe('run-and-fix-tests: load-config.js', () => {
         const result = loadConfig({ baseDir: testEnv.tmpDir });
         assertConfigError(result, /build.*property.*skipBuild/);
       });
+
+      it('accepts skipBuild=true with build config still present', () => {
+        const result = loadAndAssertConfig(
+          testEnv,
+          'configs/single-build-npm.json',
+          (config) => {
+            config.skipBuild = true;
+            // build is still present — should still validate it
+            return config;
+          },
+          assertNoConfigErrors
+        );
+
+        assert.equal(result.resolved.skipBuild, true);
+      });
+
+      it('errors when test config is missing', () => {
+        loadConfigFixture(testEnv, 'configs/single-build-npm.json', (config) => {
+          delete config.test;
+          return config;
+        });
+
+        const result = loadConfig({ baseDir: testEnv.tmpDir });
+        assertConfigError(result, /test/);
+      });
     });
   });
 

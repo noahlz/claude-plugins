@@ -469,10 +469,10 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
 
       });
 
-      it('returns git_error when getHeadSha returns null', async () => {
+      it('returns git_error when getHeadSha returns falsy value', async () => {
         const testGit = createMockGit({
           commit: () => ({ exitCode: 0, stdout: '', stderr: '' }),
-          getHeadSha: () => null
+          getHeadSha: () => ''
         });
 
         const testCcusage = createMockCcusage({

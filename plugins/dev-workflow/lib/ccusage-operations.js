@@ -115,6 +115,17 @@ export function pwdToSessionId(dirPath) {
 }
 
 /**
+ * Check if a cost entry has any non-zero usage
+ * @param {object} cost - Cost object
+ * @returns {boolean}
+ */
+function hasUsage(cost) {
+  return (typeof cost.inputTokens === 'number' && cost.inputTokens > 0)
+    || (typeof cost.outputTokens === 'number' && cost.outputTokens > 0)
+    || (typeof cost.cost === 'number' && cost.cost > 0);
+}
+
+/**
  * Filter out cost entries with zero usage (no tokens and no cost)
  * @param {Array} costsArray - Array of cost objects
  * @returns {Object} - { filtered, removed }
@@ -128,11 +139,7 @@ export function filterZeroUsageCosts(costsArray) {
   const removed = [];
 
   for (const cost of costsArray) {
-    const hasInputTokens = typeof cost.inputTokens === 'number' && cost.inputTokens > 0;
-    const hasOutputTokens = typeof cost.outputTokens === 'number' && cost.outputTokens > 0;
-    const hasCost = typeof cost.cost === 'number' && cost.cost > 0;
-
-    if (hasInputTokens || hasOutputTokens || hasCost) {
+    if (hasUsage(cost)) {
       filtered.push(cost);
     } else {
       removed.push(cost);
@@ -194,11 +201,7 @@ export function validateCostMetrics(costsArray) {
     }
 
     // Must have at least one token or cost value
-    const hasInputTokens = typeof cost.inputTokens === 'number' && cost.inputTokens > 0;
-    const hasOutputTokens = typeof cost.outputTokens === 'number' && cost.outputTokens > 0;
-    const hasCost = cost.cost > 0;
-
-    if (!hasInputTokens && !hasOutputTokens && !hasCost) {
+    if (!hasUsage(cost)) {
       return false;
     }
   }

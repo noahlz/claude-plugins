@@ -36,10 +36,10 @@ describe('lib/cost-computation.js', () => {
 
     it('rounds cost to 2 decimal places', () => {
       const entries = [
-        { model: 'test', inputTokens: 1, outputTokens: 1, costUSD: 0.123456 }
+        { model: 'test', inputTokens: 1, outputTokens: 1, costUSD: 0.125 }
       ];
       const result = aggregateEntriesByModel(entries);
-      assert.equal(result[0].cost, 0.12);
+      assert.equal(result[0].cost, 0.13);
     });
 
     it('handles empty array', () => {

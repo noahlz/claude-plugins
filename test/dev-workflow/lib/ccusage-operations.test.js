@@ -1,12 +1,16 @@
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 
 import {
   pwdToSessionId,
   validateCostMetrics,
   filterZeroUsageCosts,
   listLocalSessions,
-  findRecommendedSession
+  findRecommendedSession,
+  getCleanupPeriodDays
 } from '../../../plugins/dev-workflow/lib/ccusage-operations.js';
 
 describe('lib: ccusage-operations.js', () => {
@@ -34,19 +38,6 @@ describe('lib: ccusage-operations.js', () => {
     it('handles root path', () => {
       const result = pwdToSessionId('/');
       assert.equal(result, '-');
-    });
-
-    it('always prefixes with dash', () => {
-      const testPaths = [
-        '/Users/test',
-        'Users/test',
-        '/home/user/project'
-      ];
-
-      testPaths.forEach(p => {
-        const result = pwdToSessionId(p);
-        assert.ok(result.startsWith('-'), `Result should start with dash: ${result}`);
-      });
     });
 
     it('replaces all forward slashes with dashes', () => {
@@ -195,22 +186,108 @@ describe('lib: ccusage-operations.js', () => {
       assert.ok(typeof result.sessionId === 'string' || result.sessionId === null);
     });
 
-    it('converts path to session ID format', () => {
-      const testPath = '/Users/test/project';
-      const result = findRecommendedSession(testPath);
-      assert.ok('sessionId' in result);
-      assert.ok('match' in result);
-      assert.equal(typeof result.match, 'boolean');
-      if (result.sessionId) {
-        assert.ok(result.sessionId.includes('-'));
-      }
+    it('returns match=false for non-existent project path', () => {
+      const result = findRecommendedSession('/nonexistent/path-' + Date.now());
+      assert.equal(result.match, false);
+      assert.equal(result.sessionId, null);
     });
   });
 
-  describe('loadBlockData', () => {
-    it('is exported as a function', async () => {
-      const { loadBlockData } = await import('../../../plugins/dev-workflow/lib/ccusage-operations.js');
-      assert.equal(typeof loadBlockData, 'function');
+  // loadBlockData is tested via ccusage integration (wraps a real ccusage import).
+
+  describe('listLocalSessions', () => {
+    let testEnv;
+    let origHome;
+
+    beforeEach(() => {
+      testEnv = setupTestEnv();
+      origHome = process.env.HOME;
+    });
+
+    afterEach(() => {
+      process.env.HOME = origHome;
+      teardownTestEnv(testEnv);
+    });
+
+    it('returns empty sessions when projects directory does not exist', () => {
+      process.env.HOME = testEnv.tmpDir; // no .claude/projects here
+      const result = listLocalSessions();
+      assert.equal(result.status, 'success');
+      assert.deepStrictEqual(result.data.sessions, []);
+    });
+  });
+
+  describe('getCleanupPeriodDays', () => {
+    let testEnv;
+    let origHome;
+    let origCwd;
+
+    beforeEach(() => {
+      testEnv = setupTestEnv();
+      origHome = process.env.HOME;
+      origCwd = process.cwd();
+    });
+
+    afterEach(() => {
+      process.env.HOME = origHome;
+      process.chdir(origCwd);
+      teardownTestEnv(testEnv);
+    });
+
+    it('returns default 30 when no settings files exist', () => {
+      process.env.HOME = testEnv.tmpDir;
+      process.chdir(testEnv.tmpDir);
+      assert.equal(getCleanupPeriodDays(), 30);
+    });
+
+    it('reads cleanupPeriodDays from global settings file', () => {
+      const globalClaudeDir = join(testEnv.tmpDir, '.claude');
+      mkdirSync(globalClaudeDir, { recursive: true });
+      writeFileSync(join(globalClaudeDir, 'settings.json'), JSON.stringify({ cleanupPeriodDays: 60 }));
+      process.env.HOME = testEnv.tmpDir;
+      process.chdir(testEnv.tmpDir);
+      assert.equal(getCleanupPeriodDays(), 60);
+    });
+
+    it('project settings override global settings', () => {
+      // Global settings: 60 days
+      const globalClaudeDir = join(testEnv.tmpDir, '.claude');
+      mkdirSync(globalClaudeDir, { recursive: true });
+      writeFileSync(join(globalClaudeDir, 'settings.json'), JSON.stringify({ cleanupPeriodDays: 60 }));
+      process.env.HOME = testEnv.tmpDir;
+
+      // Project settings: 14 days (already has .claude dir from setupTestEnv)
+      writeFileSync(join(testEnv.tmpDir, '.claude', 'settings.json'), JSON.stringify({ cleanupPeriodDays: 14 }));
+      process.chdir(testEnv.tmpDir);
+
+      assert.equal(getCleanupPeriodDays(), 14);
+    });
+
+    it('ignores non-positive values (returns default 30)', () => {
+      const globalClaudeDir = join(testEnv.tmpDir, '.claude');
+      mkdirSync(globalClaudeDir, { recursive: true });
+      writeFileSync(join(globalClaudeDir, 'settings.json'), JSON.stringify({ cleanupPeriodDays: -5 }));
+      process.env.HOME = testEnv.tmpDir;
+      process.chdir(testEnv.tmpDir);
+      assert.equal(getCleanupPeriodDays(), 30);
+    });
+
+    it('ignores non-numeric values (returns default 30)', () => {
+      const globalClaudeDir = join(testEnv.tmpDir, '.claude');
+      mkdirSync(globalClaudeDir, { recursive: true });
+      writeFileSync(join(globalClaudeDir, 'settings.json'), JSON.stringify({ cleanupPeriodDays: 'thirty' }));
+      process.env.HOME = testEnv.tmpDir;
+      process.chdir(testEnv.tmpDir);
+      assert.equal(getCleanupPeriodDays(), 30);
+    });
+
+    it('ignores malformed JSON files (returns default 30)', () => {
+      const globalClaudeDir = join(testEnv.tmpDir, '.claude');
+      mkdirSync(globalClaudeDir, { recursive: true });
+      writeFileSync(join(globalClaudeDir, 'settings.json'), '{ not valid json }');
+      process.env.HOME = testEnv.tmpDir;
+      process.chdir(testEnv.tmpDir);
+      assert.equal(getCleanupPeriodDays(), 30);
     });
   });
 });

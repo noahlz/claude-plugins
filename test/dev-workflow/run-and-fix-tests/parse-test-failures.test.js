@@ -283,6 +283,7 @@ ok 3 - test three
       assert.equal(result.mode, 'glob', 'Should return glob mode');
       assert.equal(result.failures.length, 30, 'Should limit to 30 files');
       assert.equal(result.truncated, true, 'Should set truncated flag');
+      assert.equal(result.totalFailures, 35, 'Should count failures across all 35 files');
     });
   });
 
