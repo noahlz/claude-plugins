@@ -24,6 +24,12 @@ import os from 'os';
 /**
  * Load block data for a session from ccusage
  * Direct wrapper around ccusage/data-loader.loadSessionBlockData()
+ *
+ * Internally, ccusage globs **\/*.jsonl recursively under the session directory, which includes
+ * both top-level conversation files and nested subagent files (<uuid>/subagents/agent-*.jsonl).
+ * Duplicate entries (same API call echoed in parent and subagent files) are deduplicated by
+ * messageId:requestId hash before being returned. No extra filtering is needed here.
+ *
  * @param {string} sessionId - Session ID (project path)
  * @returns {Promise<Array>} Array of block data entries with timestamps
  */
@@ -106,6 +112,11 @@ export function findRecommendedSession(cwd) {
 /**
  * Convert a directory path to session ID format
  * Example: /Users/foo/bar -> -Users-foo-bar
+ *
+ * Because each git worktree has a unique absolute path, worktrees automatically get
+ * distinct session IDs (e.g. -Users-foo-project--claude-worktrees-feature-x).
+ * Concurrent Claude sessions in different worktrees therefore never share cost data.
+ *
  * @param {string} dirPath - Directory path
  * @returns {string} - Session ID
  */
@@ -120,8 +131,8 @@ export function pwdToSessionId(dirPath) {
  * @returns {boolean}
  */
 function hasUsage(cost) {
-  return (typeof cost.inputTokens === 'number' && cost.inputTokens > 0)
-    || (typeof cost.outputTokens === 'number' && cost.outputTokens > 0)
+  return (typeof cost.in === 'number' && cost.in > 0)
+    || (typeof cost.out === 'number' && cost.out > 0)
     || (typeof cost.cost === 'number' && cost.cost > 0);
 }
 

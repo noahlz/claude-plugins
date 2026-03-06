@@ -200,7 +200,7 @@ async function commit(options = {}) {
     baseDir = '.',
     sessionId: providedSessionId = null,
     costs: providedCosts = null,
-    method = 'cumulative',
+    method = 'cum',
     since = null,
     message: providedMessage = null,
     deps
@@ -282,11 +282,12 @@ async function commit(options = {}) {
 
     // Build cost footer JSON (single line, no pretty-print)
     // Omit 'since' field when null/undefined (not applicable in cumulative mode)
+    // sessionId goes last to keep the compact fields at the front
     const trailerObj = {
       method,
-      sessionId,
       cost: freshFiltered,
-      ...(since ? { since } : {})
+      ...(since ? { since } : {}),
+      sessionId
     };
     const costFooter = JSON.stringify(trailerObj);
 

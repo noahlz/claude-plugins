@@ -94,7 +94,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
       const testCost = createMockCost({
         computeCosts: async () => ({
           success: true,
-          method: 'cumulative',
+          method: 'cum',
           since: null,
           costs: createValidCosts()
         })
@@ -109,7 +109,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         dataChecks: { session_id: 'abc123' }
       });
       assert.ok(result.data.current_cost);
-      assert.equal(result.data.method, 'cumulative');
+      assert.equal(result.data.method, 'cum');
       assert.equal(result.data.since, null);
 
     });
@@ -186,7 +186,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
       const testCost = createMockCost({
         computeCosts: async () => ({
           success: true,
-          method: 'cumulative',
+          method: 'cum',
           since: null,
           costs: [{ model: 'claude-opus', cost: 0 }]  // All-zero cost
         })
@@ -214,7 +214,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
       const testCost = createMockCost({
         computeCosts: async () => ({
           success: true,
-          method: 'cumulative',
+          method: 'cum',
           since: null,
           costs: []  // Empty array
         })
@@ -243,7 +243,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
       const testCost = createMockCost({
         computeCosts: async (_sessionId, sinceDate) => ({
           success: true,
-          method: sinceDate ? 'incremental' : 'cumulative',
+          method: sinceDate ? 'inc' : 'cum',
           since: sinceDate,
           costs: createValidCosts()
         })
@@ -255,7 +255,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
       });
 
       assert.equal(result.status, 'success');
-      assert.equal(result.data.method, 'incremental');
+      assert.equal(result.data.method, 'inc');
       assert.equal(result.data.since, lastCommitDate);
       // Verify getLastCostCommitDate was called with the session ID found by findRecommendedSession
       assert.equal(capturedSessionId, 'abc123', 'Should call getLastCostCommitDate with the matched session ID');
@@ -402,8 +402,8 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         await commit({
           message: 'Subject',
           sessionId: 'test',
-          costs: [{ model: 'claude-opus', cost: 0.015, inputTokens: 10, outputTokens: 5 }],
-          method: 'incremental',
+          costs: [{ model: 'claude-opus', cost: 0.015, in: 10, out: 5 }],
+          method: 'inc',
           since: '2026-03-05T10:00:00Z',
           deps: { git: testGit, ccusage: testCcusage }
         });
@@ -412,7 +412,7 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         const trailerMatch = capturedMessage.match(/Claude-Cost-Metrics: (.+)/);
         assert.ok(trailerMatch, 'Should find trailer line');
         const trailerObj = JSON.parse(trailerMatch[1]);
-        assert.equal(trailerObj.method, 'incremental');
+        assert.equal(trailerObj.method, 'inc');
         assert.equal(trailerObj.since, '2026-03-05T10:00:00Z');
         assert.equal(trailerObj.sessionId, 'test');
 
@@ -436,15 +436,15 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         await commit({
           message: 'Subject',
           sessionId: 'test',
-          costs: [{ model: 'claude-opus', cost: 0.015, inputTokens: 10, outputTokens: 5 }],
-          method: 'cumulative',
+          costs: [{ model: 'claude-opus', cost: 0.015, in: 10, out: 5 }],
+          method: 'cum',
           since: null,
           deps: { git: testGit, ccusage: testCcusage }
         });
 
         const trailerMatch = capturedMessage.match(/Claude-Cost-Metrics: (.+)/);
         const trailerObj = JSON.parse(trailerMatch[1]);
-        assert.equal(trailerObj.method, 'cumulative');
+        assert.equal(trailerObj.method, 'cum');
         assert.equal('since' in trailerObj, false, 'since should be omitted when null');
 
       });
