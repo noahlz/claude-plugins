@@ -24,6 +24,12 @@ describe('lib/cost-computation.js', () => {
       ];
       const result = aggregateEntriesByModel(entries);
       assert.equal(result.length, 2);
+      const sonnet = result.find(r => r.model === 'claude-sonnet-4-6');
+      const haiku = result.find(r => r.model === 'claude-haiku-4-5');
+      assert.ok(sonnet, 'Should have sonnet entry');
+      assert.equal(sonnet.inputTokens, 100);
+      assert.ok(haiku, 'Should have haiku entry');
+      assert.equal(haiku.inputTokens, 500);
     });
 
     it('uses "unknown" for entries with no model', () => {
@@ -59,7 +65,8 @@ describe('lib/cost-computation.js', () => {
     function createTestDeps(blocks = mockBlocks) {
       return {
         loadBlockData: async () => blocks,
-        filterZeroUsageCosts: (costs) => ({ filtered: costs.filter(c => c.inputTokens > 0 || c.outputTokens > 0 || c.cost > 0), removed: [] })
+        // Identity passthrough — filterZeroUsageCosts behavior is tested separately
+        filterZeroUsageCosts: (costs) => ({ filtered: costs, removed: [] })
       };
     }
 

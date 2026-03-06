@@ -199,7 +199,8 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
 
       assert.equal(result.status, 'invalid_costs');
       assert.equal(result.data.session_id, 'abc123');
-      assert.ok(result.data.costs);
+      assert.ok(Array.isArray(result.data.costs), 'costs should be an array');
+      assert.ok(result.data.costs.length > 0, 'costs array should not be empty');
       assert.match(result.message, /validation failed/);
 
     });
@@ -235,8 +236,9 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
         findRecommendedSession: () => ({ match: true, sessionId: 'abc123' }),
         validateCostMetrics: () => true
       });
+      let capturedSessionId;
       const testGit = createMockGit({
-        getLastCostCommitDate: () => lastCommitDate
+        getLastCostCommitDate: (sessionId) => { capturedSessionId = sessionId; return lastCommitDate; }
       });
       const testCost = createMockCost({
         computeCosts: async (_sessionId, sinceDate) => ({
@@ -255,6 +257,8 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
       assert.equal(result.status, 'success');
       assert.equal(result.data.method, 'incremental');
       assert.equal(result.data.since, lastCommitDate);
+      // Verify getLastCostCommitDate was called with the session ID found by findRecommendedSession
+      assert.equal(capturedSessionId, 'abc123', 'Should call getLastCostCommitDate with the matched session ID');
 
     });
   });

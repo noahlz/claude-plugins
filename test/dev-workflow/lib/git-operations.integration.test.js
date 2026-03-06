@@ -196,6 +196,7 @@ describe('lib/git-operations: integration tests', () => {
   });
 
   describe("getLastCostCommitDate", () => {
+    // Session IDs are path-derived with a leading dash, e.g. /Users/test/project → -Users-test-project
     const SESSION = '-Users-test-project';
     const OTHER_SESSION = '-Users-other-project';
 
@@ -209,7 +210,8 @@ describe('lib/git-operations: integration tests', () => {
 
       const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
       assert.ok(typeof result === 'string', 'Should return a string');
-      assert.match(result, /^\d{4}-\d{2}-\d{2}T/, 'Should be ISO 8601 format');
+      // Full ISO 8601 datetime with timezone offset, as produced by git %aI format
+      assert.match(result, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/, 'Should be full ISO 8601 datetime with timezone');
     });
 
     it('skips commits without cost trailer and returns date of older matching commit', () => {
@@ -236,6 +238,16 @@ describe('lib/git-operations: integration tests', () => {
 
       const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
       assert.equal(result, dateAfterSessionA, 'Should ignore commits from other session IDs');
+
+      // Verify the inverse: OTHER_SESSION finds its own commit
+      // Capture Session B's date directly — don't use notEqual, since git timestamps have
+      // 1-second precision and both commits may land in the same second in a fast test env
+      const sessionBLog = execGit(['log', '-1', '--format=%aI'], { cwd: testEnv.tmpDir });
+      const sessionBDate = sessionBLog.stdout.trim();
+
+      const resultOther = getLastCostCommitDate(OTHER_SESSION, { cwd: testEnv.tmpDir });
+      assert.ok(resultOther !== null, 'OTHER_SESSION should find its commit');
+      assert.equal(resultOther, sessionBDate, 'OTHER_SESSION should return its own commit date');
     });
 
     it('returns null when no commits have a matching trailer', () => {
@@ -259,6 +271,20 @@ describe('lib/git-operations: integration tests', () => {
 
       const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
       assert.equal(result, dateAfterGood, 'Should skip malformed JSON and find older valid commit');
+    });
+
+    it('skips commits with valid JSON but missing sessionId field', () => {
+      stageFile(testEnv, 'file1.txt');
+      commit(`Good commit\n\n${makeTrailer(SESSION)}`, { cwd: testEnv.tmpDir });
+
+      const dateAfterGood = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+
+      stageFile(testEnv, 'file2.txt');
+      // Valid JSON but no sessionId key — distinct from wrong session and malformed JSON
+      commit('No sessionId commit\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: {"cost":[{"model":"claude-sonnet-4-6","cost":0.10}]}', { cwd: testEnv.tmpDir });
+
+      const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
+      assert.equal(result, dateAfterGood, 'Should skip trailer with no sessionId and find older valid commit');
     });
   });
 });
