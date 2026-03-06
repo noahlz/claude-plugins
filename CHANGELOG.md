@@ -2,14 +2,24 @@
 
 # 0.5.0
 
-- Replaced `write-git-commit` skill with `commit-with-costs`
-- Added `get-cost-trailer` skill for displaying session cost metrics without committing
-- Cost metrics now track incremental cost since the last git commit (falls back to cumulative for first commit of a session)
-- Refactored cost fetching, git operations, and cost computation into shared lib modules under `plugins/dev-workflow/lib/`
-- Migrated all tests to new structure under `test/dev-workflow/lib/` and `test/dev-workflow/commit-with-costs/`
+**Skills & Features**
+- Replaced `write-git-commit` skill with `commit-with-costs` for more control over when to commit
 - Added `draft-commit-message` skill for drafting commit messages without committing
-- Extracted shared reference files (`stage_and_analyze.md`, `message_guidelines.md`, `message_approval.md`) to `plugins/dev-workflow/references/` for reuse across skills
-- Updated `commit-with-costs` to delegate to shared references instead of skill-local copies
+- Added `get-cost-trailer` skill for viewing session cost metrics without committing
+- Cost metrics now track incremental cost since the last git commit (cumulative for first commit of a session)
+
+**Architecture & Code Quality**
+- Refactored cost fetching, git operations, and cost computation into shared lib modules under `plugins/dev-workflow/lib/`
+- Extracted shared reference files to `plugins/dev-workflow/references/` for reuse across skills
+- Added `react-code-reviewer` and `test-quality-reviewer` agents for code review workflows
+- Added knip configuration for dead code detection
+- Improved test structure and code coverage
+- Code cleanup and dead code removal
+
+**Testing & Validation**
+- Migrated all tests to new structure under `test/dev-workflow/`
+- Fixed false-negative detection in test output format matching
+- Improved skill self-checks for dependencies and git instructions
 
 # 0.4.0
 

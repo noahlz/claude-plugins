@@ -13,11 +13,5 @@ node_modules/
 *~
 .DS_Store
 
-# Claude Code
-.claude/settings.local.json
-
-# Plugin configurations (meant to be per-user not per-project - do not commit)
-.claude/settings.plugins.run-and-fix-tests.json
-.claude/settings.plugins.write-git-commit.json
-.claude/settings.plugins.commit-with-costs.json
-.claude/settings.plugins.get-cost-trailer.json
+# Claude Code - IDE settings (local user configurations, not project-level)
+.claude/settings*.json
