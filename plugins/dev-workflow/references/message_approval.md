@@ -24,11 +24,13 @@ Proposed commit message:
 
 ## Mandatory User Approval Instructions
 
-**MANDATORY:** Obtain explicit approval for the commit message from the user (never "assume" approval - ALWAYS perform this step):
+**MANDATORY:** Obtain explicit approval for the commit message from the user:
 
 > Use AskUserQuestion to ask "Approve this commit message?" with options:
   1. "Use full message" (Recommended)
   2. "Use just the subject"
+
+*Never "assume" approval - ALWAYS perform this step, and ALWAYS use AskUserQuestion*
 
 ## Response Processing
 
