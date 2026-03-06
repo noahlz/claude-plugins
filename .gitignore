@@ -18,3 +18,4 @@ node_modules/
 
 # Git worktrees
 .worktrees/
+.claude/worktrees/
