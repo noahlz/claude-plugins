@@ -29,12 +29,11 @@ Follow the workflow steps EXACTLY.
 - [ ] 0. Prerequisites
 - [ ] 1a. Check for existing configuration
 - [ ] 1b. Create new configuration (if needed)
-- [ ] 2. Stage and analyze changes
-- [ ] 3. Generate commit message
-- [ ] 4. Get user approval
-- [ ] 5. Fetch session costs
-- [ ] 6. Create commit
-- [ ] 7. Display summary
+- [ ] 2. Detect or generate commit message
+- [ ] 3. Get user approval
+- [ ] 4. Fetch session costs
+- [ ] 5. Create commit
+- [ ] 6. Display summary
 ```
 
 ---
@@ -87,7 +86,7 @@ All script outputs return JSON. Extract fields and store in variables:
 
 ## 0a. Pre-Flight Check
 
-⛔ **HALT if TRUE**: Already ran `git status/diff/log` in parallel OR drafted commit message OR executing system git workflow. STOP skill immediately.
+⛔ **HALT if TRUE**: Already ran `git status/diff/log` in parallel OR executing system git workflow. STOP skill immediately.
 ✅ **CONTINUE if TRUE**: No git commands executed yet. Continue.
 
 ## 0b. Check for Config
@@ -134,56 +133,42 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SEL
 → If save succeeds: Inform the user of the file location and continue to Step 2.
 → If error occurs: Display error message to user and then **exit workflow immediately**.
 
-## 2. Stage and Analyze Changes
+## 2. Detect or Generate Commit Message
 
-**IMPORTANT:** Only run the git commands below. Do **NOT** run other git command such as "git log --online" (previous commits are irrelevant).
+**Check conversation context:** Look for a `Proposed commit message:` block already present in this conversation (e.g., output from `/draft-commit-message`).
 
-### 2a. Stage changes
+**If a proposed message IS found in the conversation:**
+→ Extract COMMIT_SUBJECT (the line immediately after the ━━━ separator)
+→ Extract COMMIT_BODY (any remaining lines before the closing ━━━ separator, or empty string if none)
+→ Skip directly to Step 3 (approval).
 
-**STEP_DESCRIPTION**: "Staging changes"
+**If NO proposed message is found:**
+→ Stage and analyze:
 
-→ Execute using Bash tool:
-```bash
-git add -A
-```
+DELEGATE_TO: `../../references/stage_and_analyze.md`
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
-### 2b. Analyze staged changes
+→ Generate commit message:
 
-**STEP_DESCRIPTION**: "Generating commit message"
-
-**Generate commit message using ONE of these approaches:**
-
-1. **IF you made source code edits in this conversation:** Use your existing knowledge of the changes to draft the commit message directly. Skip the git diff command.
-
-2. **IF you have NOT made edits in this conversation:** Run `git diff --cached` to see what will be committed:
-   ```bash
-   git diff --cached
-   ```
-   Then use that output to generate the commit message.
-
-Proceed to step 3 to draft the message according to the guidelines.
-
-## 3. Generate Commit Message
-
-DELEGATE_TO: `references/message_guidelines.md`
+DELEGATE_TO: `../../references/message_guidelines.md`
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 → Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.
-→ Proceed to Step 4.
+→ Proceed to Step 3.
 
-## 4. Display Message to User for Approval
+## 3. Display Message to User for Approval
 
-**BLOCKING:** Requires user approval before Step 5.
+**BLOCKING:** Requires user approval before Step 4.
 
-DELEGATE_TO: `references/message_approval.md`
+DELEGATE_TO: `../../references/message_approval.md`
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 → Extract APPROVAL_STATUS and updated COMMIT_SUBJECT, and COMMIT_BODY per reference file instructions.
 
-→ If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 5.
-→ If APPROVAL_STATUS = "request_revisions": Return to Step 3 to regenerate message.
+→ If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 4.
+→ If APPROVAL_STATUS = "request_revisions": Return to Step 2 to regenerate message.
 
-## 5. Fetch Cost Data
+## 4. Fetch Cost Data
 
 **STEP_DESCRIPTION**: "Fetching session cost metrics"
 
@@ -198,26 +183,26 @@ DELEGATE_TO: `references/fetch_cost.md`
   - → Extract `COST_METHOD` from reference file.
   - → Extract `COST_SINCE` from reference file.
   - → Extract `CLEANUP_PERIOD_DAYS` from reference file.
-  - → Proceed to Step 6 with SESSION_ID, CURRENT_COST, COST_METHOD, COST_SINCE, and CLEANUP_PERIOD_DAYS values.
+  - → Proceed to Step 5 with SESSION_ID, CURRENT_COST, COST_METHOD, COST_SINCE, and CLEANUP_PERIOD_DAYS values.
 
 → If FETCH_STATUS is not "success":
   - → Extract `ERROR_MESSAGE` from reference file.
   - → Display error message to user.
   - → Tell user "*** Session ID must be configured to accurately extract Claude Code cost metrics. Cannot create commit without valid cost metrics."
-  - → HALT WORKFLOW - Do NOT proceed to Step 6 under any circumstances.
+  - → HALT WORKFLOW - Do NOT proceed to Step 5 under any circumstances.
 
 **IMPORTANT:** Cost must be present and accurate!
 - ⛔ NEVER fabricate or estimate cost metrics.
 - ⛔ NEVER create a git commit with fake/estimated cost data.
 - ⚠️  ONLY use results from a successful use of `ccusage` (FETCH_STATUS = "success")
 
-## 6. Create Commit
+## 5. Create Commit
 
 **STEP_DESCRIPTION**: "Creating git commit with cost metrics"
 
 **MANDATORY:** CHECK PREREQUISITES BEFORE PROCEEDING WITH COMMIT**
-- **VERIFY** SESSION_ID and CURRENT_COST exist from Step 5 - if not, GO BACK TO STEP 5
-- **VERIFY** APPROVAL_STATUS is "use_full" OR "use_subject_only" (from Step 4). If not: **Exit workflow immediately.**
+- **VERIFY** SESSION_ID and CURRENT_COST exist from Step 4 - if not, GO BACK TO STEP 4
+- **VERIFY** APPROVAL_STATUS is "use_full" OR "use_subject_only" (from Step 3). If not: **Exit workflow immediately.**
 
 DELEGATE_TO: `references/create_commit.md`
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
@@ -226,14 +211,14 @@ DELEGATE_TO: `references/create_commit.md`
 
 → If STATUS = "success":
   - → Extract `COMMIT_SHA` from reference file.
-  - → Proceed to Step 7 with COMMIT_SHA and SESSION_ID values.
+  - → Proceed to Step 6 with COMMIT_SHA and SESSION_ID values.
 
 → If STATUS is not "success":
   - → Extract `ERROR_MESSAGE` from reference file.
   - → Display ERROR_MESSAGE to user.
   - → Exit workflow immediately.
 
-## 7. Summary
+## 6. Summary
 
 → Display success summary with the following format:
 ```

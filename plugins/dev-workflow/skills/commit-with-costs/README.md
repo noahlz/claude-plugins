@@ -98,6 +98,23 @@ Or with the [ccusage CLI](https://ccusage.com/guide/installation):
 ccusage session --json
 ```
 
+## Shared References
+
+This skill uses shared reference files located in `plugins/dev-workflow/references/`:
+
+| Reference | Purpose |
+|-----------|---------|
+| `stage_and_analyze.md` | Stage changes and analyze diff |
+| `message_guidelines.md` | Commit message format and conventions |
+| `message_approval.md` | User approval workflow |
+
+Cost-specific references remain in `references/` within this skill directory:
+
+| Reference | Purpose |
+|-----------|---------|
+| `fetch_cost.md` | Fetch session cost metrics via ccusage |
+| `create_commit.md` | Create the git commit with trailers |
+
 ## Known Issues
 
 ### SubAgent Sessions
