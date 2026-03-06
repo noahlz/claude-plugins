@@ -9,7 +9,7 @@ import { computeCosts, createDefaultDeps as createCostDeps } from '../../../lib/
 function createDefaultDeps() {
   return {
     git: {
-      getLastCommitDate: git.getLastCommitDate
+      getLastCostCommitDate: git.getLastCostCommitDate
     },
     cost: {
       computeCosts,
@@ -55,7 +55,9 @@ async function fetchCost(options = {}) {
     }
 
     // Cumulative mode ignores last commit date and returns all-time session costs
-    const sinceDate = mode === 'cumulative' ? null : gitOps.getLastCommitDate({ cwd: baseDir });
+    // Incremental mode anchors to the last commit with a matching cost trailer for this session.
+    // This skips ad-hoc commits, merge commits, and commits from other session IDs.
+    const sinceDate = mode === 'cumulative' ? null : gitOps.getLastCostCommitDate(sessionId, { cwd: baseDir });
     const costResult = await costOps.computeCosts(sessionId, sinceDate);
 
     if (!costResult.success) {

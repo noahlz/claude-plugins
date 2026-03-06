@@ -19,7 +19,7 @@ function createDefaultDeps() {
       commit: git.commit,
       getHeadSha: git.getHeadSha,
       getPreviousCostMetrics: git.getPreviousCostMetrics,
-      getLastCommitDate: git.getLastCommitDate
+      getLastCostCommitDate: git.getLastCostCommitDate
     },
     cost: {
       computeCosts,
@@ -111,8 +111,9 @@ async function prepare(options = {}) {
       }
     }
 
-    // Get last commit date for incremental mode
-    const lastCommitDate = gitOps.getLastCommitDate({ cwd: baseDir });
+    // Anchor incremental cost to the last commit with a matching cost trailer for this session.
+    // This skips ad-hoc commits, merge commits, and commits from other session IDs.
+    const lastCommitDate = gitOps.getLastCostCommitDate(sessionId, { cwd: baseDir });
 
     // Compute costs (incremental if lastCommitDate exists, cumulative if null)
     const costResult = await costOps.computeCosts(sessionId, lastCommitDate);

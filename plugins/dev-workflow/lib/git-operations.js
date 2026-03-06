@@ -83,12 +83,60 @@ export function getPreviousCostMetrics(options = {}) {
 }
 
 /**
- * Get the ISO 8601 date of the most recent git commit
+ * Get the ISO 8601 author date of the most recent commit that has a Claude-Cost-Metrics
+ * trailer matching the given sessionId.
+ *
+ * Why not just use the most recent commit's date?
+ * - Ad-hoc commits (no cost trailer) and merge commits shift the "since" timestamp forward,
+ *   causing costs incurred before those commits to be counted as zero.
+ * - Multi-author repos may have commits from different session IDs; we should only anchor
+ *   incremental cost against a commit for the same session.
+ *
+ * @param {string} sessionId - The session ID to match (e.g. "-Users-foo-bar")
  * @param {Object} options - { cwd }
- * @returns {string|null} ISO 8601 date string (e.g. "2026-03-05T10:22:00-05:00") or null if no commits
+ * @returns {string|null} ISO 8601 date string or null if no matching commit found
  */
-export function getLastCommitDate(options = {}) {
-  const result = execGit(['log', '-1', '--format=%aI'], options);
-  if (result.exitCode !== 0 || !result.stdout.trim()) return null;
-  return result.stdout.trim();
+export function getLastCostCommitDate(sessionId, options = {}) {
+  try {
+    // %aI = author date ISO 8601; output one date line then the full body per commit
+    const result = execGit(
+      ['log', `--format=%aI%n%B${COMMIT_DELIMITER}`],
+      options
+    );
+
+    if (result.exitCode !== 0 || !result.stdout.trim()) {
+      return null;
+    }
+
+    // Split on delimiter to get individual commit blocks (most recent first).
+    // Each block starts with the author date on the first non-empty line, followed by the commit body.
+    // Note: %B appends a trailing newline before the delimiter, so blocks after the first start
+    // with an empty line — we must find the first non-empty line to locate the date.
+    const blocks = result.stdout.split(COMMIT_DELIMITER);
+    for (const block of blocks) {
+      const lines = block.split('\n');
+      const dateIndex = lines.findIndex(l => l.trim() !== '');
+      if (dateIndex === -1) continue;
+      const commitDate = lines[dateIndex].trim();
+
+      for (const line of lines.slice(dateIndex + 1)) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith(COST_TRAILER_PREFIX)) continue;
+        const jsonStr = trimmed.slice(COST_TRAILER_PREFIX.length).trim();
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed && parsed.sessionId === sessionId) {
+            return commitDate;
+          }
+        } catch {
+          // Malformed JSON — skip this commit
+        }
+        break; // Found trailer line but didn't match — move to next commit
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
