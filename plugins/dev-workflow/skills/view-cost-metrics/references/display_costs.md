@@ -40,3 +40,19 @@ Display costs in this format:
 
 Where `{cacheWrites}` and `{cacheReads}` are only shown when the value is not `0`.
 Cache values are already pre-abbreviated strings (e.g. `"213k"`) — display as-is.
+
+## Cost Trailer JSON
+
+→ Using Bash, run:
+```bash
+node -e "
+const method = '{{COST_METHOD}}';
+const cost = {{CURRENT_COST}};
+const since = '{{COST_SINCE}}' || null;
+const sessionId = '{{SESSION_ID}}';
+const t = {method, cost, ...(since ? {since} : {}), sessionId};
+console.log('Cost JSON:\n\nClaude-Cost-Metrics: ' + JSON.stringify(t));
+"
+```
+
+→ Print the output to the user as-is.
