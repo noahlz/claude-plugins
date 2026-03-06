@@ -210,8 +210,9 @@ describe('lib/git-operations: integration tests', () => {
 
       const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
       assert.ok(typeof result === 'string', 'Should return a string');
-      // Full ISO 8601 datetime with timezone offset, as produced by git %aI format
-      assert.match(result, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/, 'Should be full ISO 8601 datetime with timezone');
+      // Full ISO 8601 datetime with timezone, as produced by git %aI format.
+      // Accepts both 'Z' (UTC, as seen in CI) and '±HH:MM' offset (local timezone).
+      assert.match(result, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)$/, 'Should be full ISO 8601 datetime with timezone');
     });
 
     it('skips commits without cost trailer and returns date of older matching commit', () => {
