@@ -1,7 +1,5 @@
 ---
 name: run-tests
-aliases:
-  - test
 description: Runs the project test suite, analyzes failures, and proposes fixes via sub-agents.
 allowed-tools:
   - Bash(node *)

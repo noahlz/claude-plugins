@@ -232,7 +232,7 @@ DELEGATE_TO: `references/create_commit.md`
    (if COST_METHOD = "cumulative"):
       Cost total, last {CLEANUP_PERIOD_DAYS} days:
    (for each model in CURRENT_COST array):
-      - {model}: {inputTokens} in + {outputTokens} out = ${cost}
+      • {model}: {inputTokens} in + {outputTokens} out = ${cost}
 ```
 
 → Return to user.
