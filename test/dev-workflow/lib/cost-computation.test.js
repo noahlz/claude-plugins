@@ -122,5 +122,87 @@ describe('lib/cost-computation.js', () => {
       assert.equal(result.success, true);
       assert.deepEqual(result.costs, []);
     });
+
+    it('flattens multiple blocks (parent + subagent data)', async () => {
+      const blocks = [
+        { entries: [
+          { model: 'claude-sonnet-4-6', usage: { inputTokens: 100, outputTokens: 50, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 }, costUSD: 0.10, timestamp: '2026-03-05T10:00:00Z' }
+        ]},
+        { entries: [
+          { model: 'claude-haiku-4-5', usage: { inputTokens: 500, outputTokens: 200, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 }, costUSD: 0.05, timestamp: '2026-03-05T11:00:00Z' }
+        ]}
+      ];
+      const result = await computeCosts('test-session', null, createTestDeps(blocks));
+      assert.equal(result.success, true);
+      assert.equal(result.method, 'cum');
+      assert.equal(result.costs.length, 2);
+      const sonnet = result.costs.find(c => c.model === 'claude-sonnet-4-6');
+      const haiku = result.costs.find(c => c.model === 'claude-haiku-4-5');
+      assert.ok(sonnet, 'Should include parent session entry');
+      assert.equal(sonnet.in, 100);
+      assert.ok(haiku, 'Should include subagent entry');
+      assert.equal(haiku.in, 500);
+    });
+
+    it('filters by sinceDate across multiple blocks', async () => {
+      // Block 1 is the parent session (old entry), block 2 is a subagent block (new entry).
+      // sinceDate falls between the two — only block 2's entry should survive.
+      const blocks = [
+        { entries: [
+          { model: 'claude-sonnet-4-6', usage: { inputTokens: 100, outputTokens: 50, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 }, costUSD: 0.10, timestamp: '2026-03-05T10:00:00Z' }
+        ]},
+        { entries: [
+          { model: 'claude-sonnet-4-6', usage: { inputTokens: 200, outputTokens: 100, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 }, costUSD: 0.20, timestamp: '2026-03-05T11:00:00Z' }
+        ]}
+      ];
+      const result = await computeCosts('test-session', '2026-03-05T10:30:00Z', createTestDeps(blocks));
+      assert.equal(result.success, true);
+      assert.equal(result.method, 'inc');
+      assert.equal(result.costs.length, 1);
+      assert.equal(result.costs[0].in, 200);
+    });
+
+    it('excludes entry exactly at sinceDate boundary (strict >)', async () => {
+      const boundary = '2026-03-05T10:00:00Z';
+      const blocks = [{ entries: [
+        { model: 'claude-sonnet-4-6', usage: { inputTokens: 100, outputTokens: 50, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 }, costUSD: 0.10, timestamp: boundary }
+      ]}];
+      const result = await computeCosts('test-session', boundary, createTestDeps(blocks));
+      assert.equal(result.success, true);
+      assert.equal(result.method, 'inc');
+      // Entry at exactly sinceDate should be excluded (filter uses strict >)
+      assert.deepEqual(result.costs, []);
+    });
+
+    it('handles blocks with missing entries field', async () => {
+      // Second block has no entries key — simulates partially populated block data
+      const blocks = [
+        { entries: [
+          { model: 'claude-sonnet-4-6', usage: { inputTokens: 100, outputTokens: 50, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 }, costUSD: 0.10, timestamp: '2026-03-05T10:00:00Z' }
+        ]},
+        {}
+      ];
+      const result = await computeCosts('test-session', null, createTestDeps(blocks));
+      assert.equal(result.success, true);
+      assert.equal(result.costs.length, 1);
+      assert.equal(result.costs[0].in, 100);
+    });
+
+    it('aggregates same-model entries from separate blocks', async () => {
+      // Simulates same model appearing in both parent and subagent blocks (after ccusage deduplication)
+      const blocks = [
+        { entries: [
+          { model: 'claude-sonnet-4-6', usage: { inputTokens: 100, outputTokens: 50, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 }, costUSD: 0.10, timestamp: '2026-03-05T10:00:00Z' }
+        ]},
+        { entries: [
+          { model: 'claude-sonnet-4-6', usage: { inputTokens: 200, outputTokens: 80, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 }, costUSD: 0.20, timestamp: '2026-03-05T10:05:00Z' }
+        ]}
+      ];
+      const result = await computeCosts('test-session', null, createTestDeps(blocks));
+      assert.equal(result.success, true);
+      assert.equal(result.costs.length, 1, 'Same model from different blocks should be aggregated into one row');
+      assert.equal(result.costs[0].in, 300);
+      assert.equal(result.costs[0].out, 130);
+    });
   });
 });
