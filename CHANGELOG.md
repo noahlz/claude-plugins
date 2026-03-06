@@ -7,6 +7,9 @@
 - Cost metrics now track incremental cost since the last git commit (falls back to cumulative for first commit of a session)
 - Refactored cost fetching, git operations, and cost computation into shared lib modules under `plugins/dev-workflow/lib/`
 - Migrated all tests to new structure under `test/dev-workflow/lib/` and `test/dev-workflow/commit-with-costs/`
+- Added `draft-commit-message` skill for drafting commit messages without committing
+- Extracted shared reference files (`stage_and_analyze.md`, `message_guidelines.md`, `message_approval.md`) to `plugins/dev-workflow/references/` for reuse across skills
+- Updated `commit-with-costs` to delegate to shared references instead of skill-local copies
 
 # 0.4.0
 

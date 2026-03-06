@@ -29,6 +29,7 @@ claude plugin install dev-workflow@noahlz.github.io
 |-------|-------------|---------------|---------------|
 | [`run-and-fix-tests`](./plugins/dev-workflow/skills/run-and-fix-tests/SKILL.md) | Run tests with clean output and steps through fixing failures, using a plan created by a sub-agent if necessary. | `/run-and-fix-tests` | [README.md](./plugins/dev-workflow/skills/run-and-fix-tests/README.md) |
 | [`commit-with-costs`](./plugins/dev-workflow/skills/commit-with-costs/SKILL.md) | Create git commits with Claude Code attribution and session cost metrics embedded in commit footers. | `/commit-with-costs` | [README.md](./plugins/dev-workflow/skills/commit-with-costs/README.md) |
+| [`draft-commit-message`](./plugins/dev-workflow/skills/draft-commit-message/SKILL.md) | Draft a commit message from staged changes without committing. | `/draft-commit-message` | [README.md](./plugins/dev-workflow/skills/draft-commit-message/README.md) |
 | [`get-cost-trailer`](./plugins/dev-workflow/skills/get-cost-trailer/SKILL.md) | Display current session cost metrics without creating a commit. | `/get-cost-trailer` | [README.md](./plugins/dev-workflow/skills/get-cost-trailer/README.md) |
 
 #### Agents

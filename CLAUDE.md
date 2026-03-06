@@ -10,7 +10,8 @@ claude-plugins/
 ├── plugins/
 │   └── dev-workflow/
 │       ├── agents/
-│       ├── lib/       # Shared scripts
+│       ├── lib/          # Shared scripts
+│       ├── references/   # Shared skill reference files
 │       └── skills/
 │           ├── run-and-fix-tests/
 │           │   ├── assets/
@@ -20,6 +21,7 @@ claude-plugins/
 │           ├── commit-with-costs/
 │           │   ├── references/
 │           │   └── scripts/
+│           ├── draft-commit-message/
 │           └── get-cost-trailer/
 │               ├── references/
 │               └── scripts/
