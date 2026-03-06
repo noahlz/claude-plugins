@@ -12,7 +12,7 @@ Your parent agent has attempted to build the current project, but the build tool
 
 ## Input Data
 
-You receive two JSON structures from your parent agent:
+You receive two inputs from your parent agent:
 
 ### 1. Pre-Parsed Errors JSON
 
@@ -36,40 +36,17 @@ The parent agent runs `parse-build-errors.js` to extract build errors into a str
 
 **IF YOU DID NOT RECEIVE ERROR DETAILS AS JSON DATA, EXIT IMMEDIATELY INFORMING THE PARENT AGENT WHY YOU HAD TO STOP**
 
-### 2. Project Build Configuration JSON
+### 2. Build Log File Path
 
-The parent agent passes the full project build configuration loaded from `.claude/settings.plugins.run-and-fix-tests.json`.
+The parent agent passes the path to the raw build log file (captured by `run-command.js`).
 
-**Example** JSON:
-```json
-{
-  "build": {
-    "command": "npm run build",
-    "logFile": "dist/build.log",
-    "workingDir": "/path/to/project",
-    "errorPattern": "...",
-    "nativeOutputSupport": false
-  }
-}
-```
-
-**IF YOU DID NOT RECEIVE BUILD CONFIGURATION AS JSON DATA, EXIT IMMEDIATELY INFORMING THE PARENT AGENT WHY YOU HAD TO STOP**
-
-## Build Configuration
-
-Extract project build configuration from the JSON data:
-- `config.build.command` - the build command that was executed
-- `config.build.logFile` - where to find the build error log
-- `config.build.workingDir` - the working directory where build was executed
-- `config.build.errorPattern` - regex pattern for extracting errors
-- `config.build.nativeOutputSupport` - whether tool has native output support
+**IF YOU DID NOT RECEIVE THE LOG FILE PATH, EXIT IMMEDIATELY INFORMING THE PARENT AGENT WHY YOU HAD TO STOP**
 
 ## Analysis Methodology
 
-Start your analysis with the pre-parsed `errors[]` array provided by the parent agent. The `errorPattern` regex has already been applied to extract these errors.
+Start your analysis with the pre-parsed `errors[]` array provided by the parent agent. The pattern has already been applied to extract these errors.
 
-If needed during your analysis, you may read additional context from:
-- `config.build.logFile` - the full build log file for more details
+If needed during your analysis, you may read additional context from the raw build log file provided by the parent agent.
 
 During your analysis you consider the following:
 - Error message provided by the build tool

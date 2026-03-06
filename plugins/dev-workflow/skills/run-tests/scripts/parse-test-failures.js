@@ -3,8 +3,26 @@
 import { globSync } from 'fs';
 import fs from 'fs';
 import path from 'path';
-import { loadConfig } from './load-config.js';
 import { readFileSafe, compilePattern } from '../../../lib/file-utils.js';
+
+/**
+ * Built-in format patterns for common test runners.
+ * Each value is a regex pattern string used to identify failure lines.
+ * Patterns use named groups where possible for richer extraction.
+ */
+export const FORMAT_REGISTRY = {
+  tap:      '^not ok\\s+\\d+\\s+-\\s+(?<testName>.+)$',
+  // junit-xml uses glob mode — matches <failure elements in XML report files
+  'junit-xml': '<failure',
+  pytest:   '^FAILED\\s+(?<testName>.+)$',
+  go:       '^---\\s+FAIL:\\s+(?<testName>\\S+)',
+  jest:     '^\\s+FAIL\\s+(?<file>.+)$',
+  mocha:    '^\\s+\\d+\\)\\s+(?<testName>.+)$',
+  rspec:    '^rspec\\s+(?<file>[^:]+):(?<line>\\d+)',
+  dotnet:   '^\\s+Failed\\s+(?<testName>.+)\\s+\\[',
+  cargo:    '^test\\s+(?<testName>\\S+)\\s+\\.\\.\\.\\s+FAILED',
+  generic:  '(?:FAIL|ERROR|FAILED).*'
+};
 
 /**
  * Check if path contains glob patterns
@@ -114,39 +132,33 @@ function buildFailureObject(match) {
 }
 
 /**
- * Parse test failures from results file
- * @param {object} config - Configuration object
+ * Parse test failures from results file or glob pattern
+ * @param {string} filePath - Path to results file (or glob pattern)
+ * @param {string} pattern - Regex pattern to match failures
  * @param {object} options - Options for dependency injection
- * @param {object} options.deps - Dependencies { fs }
- * @returns {object} - { failures, totalFailures, truncated }
+ * @param {object} options.deps - Dependencies { fs, path, globSync }
+ * @returns {object} - { mode, failures, totalFailures, truncated }
  */
-export function parseTestFailures(config, options = {}) {
+export function parseTestFailures(filePath, pattern, options = {}) {
   const { deps = {} } = options;
   const fsModule = deps.fs || fs;
 
-  // Validate config
-  if (!config || !config.test || !config.test.all) {
-    throw new Error('Config must have "test.all" property');
+  if (!filePath) {
+    throw new Error('filePath is required');
   }
 
-  const { resultsPath, errorPattern } = config.test.all;
-
-  if (!resultsPath) {
-    throw new Error('test.all.resultsPath is required');
+  if (!pattern) {
+    throw new Error('pattern is required');
   }
 
-  if (!errorPattern) {
-    throw new Error('test.all.errorPattern is required');
-  }
-
-  // Check if resultsPath contains glob pattern
-  if (hasGlobPattern(resultsPath)) {
-    return parseGlobResults(resultsPath, errorPattern, deps);
+  // Check if filePath contains glob pattern
+  if (hasGlobPattern(filePath)) {
+    return parseGlobResults(filePath, pattern, deps);
   }
 
   // File mode: Read results file
-  const resultsContent = readFileSafe(resultsPath, { label: 'results file', fs: fsModule });
-  const regex = compilePattern(errorPattern);
+  const resultsContent = readFileSafe(filePath, { label: 'results file', fs: fsModule });
+  const regex = compilePattern(pattern);
 
   // Extract failures
   const matches = [];
@@ -164,7 +176,6 @@ export function parseTestFailures(config, options = {}) {
   // Parse failure details from matches
   const failures = limitedMatches.map(match => buildFailureObject(match));
 
-  // Warn if file has content but pattern matched nothing (format mismatch)
   const result = {
     mode: 'file',
     failures,
@@ -173,7 +184,7 @@ export function parseTestFailures(config, options = {}) {
   };
 
   if (totalFailures === 0 && resultsContent.trim().length > 10) {
-    result.warning = 'Results file has content but errorPattern matched nothing. Output format may not match configured pattern.';
+    result.warning = 'Results file has content but pattern matched nothing. Output format may not match the pattern.';
   }
 
   return result;
@@ -181,21 +192,43 @@ export function parseTestFailures(config, options = {}) {
 
 /* node:coverage disable */
 /**
+ * Resolve pattern from CLI args: --pattern takes precedence over --format
+ * @param {string} format - Format name from --format arg
+ * @param {string} pattern - Raw pattern from --pattern arg
+ * @returns {string} - Resolved pattern string
+ */
+function resolvePattern(format, pattern) {
+  if (pattern) return pattern;
+  if (format) {
+    const resolved = FORMAT_REGISTRY[format];
+    if (!resolved) {
+      throw new Error(`Unknown format "${format}". Known formats: ${Object.keys(FORMAT_REGISTRY).join(', ')}`);
+    }
+    return resolved;
+  }
+  return FORMAT_REGISTRY.generic;
+}
+
+/**
  * Main entry point
  */
 function main() {
   try {
-    // Load and resolve config
-    const { resolved: config, errors } = loadConfig();
-
-    if (errors.length > 0) {
-      throw new Error(errors.join('; '));
+    const argv = process.argv.slice(2);
+    const args = {};
+    for (let i = 0; i < argv.length; i++) {
+      if (argv[i] === '--file' && argv[i + 1] !== undefined) args.file = argv[++i];
+      else if (argv[i] === '--format' && argv[i + 1] !== undefined) args.format = argv[++i];
+      else if (argv[i] === '--pattern' && argv[i + 1] !== undefined) args.pattern = argv[++i];
     }
 
-    // Parse test failures
-    const result = parseTestFailures(config);
+    if (!args.file) {
+      throw new Error('--file is required');
+    }
 
-    // Output result as JSON
+    const pattern = resolvePattern(args.format, args.pattern);
+    const result = parseTestFailures(args.file, pattern);
+
     console.log(JSON.stringify(result, null, 2));
     process.exit(0);
   } catch (err) {
