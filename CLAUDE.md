@@ -22,7 +22,7 @@ claude-plugins/
 │           │   ├── references/
 │           │   └── scripts/
 │           ├── draft-commit-message/
-│           └── get-cost-trailer/
+│           └── view-cost-metrics/
 │               ├── references/
 │               └── scripts/
 └── test/
@@ -59,7 +59,7 @@ Follow the [best practices guide for skill authoring](https://platform.claude.co
 Do NOT add additional npm packages without justification and approval by the user.
 
 **Runtime**: `ccusage` (in `plugins/dev-workflow/package.json`)
-  - Used by `commit-with-costs` and `get-cost-trailer` skills to fetch and embed cost metrics in git commits
+  - Used by `commit-with-costs` and `view-cost-metrics` skills to fetch and embed cost metrics in git commits
 
 ### NOTE: Reinstall After Changing
 

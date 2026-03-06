@@ -1,4 +1,4 @@
-# Get Cost Trailer
+# View Cost Metrics
 
 Display current session cost metrics without creating a commit.
 
@@ -24,17 +24,35 @@ Using this skill, Claude fetches and displays the incremental cost incurred sinc
 Slash command:
 
 ```bash
-/get-cost-trailer
+/view-cost-metrics
 ```
 
 Or ask Claude: "how much has this session cost?", "show me the cost", "current costs", etc.
 
 ## Output Format
 
+First prints the raw JSON from the cost script:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "session_id": "-Users-noahlz-projects-my-project",
+    "method": "incremental",
+    "since": "2026-03-05T14:45:22-05:00",
+    "current_cost": [...]
+  },
+  "message": "Session costs resolved"
+}
 ```
-Session cost metrics:
-   ID: -Users-noahlz-projects-my-project
-   Method: incremental (since: 2026-03-05T14:45:22-05:00)
+
+Then prints the formatted summary:
+
+```
+📊 Project cost metrics:
+   Project: -Users-noahlz-projects-my-project
+   Cost since previous commit (since 2026-03-05T14:45:22-05:00):
+   Total: $0.49
 
    - claude-sonnet-4-6: 12345 in + 3210 out = $0.42
    - claude-haiku-4-5-20251001: 5000 in + 1000 out = $0.07
@@ -49,7 +67,7 @@ The `Method` line indicates how costs were calculated:
 
 ## Configuration
 
-On first run the skill saves your session ID to `.claude/settings.plugins.get-cost-trailer.json`:
+On first run the skill saves your session ID to `.claude/settings.plugins.view-cost-metrics.json`:
 
 ```json
 {
