@@ -15,6 +15,13 @@
   - `message` → ERROR_MESSAGE
   - Display ERROR_MESSAGE to user and exit
 
+## Raw JSON Output
+
+→ Print the full raw JSON string returned by the fetch-cost script to the console using Bash:
+```bash
+echo '{{FULL_JSON_OUTPUT}}'
+```
+
 ## Format for Display
 
 Display costs in this format:

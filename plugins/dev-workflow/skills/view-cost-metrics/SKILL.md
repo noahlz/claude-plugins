@@ -1,5 +1,5 @@
 ---
-name: get-cost-trailer
+name: view-cost-metrics
 description: Display current session cost metrics. Use when the user asks to see current costs, cost usage, or how much the session has cost so far.
 context: fork
 argument-hint: "[incremental|inc|cumulative|cum]"
@@ -12,7 +12,7 @@ allowed-tools:
 
 Use this skill to display current session cost metrics without creating a commit.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/get-cost-trailer`) OR asks about current session costs.
+**MANDATORY** only activate this skill when the user invokes it directly (`/view-cost-metrics`) OR asks about current session costs.
 
 Follow the workflow steps EXACTLY.
 
@@ -60,11 +60,11 @@ All script outputs return JSON. Extract fields and store in variables.
 
 ## 0. Prerequisites
 
-**SKILL_NAME**: get-cost-trailer
+**SKILL_NAME**: view-cost-metrics
 
 **MODE**: Determine from `$ARGUMENTS`: if it contains "cumulative" or "cum" → `cumulative`; otherwise → `incremental` (default, also matches "incremental" or "inc")
 
-**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.get-cost-trailer.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
+**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.view-cost-metrics.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
 
 **Configuration Routing:**
 - If `SKILL_CONFIG` = `✓ Configuration found` → Proceed to Step 1a (Load Configuration)
@@ -76,7 +76,7 @@ All script outputs return JSON. Extract fields and store in variables.
 
 → Execute using Bash tool:
 ```bash
-cat .claude/settings.plugins.get-cost-trailer.json
+cat .claude/settings.plugins.view-cost-metrics.json
 ```
 
 → Parse JSON output and extract `sessionId` field value
@@ -85,7 +85,7 @@ cat .claude/settings.plugins.get-cost-trailer.json
 
 ### 1b. Create new configuration
 
-→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! (./.claude/settings.plugins.get-cost-trailer.json). Let's create it:"
+→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! (./.claude/settings.plugins.view-cost-metrics.json). Let's create it:"
 
 → Run Bash command to list available sessions:
 ```bash
@@ -98,7 +98,7 @@ node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" list-sessions
 
 → Write config file:
 ```bash
-echo '{"sessionId":"{{SESSION_ID}}"}' > .claude/settings.plugins.get-cost-trailer.json
+echo '{"sessionId":"{{SESSION_ID}}"}' > .claude/settings.plugins.view-cost-metrics.json
 ```
 
 → Inform the user of the file location and continue to Step 2.
