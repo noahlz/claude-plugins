@@ -10,6 +10,7 @@ import {
   getPluginScriptPath,
   extractJsonFromOutput
 } from '../../lib/helpers.js';
+import { setupGitRepo } from './helpers.js';
 
 /** Test commit-workflow.js (commit-with-costs) against a temporary git repository. */
 describe('commit-with-costs: commit-workflow.js integration tests', () => {
@@ -18,16 +19,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
   // Create a temporary directory and make it a git repo.
   beforeEach(() => {
     testEnv = setupTestEnv();
-
-    // Initialize git repo for testing
-    execGit(['init'], { cwd: testEnv.tmpDir });
-    execGit(['config', 'user.email', 'test@example.com'], { cwd: testEnv.tmpDir });
-    execGit(['config', 'user.name', 'Test User'], { cwd: testEnv.tmpDir });
-
-    // Create initial commit
-    writeFileSync(join(testEnv.tmpDir, 'initial.txt'), 'initial');
-    execGit(['add', 'initial.txt'], { cwd: testEnv.tmpDir });
-    execGit(['commit', '-m', 'initial commit'], { cwd: testEnv.tmpDir });
+    setupGitRepo(testEnv);
   });
 
   afterEach(() => {

@@ -61,8 +61,7 @@ describe('run-and-fix-tests: select-default.js', () => {
       });
 
       assert.ok(result.configPath.includes('.claude'), 'Should create config');
-      // May use template if no go.json default
-      assert.ok(result.source === 'go.json' || result.source === 'TEMPLATE.json', 'Should use go or template');
+      assert.equal(result.source, 'go.json');
     });
   });
 
@@ -153,6 +152,17 @@ describe('run-and-fix-tests: select-default.js', () => {
           targetDir: testEnv.tmpDir
         });
       }, /Template not found/);
+    });
+
+    it('throws when tool has no default and template is missing', () => {
+      assert.throws(
+        () => selectDefault({
+          detectedTools: [{ tool: 'fakeTool', location: '.', configFile: 'fake.json', config: {} }],
+          pluginRoot: '/nonexistent/plugin',
+          targetDir: testEnv.tmpDir
+        }),
+        /Template not found/
+      );
     });
   });
 });

@@ -50,8 +50,9 @@ export async function computeCosts(sessionId, sinceDate, deps = {}) {
     const allEntries = blocks.flatMap(block => block.entries ?? []);
 
     // Filter to entries after sinceDate when provided
-    const entries = sinceDate
-      ? allEntries.filter(entry => new Date(entry.timestamp) > new Date(sinceDate))
+    const sinceMs = sinceDate ? new Date(sinceDate).getTime() : null;
+    const entries = sinceMs !== null
+      ? allEntries.filter(entry => new Date(entry.timestamp).getTime() > sinceMs)
       : allEntries;
 
     const aggregated = aggregateEntriesByModel(entries);

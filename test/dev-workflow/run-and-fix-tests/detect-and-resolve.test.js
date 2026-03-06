@@ -77,17 +77,8 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
 
     describe('edge cases', () => {
       it('handles empty project (no tools detected)', () => {
-        // Empty directory - no config files
-        // detectTools returns empty array when nothing found
-
-        try {
-          const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
-          // If it returns empty array, that's valid
-          assert.equal(detected.length, 0, 'Should return empty array for empty project');
-        } catch (error) {
-          // If it throws, that's also acceptable error handling
-          assert.ok(error, 'Should handle empty project gracefully');
-        }
+        const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+        assert.deepStrictEqual(detected, []);
       });
     });
   });
@@ -125,6 +116,16 @@ describe('run-and-fix-tests: detect-and-resolve.js', () => {
 
       const npmTool = detected.find(t => t.tool === 'npm');
       assert.ok(npmTool, 'Should detect npm tool using glob-style search in subdirectories');
+    });
+
+    it('detects dotnet project using glob configFile pattern (*.csproj)', () => {
+      writeFileSync(join(testEnv.tmpDir, 'MyApp.csproj'), '<Project/>');
+
+      const detected = detectTools({ pluginRoot: testEnv.pluginRoot, rootDir: testEnv.tmpDir });
+
+      const dotnetTool = detected.find(t => t.tool === 'dotnet');
+      assert.ok(dotnetTool, 'Should detect dotnet tool via *.csproj glob');
+      assert.ok(dotnetTool.configFile.endsWith('.csproj'));
     });
   });
 });

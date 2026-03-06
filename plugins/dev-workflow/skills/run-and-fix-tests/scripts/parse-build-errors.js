@@ -2,6 +2,7 @@
 
 import fs from 'fs';
 import { loadConfig } from './load-config.js';
+import { readFileSafe, compilePattern } from '../../../lib/file-utils.js';
 
 /**
  * Parse build errors from log file
@@ -29,21 +30,8 @@ export function parseBuildErrors(config, options = {}) {
     throw new Error('build.errorPattern is required');
   }
 
-  // Read log file
-  let logContent;
-  try {
-    logContent = fsModule.readFileSync(logFile, 'utf8');
-  } catch (err) {
-    throw new Error(`Failed to read log file at ${logFile}: ${err.message}`);
-  }
-
-  // Parse regex pattern
-  let regex;
-  try {
-    regex = new RegExp(errorPattern, 'gm');
-  } catch (err) {
-    throw new Error(`Invalid regex pattern "${errorPattern}": ${err.message}`);
-  }
+  const logContent = readFileSafe(logFile, { label: 'log file', fs: fsModule });
+  const regex = compilePattern(errorPattern);
 
   // Extract errors
   const matches = [];

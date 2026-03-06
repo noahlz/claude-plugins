@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
 import { globSync } from 'fs';
+import fs from 'fs';
 import path from 'path';
 import { loadConfig } from './load-config.js';
+import { readFileSafe, compilePattern } from '../../../lib/file-utils.js';
 
 /**
  * Check if path contains glob patterns
@@ -38,17 +39,12 @@ function parseGlobResults(resultsPath, errorPattern, deps = {}) {
     };
   }
 
-  // Compile regex for presence check
-  let regex;
-  try {
-    regex = new RegExp(errorPattern, 'gm');
-  } catch (err) {
-    throw new Error(`Invalid regex pattern "${errorPattern}": ${err.message}`);
-  }
+  const regex = compilePattern(errorPattern);
 
-  // Check each file for failures
+  // Check each file for failures — scan ALL files for totalFailures, but cap the display list
   const fileFailures = [];
   const MAX_FAILURES = 30;
+  let totalFailures = 0;
 
   for (const filePath of files) {
     const content = fsModule.readFileSync(filePath, 'utf8');
@@ -63,20 +59,18 @@ function parseGlobResults(resultsPath, errorPattern, deps = {}) {
     }
 
     if (count > 0) {
-      fileFailures.push({
-        file: pathModule.basename(filePath),
-        count
-      });
-    }
-
-    // Stop if we've hit the limit
-    if (fileFailures.length >= MAX_FAILURES) {
-      break;
+      totalFailures += count;
+      // Only add to the display list if we haven't hit the cap
+      if (fileFailures.length < MAX_FAILURES) {
+        fileFailures.push({
+          file: pathModule.basename(filePath),
+          count
+        });
+      }
     }
   }
 
-  const totalFailures = fileFailures.reduce((sum, f) => sum + f.count, 0);
-  const truncated = fileFailures.length >= MAX_FAILURES && files.length > fileFailures.length;
+  const truncated = fileFailures.length >= MAX_FAILURES && totalFailures > fileFailures.reduce((sum, f) => sum + f.count, 0);
 
   return {
     mode: 'glob',
@@ -151,20 +145,8 @@ export function parseTestFailures(config, options = {}) {
   }
 
   // File mode: Read results file
-  let resultsContent;
-  try {
-    resultsContent = fsModule.readFileSync(resultsPath, 'utf8');
-  } catch (err) {
-    throw new Error(`Failed to read results file at ${resultsPath}: ${err.message}`);
-  }
-
-  // Parse regex pattern
-  let regex;
-  try {
-    regex = new RegExp(errorPattern, 'gm');
-  } catch (err) {
-    throw new Error(`Invalid regex pattern "${errorPattern}": ${err.message}`);
-  }
+  const resultsContent = readFileSafe(resultsPath, { label: 'results file', fs: fsModule });
+  const regex = compilePattern(errorPattern);
 
   // Extract failures
   const matches = [];
