@@ -192,11 +192,11 @@ export function assertCommitMessage(testEnv, expectedSubject, expectedBodyParts 
 export function createValidCosts(overrides = {}) {
   return [{
     model: 'test-model',
+    cost: 0.05,
     in: 100,
     out: 50,
     cacheWrites: 0,
     cacheReads: 0,
-    cost: 0.05,
     ...overrides
   }];
 }

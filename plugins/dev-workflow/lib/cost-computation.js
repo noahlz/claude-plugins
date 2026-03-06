@@ -43,11 +43,11 @@ export function aggregateEntriesByModel(entries) {
 
   return Array.from(byModel.values()).map(({ model, inputTokens, outputTokens, cacheWriteTokens, cacheReadTokens, costUSD }) => ({
     model,
+    cost: Math.round(costUSD * 100) / 100,
     in: inputTokens,
     out: outputTokens,
     cacheWrites: abbreviateTokens(cacheWriteTokens),
-    cacheReads: abbreviateTokens(cacheReadTokens),
-    cost: Math.round(costUSD * 100) / 100
+    cacheReads: abbreviateTokens(cacheReadTokens)
   }));
 }
 

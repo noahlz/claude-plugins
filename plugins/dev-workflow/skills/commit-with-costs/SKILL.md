@@ -227,18 +227,16 @@ DELEGATE_TO: `references/create_commit.md`
 
 📊 Project cost metrics:
    Project: {SESSION_ID}
-   (if COST_METHOD = "incremental"):
+   (if COST_METHOD = "inc"):
       Cost since previous commit (since {COST_SINCE}):
-   (if COST_METHOD = "cumulative"):
+   (if COST_METHOD = "cum"):
       Cost total, last {CLEANUP_PERIOD_DAYS} days:
    (for each model in CURRENT_COST array):
-      • {model}: {inputTokens}in [+ {cacheWrite} cacheWrite] [+ {cacheRead} cacheRead] + {outputTokens}out = ${cost}
+      • {model}: ${cost} = {in}in [+ {cacheWrites} cacheWrites] [+ {cacheReads} cacheReads] + {out}out
 ```
 
-Where `{cacheWrite}` and `{cacheRead}` are only shown when > 0, and are formatted abbreviated:
-- >= 1,000,000 → `3.5MM` (n / 1_000_000, one decimal place)
-- >= 1,000 → `320.0K` (n / 1_000, one decimal place)
-- < 1,000 → show as-is
+Where `{cacheWrites}` and `{cacheReads}` are only shown when the value is not `0`.
+Cache values are already pre-abbreviated strings (e.g. `"213k"`) — display as-is.
 
 ```
 ```

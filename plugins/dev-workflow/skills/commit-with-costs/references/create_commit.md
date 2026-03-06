@@ -14,7 +14,7 @@
 **Value Replacements:**
 - `{{SESSION_ID}}`: Literal session ID from Step 5
 - `{{CURRENT_COST}}`: Literal JSON array from Step 5
-- `{{COST_METHOD}}`: Method from Step 5 ("incremental" or "cumulative")
+- `{{COST_METHOD}}`: Method from Step 5 ("inc" or "cum")
 - `{{COST_SINCE}}`: Since date from Step 5 (ISO date or empty string if null)
 - `{{COMMIT_SUBJECT}}`: Subject line from Step 4
 - `{{COMMIT_BODY}}`: Body from Step 4 (omit blank line if empty)
