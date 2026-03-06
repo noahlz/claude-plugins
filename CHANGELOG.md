@@ -6,6 +6,7 @@
 - Renamed `run-and-fix-tests` skill to `run-tests` (slash command: `/run-tests`)
 - Replaced config-file system with LLM-driven inference for test command detection
 - Added `run-command.js` script to capture all test/build output to file
+- Cost tracking uses more compact JSON format (abbreviated fields) – with old formats documented for backwards compatibility.
 
 **Architecture & Code Quality**
 - Refactored `parse-test-failures.js` and `parse-build-errors.js` to CLI-arg interface with built-in format registries
@@ -13,10 +14,12 @@
   - Scripts for detecting build configuration (no longer needed)
   - Default config assets (`assets/defaults/`) and config detection/loading scripts
   - Shared lib scripts and reference files (no longer needed)
+- Cost Tracking: added more documentation on methodology.
 
 **Testing**
 - Added `run-command.test.js` integration tests for the new command runner script
 - Updated `parse-build-errors.test.js` and `parse-test-failures.test.js` for new CLI-arg interface
+- Cost tracking: added more test cases for sub-agents, worktrees, and other cases. Verified incremental cost tracking works.
 - Removed obsolete test files, fixtures and directories.
 
 # 0.5.0
