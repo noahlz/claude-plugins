@@ -46,7 +46,7 @@ export function createMockCcusage(overrides = {}) {
  */
 export function createMockCost(overrides = {}) {
   return {
-    computeCosts: async () => ({ success: true, method: 'cumulative', since: null, costs: [] }),
+    computeCosts: async () => ({ success: true, method: 'cum', since: null, costs: [] }),
     loadBlockData: async () => [],
     filterZeroUsageCosts: (costs) => ({ filtered: costs, removed: [] }),
     ...overrides
@@ -192,8 +192,10 @@ export function assertCommitMessage(testEnv, expectedSubject, expectedBodyParts 
 export function createValidCosts(overrides = {}) {
   return [{
     model: 'test-model',
-    inputTokens: 100,
-    outputTokens: 50,
+    in: 100,
+    out: 50,
+    cacheWrites: 0,
+    cacheReads: 0,
     cost: 0.05,
     ...overrides
   }];

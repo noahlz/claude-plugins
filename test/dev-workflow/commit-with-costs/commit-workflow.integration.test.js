@@ -63,7 +63,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         assert.ok(data.data.current_cost, 'Should have current_cost on success');
         assert.ok(Array.isArray(data.data.current_cost), 'current_cost should be array');
         // New fields: method and since
-        assert.ok(['incremental', 'cumulative'].includes(data.data.method), 'Should have method field');
+        assert.ok(['inc', 'cum'].includes(data.data.method), 'Should have method field');
         assert.ok('since' in data.data, 'Should have since field (can be null)');
       }
     });
@@ -141,8 +141,8 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         const validMetrics = JSON.stringify([
           {
             model: 'test-model',
-            inputTokens: 100,
-            outputTokens: 50,
+            in: 100,
+            out: 50,
             cost: 0.05
           }
         ]);
@@ -166,7 +166,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
         const validMetrics = JSON.stringify([
-          { model: 'test-model', inputTokens: 100, outputTokens: 50, cost: 0.05 }
+          { model: 'test-model', in: 100, out: 50, cost: 0.05 }
         ]);
 
         const result = execNodeScript(scriptPath, {
@@ -174,7 +174,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
             'commit',
             '--session-id', 'test-session-123',
             '--costs', validMetrics,
-            '--method', 'incremental',
+            '--method', 'inc',
             '--since', '2026-03-05T10:00:00Z'
           ],
           cwd: testEnv.tmpDir,
@@ -190,7 +190,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         const trailerMatch = gitLogResult.stdout.match(/Claude-Cost-Metrics: (.+)/);
         assert.ok(trailerMatch, 'Should have Claude-Cost-Metrics trailer');
         const trailerObj = JSON.parse(trailerMatch[1]);
-        assert.equal(trailerObj.method, 'incremental');
+        assert.equal(trailerObj.method, 'inc');
         assert.equal(trailerObj.since, '2026-03-05T10:00:00Z');
       });
 
@@ -201,7 +201,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
         const validMetrics = JSON.stringify([
-          { model: 'test-model', inputTokens: 100, outputTokens: 50, cost: 0.05 }
+          { model: 'test-model', in: 100, out: 50, cost: 0.05 }
         ]);
 
         const result = execNodeScript(scriptPath, {
@@ -262,7 +262,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
         const invalidMetrics = JSON.stringify([
-          { model: 'test-model', inputTokens: 0, outputTokens: 0, cost: 0 }
+          { model: 'test-model', in: 0, out: 0, cost: 0 }
         ]);
 
         const result = execNodeScript(scriptPath, {
@@ -283,8 +283,8 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
         const mixedMetrics = JSON.stringify([
-          { model: 'valid-model', inputTokens: 100, outputTokens: 50, cost: 0.05 },
-          { model: 'zero-model', inputTokens: 0, outputTokens: 0, cost: 0 }
+          { model: 'valid-model', in: 100, out: 50, cost: 0.05 },
+          { model: 'zero-model', in: 0, out: 0, cost: 0 }
         ]);
 
         const result = execNodeScript(scriptPath, {
@@ -308,7 +308,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
 
         // Pass valid metrics but without staging changes (git commit will fail)
         const validMetrics = JSON.stringify([
-          { model: 'test-model', inputTokens: 100, outputTokens: 50, cost: 0.05 }
+          { model: 'test-model', in: 100, out: 50, cost: 0.05 }
         ]);
 
         const result = execNodeScript(scriptPath, {
@@ -329,7 +329,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
         const validMetrics = JSON.stringify([
-          { model: 'test-model', inputTokens: 100, outputTokens: 50, cost: 0.05 }
+          { model: 'test-model', in: 100, out: 50, cost: 0.05 }
         ]);
 
         const messageWithBody = 'Add new feature\n\n- Implemented core functionality\n- Added unit tests';

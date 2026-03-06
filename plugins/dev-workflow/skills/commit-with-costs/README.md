@@ -115,17 +115,25 @@ Cost-specific references remain in `references/` within this skill directory:
 | `fetch_cost.md` | Fetch session cost metrics via ccusage |
 | `create_commit.md` | Create the git commit with trailers |
 
-## Known Issues
+## Per-Commit Cost Methodology
 
-### SubAgent Sessions
+### Session Isolation by Working Directory
 
-Claude Code stores subagent JSONL files within the parent project's directory:
+The session ID is derived from the absolute path of the current working directory (`pwdToSessionId` in `lib/ccusage-operations.js`). Because each git worktree has a distinct path, each gets its own `~/.claude/projects/<session-id>/` directory. Concurrent Claude sessions in different worktrees of the same repo never share cost data.
+
+### Incremental Cost Anchoring
+
+In incremental mode, the cost window opens at the commit date of the most recent commit whose `Claude-Cost-Metrics` trailer contains a matching `sessionId` (`getLastCostCommitDate` in `lib/git-operations.js`). This deliberately skips merge commits, manual commits, and commits from other sessions. When no prior matching commit exists (first commit of a session), costs fall back to cumulative mode — all usage since session start.
+
+### Subagent Cost Inclusion
+
+When Claude spawns subagents, their usage is written to nested files within the session directory:
 
 ```
-~/.claude/projects/<project-id>/<session-uuid>/subagents/agent-*.jsonl
+~/.claude/projects/<session-id>/<session-uuid>/subagents/agent-*.jsonl
 ```
 
-Because ccusage's `loadSessionBlockData` uses a recursive `**/*.jsonl` glob and filters by the top-level project directory name, subagent costs are automatically included when fetching costs for the parent project. No special handling is required.
+`loadSessionBlockData` (ccusage) uses a recursive `**/*.jsonl` glob scoped to the session directory, so subagent entries are automatically included. The same API call appears in both the parent and subagent files; ccusage deduplicates by `messageId:requestId` before aggregation. See `lib/cost-computation.js#computeCosts` for how entries are flattened and filtered.
 
 ## Author
 

@@ -146,7 +146,7 @@ describe('lib/git-operations: integration tests', () => {
 
     it('returns cost array from most recent commit with trailer', () => {
       const costs = [
-        { model: 'claude-sonnet-4-6', inputTokens: 100, outputTokens: 50, cost: 1.05 }
+        { model: 'claude-sonnet-4-6', in: 100, out: 50, cost: 1.05 }
       ];
       // Use two trailer lines (like real commits) to ensure git recognizes the trailer block
       const trailers = `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId: 'test', cost: costs })}`;
@@ -175,7 +175,7 @@ describe('lib/git-operations: integration tests', () => {
 
     it('finds trailer in older commit when most recent has none', () => {
       const costs = [
-        { model: 'claude-opus-4-6', inputTokens: 10, outputTokens: 5, cost: 0.50 }
+        { model: 'claude-opus-4-6', in: 10, out: 5, cost: 0.50 }
       ];
       const trailers = `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId: 'test', cost: costs })}`;
 
@@ -200,7 +200,7 @@ describe('lib/git-operations: integration tests', () => {
     const SESSION = '-Users-test-project';
     const OTHER_SESSION = '-Users-other-project';
 
-    function makeTrailer(sessionId, costs = [{ model: 'claude-sonnet-4-6', inputTokens: 10, outputTokens: 5, cost: 0.10 }]) {
+    function makeTrailer(sessionId, costs = [{ model: 'claude-sonnet-4-6', in: 10, out: 5, cost: 0.10 }]) {
       return `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId, cost: costs })}`;
     }
 

@@ -50,28 +50,28 @@ describe('lib: ccusage-operations.js', () => {
   describe('validateCostMetrics', () => {
     it('validates valid cost metrics array', () => {
       const costs = [
-        { model: 'claude-opus-4.5', inputTokens: 100, outputTokens: 50, cost: 0.12 }
+        { model: 'claude-opus-4.5', in: 100, out: 50, cost: 0.12 }
       ];
       assert.equal(validateCostMetrics(costs), true);
     });
 
     it('validates costs with only cost value', () => {
       const costs = [
-        { model: 'test-model', inputTokens: 0, outputTokens: 0, cost: 0.05 }
+        { model: 'test-model', in: 0, out: 0, cost: 0.05 }
       ];
       assert.equal(validateCostMetrics(costs), true);
     });
 
     it('validates costs with only input tokens', () => {
       const costs = [
-        { model: 'test-model', inputTokens: 100, outputTokens: 0, cost: 0 }
+        { model: 'test-model', in: 100, out: 0, cost: 0 }
       ];
       assert.equal(validateCostMetrics(costs), true);
     });
 
     it('validates costs with only output tokens', () => {
       const costs = [
-        { model: 'test-model', inputTokens: 0, outputTokens: 50, cost: 0 }
+        { model: 'test-model', in: 0, out: 50, cost: 0 }
       ];
       assert.equal(validateCostMetrics(costs), true);
     });
@@ -88,37 +88,37 @@ describe('lib: ccusage-operations.js', () => {
 
     it('rejects cost with missing model field', () => {
       const costs = [
-        { inputTokens: 100, outputTokens: 50, cost: 0.12 }
+        { in: 100, out: 50, cost: 0.12 }
       ];
       assert.equal(validateCostMetrics(costs), false);
     });
 
     it('rejects cost with non-numeric cost field', () => {
       const costs = [
-        { model: 'test-model', inputTokens: 100, outputTokens: 50, cost: 'invalid' }
+        { model: 'test-model', in: 100, out: 50, cost: 'invalid' }
       ];
       assert.equal(validateCostMetrics(costs), false);
     });
 
     it('rejects cost with all zeros and no cost', () => {
       const costs = [
-        { model: 'test-model', inputTokens: 0, outputTokens: 0, cost: 0 }
+        { model: 'test-model', in: 0, out: 0, cost: 0 }
       ];
       assert.equal(validateCostMetrics(costs), false);
     });
 
     it('accepts multiple valid costs', () => {
       const costs = [
-        { model: 'claude-opus-4.5', inputTokens: 100, outputTokens: 50, cost: 0.12 },
-        { model: 'claude-haiku-4.5', inputTokens: 200, outputTokens: 75, cost: 0.05 }
+        { model: 'claude-opus-4.5', in: 100, out: 50, cost: 0.12 },
+        { model: 'claude-haiku-4.5', in: 200, out: 75, cost: 0.05 }
       ];
       assert.equal(validateCostMetrics(costs), true);
     });
 
     it('rejects if any element is invalid', () => {
       const costs = [
-        { model: 'claude-opus-4.5', inputTokens: 100, outputTokens: 50, cost: 0.12 },
-        { inputTokens: 200, outputTokens: 75, cost: 0.05 }
+        { model: 'claude-opus-4.5', in: 100, out: 50, cost: 0.12 },
+        { in: 200, out: 75, cost: 0.05 }
       ];
       assert.equal(validateCostMetrics(costs), false);
     });
@@ -127,8 +127,8 @@ describe('lib: ccusage-operations.js', () => {
   describe('filterZeroUsageCosts', () => {
     it('filters out entries with all zeros', () => {
       const costs = [
-        { model: 'claude-sonnet-4', inputTokens: 100, outputTokens: 50, cost: 0.10 },
-        { model: 'claude-haiku-3.5', inputTokens: 0, outputTokens: 0, cost: 0 }
+        { model: 'claude-sonnet-4', in: 100, out: 50, cost: 0.10 },
+        { model: 'claude-haiku-3.5', in: 0, out: 0, cost: 0 }
       ];
       const result = filterZeroUsageCosts(costs);
       assert.equal(result.filtered.length, 1);
@@ -139,9 +139,9 @@ describe('lib: ccusage-operations.js', () => {
 
     it('keeps entries with any non-zero value', () => {
       const costs = [
-        { model: 'model-1', inputTokens: 100, outputTokens: 0, cost: 0 },
-        { model: 'model-2', inputTokens: 0, outputTokens: 50, cost: 0 },
-        { model: 'model-3', inputTokens: 0, outputTokens: 0, cost: 0.05 }
+        { model: 'model-1', in: 100, out: 0, cost: 0 },
+        { model: 'model-2', in: 0, out: 50, cost: 0 },
+        { model: 'model-3', in: 0, out: 0, cost: 0.05 }
       ];
       const result = filterZeroUsageCosts(costs);
       assert.equal(result.filtered.length, 3);

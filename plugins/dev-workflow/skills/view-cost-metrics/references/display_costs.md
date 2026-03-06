@@ -35,5 +35,10 @@ Display costs in this format:
    Total: ${sum of all cost values}
 
    (for each model in CURRENT_COST array):
-      - {model}: {inputTokens} in + {outputTokens} out = ${cost}
+      - {model}: {inputTokens}in [+ {cacheWrite} cacheWrite] [+ {cacheRead} cacheRead] + {outputTokens}out = ${cost}
 ```
+
+Where `{cacheWrite}` and `{cacheRead}` are only shown when > 0, and are formatted abbreviated:
+- >= 1,000,000 → `3.5MM` (n / 1_000_000, one decimal place)
+- >= 1,000 → `320.0K` (n / 1_000, one decimal place)
+- < 1,000 → show as-is

@@ -78,6 +78,14 @@ On first run the skill saves your session ID to `.claude/settings.plugins.view-c
 **Session ID format:** Absolute paths with `/` replaced by `-`:
 - `/Users/noahlz/projects/claude-plugins` → `-Users-noahlz-projects-claude-plugins`
 
+## Per-Commit Cost Methodology
+
+Cost computation follows the same logic as `commit-with-costs` — see that skill's README for full details. Brief summary:
+
+- **Session isolation:** Session IDs are derived from the working directory path (`pwdToSessionId` in `lib/ccusage-operations.js`), so each git worktree is naturally isolated.
+- **Incremental anchoring:** In incremental mode, the cost window opens at the most recent commit with a matching `sessionId` in its `Claude-Cost-Metrics` trailer (`getLastCostCommitDate` in `lib/git-operations.js`).
+- **Subagent costs included:** ccusage's recursive glob picks up nested `subagents/agent-*.jsonl` files and deduplicates entries by `messageId:requestId`. See `lib/cost-computation.js#computeCosts`.
+
 ## Author
 
 [@noahlz](https://github.com/noahlz)
