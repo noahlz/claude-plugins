@@ -45,18 +45,21 @@ Activate this skill when:
 
 **MANDATORY:**
 
-- ⛔ NEVER run test or build commands directly via Bash — ALWAYS use `run-command.js` (see step 3)
-- ⛔ NEVER pipe or capture test output directly — ALL output MUST go to a file via `run-command.js`
-- Use memory to recall test commands for this project and avoid asking the user repeatedly
+- ⛔ NEVER run test or build commands directly — use `run-command.js` for ALL execution
+- ⛔ NEVER re-run tests to inspect output — Read the output file instead
+- ⛔ ALL diagnostic information comes from files, never from re-execution
+- Use memory to recall test commands for this project
 
 ## 1. Determine How to Build and Test
 
-Check CLAUDE.md, project files (`package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `Makefile`, etc.), and memory to determine:
+Check memory, CLAUDE.md, and project files (`package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `Makefile`, etc.) to determine:
 - The test command to run
 - Whether a separate build step is required (most projects don't need one)
 - The output format (TAP, pytest, go, jest, etc.)
 
-**If uncertain about the test command:** Use `AskUserQuestion` to ask the user. Save the answer to memory so you don't ask again.
+**Quiet/silent flags:** Use `--silent`, `--quiet`, or equivalent when the build tool writes structured results to files (e.g., Maven surefire XML reports, TAP reporters, Jest JSON output). Omit quiet flags when the tool's console output is the only source of test results.
+
+**If uncertain:** Use `AskUserQuestion`. Save the answer to memory.
 
 ## 2. Build (if needed)
 
@@ -93,14 +96,28 @@ Parse the JSON output. Store the `outputFile` path and `exitCode`.
 
 **STEP_DESCRIPTION**: "Analyzing test failures"
 
-Inspect the output file to determine the test format (TAP, pytest, go, jest, etc.), or infer from the project type.
+### 4a. Read the output file
 
-Run the failure parser:
+Use Read tool on the output file from step 3. Determine:
+- The failure type: test failures, compilation/module errors, or crashes
+- The test output format (TAP, pytest, go, jest, etc.)
+
+⛔ Do NOT skip this step. Do NOT re-run the test command.
+
+### 4b. Route by failure type
+
+**If compilation/module errors or crashes** (e.g., `MODULE_NOT_FOUND`, `SyntaxError`, segfault, OOM):
+→ DELEGATE_TO: `references/extract-build-errors.md`
+⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
+
+**If test failures** (assertions, expected vs actual, test names visible):
+→ Run the failure parser:
 ```
 node "<SKILL_BASE_DIR>/scripts/parse-test-failures.js" --file dist/test-results.log --format <format>
 ```
-
 (Use `--pattern "<regex>"` instead of `--format` if the built-in formats don't match.)
+
+→ **If parser returns 0 failures:** The format was wrong or output is not parseable. Fall back to the output file you already read in 4a — extract failure details manually.
 
 → DELEGATE_TO: `references/extract-test-failures.md`
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE

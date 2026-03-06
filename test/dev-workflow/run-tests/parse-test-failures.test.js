@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { parseTestFailures, FORMAT_REGISTRY } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/parse-test-failures.js';
+import { parseTestFailures, FORMAT_REGISTRY } from '../../../plugins/dev-workflow/skills/run-tests/scripts/parse-test-failures.js';
 import {
   createMockFs,
   parseTestsWithMock,
@@ -10,7 +10,7 @@ import {
   assertGlobResult
 } from './helpers.js';
 
-describe('run-and-fix-tests: parse-test-failures.js', () => {
+describe('run-tests: parse-test-failures.js', () => {
   describe('parsing', () => {
     it('parses test results and counts failures', () => {
       const resultsContent = `

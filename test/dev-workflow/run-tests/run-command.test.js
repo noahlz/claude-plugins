@@ -9,7 +9,7 @@ import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const SCRIPT = join(__dirname, '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/run-command.js');
+const SCRIPT = join(__dirname, '../../../plugins/dev-workflow/skills/run-tests/scripts/run-command.js');
 
 function runScript(args, env = {}) {
   return spawnSync('node', [SCRIPT, ...args], {
@@ -18,7 +18,7 @@ function runScript(args, env = {}) {
   });
 }
 
-describe('run-and-fix-tests: run-command.js', () => {
+describe('run-tests: run-command.js', () => {
   let testEnv;
 
   beforeEach(() => { testEnv = setupTestEnv(); });

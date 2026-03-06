@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
-import { parseBuildErrors } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/parse-build-errors.js';
-import { parseTestFailures } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/parse-test-failures.js';
+import { parseBuildErrors } from '../../../plugins/dev-workflow/skills/run-tests/scripts/parse-build-errors.js';
+import { parseTestFailures } from '../../../plugins/dev-workflow/skills/run-tests/scripts/parse-test-failures.js';
 
 // Re-export generic helpers for convenience
 export { setupTestEnv, teardownTestEnv };

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { parseBuildErrors, FORMAT_REGISTRY } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/parse-build-errors.js';
+import { parseBuildErrors, FORMAT_REGISTRY } from '../../../plugins/dev-workflow/skills/run-tests/scripts/parse-build-errors.js';
 import {
   createMockFs,
   parseBuildWithMock,
@@ -8,7 +8,7 @@ import {
   assertErrorDetails
 } from './helpers.js';
 
-describe('run-and-fix-tests: parse-build-errors.js', () => {
+describe('run-tests: parse-build-errors.js', () => {
   describe('parsing', () => {
     it('parses build log and extracts errors', () => {
       const logContent = `
