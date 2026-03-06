@@ -1,6 +1,6 @@
-# Testing Methodology: run-and-fix-tests
+# Testing Methodology: run-tests
 
-Tips on writing and running tests for the run-and-fix-tests script suite:
+Tips on writing and running tests for the run-tests script suite:
 
 ## Test Helpers
 

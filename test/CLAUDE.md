@@ -14,11 +14,8 @@
 test/
 ├── lib/                        # Shared test utilities
 ├── dev-workflow/
-│   ├── run-and-fix-tests/
-│   │   ├── CLAUDE.md           # Suite-specific instructions
-│   │   └── fixtures/
-│   │       ├── configs/            # Configuration fixtures
-│   │       └── project-templates/  # Project structure fixtures
+│   ├── run-tests/
+│   │   └── CLAUDE.md           # Suite-specific instructions
 │   └── commit-with-costs/
 │       └── CLAUDE.md           # Suite-specific instructions
 ```
@@ -68,7 +65,7 @@ See [`commit-workflow.unit.test.js`](./dev-workflow/commit-with-costs/commit-wor
 Create custom helpers to encapsulate complex assertions and reduce test duplication.
 
 **Examples:**
-- [`run-and-fix-tests/helpers.js`](./dev-workflow/run-and-fix-tests/helpers.js) functions: `assertParserResult()`, `assertErrorDetails()`, `assertFailureDetails()`
+- [`run-tests/helpers.js`](./dev-workflow/run-tests/helpers.js) functions: `assertParserResult()`, `assertErrorDetails()`, `assertFailureDetails()`
 - [`commit-with-costs/helpers.js`](./dev-workflow/commit-with-costs/helpers.js) functions: `assertResultStatus()`, `assertCommitMessage()`
 
 ### Wrapper Functions
@@ -76,7 +73,7 @@ Create custom helpers to encapsulate complex assertions and reduce test duplicat
 Reduce boilerplate by wrapping common test setup patterns.
 
 **Examples:**
-- [`run-and-fix-tests/helpers.js`](./dev-workflow/run-and-fix-tests/helpers.js) functions: `parseBuildWithMock()`, `parseTestsWithMock()`, `parseTestsWithGlob()`
+- [`run-tests/helpers.js`](./dev-workflow/run-tests/helpers.js) functions: `parseBuildWithMock()`, `parseTestsWithMock()`, `parseTestsWithGlob()`
 - [`commit-with-costs/helpers.js`](./dev-workflow/commit-with-costs/helpers.js) functions: `execCommitWorkflow()`
 
 ## Test Environment Lifecycle
@@ -87,7 +84,7 @@ Reduce boilerplate by wrapping common test setup patterns.
 - `teardownTestEnv()` - Removes temp directory recursively
 - Always use in `beforeEach()` / `afterEach()`
 
-**Example:** See any test file's structure, e.g. [`parse-build-errors.test.js`](./dev-workflow/run-and-fix-tests/parse-build-errors.test.js)
+**Example:** See any test file's structure, e.g. [`parse-build-errors.test.js`](./dev-workflow/run-tests/parse-build-errors.test.js)
 
 ## Troubleshooting
 

@@ -27,7 +27,7 @@ claude plugin install dev-workflow@noahlz.github.io
 
 | Skill | Description | Slash Command | Documentation |
 |-------|-------------|---------------|---------------|
-| [`run-and-fix-tests`](./plugins/dev-workflow/skills/run-and-fix-tests/SKILL.md) | Run tests with clean output and steps through fixing failures, using a plan created by a sub-agent if necessary. | `/run-and-fix-tests` | [README.md](./plugins/dev-workflow/skills/run-and-fix-tests/README.md) |
+| [`run-tests`](./plugins/dev-workflow/skills/run-tests/SKILL.md) | Run tests, analyze failures, and propose fixes via sub-agents. Infers test commands from project files without requiring configuration. | `/run-tests` | [README.md](./plugins/dev-workflow/skills/run-tests/README.md) |
 | [`commit-with-costs`](./plugins/dev-workflow/skills/commit-with-costs/SKILL.md) | Create git commits with Claude Code attribution and session cost metrics embedded in commit footers. | `/commit-with-costs` | [README.md](./plugins/dev-workflow/skills/commit-with-costs/README.md) |
 | [`draft-commit-message`](./plugins/dev-workflow/skills/draft-commit-message/SKILL.md) | Draft a commit message from staged changes without committing. | `/draft-commit-message` | [README.md](./plugins/dev-workflow/skills/draft-commit-message/README.md) |
 | [`view-cost-metrics`](./plugins/dev-workflow/skills/view-cost-metrics/SKILL.md) | Display current session cost metrics without creating a commit. | `/view-cost-metrics` | [README.md](./plugins/dev-workflow/skills/view-cost-metrics/README.md) |
@@ -36,8 +36,8 @@ claude plugin install dev-workflow@noahlz.github.io
 
 | Agent | Description |
 |-------|-------------|
-| [`broken-build-analyzer`](./plugins/dev-workflow/agents/broken-build-analyzer.md) | Analyzes build/compilation failures and provides diagnosis suitable for creating a plan to fix the build. Used by `run-and-fix-tests`. |
-| [`failed-test-analyzer`](./plugins/dev-workflow/agents/failed-test-analyzer.md) | Analyzes test failures and provides diagnosis suitable for creating a plan to fix the tests. Used by `run-and-fix-tests`. |
+| [`broken-build-analyzer`](./plugins/dev-workflow/agents/broken-build-analyzer.md) | Analyzes build/compilation failures and provides diagnosis suitable for creating a plan to fix the build. Used by `run-tests`. |
+| [`failed-test-analyzer`](./plugins/dev-workflow/agents/failed-test-analyzer.md) | Analyzes test failures and provides diagnosis suitable for creating a plan to fix the tests. Used by `run-tests`. |
 | [`react-code-reviewer`](./plugins/dev-workflow/agents/react-code-reviewer.md) | Reviews React/TypeScript code changes for quality, maintainability, and best practices. Reports findings by priority with concrete fixes. |
 | [`test-quality-reviewer`](./plugins/dev-workflow/agents/test-quality-reviewer.md) | Reviews written or modified tests for assertion quality, mock validity, and clean test structure. Reports findings by severity. |
 
@@ -82,7 +82,7 @@ Skills will halt and display an error if run on an older version.
 
 Scripts used by skills are tested using Node.js with the native `node:test` module.
 
-Run tests with this plugin's `dev-workflow:run-and-fix-tests` skill ("eat your own dogfood") or:
+Run tests with this plugin's `dev-workflow:run-tests` skill ("eat your own dogfood") or:
 
 ```bash
 npm test
