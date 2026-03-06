@@ -71,5 +71,11 @@ If you need to add new or update existing tests, see: [test/CLAUDE.md](./test/CL
 
 ### Running Tests
 
-**ALWAYS** use the `dev-workflow:run-tests` skill to run tests, such as after making changes to Node / JavaScript code. 
+**ALWAYS** use the `dev-workflow:run-tests` skill to run tests, such as after making changes to Node / JavaScript code.
+
+**Test output:** The test runner writes two formats simultaneously:
+- Spec (human-readable): captured by `run-command.js` to `dist/test-results.log`
+- TAP (machine-parseable): written directly to `dist/test-results.tap`
+
+**For failure analysis, use `dist/test-results.tap`** — not `dist/test-results.log`.
 

@@ -1,10 +1,8 @@
-# Instructions: Extract Build Errors
-
-Follow these instructions to extract errors from build logs and delegate to the analyzer agent.
+# Extract Build Errors
 
 ## Procedure
 
-→ Inspect the build log file to determine the build tool format (maven, gradle, tsc, gcc, cargo, go, generic).
+→ Read the build log file. Determine the build tool format (maven, gradle, tsc, gcc, cargo, go, generic).
 
 → Run the build error parser:
 ```

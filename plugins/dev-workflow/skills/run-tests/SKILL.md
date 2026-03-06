@@ -98,9 +98,14 @@ Parse the JSON output. Store the `outputFile` path and `exitCode`.
 
 ### 4a. Read the output file
 
-Use Read tool on the output file from step 3. Determine:
-- The failure type: test failures, compilation/module errors, or crashes
-- The test output format (TAP, pytest, go, jest, etc.)
+Check CLAUDE.md and memory for a project-specific structured results file (e.g., `dist/test-results.tap`, `target/surefire-reports/`, `test-results.json`).
+
+- **If found:** Read that file.
+- **Otherwise:** Read the output file from step 3 (`dist/test-results.log`).
+
+Determine:
+- Failure type: test failures, compilation/module errors, or crashes
+- Output format (TAP, pytest, go, jest, etc.)
 
 ⛔ Do NOT skip this step. Do NOT re-run the test command.
 
@@ -117,7 +122,7 @@ node "<SKILL_BASE_DIR>/scripts/parse-test-failures.js" --file dist/test-results.
 ```
 (Use `--pattern "<regex>"` instead of `--format` if the built-in formats don't match.)
 
-→ **If parser returns 0 failures:** The format was wrong or output is not parseable. Fall back to the output file you already read in 4a — extract failure details manually.
+→ **If parser returns 0 failures:** Fall back to the output file read in 4a — extract failure details manually.
 
 → DELEGATE_TO: `references/extract-test-failures.md`
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE

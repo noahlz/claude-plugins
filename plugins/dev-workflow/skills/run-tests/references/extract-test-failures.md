@@ -1,10 +1,8 @@
-# Instructions: Extract Test Failures
-
-Follow these instructions to extract failure information from test results and delegate to the analyzer agent.
+# Extract Test Failures
 
 ## Procedure
 
-→ You should already have run `parse-test-failures.js` before entering this reference. Use its JSON output.
+→ Use the JSON output from `parse-test-failures.js` (run in step 4b).
 
 → Check the JSON output:
 
@@ -13,8 +11,7 @@ Follow these instructions to extract failure information from test results and d
   - → Return to skill workflow with "no failures" indication
 
 → If `totalFailures` = 0 AND test command exit code was non-zero:
-  - ⚠️ **Format mismatch detected**: parser found 0 failures but tests exited with a failure code
-  - → Warn user: "Parser found 0 failures but exit code indicates test failures. The output format may not match the pattern."
+  - → Warn user: "Parser found 0 failures but exit code indicates failures. Output format may not match."
   - → If `warning` field is present in JSON output, display it to the user
   - → Read the raw output file using the Read tool
   - → Invoke the `failed-test-analyzer` agent, passing it:
