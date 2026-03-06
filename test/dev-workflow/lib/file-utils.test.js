@@ -1,13 +1,11 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 import {
   readFileSafe,
-  compilePattern,
-  copyFile,
-  ensureClaudeDir
+  compilePattern
 } from '../../../plugins/dev-workflow/lib/file-utils.js';
 
 describe('lib: file-utils.js', () => {
@@ -73,51 +71,6 @@ describe('lib: file-utils.js', () => {
         () => compilePattern('[invalid'),
         /Invalid regex pattern "\[invalid"/
       );
-    });
-  });
-
-  describe('copyFile', () => {
-    it('copies file to destination', () => {
-      const src = join(testEnv.tmpDir, 'src.txt');
-      const dest = join(testEnv.tmpDir, 'dest.txt');
-      writeFileSync(src, 'content');
-
-      copyFile(src, dest);
-
-      assert.ok(existsSync(dest));
-    });
-
-    it('creates destination directory when it does not exist', () => {
-      const src = join(testEnv.tmpDir, 'src.txt');
-      const dest = join(testEnv.tmpDir, 'newdir', 'nested', 'dest.txt');
-      writeFileSync(src, 'content');
-
-      copyFile(src, dest);
-
-      assert.ok(existsSync(dest), 'File should exist in newly created directory');
-    });
-  });
-
-  describe('ensureClaudeDir', () => {
-    it('creates .claude dir when it does not exist', () => {
-      const baseDir = join(testEnv.tmpDir, 'newbase');
-      mkdirSync(baseDir, { recursive: true });
-
-      const claudeDir = ensureClaudeDir(baseDir);
-
-      assert.ok(existsSync(claudeDir), '.claude dir should be created');
-    });
-
-    it('returns path to .claude dir', () => {
-      const claudeDir = ensureClaudeDir(testEnv.tmpDir);
-
-      assert.ok(claudeDir.endsWith('.claude'), 'Should return path ending in .claude');
-      assert.ok(existsSync(claudeDir));
-    });
-
-    it('does not fail when .claude dir already exists', () => {
-      // setupTestEnv already creates .claude, so calling again should be idempotent
-      assert.doesNotThrow(() => ensureClaudeDir(testEnv.tmpDir));
     });
   });
 });

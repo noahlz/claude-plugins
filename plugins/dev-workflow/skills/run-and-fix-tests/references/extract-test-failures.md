@@ -1,44 +1,37 @@
 # Instructions: Extract Test Failures
 
-Follow these instructions to extract failure information from test results:
+Follow these instructions to extract failure information from test results and delegate to the analyzer agent.
 
 ## Procedure
 
-→ Execute test failure parsing script:
-```bash
-node "{{SKILL_BASE_DIR}}/scripts/parse-test-failures.js"
-```
+→ You should already have run `parse-test-failures.js` before entering this reference. Use its JSON output.
 
-→ Check exit code:
+→ Check the JSON output:
 
-→ If exit code = 0 (success):
-  - → Parse JSON output from script execution
-  - → Extract `totalFailures` count and `warning` field (if present)
+→ If `totalFailures` = 0 AND test command exit code was 0:
+  - → Display to user: "All tests passed"
+  - → Return to skill workflow with "no failures" indication
 
-  - → If `totalFailures` = 0 AND test command exit code (from step 4) was 0:
-    - → Display to user: "All tests passed"
-    - → Return to skill workflow with "no failures" indication
+→ If `totalFailures` = 0 AND test command exit code was non-zero:
+  - ⚠️ **Format mismatch detected**: parser found 0 failures but tests exited with a failure code
+  - → Warn user: "Parser found 0 failures but exit code indicates test failures. The output format may not match the pattern."
+  - → If `warning` field is present in JSON output, display it to the user
+  - → Read the raw output file using the Read tool
+  - → Invoke the `failed-test-analyzer` agent, passing it:
+    1. Raw output file contents
+    2. The output file path
+  - → Receive analysis from the agent
+  - → Resume workflow with agent analysis
 
-  - → If `totalFailures` = 0 AND test command exit code (from step 4) was non-zero:
-    - ⚠️ **Format mismatch detected**: parser found 0 failures but tests exited with a failure code
-    - → Warn user: "Parser found 0 failures but exit code indicates test failures. The output format may not match the configured errorPattern."
-    - → If `warning` field is present in JSON output, display it to the user
-    - → Read the raw results file at `config.test.all.resultsPath` using the Read tool
-    - → Invoke the `failed-test-analyzer` agent, passing it TWO inputs:
-      1. Raw results file contents
-      2. Project configuration JSON (from step 2 of skill workflow)
-    - → Receive structured JSON analysis from the agent
-    - → Resume workflow with agent analysis
+→ If `totalFailures` > 0:
+  - → Display count to user: "Found [totalFailures] test failures"
+  - → Invoke the `failed-test-analyzer` agent, passing it:
+    1. Pre-parsed failures JSON (script output)
+    2. The output file path (for reading more context if needed)
+  - → Receive analysis from the agent
+  - → Resume workflow with agent analysis
 
-  - → If `totalFailures` > 0:
-    - → Display count to user: "Found [totalFailures] test failures"
-    - → Invoke the `failed-test-analyzer` agent, passing it TWO inputs:
-      1. Pre-parsed failures JSON (script output)
-      2. Project configuration JSON (from step 2 of skill workflow)
-    - → Receive structured JSON analysis from the agent
-    - → Resume workflow with agent analysis
-
-→ If exit code ≠ 0 (error):
+→ If `parse-test-failures.js` exited non-zero:
   - → Display error message to user
-  - → Detect the issue (missing results file, invalid config, etc.) and recover or halt
+  - → Detect the issue (missing output file, invalid pattern, etc.) and recover or halt
   - → Resume skill workflow with error context

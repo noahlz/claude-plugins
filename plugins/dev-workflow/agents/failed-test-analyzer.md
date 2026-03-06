@@ -12,7 +12,7 @@ Your parent agent has run tests for the current project, and one or more of the 
 
 ## Input Data
 
-You receive two JSON structures from your parent agent:
+You receive two inputs from your parent agent:
 
 ### 1. Pre-Parsed Test Failures JSON
 
@@ -38,45 +38,17 @@ The parent agent runs `parse-test-failures.js` to extract test failures into a s
 
 **IF YOU DID NOT RECEIVE ERROR DETAILS AS JSON DATA, EXIT IMMEDIATELY INFORMING THE PARENT AGENT WHY YOU HAD TO STOP**
 
-### 2. Project Build Configuration JSON
+### 2. Test Output File Path
 
-The parent agent passes the full project configuration loaded from `.claude/settings.plugins.run-and-fix-tests.json`.
+The parent agent passes the path to the raw test output file (captured by `run-command.js`).
 
-Example JSON:
-```json
-{
-  "test": {
-    "all": {
-      "command": "npm test",
-      "resultsPath": "dist/test-results.tap",
-      "errorPattern": "...",
-      "nativeOutputSupport": false
-    }
-  },
-  "skipBuild": false,
-  "logFile": "dist/test.log"
-}
-```
-
-**IF YOU DID NOT RECEIVE BUILD CONFIGURATION AS JSON DATA, EXIT IMMEDIATELY INFORMING THE PARENT AGENT WHY YOU HAD TO STOP**
-
-## Test Configuration
-
-You receive the project configuration as JSON. Access test information as:
-- `config.test.all.command` - the test command that was executed
-- `config.test.all.resultsPath` - where to find the test failures/results
-- `config.test.all.errorPattern` - regex pattern for extracting test failures
-- `config.test.all.nativeOutputSupport` - whether tool has native output support
-- `config.skipBuild` - whether build was skipped (true if test command identical to build command)
-- `config.logFile` (optional) - optional consolidated log file for all test output
+**IF YOU DID NOT RECEIVE THE OUTPUT FILE PATH, EXIT IMMEDIATELY INFORMING THE PARENT AGENT WHY YOU HAD TO STOP**
 
 ## Analysis Methodology
 
-Start your analysis with the pre-parsed `failures[]` array provided by the parent agent. The `errorPattern` regex has already been applied to extract these failures.
+Start your analysis with the pre-parsed `failures[]` array provided by the parent agent. The pattern has already been applied to extract these failures.
 
-If needed during your analysis, you may read additional context from:
-- `config.test.all.resultsPath` - the full test results file for more details
-- `config.logFile` - optional consolidated log file with all test output
+If needed during your analysis, you may read additional context from the raw test output file provided by the parent agent.
 
 During your analysis you consider the following:
 - Test failure messages from the pre-parsed failures

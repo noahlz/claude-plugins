@@ -1,67 +1,10 @@
-import { writeFileSync, mkdirSync, cpSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { strict as assert } from 'node:assert';
-import { setupTestEnv, teardownTestEnv, readFixture } from '../../lib/helpers.js';
+import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 import { parseBuildErrors } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/parse-build-errors.js';
 import { parseTestFailures } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/parse-test-failures.js';
-import { loadConfig } from '../../../plugins/dev-workflow/skills/run-and-fix-tests/scripts/load-config.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = join(dirname(__filename), '../..');  // test/
-const TESTS_ROOT = __dirname;
-const PLUGIN_ROOT = join(dirname(TESTS_ROOT), 'plugins');
 
 // Re-export generic helpers for convenience
-export { setupTestEnv, teardownTestEnv, readFixture };
-
-/**
- * Setup test environment with plugin-specific paths
- * @param {string} pluginName - Plugin name (e.g., 'dev-workflow')
- * @returns {Object} Test environment with pluginRoot and tmpDir
- */
-export function setupPluginTestEnv(pluginName) {
-  const env = setupTestEnv();
-  return {
-    ...env,
-    pluginRoot: join(PLUGIN_ROOT, pluginName)
-  };
-}
-
-/**
- * Load a config fixture from run-and-fix-tests and write to test environment
- * @param {Object} testEnv - Test environment from setupTestEnv
- * @param {string} fixtureName - Fixture name (e.g., 'configs/single-build-npm.json')
- * @param {Function} modifyFn - Optional function to modify config before writing
- * @returns {Object} The loaded (and possibly modified) config object
- */
-export function loadConfigFixture(testEnv, fixtureName, modifyFn) {
-  const fixtureData = readFixture('dev-workflow/run-and-fix-tests', fixtureName);
-  let config = JSON.parse(fixtureData);
-
-  if (modifyFn) {
-    config = modifyFn(config);
-  }
-
-  const configDir = join(testEnv.tmpDir, '.claude');
-  mkdirSync(configDir, { recursive: true });
-  writeFileSync(
-    join(configDir, 'settings.plugins.run-and-fix-tests.json'),
-    JSON.stringify(config)
-  );
-
-  return config;
-}
-
-/**
- * Copy a project template from run-and-fix-tests fixtures to the test environment
- * @param {Object} testEnv - Test environment from setupTestEnv
- * @param {string} templateName - Template directory name
- */
-export function setupProjectTemplate(testEnv, templateName) {
-  const templatePath = join(TESTS_ROOT, 'dev-workflow', 'run-and-fix-tests', 'fixtures', 'project-templates', templateName);
-  cpSync(templatePath, testEnv.tmpDir, { recursive: true });
-}
+export { setupTestEnv, teardownTestEnv };
 
 /**
  * Create mock fs module for testing
@@ -119,60 +62,6 @@ export function createMockGlobDeps(files) {
         .filter(name => regex.test(name))
         .map(name => `${dirPath}/${name}`);
     }
-  };
-}
-
-/**
- * Create a tool config object for testing
- * @param {string} toolName - Tool name (e.g., 'npm', 'maven', 'go')
- * @param {Object} overrides - Optional overrides for config properties
- * @returns {Object} Tool config object
- */
-export function createToolConfig(toolName, overrides = {}) {
-  const defaultConfigs = {
-    npm: {
-      tool: 'npm',
-      location: '(project root)',
-      configFile: 'package.json'
-    },
-    maven: {
-      tool: 'maven',
-      location: '(project root)',
-      configFile: 'pom.xml'
-    },
-    gradle: {
-      tool: 'gradle',
-      location: '(project root)',
-      configFile: 'build.gradle'
-    },
-    go: {
-      tool: 'go',
-      location: '(project root)',
-      configFile: 'go.mod'
-    }
-  };
-
-  const baseConfig = defaultConfigs[toolName] || {
-    tool: toolName,
-    location: '(project root)',
-    configFile: `${toolName}.config`
-  };
-
-  // Load fixture config for npm and maven
-  let config = null;
-  if (toolName === 'npm' || toolName === 'maven') {
-    try {
-      const fixtureData = readFixture('dev-workflow/run-and-fix-tests', 'configs/single-build-npm.json');
-      config = JSON.parse(fixtureData);
-    } catch (e) {
-      config = {};
-    }
-  }
-
-  return {
-    ...baseConfig,
-    config,
-    ...overrides
   };
 }
 
@@ -275,105 +164,35 @@ export function assertGlobResult(result, expectedFileCount, expectedTotalFailure
 }
 
 /**
- * Run parseBuildErrors with standard pattern: config + mock fs + parse
- * @param {Object} configOverrides - Config overrides for build property
+ * Run parseBuildErrors with mock fs
+ * @param {string} pattern - Error pattern
  * @param {string} logContent - Log file content
  * @returns {Object} Parser result
  */
-export function parseBuildWithMock(configOverrides, logContent) {
-  const config = {
-    build: {
-      logFile: 'build.log',
-      errorPattern: 'error',
-      ...configOverrides
-    }
-  };
-
+export function parseBuildWithMock(pattern, logContent) {
   const mockFs = createMockFs(logContent);
-  return parseBuildErrors(config, { deps: { fs: mockFs } });
+  return parseBuildErrors('build.log', pattern, { deps: { fs: mockFs } });
 }
 
 /**
- * Run parseTestFailures with standard pattern: config + mock fs + parse
- * @param {Object} configOverrides - Config overrides for test.all property
+ * Run parseTestFailures with mock fs
+ * @param {string} pattern - Error pattern
  * @param {string} resultsContent - Results file content
  * @returns {Object} Parser result
  */
-export function parseTestsWithMock(configOverrides, resultsContent) {
-  const config = {
-    test: {
-      all: {
-        resultsPath: 'results.tap',
-        errorPattern: '^not ok',
-        ...configOverrides
-      }
-    }
-  };
-
+export function parseTestsWithMock(pattern, resultsContent) {
   const mockFs = createMockFs(resultsContent);
-  return parseTestFailures(config, { deps: { fs: mockFs } });
+  return parseTestFailures('results.tap', pattern, { deps: { fs: mockFs } });
 }
 
 /**
- * Run parseTestFailures in glob mode
- * @param {Object} configOverrides - Config overrides for test.all property
+ * Run parseTestFailures in glob mode with mock dependencies
+ * @param {string} filePath - Glob pattern path
+ * @param {string} pattern - Error pattern
  * @param {Object<string, string>} files - Map of filename to content
  * @returns {Object} Parser result
  */
-export function parseTestsWithGlob(configOverrides, files) {
-  const config = {
-    test: {
-      all: {
-        resultsPath: 'target/surefire-reports/TEST-*.xml',
-        errorPattern: '<failure',
-        ...configOverrides
-      }
-    }
-  };
-
+export function parseTestsWithGlob(filePath, pattern, files) {
   const mockDeps = createMockGlobDeps(files);
-  return parseTestFailures(config, { deps: mockDeps });
-}
-
-// ============================================================================
-// Config Test Helpers
-// ============================================================================
-
-/**
- * Load config fixture and assert on result
- * @param {Object} testEnv - Test environment
- * @param {string} fixtureName - Fixture name
- * @param {Function} modifyFn - Optional config modifier
- * @param {Function} assertFn - Custom assertion function
- * @returns {Object} loadConfig result
- */
-export function loadAndAssertConfig(testEnv, fixtureName, modifyFn, assertFn) {
-  loadConfigFixture(testEnv, fixtureName, modifyFn);
-  const result = loadConfig({ baseDir: testEnv.tmpDir });
-
-  if (assertFn) {
-    assertFn(result);
-  }
-
-  return result;
-}
-
-/**
- * Assert config loaded without errors
- * @param {Object} result - loadConfig result
- * @param {string} message - Optional custom message
- */
-export function assertNoConfigErrors(result, message = 'Should have no errors') {
-  assert.equal(result.errors.length, 0, message);
-  assert.ok(result.resolved, 'Should have resolved config');
-}
-
-/**
- * Assert config has validation errors
- * @param {Object} result - loadConfig result
- * @param {RegExp} errorPattern - Pattern to match in error message
- */
-export function assertConfigError(result, errorPattern) {
-  assert.ok(result.errors.length > 0, 'Should have validation errors');
-  assert.match(result.errors[0], errorPattern, 'Error should match expected pattern');
+  return parseTestFailures(filePath, pattern, { deps: mockDeps });
 }

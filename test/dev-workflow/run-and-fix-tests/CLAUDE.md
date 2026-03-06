@@ -2,20 +2,18 @@
 
 Tips on writing and running tests for the run-and-fix-tests script suite:
 
-## Fixtures
+## Test Helpers
 
-### Loading Fixtures
+Use helpers from [`./helpers.js`](./helpers.js):
+- `createMockFs(content)` — mock fs for parser unit tests
+- `createMockGlobDeps(files)` — mock deps for glob mode tests
+- `parseBuildWithMock(pattern, logContent)` — run parseBuildErrors with mock fs
+- `parseTestsWithMock(pattern, resultsContent)` — run parseTestFailures with mock fs
+- `parseTestsWithGlob(filePath, pattern, files)` — run parseTestFailures in glob mode
+- `assertParserResult`, `assertErrorDetails`, `assertFailureDetails`, `assertGlobResult` — assertion helpers
 
-Use `readFixture(pluginName, fixturePath)` from [`../../lib/helpers.js`](../../lib/helpers.js) to load test data.
+## Test Files
 
-### Modifying Fixtures
-
-Prefer inline modification over creating fixture variants.
-
-**Example:** See [`load-config.test.js`](./load-config.test.js) for example of `loadConfigFixture()` with inline modification.
-
-### Project Templates
-
-Use `setupProjectTemplate()` for tests requiring realistic project structures.
-
-**Example:** See [`detect-and-resolve.test.js`](./detect-and-resolve.test.js) for examples of tool detection tests.
+- `run-command.test.js` — integration tests for the command runner script
+- `parse-test-failures.test.js` — unit tests for the test failure parser
+- `parse-build-errors.test.js` — unit tests for the build error parser
