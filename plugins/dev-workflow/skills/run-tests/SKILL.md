@@ -31,7 +31,7 @@ Activate this skill when:
 
 ⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
 
-**Node.js Check**: !`node -e "process.exit(parseInt(process.version.slice(1)) >= 22 ? 0 : 1)" 2>/dev/null && echo "✓ Node.js $(node -v)" || echo "ERROR: Node.js 22+ required (found: $(node -v 2>/dev/null || echo 'not installed')). Install: https://nodejs.org/"`
+**Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
 
 ⛔ **HALT** if Node.js Check shows `ERROR`.
 

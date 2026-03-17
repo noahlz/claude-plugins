@@ -35,11 +35,11 @@ Follow the workflow steps EXACTLY.
 
 ⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
 
-**Node.js Check**: !`node -e "process.exit(parseInt(process.version.slice(1)) >= 22 ? 0 : 1)" 2>/dev/null && echo "✓ Node.js $(node -v)" || echo "ERROR: Node.js 22+ required (found: $(node -v 2>/dev/null || echo 'not installed')). Install: https://nodejs.org/"`
+**Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
 
 ⛔ **HALT** if Node.js Check shows `ERROR`.
 
-**Dependencies**: !`[ -d "${CLAUDE_SKILL_DIR}/../../node_modules" ] || (npm install --prefix "${CLAUDE_SKILL_DIR}/../.." --silent 2>&1 && echo "Plugin dependencies installed." || echo "WARNING: Failed to install plugin dependencies.")`
+**Dependencies**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-dependencies.js" "${CLAUDE_SKILL_DIR}/../.."`
 
 ## Workflow Rules & Guardrails
 
@@ -64,7 +64,7 @@ All script outputs return JSON. Extract fields and store in variables.
 
 **MODE**: Determine from `$ARGUMENTS`: if it contains "cumulative" or "cum" → `cumulative`; otherwise → `incremental` (default, also matches "incremental" or "inc")
 
-**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.view-cost-metrics.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
+**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.view-cost-metrics.json"`
 
 **Configuration Routing:**
 - If `SKILL_CONFIG` = `✓ Configuration found` → Proceed to Step 1a (Load Configuration)
