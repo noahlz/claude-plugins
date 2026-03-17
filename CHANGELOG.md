@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.6.1
+
+**Bug Fix**
+- Fixed: skills fail in new projects due to guardrail preventing ad-hoc ("ambiguous") Bash ! literals in skill files.
+
 # 0.6.0
 
 **Skills & Features**
