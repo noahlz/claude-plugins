@@ -44,15 +44,15 @@ Follow the workflow steps EXACTLY.
 
 ⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
 
-**Node.js Check**: !`node -e "process.exit(parseInt(process.version.slice(1)) >= 22 ? 0 : 1)" 2>/dev/null && echo "✓ Node.js $(node -v)" || echo "ERROR: Node.js 22+ required (found: $(node -v 2>/dev/null || echo 'not installed')). Install: https://nodejs.org/"`
+**Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
 
 ⛔ **HALT** if Node.js Check shows `ERROR`.
 
-**Git Instructions Check**: !`( [ "$CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS" = "1" ] || node -e "const fs=require('fs');const f=[process.env.HOME+'/.claude/settings.json','.claude/settings.json'];process.exit(f.some(p=>{try{return JSON.parse(fs.readFileSync(p,'utf8')).includeGitInstructions===false}catch(e){return false}})?0:1)" 2>/dev/null ) && echo "OK" || echo "WARNING: includeGitInstructions is not disabled. Built-in git instructions may conflict with this skill. Set includeGitInstructions: false in .claude/settings.json — see skill README for details."`
+**Git Instructions Check**: !`node "${CLAUDE_SKILL_DIR}/scripts/check-git-instructions.js"`
 
 → If the above check shows WARNING, display it to the user before proceeding.
 
-**Dependencies**: !`[ -d "${CLAUDE_SKILL_DIR}/../../node_modules" ] || (npm install --prefix "${CLAUDE_SKILL_DIR}/../.." --silent 2>&1 && echo "Plugin dependencies installed." || echo "WARNING: Failed to install plugin dependencies.")`
+**Dependencies**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-dependencies.js" "${CLAUDE_SKILL_DIR}/../.."`
 
 ## Workflow Rules & Guardrails
 
@@ -93,7 +93,7 @@ All script outputs return JSON. Extract fields and store in variables:
 
 **SKILL_NAME**: commit-with-costs
 
-**SKILL_CONFIG**: !`[ -f "./.claude/settings.plugins.commit-with-costs.json" ] && echo "✓ Configuration found" || echo "NOT_CONFIGURED"`
+**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.commit-with-costs.json"`
 
 **Configuration Routing:**
 - If `SKILL_CONFIG` = `✓ Configuration found` → Proceed to Step 1a (Load Configuration)
