@@ -126,13 +126,12 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
 → Use AskUserQuestion to ask user "Select a Claude Code session:" with options from first 4 sessions (each option label = sessionId).
 → Extract selected session ID from user response and store in `SELECTED_SESSION_ID` variable.
 
-→ Run Bash command to save selected session to config:
+→ Write config file:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" save-config "$(pwd)" "{{SELECTED_SESSION_ID}}"
+echo '{"sessionId":"{{SELECTED_SESSION_ID}}"}' > .claude/settings.plugins.commit-with-costs.json
 ```
 
-→ If save succeeds: Inform the user of the file location and continue to Step 2.
-→ If error occurs: Display error message to user and then **exit workflow immediately**.
+→ Inform the user of the file location and continue to Step 2.
 
 ## 2. Detect or Generate Commit Message
 

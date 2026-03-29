@@ -6,6 +6,7 @@ import { Readable } from 'stream';
 import * as git from '../../../lib/git-operations.js';
 import * as ccusage from '../../../lib/ccusage-operations.js';
 import { computeCosts, createDefaultDeps as createCostDeps } from '../../../lib/cost-computation.js';
+import { readSessionConfig } from '../../../lib/file-utils.js';
 
 
 /**
@@ -369,9 +370,20 @@ async function main() {
 
       case 'fetch-cost':
       case 'prepare': {
-        const baseDir = args[0] || '.';
-        const sessionId = args[1] || null;
-        outputFile = args[2];
+        const configIdx = args.indexOf('--config');
+        let baseDir, sessionId;
+        if (configIdx !== -1) {
+          // Read sessionId from config file (avoids passing hyphen-prefixed IDs as CLI args)
+          const config = readSessionConfig(args[configIdx + 1]);
+          sessionId = config.sessionId;
+          baseDir = process.cwd();
+        } else {
+          // Legacy: positional args for backwards compatibility
+          baseDir = args[0] || '.';
+          sessionId = args[1] || null;
+        }
+        const flagValues = new Set([configIdx].filter(i => i !== -1).flatMap(i => [i, i + 1]));
+        outputFile = args.find((a, i) => !flagValues.has(i) && (configIdx !== -1 || i >= 2));
         result = await prepare({ baseDir, sessionId, deps });
         break;
       }
@@ -385,12 +397,21 @@ async function main() {
       }
 
       case 'commit': {
+        const configIdx = args.indexOf('--config');
         const sessionIdIndex = args.indexOf('--session-id');
         const costsIndex = args.indexOf('--costs');
         const methodIndex = args.indexOf('--method');
         const sinceIndex = args.indexOf('--since');
 
-        const sessionId = sessionIdIndex !== -1 ? args[sessionIdIndex + 1] : null;
+        let sessionId;
+        if (configIdx !== -1) {
+          // Read sessionId from config file (avoids passing hyphen-prefixed IDs as CLI args)
+          const config = readSessionConfig(args[configIdx + 1]);
+          sessionId = config.sessionId;
+        } else {
+          sessionId = sessionIdIndex !== -1 ? args[sessionIdIndex + 1] : null;
+        }
+
         const costs = costsIndex !== -1 ? args[costsIndex + 1] : null;
         const method = methodIndex !== -1 ? args[methodIndex + 1] : 'cumulative';
         const since = sinceIndex !== -1 ? args[sinceIndex + 1] : null;

@@ -75,14 +75,8 @@ All script outputs return JSON. Extract fields and store in variables.
 
 ### 1a. Load existing configuration
 
-→ Execute using Bash tool:
-```bash
-cat .claude/settings.plugins.view-cost-metrics.json
-```
-
-→ Parse JSON output and extract `sessionId` field value
-→ Store as SESSION_ID for use in subsequent steps
-→ Proceed to Step 2
+→ Configuration exists. Proceed to Step 2.
+→ (The script reads the config file directly via `--config` flag.)
 
 ### 1b. Create new configuration
 
@@ -110,7 +104,7 @@ echo '{"sessionId":"{{SESSION_ID}}"}' > .claude/settings.plugins.view-cost-metri
 
 → Execute using Bash tool:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" fetch-cost "$(pwd)" "{{SESSION_ID}}" --mode {{MODE}}
+node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" fetch-cost --config .claude/settings.plugins.view-cost-metrics.json --mode {{MODE}}
 ```
 
 → Parse JSON output.

@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   setupTestEnv,
@@ -10,7 +10,21 @@ import {
   getPluginScriptPath,
   extractJsonFromOutput
 } from '../../lib/helpers.js';
-import { setupGitRepo } from './helpers.js';
+import { setupGitRepo, stageFile } from './helpers.js';
+
+/**
+ * Write a skill config file with the given sessionId into the test environment
+ * @param {Object} testEnv - Test environment from setupTestEnv()
+ * @param {string} sessionId - Session ID to write
+ * @returns {string} Absolute path to the config file
+ */
+function writeConfigFile(testEnv, sessionId) {
+  const claudeDir = join(testEnv.tmpDir, '.claude');
+  if (!existsSync(claudeDir)) mkdirSync(claudeDir, { recursive: true });
+  const configPath = join(claudeDir, 'settings.plugins.commit-with-costs.json');
+  writeFileSync(configPath, JSON.stringify({ sessionId }));
+  return configPath;
+}
 
 /** Test commit-workflow.js (commit-with-costs) against a temporary git repository. */
 describe('commit-with-costs: commit-workflow.js integration tests', () => {
@@ -127,6 +141,55 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         assert.ok(data.data.current_cost, 'Should have current_cost on success');
         assert.ok(Array.isArray(data.data.current_cost), 'current_cost should be array');
       }
+    });
+  });
+
+  describe("prepare action with --config flag", () => {
+    it('reads sessionId from config file instead of positional arg', () => {
+      const configPath = writeConfigFile(testEnv, '-Users-noahlz-projects-claude-plugins');
+      const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
+
+      const result = execNodeScript(scriptPath, {
+        args: ['prepare', '--config', configPath],
+        cwd: testEnv.tmpDir
+      });
+
+      const data = extractJsonFromOutput(result.stdout);
+      assert.ok(['success', 'error', 'invalid_costs'].includes(data.status), 'Should return valid status');
+      if (data.status === 'success') {
+        assert.equal(data.data.session_id, '-Users-noahlz-projects-claude-plugins');
+      }
+    });
+
+    it('returns error when config file does not exist', () => {
+      const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
+
+      const result = execNodeScript(scriptPath, {
+        args: ['prepare', '--config', join(testEnv.tmpDir, 'nonexistent.json')],
+        cwd: testEnv.tmpDir
+      });
+
+      const data = extractJsonFromOutput(result.stdout);
+      assert.equal(data.status, 'error', 'Should return error for missing config');
+      assert.ok(data.message.includes('skill config'), 'Error should mention skill config');
+    });
+
+    it('returns error when config file missing sessionId', () => {
+      const claudeDir = join(testEnv.tmpDir, '.claude');
+      if (!existsSync(claudeDir)) mkdirSync(claudeDir, { recursive: true });
+      const configPath = join(claudeDir, 'bad-config.json');
+      writeFileSync(configPath, JSON.stringify({ otherField: 'value' }));
+
+      const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
+
+      const result = execNodeScript(scriptPath, {
+        args: ['prepare', '--config', configPath],
+        cwd: testEnv.tmpDir
+      });
+
+      const data = extractJsonFromOutput(result.stdout);
+      assert.equal(data.status, 'error', 'Should return error for invalid config');
+      assert.ok(data.message.includes('sessionId'), 'Error should mention missing sessionId');
     });
   });
 
@@ -299,6 +362,56 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         // After filtering, should succeed (zero entries filtered before validation)
         assert.equal(data.status, 'success', 'Should succeed with mixed data after filtering');
         assert.ok(data.data.commit_sha, 'Should return commit SHA');
+      });
+    });
+
+    describe("--config flag", () => {
+      it('reads sessionId from config file instead of --session-id flag', () => {
+        stageFile(testEnv, 'test.txt');
+
+        const configPath = writeConfigFile(testEnv, 'config-session-id');
+        const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
+
+        const validMetrics = JSON.stringify([
+          { model: 'test-model', in: 100, out: 50, cost: 0.05 }
+        ]);
+
+        const result = execNodeScript(scriptPath, {
+          args: ['commit', '--config', configPath, '--costs', validMetrics],
+          cwd: testEnv.tmpDir,
+          input: 'Test commit with config'
+        });
+
+        const data = extractJsonFromOutput(result.stdout);
+        assert.equal(data.status, 'success', 'Should succeed with --config flag');
+        assert.ok(data.data.commit_sha, 'Should return commit SHA');
+
+        // Verify the trailer uses the sessionId from config
+        const gitLogResult = execGit(['log', '-1', '--format=%B'], { cwd: testEnv.tmpDir });
+        const trailerMatch = gitLogResult.stdout.match(/Claude-Cost-Metrics: (.+)/);
+        assert.ok(trailerMatch, 'Should have Claude-Cost-Metrics trailer');
+        const trailerObj = JSON.parse(trailerMatch[1]);
+        assert.equal(trailerObj.sessionId, 'config-session-id', 'Should use sessionId from config file');
+      });
+
+      it('returns error when config file does not exist', () => {
+        stageFile(testEnv, 'test.txt');
+
+        const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
+
+        const validMetrics = JSON.stringify([
+          { model: 'test-model', in: 100, out: 50, cost: 0.05 }
+        ]);
+
+        const result = execNodeScript(scriptPath, {
+          args: ['commit', '--config', join(testEnv.tmpDir, 'nonexistent.json'), '--costs', validMetrics],
+          cwd: testEnv.tmpDir,
+          input: 'Test commit'
+        });
+
+        const data = extractJsonFromOutput(result.stdout);
+        assert.equal(data.status, 'error', 'Should return error for missing config');
+        assert.ok(data.message.includes('skill config'), 'Error should mention skill config');
       });
     });
 

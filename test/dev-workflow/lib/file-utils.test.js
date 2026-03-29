@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 import {
   readFileSafe,
+  readSessionConfig,
   compilePattern
 } from '../../../plugins/dev-workflow/lib/file-utils.js';
 
@@ -49,6 +50,55 @@ describe('lib: file-utils.js', () => {
       assert.throws(
         () => readFileSafe(missingPath, { fs: mockFs }),
         /Failed to read file at/
+      );
+    });
+  });
+
+  describe('readSessionConfig', () => {
+    it('returns full parsed config object with sessionId', () => {
+      const configPath = join(testEnv.tmpDir, 'config.json');
+      writeFileSync(configPath, JSON.stringify({ sessionId: '-Users-test-project' }));
+
+      const config = readSessionConfig(configPath);
+      assert.deepStrictEqual(config, { sessionId: '-Users-test-project' });
+    });
+
+    it('throws when file does not exist', () => {
+      const missingPath = join(testEnv.tmpDir, 'missing-config.json');
+
+      assert.throws(
+        () => readSessionConfig(missingPath),
+        /Failed to read skill config at/
+      );
+    });
+
+    it('throws SyntaxError on invalid JSON', () => {
+      const configPath = join(testEnv.tmpDir, 'bad.json');
+      writeFileSync(configPath, 'not json');
+
+      assert.throws(
+        () => readSessionConfig(configPath),
+        { name: 'SyntaxError' }
+      );
+    });
+
+    it('throws when sessionId field is missing', () => {
+      const configPath = join(testEnv.tmpDir, 'empty-config.json');
+      writeFileSync(configPath, JSON.stringify({ otherField: 'value' }));
+
+      assert.throws(
+        () => readSessionConfig(configPath),
+        /missing sessionId field/
+      );
+    });
+
+    it('throws when sessionId is empty string', () => {
+      const configPath = join(testEnv.tmpDir, 'empty-id.json');
+      writeFileSync(configPath, JSON.stringify({ sessionId: '' }));
+
+      assert.throws(
+        () => readSessionConfig(configPath),
+        /missing sessionId field/
       );
     });
   });

@@ -11,7 +11,7 @@
 ## Execute Fetch Command
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare "$(pwd)" "{{SESSION_ID}}"
+node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare --config .claude/settings.plugins.commit-with-costs.json
 ```
 
 **NOTE:** If the above command fails, execute this script and try again:

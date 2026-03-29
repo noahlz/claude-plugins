@@ -12,7 +12,6 @@
 ## Execute Command
 
 **Value Replacements:**
-- `{{SESSION_ID}}`: Literal session ID from Step 5
 - `{{CURRENT_COST}}`: Literal JSON array from Step 5
 - `{{COST_METHOD}}`: Method from Step 5 ("inc" or "cum")
 - `{{COST_SINCE}}`: Since date from Step 5 (ISO date or empty string if null)
@@ -21,7 +20,7 @@
 
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" commit \
-  --session-id "{{SESSION_ID}}" \
+  --config .claude/settings.plugins.commit-with-costs.json \
   --costs "{{CURRENT_COST}}" \
   --method "{{COST_METHOD}}" \
   --since "{{COST_SINCE}}" \
