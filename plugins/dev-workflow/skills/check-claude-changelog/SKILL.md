@@ -17,6 +17,12 @@ Check for Claude Code updates relevant to the current project.
 
 **MANDATORY** only activate this skill when the user invokes it directly (`/check-claude-changelog`) OR asks about Claude Code updates.
 
+## Arguments
+
+Optional: `since <version>` — show changes since a specific version (e.g. `/check-claude-changelog since 2.1.50`).
+
+When no argument is provided, defaults to showing changes since the last git commit date.
+
 ---
 
 # Skill Context
@@ -47,6 +53,14 @@ All scripts return JSON with `status` ("success" or "error") and `data` or `mess
 
 # Workflow
 
+## 0. Parse Arguments
+
+Check if the user provided a `since <version>` argument (e.g. `since 2.1.50`). The version must match `\d+\.\d+\.\d+`.
+
+If a version argument is found: set `sinceVersion` to that value, skip Step 1 entirely, and proceed to Step 2.
+
+If no version argument: proceed to Step 1.
+
 ## 1. Get Last Commit Date
 
 **STEP_DESCRIPTION**: "Checking last commit date"
@@ -60,6 +74,14 @@ If no commits: default to 30 days ago. Note "No commits found — showing recent
 ## 2. Fetch Changelog
 
 **STEP_DESCRIPTION**: "Fetching Claude Code changelog"
+
+If `sinceVersion` is set:
+
+```bash
+node "${CLAUDE_SKILL_DIR}/scripts/fetch-changelog.js" --since-version "{{sinceVersion}}"
+```
+
+Otherwise:
 
 ```bash
 node "${CLAUDE_SKILL_DIR}/scripts/fetch-changelog.js" --since "{{last_commit_date}}"
@@ -104,7 +126,7 @@ Present a compact summary table followed by actionable suggestions.
 Format:
 
 ```
-## Summary of Changes to Claude Code since [date] (your latest commit for this project)
+## Summary of Changes to Claude Code since [version]
 
 Versions X.Y.Z – A.B.C
 

@@ -64,10 +64,10 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
   describe('success cases', () => {
     it('fetches version history and writes changelog to temp file', () => {
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': COMMITS_JSON,
         'commits/abc123': COMMIT_DETAIL_V2_1_87,
         'commits/def456': COMMIT_DETAIL_V2_1_88,
-        'CHANGELOG.md': RAW_CHANGELOG,
       }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
@@ -98,8 +98,8 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
       ]);
 
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': oldCommitsJson,
-        'CHANGELOG.md': RAW_CHANGELOG,
       }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
@@ -112,10 +112,10 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
 
     it('skips commits whose detail fetch fails and returns remaining versions', () => {
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': COMMITS_JSON,
         'commits/abc123': new Error('API rate limit exceeded'),
         'commits/def456': COMMIT_DETAIL_V2_1_88,
-        'CHANGELOG.md': RAW_CHANGELOG,
       }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
@@ -131,9 +131,9 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
       ]);
 
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': boundaryJson,
         'commits/bbb222': COMMIT_DETAIL_V2_1_87,
-        'CHANGELOG.md': RAW_CHANGELOG,
       }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
@@ -145,10 +145,10 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
 
     it('skips commits whose patch contains no +## version line', () => {
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': COMMITS_JSON,
         'commits/abc123': COMMIT_DETAIL_NO_VERSION,
         'commits/def456': COMMIT_DETAIL_NO_VERSION,
-        'CHANGELOG.md': RAW_CHANGELOG,
       }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
@@ -161,6 +161,7 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
   describe('error cases', () => {
     it('returns error when commits API fetch fails', () => {
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': new Error('curl: (6) Could not resolve host'),
       }, testEnv);
 
@@ -172,6 +173,7 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
 
     it('returns error when commits API returns empty array', () => {
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': '[]',
       }, testEnv);
 
@@ -183,10 +185,7 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
 
     it('returns error when raw changelog fetch fails', () => {
       const deps = createMockDeps({
-        'commits?path=CHANGELOG.md': COMMITS_JSON,
-        'commits/abc123': COMMIT_DETAIL_V2_1_87,
-        'commits/def456': COMMIT_DETAIL_V2_1_88,
-        'CHANGELOG.md': new Error('curl: (6) Could not resolve host'),
+        'raw.githubusercontent': new Error('curl: (6) Could not resolve host'),
       }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
@@ -206,10 +205,10 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
 
     it('returns empty versions when sinceDate is null (no commits pass filter)', () => {
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': COMMITS_JSON,
         'commits/abc123': COMMIT_DETAIL_V2_1_87,
         'commits/def456': COMMIT_DETAIL_V2_1_88,
-        'CHANGELOG.md': RAW_CHANGELOG,
       }, testEnv);
 
       const result = fetchChangelog(null, deps);
@@ -224,18 +223,130 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
       let capturedCmd = '';
 
       const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
         'commits?path=CHANGELOG.md': (cmd) => {
           capturedCmd = cmd;
           return COMMITS_JSON;
         },
         'commits/abc123': COMMIT_DETAIL_V2_1_87,
         'commits/def456': COMMIT_DETAIL_V2_1_88,
-        'CHANGELOG.md': RAW_CHANGELOG,
       }, testEnv);
 
-      fetchChangelog(SINCE_DATE, deps, { maxVersions: 25 });
+      const result = fetchChangelog(SINCE_DATE, deps, { maxVersions: 25 });
 
+      assert.equal(result.status, 'success');
       assert.match(capturedCmd, /per_page=25/);
+    });
+  });
+
+  describe('sinceVersion option', () => {
+    const MULTI_VERSION_CHANGELOG = [
+      '# Changelog',
+      '',
+      '## 2.1.90',
+      '',
+      'Latest changes.',
+      '',
+      '## 2.1.88',
+      '',
+      'Another entry.',
+      '',
+      '## 2.1.87',
+      '',
+      'Some content here.',
+      '',
+      '## 2.1.50',
+      '',
+      'Old content.',
+      '',
+    ].join('\n');
+
+    it('returns versions newer than sinceVersion, skipping commit API', () => {
+      const deps = createMockDeps({
+        'raw.githubusercontent': MULTI_VERSION_CHANGELOG,
+      }, testEnv);
+
+      const result = fetchChangelog(null, deps, { sinceVersion: '2.1.87' });
+
+      assert.equal(result.status, 'success');
+      assert.equal(result.data.versions.length, 2);
+      assert.equal(result.data.versions[0].version, '2.1.90');
+      assert.equal(result.data.versions[1].version, '2.1.88');
+      assert.equal(result.data.sinceVersion, '2.1.87');
+    });
+
+    it('returns empty versions when sinceVersion is latest', () => {
+      const deps = createMockDeps({
+        'raw.githubusercontent': MULTI_VERSION_CHANGELOG,
+      }, testEnv);
+
+      const result = fetchChangelog(null, deps, { sinceVersion: '2.1.90' });
+
+      assert.equal(result.status, 'success');
+      assert.deepEqual(result.data.versions, []);
+    });
+
+    it('returns all versions when sinceVersion predates all entries', () => {
+      const deps = createMockDeps({
+        'raw.githubusercontent': MULTI_VERSION_CHANGELOG,
+      }, testEnv);
+
+      const result = fetchChangelog(null, deps, { sinceVersion: '2.0.0' });
+
+      assert.equal(result.status, 'success');
+      assert.deepEqual(
+        result.data.versions.map(v => v.version),
+        ['2.1.90', '2.1.88', '2.1.87', '2.1.50']
+      );
+    });
+
+    it('sets date fields to null for version-based results', () => {
+      const deps = createMockDeps({
+        'raw.githubusercontent': MULTI_VERSION_CHANGELOG,
+      }, testEnv);
+
+      const result = fetchChangelog(null, deps, { sinceVersion: '2.1.87' });
+
+      assert.ok(result.data.versions.length > 0, 'expected non-empty versions for null-date check');
+      for (const v of result.data.versions) {
+        assert.equal(v.date, null);
+        assert.equal(v.dateShort, null);
+      }
+    });
+
+    it('writes changelog to temp file', () => {
+      const deps = createMockDeps({
+        'raw.githubusercontent': MULTI_VERSION_CHANGELOG,
+      }, testEnv);
+
+      const result = fetchChangelog(null, deps, { sinceVersion: '2.1.87' });
+
+      assert.ok(result.data.changelogFile.startsWith(testEnv.tmpDir));
+      assert.equal(deps.writtenContent, MULTI_VERSION_CHANGELOG);
+    });
+
+    it('returns error when changelog fetch fails', () => {
+      const deps = createMockDeps({
+        'raw.githubusercontent': new Error('curl: (6) Could not resolve host'),
+      }, testEnv);
+
+      const result = fetchChangelog(null, deps, { sinceVersion: '2.1.50' });
+
+      assert.equal(result.status, 'error');
+      assert.match(result.error, /Failed to fetch changelog/);
+    });
+
+    it('sets sinceVersion to null when not provided', () => {
+      const deps = createMockDeps({
+        'raw.githubusercontent': RAW_CHANGELOG,
+        'commits?path=CHANGELOG.md': COMMITS_JSON,
+        'commits/abc123': COMMIT_DETAIL_V2_1_87,
+        'commits/def456': COMMIT_DETAIL_V2_1_88,
+      }, testEnv);
+
+      const result = fetchChangelog(SINCE_DATE, deps);
+
+      assert.equal(result.data.sinceVersion, null);
     });
   });
 });
