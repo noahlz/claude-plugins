@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
+
+const API_BASE = 'https://api.github.com/repos/anthropics/claude-code';
+const RAW_BASE = 'https://raw.githubusercontent.com/anthropics/claude-code/main';
 
 export function createDefaultDeps() {
   return {
@@ -8,14 +14,16 @@ export function createDefaultDeps() {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: 30000
-    })
+    }),
+    writeFile: (path, content) => writeFileSync(path, content, 'utf8'),
+    tmpdir: () => tmpdir()
   };
 }
 
 /**
- * Fetch changelog version-date mappings via gh api and raw content via curl.
+ * Fetch changelog version-date mappings via GitHub REST API (curl) and raw content.
  * @param {string} sinceDate - ISO 8601 date string to filter versions after
- * @param {object} deps - Dependencies { exec }
+ * @param {object} deps - Dependencies { exec, writeFile, tmpdir }
  * @param {object} [options] - Options
  * @param {number} [options.maxVersions=10] - Max versions to fetch
  * @returns {{ status: string, data?: object, error?: string }}
@@ -26,37 +34,38 @@ export function fetchChangelog(sinceDate, deps, options = {}) {
   const { maxVersions = 10 } = options;
 
   try {
-    // Check gh CLI is available
+    // Get commit SHAs and dates for CHANGELOG.md
+    let commitsJson;
     try {
-      deps.exec('gh --version');
-    } catch {
-      return { status: 'error', error: 'gh CLI is required. Install from https://cli.github.com/' };
+      const raw = deps.exec(
+        `curl -sf "${API_BASE}/commits?path=CHANGELOG.md&per_page=${maxVersions}"`
+      );
+      commitsJson = JSON.parse(raw);
+    } catch (err) {
+      return { status: 'error', error: `Failed to fetch commits: ${err.message}` };
     }
 
-    // Get commit SHAs and dates for CHANGELOG.md in one call
-    const commitsRaw = deps.exec(
-      `gh api "repos/anthropics/claude-code/commits?path=CHANGELOG.md&per_page=${maxVersions}" --jq '.[] | [.sha, .commit.author.date] | @tsv'`
-    ).trim();
-
-    if (!commitsRaw) {
+    if (!Array.isArray(commitsJson) || commitsJson.length === 0) {
       return { status: 'error', error: 'No commits found for CHANGELOG.md' };
     }
 
-    const commits = commitsRaw.split('\n').map(line => {
-      const [sha, date] = line.split('\t');
-      return { sha, date };
-    });
+    const commits = commitsJson.map(c => ({
+      sha: c.sha,
+      date: c.commit.author.date
+    }));
 
     // Filter to commits after sinceDate
     const matching = commits.filter(c => c.date >= sinceDate);
 
-    // For each matching commit, extract the version from the patch
+    // For each matching commit, fetch the commit detail and extract version from patch
     const versions = [];
     for (const commit of matching) {
       try {
-        const patch = deps.exec(
-          `gh api "repos/anthropics/claude-code/commits/${commit.sha}" --jq '.files[0].patch'`
+        const raw = deps.exec(
+          `curl -sf "${API_BASE}/commits/${commit.sha}"`
         );
+        const detail = JSON.parse(raw);
+        const patch = detail.files?.[0]?.patch || '';
         const match = patch.match(/^\+## (\d+\.\d+\.\d+)/m);
         if (match) {
           versions.push({
@@ -66,26 +75,28 @@ export function fetchChangelog(sinceDate, deps, options = {}) {
           });
         }
       } catch {
-        // Skip commits where patch extraction fails
+        // Skip commits where fetch/parse fails
       }
     }
 
     // Sort newest-first
     versions.sort((a, b) => b.date.localeCompare(a.date));
 
-    // Fetch raw changelog content
-    let changelogRaw;
+    // Fetch raw changelog and write to temp file to avoid JSON truncation
+    let changelogFile;
     try {
-      changelogRaw = deps.exec(
-        'curl -sL https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md'
+      const changelogRaw = deps.exec(
+        `curl -sfL ${RAW_BASE}/CHANGELOG.md`
       );
+      changelogFile = join(deps.tmpdir(), `claude-changelog-${Date.now()}.md`);
+      deps.writeFile(changelogFile, changelogRaw);
     } catch (err) {
       return { status: 'error', error: `Failed to fetch changelog: ${err.message}` };
     }
 
     return {
       status: 'success',
-      data: { versions, changelogRaw }
+      data: { versions, changelogFile }
     };
   } catch (err) {
     return { status: 'error', error: err.message };
@@ -102,10 +113,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const maxVersions = maxIndex !== -1 ? parseInt(args[maxIndex + 1], 10) : 10;
 
   const result = fetchChangelog(sinceDate, createDefaultDeps(), { maxVersions });
-  // Truncate changelogRaw in CLI output to avoid flooding stdout
-  if (result.data?.changelogRaw) {
-    result.data.changelogRaw = result.data.changelogRaw.slice(0, 500) + '\n... (truncated)';
-  }
   console.log(JSON.stringify(result, null, 2));
 }
 /* node:coverage enable */

@@ -3,26 +3,36 @@ import { strict as assert } from 'node:assert';
 import { fetchChangelog } from '../../../plugins/dev-workflow/skills/check-claude-changelog/scripts/fetch-changelog.js';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 
-// All commit dates (March 15, 20) are after SINCE_DATE so they pass the filter
 const SINCE_DATE = '2026-03-01T00:00:00Z';
 
-const COMMITS_TSV = [
-  'abc123\t2026-03-15T10:00:00Z',
-  'def456\t2026-03-20T12:00:00Z',
-].join('\n');
+// Mock GitHub API responses as JSON strings (what curl returns)
+const COMMITS_JSON = JSON.stringify([
+  { sha: 'abc123', commit: { author: { date: '2026-03-15T10:00:00Z' } } },
+  { sha: 'def456', commit: { author: { date: '2026-03-20T12:00:00Z' } } },
+]);
 
-const PATCH_V2_1_87 = '+## 2.1.87\n+Some changelog text\n context line\n';
-const PATCH_V2_1_88 = '+## 2.1.88\n+Another changelog entry\n context line\n';
+const COMMIT_DETAIL_V2_1_87 = JSON.stringify({
+  files: [{ patch: '+## 2.1.87\n+Some changelog text\n context line\n' }]
+});
+
+const COMMIT_DETAIL_V2_1_88 = JSON.stringify({
+  files: [{ patch: '+## 2.1.88\n+Another changelog entry\n context line\n' }]
+});
+
+// Commit detail with no version in the patch
+const COMMIT_DETAIL_NO_VERSION = JSON.stringify({
+  files: [{ patch: ' context line\n-removed line\n' }]
+});
+
 const RAW_CHANGELOG = '# Changelog\n\n## 2.1.88\n\nAnother entry.\n\n## 2.1.87\n\nSome content here.\n';
 
 /**
  * Routes exec() calls to handler functions or values by substring matching.
- * Unlike the per-method mock factories in commit-with-costs/helpers.js, this
- * uses substring routing because fetch-changelog funnels all calls through a
- * single deps.exec(cmd) — the command string is the only dispatch surface.
- * If a handler is an Error, it is thrown. Functions receive the full command.
+ * Handlers that are Error instances are thrown. Functions receive the full command.
  */
-function createMockDeps(handlers) {
+function createMockDeps(handlers, testEnv) {
+  let writtenFile = null;
+  let writtenContent = null;
   return {
     exec: (cmd) => {
       for (const [pattern, handler] of Object.entries(handlers)) {
@@ -32,7 +42,11 @@ function createMockDeps(handlers) {
         }
       }
       throw new Error(`Unmocked command: ${cmd}`);
-    }
+    },
+    writeFile: (path, content) => { writtenFile = path; writtenContent = content; },
+    tmpdir: () => testEnv?.tmpDir ?? '/tmp',
+    get writtenFile() { return writtenFile; },
+    get writtenContent() { return writtenContent; },
   };
 }
 
@@ -48,14 +62,13 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
   });
 
   describe('success cases', () => {
-    it('fetches version history and raw changelog since a given date', () => {
+    it('fetches version history and writes changelog to temp file', () => {
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
-        'commits?path=CHANGELOG.md': COMMITS_TSV,
-        'commits/abc123': PATCH_V2_1_87,
-        'commits/def456': PATCH_V2_1_88,
-        'curl': RAW_CHANGELOG,
-      });
+        'commits?path=CHANGELOG.md': COMMITS_JSON,
+        'commits/abc123': COMMIT_DETAIL_V2_1_87,
+        'commits/def456': COMMIT_DETAIL_V2_1_88,
+        'CHANGELOG.md': RAW_CHANGELOG,
+      }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
@@ -72,36 +85,38 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
         date: '2026-03-15T10:00:00Z',
         dateShort: '2026-03-15'
       });
-      assert.equal(result.data.changelogRaw, RAW_CHANGELOG);
+      assert.ok(result.data.changelogFile.startsWith(testEnv.tmpDir),
+        `expected path under test tmpDir, got ${result.data.changelogFile}`);
+      assert.match(result.data.changelogFile, /claude-changelog-/);
+      assert.equal(deps.writtenContent, RAW_CHANGELOG);
     });
 
     it('returns empty versions array when all commits predate sinceDate', () => {
-      const oldCommitsTsv = [
-        'aaa111\t2026-02-01T10:00:00Z',
-        'bbb222\t2026-02-15T10:00:00Z',
-      ].join('\n');
+      const oldCommitsJson = JSON.stringify([
+        { sha: 'aaa111', commit: { author: { date: '2026-02-01T10:00:00Z' } } },
+        { sha: 'bbb222', commit: { author: { date: '2026-02-15T10:00:00Z' } } },
+      ]);
 
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
-        'commits?path=CHANGELOG.md': oldCommitsTsv,
-        'curl': RAW_CHANGELOG,
-      });
+        'commits?path=CHANGELOG.md': oldCommitsJson,
+        'CHANGELOG.md': RAW_CHANGELOG,
+      }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
       assert.equal(result.status, 'success');
       assert.deepEqual(result.data.versions, []);
-      assert.equal(result.data.changelogRaw, RAW_CHANGELOG);
+      assert.ok(result.data.changelogFile.startsWith(testEnv.tmpDir));
+      assert.equal(deps.writtenContent, RAW_CHANGELOG);
     });
 
-    it('skips commits whose patch fetch fails and returns remaining versions', () => {
+    it('skips commits whose detail fetch fails and returns remaining versions', () => {
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
-        'commits?path=CHANGELOG.md': COMMITS_TSV,
+        'commits?path=CHANGELOG.md': COMMITS_JSON,
         'commits/abc123': new Error('API rate limit exceeded'),
-        'commits/def456': PATCH_V2_1_88,
-        'curl': RAW_CHANGELOG,
-      });
+        'commits/def456': COMMIT_DETAIL_V2_1_88,
+        'CHANGELOG.md': RAW_CHANGELOG,
+      }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
@@ -111,13 +126,15 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
     });
 
     it('includes commits exactly on the sinceDate boundary', () => {
-      const boundaryCommits = 'bbb222\t2026-03-01T00:00:00Z';
+      const boundaryJson = JSON.stringify([
+        { sha: 'bbb222', commit: { author: { date: '2026-03-01T00:00:00Z' } } },
+      ]);
+
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
-        'commits?path=CHANGELOG.md': boundaryCommits,
-        'commits/bbb222': PATCH_V2_1_87,
-        'curl': RAW_CHANGELOG,
-      });
+        'commits?path=CHANGELOG.md': boundaryJson,
+        'commits/bbb222': COMMIT_DETAIL_V2_1_87,
+        'CHANGELOG.md': RAW_CHANGELOG,
+      }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
@@ -128,12 +145,11 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
 
     it('skips commits whose patch contains no +## version line', () => {
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
-        'commits?path=CHANGELOG.md': COMMITS_TSV,
-        'commits/abc123': ' context line\n-removed line\n',
-        'commits/def456': ' context line\n-removed line\n',
-        'curl': RAW_CHANGELOG,
-      });
+        'commits?path=CHANGELOG.md': COMMITS_JSON,
+        'commits/abc123': COMMIT_DETAIL_NO_VERSION,
+        'commits/def456': COMMIT_DETAIL_NO_VERSION,
+        'CHANGELOG.md': RAW_CHANGELOG,
+      }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
@@ -143,22 +159,21 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
   });
 
   describe('error cases', () => {
-    it('returns error status with install URL when gh is not installed', () => {
+    it('returns error when commits API fetch fails', () => {
       const deps = createMockDeps({
-        'gh --version': new Error('command not found: gh'),
-      });
+        'commits?path=CHANGELOG.md': new Error('curl: (6) Could not resolve host'),
+      }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
       assert.equal(result.status, 'error');
-      assert.match(result.error, /https:\/\/cli\.github\.com/);
+      assert.match(result.error, /Failed to fetch commits/);
     });
 
-    it('returns error status when commits API returns empty string', () => {
+    it('returns error when commits API returns empty array', () => {
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
-        'commits?path=CHANGELOG.md': '',
-      });
+        'commits?path=CHANGELOG.md': '[]',
+      }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
@@ -166,14 +181,13 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
       assert.match(result.error, /No commits found/);
     });
 
-    it('returns error status when curl fails', () => {
+    it('returns error when raw changelog fetch fails', () => {
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
-        'commits?path=CHANGELOG.md': COMMITS_TSV,
-        'commits/abc123': PATCH_V2_1_87,
-        'commits/def456': PATCH_V2_1_88,
-        'curl': new Error('curl: (6) Could not resolve host'),
-      });
+        'commits?path=CHANGELOG.md': COMMITS_JSON,
+        'commits/abc123': COMMIT_DETAIL_V2_1_87,
+        'commits/def456': COMMIT_DETAIL_V2_1_88,
+        'CHANGELOG.md': new Error('curl: (6) Could not resolve host'),
+      }, testEnv);
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
@@ -190,37 +204,34 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
       );
     });
 
-    it('throws when sinceDate is null', () => {
+    it('returns empty versions when sinceDate is null (no commits pass filter)', () => {
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
-        'commits?path=CHANGELOG.md': COMMITS_TSV,
-        'commits/abc123': PATCH_V2_1_87,
-        'commits/def456': PATCH_V2_1_88,
-        'curl': RAW_CHANGELOG,
-      });
+        'commits?path=CHANGELOG.md': COMMITS_JSON,
+        'commits/abc123': COMMIT_DETAIL_V2_1_87,
+        'commits/def456': COMMIT_DETAIL_V2_1_88,
+        'CHANGELOG.md': RAW_CHANGELOG,
+      }, testEnv);
 
       const result = fetchChangelog(null, deps);
 
-      // With null sinceDate, no commits pass the >= filter
       assert.equal(result.status, 'success');
       assert.equal(result.data.versions.length, 0);
     });
   });
 
   describe('options', () => {
-    it('includes maxVersions in the gh api per_page query parameter', () => {
+    it('includes maxVersions in the curl per_page query parameter', () => {
       let capturedCmd = '';
 
       const deps = createMockDeps({
-        'gh --version': 'gh version 2.45.0',
         'commits?path=CHANGELOG.md': (cmd) => {
           capturedCmd = cmd;
-          return COMMITS_TSV;
+          return COMMITS_JSON;
         },
-        'commits/abc123': PATCH_V2_1_87,
-        'commits/def456': PATCH_V2_1_88,
-        'curl': RAW_CHANGELOG,
-      });
+        'commits/abc123': COMMIT_DETAIL_V2_1_87,
+        'commits/def456': COMMIT_DETAIL_V2_1_88,
+        'CHANGELOG.md': RAW_CHANGELOG,
+      }, testEnv);
 
       fetchChangelog(SINCE_DATE, deps, { maxVersions: 25 });
 

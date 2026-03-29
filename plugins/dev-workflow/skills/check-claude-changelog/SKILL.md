@@ -6,7 +6,6 @@ model: sonnet
 allowed-tools:
   - Bash(node *)
   - Bash(git *)
-  - Bash(gh *)
   - Bash(curl *)
   - Read
   - Grep
@@ -16,26 +15,7 @@ allowed-tools:
 
 Check for Claude Code updates relevant to the current project.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/check-claude-changelog`) OR asks about Claude Code updates. Examples:
-- "check changelog"
-- "what's new in Claude Code"
-- "any Claude Code updates"
-
-Follow the workflow steps EXACTLY.
-
----
-
-# Skill Workflow Checklist
-
-```
-- [ ] 0. Prerequisites
-- [ ] 1. Get last commit date
-- [ ] 2. Fetch changelog versions and content
-- [ ] 3. Parse changelog entries
-- [ ] 4. Scan project context
-- [ ] 5. Assess relevance
-- [ ] 6. Present results
-```
+**MANDATORY** only activate this skill when the user invokes it directly (`/check-claude-changelog`) OR asks about Claude Code updates.
 
 ---
 
@@ -43,158 +23,109 @@ Follow the workflow steps EXACTLY.
 
 **SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
 
-⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
+**VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
 
 **Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
 
-⛔ **HALT** if Node.js Check shows `ERROR`.
+**HALT** if Node.js Check shows `ERROR`.
 
-## Workflow Rules & Guardrails
+## Workflow Rules
 
-**MANDATORY:** FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW.
+### Delegation Protocol
 
-### A. Delegation Protocol
+When you see `DELEGATE_TO: [file]`: Read the reference file, execute its instructions, then return here.
 
-When you see `DELEGATE_TO: [file]`:
-⛔ **STOP** → Use Read tool on the reference file path
-→ Execute its instructions exactly
-→ Return to SKILL.md only after completing reference file instructions
+### Narration Control
 
-### B. Narration Control
+Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps silently.
 
-⚠️  **SILENCE PROTOCOL**
-Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and tool calls silently - no explanatory text.
+### Script Output
 
-### C. JSON Response Protocol
-
-All script outputs return JSON. Extract fields and store in variables:
-- Syntax: `json.field.path` → VARIABLE_NAME
+All scripts return JSON with `status` ("success" or "error") and `data` or `message` fields.
 
 ---
 
-# Skill Workflow Instructions
-
-## 0. Prerequisites
-
-**gh CLI Check**: !`gh --version`
-
-⛔ **HALT** if gh CLI Check fails: "This skill requires the GitHub CLI (`gh`). Install from https://cli.github.com/"
-✅ **CONTINUE if TRUE**: gh CLI is available.
+# Workflow
 
 ## 1. Get Last Commit Date
 
 **STEP_DESCRIPTION**: "Checking last commit date"
 
-→ Execute using Bash tool:
-```bash
-node "${CLAUDE_SKILL_DIR}/scripts/get-last-commit-date.js"
-```
+Run: `git log -1 --format="%aI %h %s" HEAD`
 
-→ Parse JSON output.
+If the repo has commits: note the ISO date, short date, short SHA, and subject.
 
-→ If `status` = "success":
-  - `data.date` → LAST_COMMIT_DATE
-  - `data.dateShort` → LAST_COMMIT_DATE_SHORT
-  - `data.sha` → LAST_COMMIT_SHA
-  - `data.message` → LAST_COMMIT_MESSAGE
-  - → Proceed to Step 2.
-
-→ If `status` = "error":
-  - Set LAST_COMMIT_DATE_SHORT to a date 30 days ago from today
-  - Set NO_COMMITS = true
-  - → Proceed to Step 2 with note: "No commits found — showing recent versions."
+If no commits: default to 30 days ago. Note "No commits found — showing recent versions."
 
 ## 2. Fetch Changelog
 
 **STEP_DESCRIPTION**: "Fetching Claude Code changelog"
 
-→ Execute using Bash tool:
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/fetch-changelog.js" --since "{{LAST_COMMIT_DATE}}"
+node "${CLAUDE_SKILL_DIR}/scripts/fetch-changelog.js" --since "{{last_commit_date}}"
 ```
 
-→ Parse JSON output.
+On success: the script writes the full changelog to a temp file. Use the Read tool on the `changelogFile` path from the JSON output to get the content. **DO NOT** fetch the changelog again — use this file for all subsequent steps.
 
-→ If `status` = "success":
-  - `data.versions` → VERSION_DATES
-  - `data.changelogRaw` → CHANGELOG_RAW
-  - → Proceed to Step 3.
+On error: **HALT** and display the error to the user.
 
-→ If `status` = "error":
-  - ⛔ HALT: Display the error message to the user.
+## 3. Parse and Filter Changelog Entries
 
-## 3. Parse Changelog Entries
-
-→ If VERSION_DATES is empty and NO_COMMITS is not set:
-  - → Skip to Step 6 with message: "You're up to date! No new Claude Code versions since your last commit on LAST_COMMIT_DATE_SHORT."
+If no new versions found and commits exist: skip to Step 6 with "You're up to date!"
 
 DELEGATE_TO: `references/parse-changelog.md`
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
-→ Extract CHANGELOG_ENTRIES per reference file instructions.
+## 4. Gather Project Context
 
-→ Proceed to Step 4.
+**STEP_DESCRIPTION**: "Scanning project for Claude Code usage patterns"
 
-## 4. Scan Project Context
+Run these Glob checks (no agent needed):
 
-**STEP_DESCRIPTION**: "Scanning project for context"
+1. `**/CLAUDE.md` — project instructions
+2. `~/.claude/settings.json` — user-level settings and hooks
+3. `.claude/settings.json` — project-level settings and hooks
+4. `.claude/hooks/**` — hook scripts
+5. `**/agents/**/*.md` — agent definitions
+6. `**/skills/**/SKILL.md` — skill definitions
+7. `.claude/mcp*.json` or `mcp*.json` — MCP server configs
 
-→ Execute using Bash tool:
-```bash
-node "${CLAUDE_SKILL_DIR}/scripts/scan-project-context.js"
-```
-
-→ Parse JSON output.
-
-→ If `status` = "success":
-  - `data` → PROJECT_CONTEXT
-  - → Proceed to Step 5.
-
-→ If `status` = "error":
-  - Set PROJECT_CONTEXT to empty object
-  - → Proceed to Step 5 (relevance assessment will be generic).
+For each match found, read the file (or just note its existence for large files). Build a brief summary of how this project uses Claude Code — this context informs the relevance assessment in Step 5.
 
 ## 5. Assess Relevance
 
 DELEGATE_TO: `references/assess-relevance.md`
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
-
-→ Extract ACTIONABLE_ITEMS per reference file instructions.
-
-→ Proceed to Step 6.
 
 ## 6. Present Results
 
 **STEP_DESCRIPTION**: "Presenting Claude Code updates"
 
-→ If "up to date" message was set in Step 3, display it and exit.
+Present a compact summary table followed by actionable suggestions.
 
-→ Otherwise, display results in this format:
+Format:
 
 ```
-## Claude Code Updates Since [LAST_COMMIT_DATE_SHORT]
-(Last commit: [LAST_COMMIT_SHA] — [LAST_COMMIT_MESSAGE])
+## Summary of Changes to Claude Code since [date] (your latest commit for this project)
 
-### [version] (date)
-**Added:** ...
-**Fixed:** ...
-**Changed:** ...
-(other categories as present)
+Versions X.Y.Z – A.B.C
 
-### [version] (date)
-...
+| Area | Change | Version |
+|------|--------|---------|
+| Hooks | Conditional `if` field for filtering | 2.1.85 |
+| ... | ... | ... |
 
----
+### Actionable Items
 
-## Most Actionable for This Project
-
-1. **[HIGH]** Description → Why it matters for this project
-2. **[MEDIUM]** Description → Why it matters
-...
+- Update hooks to use `if` conditions for filtering (2.1.85)
+- ...
 ```
 
-→ If NO_COMMITS is set, prepend: "⚠️ No commits found in this repo. Showing the 3 most recent Claude Code versions."
+**Table rules**: Group by functional area, not by version. Keep rows tight — no explanations in the table.
 
-→ If ACTIONABLE_ITEMS is empty, replace the "Most Actionable" section with: "No changes specifically relevant to this project's configuration were identified."
+**Actionable Items**: Rephrase each change as a concrete suggestion for what the user could do in this project. Include the version in parentheses. Only list items that are relevant to the project context from Step 4.
 
-→ Return to user.
+Do NOT list the full changelog version-by-version.
+
+If no commits were found, note that you're showing recent versions as a fallback.
+If no actionable items were identified, say so.
+
+Always end with: `[Full changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)`
