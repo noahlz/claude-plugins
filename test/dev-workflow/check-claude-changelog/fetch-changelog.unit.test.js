@@ -3,6 +3,7 @@ import { strict as assert } from 'node:assert';
 import { fetchChangelog } from '../../../plugins/dev-workflow/skills/check-claude-changelog/scripts/fetch-changelog.js';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 
+// All commit dates (March 15, 20) are after SINCE_DATE so they pass the filter
 const SINCE_DATE = '2026-03-01T00:00:00Z';
 
 const COMMITS_TSV = [
@@ -10,11 +11,15 @@ const COMMITS_TSV = [
   'def456\t2026-03-20T12:00:00Z',
 ].join('\n');
 
-const PATCH_WITH_VERSION = '+## 2.1.87\n+Some changelog text\n context line\n';
-const RAW_CHANGELOG = '# Changelog\n\n## 2.1.87\n\nSome content here.\n';
+const PATCH_V2_1_87 = '+## 2.1.87\n+Some changelog text\n context line\n';
+const PATCH_V2_1_88 = '+## 2.1.88\n+Another changelog entry\n context line\n';
+const RAW_CHANGELOG = '# Changelog\n\n## 2.1.88\n\nAnother entry.\n\n## 2.1.87\n\nSome content here.\n';
 
 /**
  * Routes exec() calls to handler functions or values by substring matching.
+ * Unlike the per-method mock factories in commit-with-costs/helpers.js, this
+ * uses substring routing because fetch-changelog funnels all calls through a
+ * single deps.exec(cmd) — the command string is the only dispatch surface.
  * If a handler is an Error, it is thrown. Functions receive the full command.
  */
 function createMockDeps(handlers) {
@@ -43,23 +48,30 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
   });
 
   describe('success cases', () => {
-    it('returns versions array and changelogRaw on valid mock output', () => {
+    it('fetches version history and raw changelog since a given date', () => {
       const deps = createMockDeps({
         'gh --version': 'gh version 2.45.0',
         'commits?path=CHANGELOG.md': COMMITS_TSV,
-        'commits/abc123': PATCH_WITH_VERSION,
-        'commits/def456': PATCH_WITH_VERSION,
+        'commits/abc123': PATCH_V2_1_87,
+        'commits/def456': PATCH_V2_1_88,
         'curl': RAW_CHANGELOG,
       });
 
       const result = fetchChangelog(SINCE_DATE, deps);
 
       assert.equal(result.status, 'success');
-      assert.ok(Array.isArray(result.data.versions));
-      assert.ok(result.data.versions.length > 0);
-      assert.equal(result.data.versions[0].version, '2.1.87');
-      assert.ok(result.data.versions[0].date);
-      assert.ok(result.data.versions[0].dateShort);
+      assert.equal(result.data.versions.length, 2);
+      // Sorted newest-first: def456 (March 20) before abc123 (March 15)
+      assert.deepEqual(result.data.versions[0], {
+        version: '2.1.88',
+        date: '2026-03-20T12:00:00Z',
+        dateShort: '2026-03-20'
+      });
+      assert.deepEqual(result.data.versions[1], {
+        version: '2.1.87',
+        date: '2026-03-15T10:00:00Z',
+        dateShort: '2026-03-15'
+      });
       assert.equal(result.data.changelogRaw, RAW_CHANGELOG);
     });
 
@@ -80,6 +92,38 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
       assert.equal(result.status, 'success');
       assert.deepEqual(result.data.versions, []);
       assert.equal(result.data.changelogRaw, RAW_CHANGELOG);
+    });
+
+    it('skips commits whose patch fetch fails and returns remaining versions', () => {
+      const deps = createMockDeps({
+        'gh --version': 'gh version 2.45.0',
+        'commits?path=CHANGELOG.md': COMMITS_TSV,
+        'commits/abc123': new Error('API rate limit exceeded'),
+        'commits/def456': PATCH_V2_1_88,
+        'curl': RAW_CHANGELOG,
+      });
+
+      const result = fetchChangelog(SINCE_DATE, deps);
+
+      assert.equal(result.status, 'success');
+      assert.equal(result.data.versions.length, 1);
+      assert.equal(result.data.versions[0].version, '2.1.88');
+    });
+
+    it('includes commits exactly on the sinceDate boundary', () => {
+      const boundaryCommits = 'bbb222\t2026-03-01T00:00:00Z';
+      const deps = createMockDeps({
+        'gh --version': 'gh version 2.45.0',
+        'commits?path=CHANGELOG.md': boundaryCommits,
+        'commits/bbb222': PATCH_V2_1_87,
+        'curl': RAW_CHANGELOG,
+      });
+
+      const result = fetchChangelog(SINCE_DATE, deps);
+
+      assert.equal(result.status, 'success');
+      assert.equal(result.data.versions.length, 1);
+      assert.equal(result.data.versions[0].version, '2.1.87');
     });
 
     it('skips commits whose patch contains no +## version line', () => {
@@ -126,8 +170,8 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
       const deps = createMockDeps({
         'gh --version': 'gh version 2.45.0',
         'commits?path=CHANGELOG.md': COMMITS_TSV,
-        'commits/abc123': PATCH_WITH_VERSION,
-        'commits/def456': PATCH_WITH_VERSION,
+        'commits/abc123': PATCH_V2_1_87,
+        'commits/def456': PATCH_V2_1_88,
         'curl': new Error('curl: (6) Could not resolve host'),
       });
 
@@ -142,8 +186,24 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
     it('throws when deps is null', () => {
       assert.throws(
         () => fetchChangelog(SINCE_DATE, null),
-        /deps parameter required/
+        { name: 'Error', message: /deps parameter required/ }
       );
+    });
+
+    it('throws when sinceDate is null', () => {
+      const deps = createMockDeps({
+        'gh --version': 'gh version 2.45.0',
+        'commits?path=CHANGELOG.md': COMMITS_TSV,
+        'commits/abc123': PATCH_V2_1_87,
+        'commits/def456': PATCH_V2_1_88,
+        'curl': RAW_CHANGELOG,
+      });
+
+      const result = fetchChangelog(null, deps);
+
+      // With null sinceDate, no commits pass the >= filter
+      assert.equal(result.status, 'success');
+      assert.equal(result.data.versions.length, 0);
     });
   });
 
@@ -157,8 +217,8 @@ describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
           capturedCmd = cmd;
           return COMMITS_TSV;
         },
-        'commits/abc123': PATCH_WITH_VERSION,
-        'commits/def456': PATCH_WITH_VERSION,
+        'commits/abc123': PATCH_V2_1_87,
+        'commits/def456': PATCH_V2_1_88,
         'curl': RAW_CHANGELOG,
       });
 
