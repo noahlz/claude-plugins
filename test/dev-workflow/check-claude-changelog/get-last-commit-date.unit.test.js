@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { getLastCommitDate } from '../../../plugins/dev-workflow/skills/check-changelog/scripts/get-last-commit-date.js';
+import { getLastCommitDate } from '../../../plugins/dev-workflow/skills/check-claude-changelog/scripts/get-last-commit-date.js';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 
 /**
@@ -16,7 +16,7 @@ function createMockDeps(gitResult) {
   };
 }
 
-describe('check-changelog: get-last-commit-date.js unit tests', () => {
+describe('check-claude-changelog: get-last-commit-date.js unit tests', () => {
   let testEnv;
 
   beforeEach(() => {

@@ -2,7 +2,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import path from 'node:path';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
-import { scanProjectContext } from '../../../plugins/dev-workflow/skills/check-changelog/scripts/scan-project-context.js';
+import { scanProjectContext } from '../../../plugins/dev-workflow/skills/check-claude-changelog/scripts/scan-project-context.js';
 
 // Build mock deps from a set of "existing" path suffixes and a content map.
 // existingPaths: array of path suffixes relative to cwd (e.g. 'CLAUDE.md', '.claude/settings.json')
@@ -26,7 +26,7 @@ function createMockDeps(existingPaths = [], contentMap = {}, cwd = '/') {
   };
 }
 
-describe('check-changelog: scan-project-context.js unit tests', () => {
+describe('check-claude-changelog: scan-project-context.js unit tests', () => {
   let testEnv;
 
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { fetchChangelog } from '../../../plugins/dev-workflow/skills/check-changelog/scripts/fetch-changelog.js';
+import { fetchChangelog } from '../../../plugins/dev-workflow/skills/check-claude-changelog/scripts/fetch-changelog.js';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 
 const SINCE_DATE = '2026-03-01T00:00:00Z';
@@ -31,7 +31,7 @@ function createMockDeps(handlers) {
   };
 }
 
-describe('check-changelog: fetch-changelog.js unit tests', () => {
+describe('check-claude-changelog: fetch-changelog.js unit tests', () => {
   let testEnv;
 
   beforeEach(() => {
