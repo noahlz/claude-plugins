@@ -27,9 +27,9 @@ set -e
 echo "Forcing reinstallation of dev-workflow plugin..."
 echo ""
 
-# Uninstall plugin and marketplace
-claude plugin uninstall dev-workflow@noahlz.github.io
-claude plugin marketplace remove noahlz.github.io
+# Uninstall plugin and marketplace (tolerate "not found" if already removed)
+claude plugin uninstall dev-workflow@noahlz.github.io 2>/dev/null || echo "(plugin was not installed — skipping uninstall)"
+claude plugin marketplace remove noahlz.github.io 2>/dev/null || echo "(marketplace was not registered — skipping remove)"
 
 # Delete the cached plugin directory to bypass version caching.
 # Without this, Claude Code would skip reinstall if the version number

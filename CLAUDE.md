@@ -1,81 +1,19 @@
 # Claude Code Plugins
 
-A collection of Claude Code [plugins](https://code.claude.com/docs/en/plugins).
+A collection of Claude Code [plugins](https://code.claude.com/docs/en/plugins) with standard directory conventions and an extensive test suite.
 
-## Project Structure
+## Development Rules
 
-```
-claude-plugins/
-├── .claude-plugin/
-├── plugins/
-│   └── dev-workflow/
-│       ├── agents/
-│       ├── lib/          # Shared scripts
-│       ├── references/   # Shared skill reference files
-│       └── skills/
-│           ├── run-tests/
-│           │   ├── references/
-│           │   └── scripts/
-│           ├── commit-with-costs/
-│           │   ├── references/
-│           │   └── scripts/
-│           ├── draft-commit-message/
-│           └── view-cost-metrics/
-│               ├── references/
-│               └── scripts/
-└── test/
-    ├── dev-workflow/
-    │   ├── run-tests/
-    │   ├── commit-with-costs/
-    │   └── lib/
-    └── lib/                     # Cross-module test utilities
-```
+- Follow the [best practices guide for skill authoring](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices).
+- Do NOT preserve backwards compatibility when enhancing or refactoring.
+- Write scripts, not ad-hoc Bash commands. Keep shared scripts in `plugins/dev-workflow/lib/`.
+- Minimize external dependencies. Use pure Node.js/JavaScript. Do NOT add npm packages without user approval.
+- Write tests for all changes. Run the `dev-workflow:run-tests` skill after every script change. See [test/CLAUDE.md](./test/CLAUDE.md).
 
-## Development Philosophy
+## ccusage
 
-### Use Best Practices
+This project uses [`ccusage`](https://github.com/ryoppippi/ccusage) for Claude Code usage and cost stats.
 
-Follow the [best practices guide for skill authoring](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices).
+## Reinstall After Changes
 
-### Move Fast and Break Things
-
-**This plugin is not yet released!** You do **NOT** have keep existing behavior for "backwards compatability" when adding enhancements or refactoring.
-
-### Script-First Approach
-
-- Prefer writing and orchestrating pre-existing scripts over dynamic code generation or ad-hoc commands.
-- When writing new scripts, keep code DRY with shared scripts under `plugins/dev-workflow/lib/` for use by all skills and agents
-- Write Node.js tests for scripts, placing them under `test/dev-workflow/` in directories named for the corresponding skills and plugins.
-
-### Dependencies
-
-**Minimize external dependencies. Use pure Node.js and JavaScript.**
-
-Do NOT add additional npm packages without justification and approval by the user.
-
-**Runtime**: `ccusage` (in `plugins/dev-workflow/package.json`)
-  - Used by `commit-with-costs` and `view-cost-metrics` skills to fetch and embed cost metrics in git commits
-
-### NOTE: Reinstall After Changing
-
-When modifying or debugging scripts **prompt the user to reload the plugin**.
-
-- For **any local development changes** (scripts, SKILL.md, agents, references): run `./force-reinstall.sh` and restart Claude Code.
-- `/reload-plugins` only works for plugins installed from a remote registry URL, not local development.
-
-## Testing
-
-### Adding / Updating Tests
-
-If you need to add new or update existing tests, see: [test/CLAUDE.md](./test/CLAUDE.md) 
-
-### Running Tests
-
-**ALWAYS** use the `dev-workflow:run-tests` skill to run tests, such as after making changes to Node / JavaScript code.
-
-**Test output:** The test runner writes two formats simultaneously:
-- Spec (human-readable): captured by `run-command.js` to `dist/test-results.log`
-- TAP (machine-parseable): written directly to `dist/test-results.tap`
-
-**For failure analysis, use `dist/test-results.tap`** — not `dist/test-results.log`.
-
+After modifying scripts, SKILL.md, agents, or references: prompt the user to run `./force-reinstall.sh` and restart Claude Code. `/reload-plugins` only works for remote registry plugins, not local development.
