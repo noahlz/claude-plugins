@@ -6,20 +6,6 @@
 - Use dependency injection, mock/stub external dependencies and data
 - Fast: target: less than 5 seconds to run all tests
 
-## Test Organization
-
-### Directory Structure
-
-```
-test/
-├── lib/                        # Shared test utilities
-├── dev-workflow/
-│   ├── run-tests/
-│   │   └── CLAUDE.md           # Suite-specific instructions
-│   └── commit-with-costs/
-│       └── CLAUDE.md           # Suite-specific instructions
-```
-
 ### Test Types
 
 - **Unit tests** (`*.unit.test.js`): Mock all dependencies, test logic in isolation
