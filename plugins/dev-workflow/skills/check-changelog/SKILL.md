@@ -1,11 +1,12 @@
 ---
-name: check-changelog
+name: check-claude-changelog
 description: Check Claude Code changelog for updates since your last commit. Use when the user wants to see what changed in Claude Code.
 context: fork
 allowed-tools:
   - Bash(node *)
   - Bash(git *)
-  - WebFetch
+  - Bash(gh *)
+  - Bash(curl *)
   - Read
   - Grep
   - Glob
@@ -14,7 +15,7 @@ allowed-tools:
 
 Check for Claude Code updates relevant to the current project.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/check-changelog`) OR asks about Claude Code updates. Examples:
+**MANDATORY** only activate this skill when the user invokes it directly (`/check-claude-changelog`) OR asks about Claude Code updates. Examples:
 - "check changelog"
 - "what's new in Claude Code"
 - "any Claude Code updates"
@@ -28,7 +29,7 @@ Follow the workflow steps EXACTLY.
 ```
 - [ ] 0. Prerequisites
 - [ ] 1. Get last commit date
-- [ ] 2. Fetch changelog
+- [ ] 2. Fetch changelog versions and content
 - [ ] 3. Parse changelog entries
 - [ ] 4. Scan project context
 - [ ] 5. Assess relevance
@@ -74,8 +75,10 @@ All script outputs return JSON. Extract fields and store in variables:
 
 ## 0. Prerequisites
 
-⛔ **HALT if TRUE**: WebFetch tool is not available. Tell user: "This skill requires the WebFetch tool to fetch the Claude Code changelog."
-✅ **CONTINUE if TRUE**: WebFetch is available.
+**gh CLI Check**: !`gh --version`
+
+⛔ **HALT** if gh CLI Check fails: "This skill requires the GitHub CLI (`gh`). Install from https://cli.github.com/"
+✅ **CONTINUE if TRUE**: gh CLI is available.
 
 ## 1. Get Last Commit Date
 
@@ -104,27 +107,30 @@ node "${CLAUDE_SKILL_DIR}/scripts/get-last-commit-date.js"
 
 **STEP_DESCRIPTION**: "Fetching Claude Code changelog"
 
-→ Use WebFetch tool to fetch:
+→ Execute using Bash tool:
+```bash
+node "${CLAUDE_SKILL_DIR}/scripts/fetch-changelog.js" --since "{{LAST_COMMIT_DATE}}"
 ```
-https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md
-```
 
-→ Store full response text as CHANGELOG_RAW.
+→ Parse JSON output.
 
-→ If WebFetch fails:
-  - ⛔ HALT: "Failed to fetch Claude Code changelog. Check your network connection."
+→ If `status` = "success":
+  - `data.versions` → VERSION_DATES
+  - `data.changelogRaw` → CHANGELOG_RAW
+  - → Proceed to Step 3.
 
-→ Proceed to Step 3.
+→ If `status` = "error":
+  - ⛔ HALT: Display the error message to the user.
 
 ## 3. Parse Changelog Entries
+
+→ If VERSION_DATES is empty and NO_COMMITS is not set:
+  - → Skip to Step 6 with message: "You're up to date! No new Claude Code versions since your last commit on LAST_COMMIT_DATE_SHORT."
 
 DELEGATE_TO: `references/parse-changelog.md`
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 → Extract CHANGELOG_ENTRIES per reference file instructions.
-
-→ If CHANGELOG_ENTRIES is empty and NO_COMMITS is not set:
-  - → Skip to Step 6 with message: "You're up to date! No new Claude Code versions since your last commit on LAST_COMMIT_DATE_SHORT."
 
 → Proceed to Step 4.
 
