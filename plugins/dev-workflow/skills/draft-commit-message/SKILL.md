@@ -1,6 +1,7 @@
 ---
 name: draft-commit-message
 description: Draft a commit message from staged changes without committing. Use when the user asks to write or draft a commit message.
+model: sonnet
 context: fork
 allowed-tools:
   - Bash(git *)

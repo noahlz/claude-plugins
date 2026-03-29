@@ -1,6 +1,7 @@
 ---
 name: commit-with-costs
 description: Create a git commit with trailers for session cost metrics and Claude attribution. Use when the user asks you to commit changes to git.
+model: sonnet
 context: fork
 allowed-tools:
   - Bash(git *)

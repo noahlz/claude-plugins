@@ -2,6 +2,7 @@
 name: check-claude-changelog
 description: Check Claude Code changelog for updates since your last commit. Use when the user wants to see what changed in Claude Code.
 context: fork
+model: sonnet
 allowed-tools:
   - Bash(node *)
   - Bash(git *)
