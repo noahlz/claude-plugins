@@ -34,6 +34,85 @@ function compareSemver(a, b) {
 }
 
 /**
+ * Fetch raw changelog from GitHub, write to a temp file.
+ * @returns {{ changelogRaw: string, changelogFile: string } | { error: string }}
+ */
+function fetchRawChangelog(deps) {
+  try {
+    const changelogRaw = deps.exec(`curl -sfL ${RAW_BASE}/CHANGELOG.md`);
+    const changelogFile = join(deps.tmpdir(), `claude-changelog-${Date.now()}.md`);
+    deps.writeFile(changelogFile, changelogRaw);
+    return { changelogRaw, changelogFile };
+  } catch (err) {
+    return { error: `Failed to fetch changelog: ${err.message}` };
+  }
+}
+
+/**
+ * Extract versions newer than sinceVersion from changelog headers.
+ * Parses lines matching: ## X.Y.Z or ## X.Y.Z - YYYY-MM-DD
+ */
+function extractVersionsSince(changelogRaw, sinceVersion) {
+  const versionPattern = /^## (\d+\.\d+\.\d+)(?:\s.*)?$/gm;
+  const versions = [];
+  let match;
+  while ((match = versionPattern.exec(changelogRaw)) !== null) {
+    const ver = match[1];
+    if (compareSemver(ver, sinceVersion) > 0) {
+      versions.push({ version: ver, date: null, dateShort: null });
+    }
+  }
+  versions.sort((a, b) => compareSemver(b.version, a.version));
+  return versions;
+}
+
+/**
+ * Discover versions via GitHub commit API, filtered by date.
+ * @returns {{ versions: Array } | { error: string }}
+ */
+function fetchVersionsByDate(sinceDate, maxVersions, deps) {
+  let commitsJson;
+  try {
+    const raw = deps.exec(
+      `curl -sf "${API_BASE}/commits?path=CHANGELOG.md&per_page=${maxVersions}"`
+    );
+    commitsJson = JSON.parse(raw);
+  } catch (err) {
+    return { error: `Failed to fetch commits: ${err.message}` };
+  }
+
+  if (!Array.isArray(commitsJson) || commitsJson.length === 0) {
+    return { error: 'No commits found for CHANGELOG.md' };
+  }
+
+  const matching = commitsJson
+    .map(c => ({ sha: c.sha, date: c.commit.author.date }))
+    .filter(c => c.date >= sinceDate);
+
+  const versions = [];
+  for (const commit of matching) {
+    try {
+      const raw = deps.exec(`curl -sf "${API_BASE}/commits/${commit.sha}"`);
+      const detail = JSON.parse(raw);
+      const patch = detail.files?.[0]?.patch || '';
+      const versionMatch = patch.match(/^\+## (\d+\.\d+\.\d+)/m);
+      if (versionMatch) {
+        versions.push({
+          version: versionMatch[1],
+          date: commit.date,
+          dateShort: commit.date.slice(0, 10)
+        });
+      }
+    } catch {
+      // Skip commits where fetch/parse fails
+    }
+  }
+
+  versions.sort((a, b) => b.date.localeCompare(a.date));
+  return { versions };
+}
+
+/**
  * Fetch changelog version-date mappings via GitHub REST API (curl) and raw content.
  * @param {string} sinceDate - ISO 8601 date string to filter versions after
  * @param {object} deps - Dependencies { exec, writeFile, tmpdir }
@@ -47,88 +126,26 @@ export function fetchChangelog(sinceDate, deps, options = {}) {
 
   const { maxVersions = 10, sinceVersion } = options;
 
-  try {
-    // Fetch raw changelog and write to temp file
-    let changelogRaw, changelogFile;
-    try {
-      changelogRaw = deps.exec(
-        `curl -sfL ${RAW_BASE}/CHANGELOG.md`
-      );
-      changelogFile = join(deps.tmpdir(), `claude-changelog-${Date.now()}.md`);
-      deps.writeFile(changelogFile, changelogRaw);
-    } catch (err) {
-      return { status: 'error', error: `Failed to fetch changelog: ${err.message}` };
-    }
-
-    let versions;
-
-    if (sinceVersion) {
-      // Extract versions from changelog headers: ## X.Y.Z or ## X.Y.Z - YYYY-MM-DD
-      const versionPattern = /^## (\d+\.\d+\.\d+)(?:\s.*)?$/gm;
-      versions = [];
-      let match;
-      while ((match = versionPattern.exec(changelogRaw)) !== null) {
-        const ver = match[1];
-        if (compareSemver(ver, sinceVersion) > 0) {
-          versions.push({ version: ver, date: null, dateShort: null });
-        }
-      }
-      // Sort newest-first
-      versions.sort((a, b) => compareSemver(b.version, a.version));
-    } else {
-      // Date-based: discover versions via GitHub commit API
-      let commitsJson;
-      try {
-        const raw = deps.exec(
-          `curl -sf "${API_BASE}/commits?path=CHANGELOG.md&per_page=${maxVersions}"`
-        );
-        commitsJson = JSON.parse(raw);
-      } catch (err) {
-        return { status: 'error', error: `Failed to fetch commits: ${err.message}` };
-      }
-
-      if (!Array.isArray(commitsJson) || commitsJson.length === 0) {
-        return { status: 'error', error: 'No commits found for CHANGELOG.md' };
-      }
-
-      const commits = commitsJson.map(c => ({
-        sha: c.sha,
-        date: c.commit.author.date
-      }));
-
-      const matching = commits.filter(c => c.date >= sinceDate);
-
-      versions = [];
-      for (const commit of matching) {
-        try {
-          const raw = deps.exec(
-            `curl -sf "${API_BASE}/commits/${commit.sha}"`
-          );
-          const detail = JSON.parse(raw);
-          const patch = detail.files?.[0]?.patch || '';
-          const m = patch.match(/^\+## (\d+\.\d+\.\d+)/m);
-          if (m) {
-            versions.push({
-              version: m[1],
-              date: commit.date,
-              dateShort: commit.date.slice(0, 10)
-            });
-          }
-        } catch {
-          // Skip commits where fetch/parse fails
-        }
-      }
-
-      versions.sort((a, b) => b.date.localeCompare(a.date));
-    }
-
-    return {
-      status: 'success',
-      data: { versions, changelogFile, sinceVersion: sinceVersion || null }
-    };
-  } catch (err) {
-    return { status: 'error', error: err.message };
+  const changelog = fetchRawChangelog(deps);
+  if (changelog.error) {
+    return { status: 'error', error: changelog.error };
   }
+
+  let versions;
+  if (sinceVersion) {
+    versions = extractVersionsSince(changelog.changelogRaw, sinceVersion);
+  } else {
+    const result = fetchVersionsByDate(sinceDate, maxVersions, deps);
+    if (result.error) {
+      return { status: 'error', error: result.error };
+    }
+    versions = result.versions;
+  }
+
+  return {
+    status: 'success',
+    data: { versions, changelogFile: changelog.changelogFile, sinceVersion: sinceVersion || null }
+  };
 }
 
 /* node:coverage disable */
