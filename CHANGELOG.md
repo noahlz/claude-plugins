@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.7.0
+- Added check-claude-changelog skill. See README
+- Fixed bug in commit-with-costs skill where Claude Code required permissions frequently due to the SESSION_ID typically starting with a hyphen (it looks like a flag injected into the node command line)
+
 # 0.6.1
 
 **Bug Fix**
