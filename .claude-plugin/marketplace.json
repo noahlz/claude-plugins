@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Dev workflows and productivity tools for Claude Code.",
-    "version": "0.6.2"
+    "version": "0.6.0"
   },
   "plugins": [
     {

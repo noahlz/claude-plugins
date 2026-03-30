@@ -31,7 +31,7 @@ claude plugin install dev-workflow@noahlz.github.io
 | [`commit-with-costs`](./plugins/dev-workflow/skills/commit-with-costs/SKILL.md) | Create git commits with Claude Code attribution and session cost metrics embedded in commit footers. | `/commit-with-costs` | [README.md](./plugins/dev-workflow/skills/commit-with-costs/README.md) |
 | [`draft-commit-message`](./plugins/dev-workflow/skills/draft-commit-message/SKILL.md) | Draft a commit message from staged changes without committing. | `/draft-commit-message` | [README.md](./plugins/dev-workflow/skills/draft-commit-message/README.md) |
 | [`view-cost-metrics`](./plugins/dev-workflow/skills/view-cost-metrics/SKILL.md) | Display current session cost metrics without creating a commit. | `/view-cost-metrics` | [README.md](./plugins/dev-workflow/skills/view-cost-metrics/README.md) |
-| [`check-claude-changelog`](./plugins/dev-workflow/skills/check-changelog/SKILL.md) | Check Claude Code changelog for updates since your last commit, with relevance scoring for your project. Requires `gh` CLI. | `/check-claude-changelog` | [README.md](./plugins/dev-workflow/skills/check-changelog/README.md) |
+| [`check-claude-changelog`](./plugins/dev-workflow/skills/check-claude-changelog/SKILL.md) | Check Claude Code changelog for updates since your last commit, with relevance scoring for your project. | `/check-claude-changelog [since <version>]` | [README.md](./plugins/dev-workflow/skills/check-claude-changelog/README.md) |
 
 #### Agents
 
