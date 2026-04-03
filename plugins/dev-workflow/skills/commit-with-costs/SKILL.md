@@ -13,10 +13,10 @@ allowed-tools:
 
 Use this skill to create a git commit with a message summarizing changes and trailers for attribution and cost metrics.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/commit-with-costs`) OR prompts you to commit. Examples:
-- "[git] commit"
-- "commit [this | my changes | to git]"
-- "save to git"
+**MANDATORY** only activate this skill when the user invokes it directly (`/commit-with-costs`) OR prompts you to commit with cost metrics. Examples:
+- "commit with costs"
+- "commit with cost metrics"
+- "commit and track costs"
 
 Follow the workflow steps EXACTLY.
 
@@ -135,7 +135,7 @@ echo '{"sessionId":"{{SELECTED_SESSION_ID}}"}' > .claude/settings.plugins.commit
 
 ## 2. Detect or Generate Commit Message
 
-**Check conversation context:** Look for a `Proposed commit message:` block already present in this conversation (e.g., output from `/draft-commit-message`).
+**Check conversation context:** Look for a `Proposed commit message:` block already present in this conversation (e.g., output from `/preview-commit-message`).
 
 **If a proposed message IS found in the conversation:**
 → Extract COMMIT_SUBJECT (the line immediately after the ━━━ separator)
