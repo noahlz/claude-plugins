@@ -20,6 +20,14 @@
           "path": "version"
         },
         {
+          "file": "package-lock.json",
+          "path": "version"
+        },
+        {
+          "file": "package-lock.json",
+          "path": "packages..version"
+        },
+        {
           "file": ".claude-plugin/marketplace.json",
           "path": "metadata.version"
         },
