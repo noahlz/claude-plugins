@@ -9,10 +9,14 @@
   "scripts": {
     "clean": "rm -rf dist/",
     "test": "node test/run-tests.js",
-    "coverage": "node --experimental-test-coverage --test test/**/*.test.js"
+    "coverage": "node --experimental-test-coverage --test test/**/*.test.js",
+    "release": "release-it",
+    "release:dry-run": "release-it --dry-run"
   },
   "devDependencies": {
-    "knip": "^5.85.0"
+    "@release-it/bumper": "7.0.5",
+    "knip": "^5.85.0",
+    "release-it": "19.2.4"
   },
   "knip": {
     "entry": [

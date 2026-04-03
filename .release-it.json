@@ -1,0 +1,27 @@
+{
+  "git": {
+    "push": false,
+    "tagName": "v${version}",
+    "commitMessage": "Version ${version}"
+  },
+  "github": {
+    "release": false
+  },
+  "npm": {
+    "publish": false
+  },
+  "plugins": {
+    "@release-it/bumper": {
+      "out": [
+        {
+          "file": ".claude-plugin/marketplace.json",
+          "path": "metadata.version"
+        },
+        {
+          "file": ".claude-plugin/marketplace.json",
+          "path": "plugins.0.version"
+        }
+      ]
+    }
+  }
+}
