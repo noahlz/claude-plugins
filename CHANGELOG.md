@@ -5,10 +5,10 @@
 
 # 0.8.0
 - Added `commit-only` skill for plain git commits without cost metrics (`/commit-only`)
-- Renamed `draft-commit-message` → `preview-commit-message` skill
-- Narrowed `commit-with-costs` triggers to cost-specific prompts only
 - Added `release-it` for automated version bumping (local tag only — no push, GitHub release, or npm publish)
-- Added `changelog-update` skill for composing changelog entries from commits since last release (`/changelog-update`)
+- Added `update-changelog` skill for composing changelog entries from commits since last release
+- Narrowed `commit-with-costs` triggers to cost-specific prompts only
+- Renamed `draft-commit-message` → `preview-commit-message` skill
 
 # 0.7.1
 - Fixed duplicate commit message display in `commit-with-costs` and `draft-commit-message` skills
