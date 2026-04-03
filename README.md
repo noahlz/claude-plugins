@@ -34,6 +34,7 @@ claude plugin install dev-workflow@noahlz.github.io
 | [`view-cost-metrics`](./plugins/dev-workflow/skills/view-cost-metrics/SKILL.md) | Display current session cost metrics without creating a commit. | `/view-cost-metrics` |
 | [`check-claude-changelog`](./plugins/dev-workflow/skills/check-claude-changelog/SKILL.md) | Check Claude Code changelog for updates since your last commit, with relevance scoring. | `/check-claude-changelog [since <version>]` |
 | [`update-changelog`](./plugins/dev-workflow/skills/update-changelog/SKILL.md) | Inspect commits since last release and compose changelog entries matching your project's format. | `/update-changelog` |
+| [`tighten`](./plugins/dev-workflow/skills/tighten/SKILL.md) | Make skill, agent, reference, rule, or doc files more concise and LLM-friendly. | `/tighten [file-path \| skill-name \| agent-name \| docs \| readme \| rules]` |
 
 #### Agents
 
