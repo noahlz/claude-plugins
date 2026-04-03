@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "dev-workflow",
-      "version": "0.7.1",
+      "version": "0.8.0",
       "description": "Plugins for claude code workflow productivity.",
       "author": {
         "name": "Noah Zucker",
@@ -24,7 +24,12 @@
       "repository": "https://github.com/noahlz/claude-plugins",
       "license": "MIT",
       "category": "development",
-      "tags": ["git", "testing", "workflow", "productivity"]
+      "tags": [
+        "git",
+        "testing",
+        "workflow",
+        "productivity"
+      ]
     }
   ]
 }
