@@ -29,9 +29,11 @@ claude plugin install dev-workflow@noahlz.github.io
 |-------|-------------|---------------|---------------|
 | [`run-tests`](./plugins/dev-workflow/skills/run-tests/SKILL.md) | Run tests, analyze failures, and propose fixes via sub-agents. Infers test commands from project files without requiring configuration. | `/run-tests` | [README.md](./plugins/dev-workflow/skills/run-tests/README.md) |
 | [`commit-with-costs`](./plugins/dev-workflow/skills/commit-with-costs/SKILL.md) | Create git commits with Claude Code attribution and session cost metrics embedded in commit footers. | `/commit-with-costs` | [README.md](./plugins/dev-workflow/skills/commit-with-costs/README.md) |
-| [`draft-commit-message`](./plugins/dev-workflow/skills/draft-commit-message/SKILL.md) | Draft a commit message from staged changes without committing. | `/draft-commit-message` | [README.md](./plugins/dev-workflow/skills/draft-commit-message/README.md) |
+| [`preview-commit-message`](./plugins/dev-workflow/skills/preview-commit-message/SKILL.md) | Draft a commit message from staged changes without committing. | `/preview-commit-message` | [README.md](./plugins/dev-workflow/skills/preview-commit-message/README.md) |
+| [`commit-only`](./plugins/dev-workflow/skills/commit-only/SKILL.md) | Commit staged changes with an AI-generated message. No cost metrics attached. | `/commit-only` | [README.md](./plugins/dev-workflow/skills/commit-only/README.md) |
 | [`view-cost-metrics`](./plugins/dev-workflow/skills/view-cost-metrics/SKILL.md) | Display current session cost metrics without creating a commit. | `/view-cost-metrics` | [README.md](./plugins/dev-workflow/skills/view-cost-metrics/README.md) |
 | [`check-claude-changelog`](./plugins/dev-workflow/skills/check-claude-changelog/SKILL.md) | Check Claude Code changelog for updates since your last commit, with relevance scoring for your project. | `/check-claude-changelog [since <version>]` | [README.md](./plugins/dev-workflow/skills/check-claude-changelog/README.md) |
+| [`changelog-update`](./plugins/dev-workflow/skills/changelog-update/SKILL.md) | Inspect commits since last release and compose changelog entries matching the project's existing format. | `/changelog-update` | [README.md](./plugins/dev-workflow/skills/changelog-update/README.md) |
 
 #### Agents
 
