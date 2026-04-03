@@ -4,11 +4,7 @@ Guides Claude through building and testing your project. When failures occur, pr
 
 ## What It Does
 
-- Infers the test command from project files (`package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `Makefile`, etc.) or memory
-- Captures all test/build output to a file (never pollutes the console)
-- Analyzes compilation errors using the `broken-build-analyzer` agent
-- Analyzes test failures using the `failed-test-analyzer` agent
-- Provides root cause analysis and fix recommendations suitable for subsequent Plan mode
+Infers the test command from project files or memory, captures all output to a log file, and delegates compilation errors to `broken-build-analyzer` or test failures to `failed-test-analyzer` for root cause analysis and fix recommendations.
 
 ## Prerequisites
 
@@ -16,32 +12,18 @@ Guides Claude through building and testing your project. When failures occur, pr
 
 ## Usage
 
-Slash command:
-
 ```bash
-/run-tests              # Run all tests
+/run-tests
 ```
 
 Or tell Claude: "run tests", "test", "build and test", "fix tests", etc.
 
 ## How It Infers the Test Command
 
-The skill checks in order:
-1. Claude memory (if you've run tests before in this project)
-2. `CLAUDE.md` in the project root
-3. Standard project files (`package.json`, `pom.xml`, `go.mod`, etc.)
-4. Asks you via `AskUserQuestion` if still uncertain — then saves the answer to memory
+Checks Claude memory, then `CLAUDE.md`, then standard project files (`package.json`, `pom.xml`, `go.mod`, `Cargo.toml`, `Makefile`, etc.), then asks via `AskUserQuestion` if still uncertain and saves the answer to memory.
 
-## Agents
+## Edge Cases
 
-This skill delegates to specialized analyzer agents for root cause analysis:
-
-- [broken-build-analyzer](../../agents/broken-build-analyzer.md) - Analyzes compilation failures
-- [failed-test-analyzer](../../agents/failed-test-analyzer.md) - Analyzes test failures
-
-Both agents provide fix recommendations without making edits. The user implements fixes via plan mode.
-
-## Author
-
-[@noahlz](https://github.com/noahlz)
-[Claude](https://claude.com/product/claude-code)
+- **No recognized project file** — prompts for the test command and saves to memory
+- **Build failure** — routes to `broken-build-analyzer` before running tests
+- **Test failure** — routes to `failed-test-analyzer` for per-failure diagnosis
