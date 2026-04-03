@@ -1,6 +1,6 @@
 ---
-name: draft-commit-message
-description: Draft a commit message from staged changes without committing. Use when the user asks to write or draft a commit message.
+name: preview-commit-message
+description: Preview a commit message from staged changes without committing. Use when the user asks to write, draft, or preview a commit message.
 model: sonnet
 context: fork
 allowed-tools:
@@ -12,9 +12,10 @@ allowed-tools:
 
 Use this skill to draft a commit message from staged changes without actually committing.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/draft-commit-message`) OR prompts you to draft a message. Examples:
+**MANDATORY** only activate this skill when the user invokes it directly (`/preview-commit-message`) OR prompts you to draft a message. Examples:
 - "write a commit message"
 - "draft a commit message"
+- "preview a commit message"
 - "prepare a commit message"
 
 Follow the workflow steps EXACTLY.
@@ -93,6 +94,6 @@ Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-> Inform the user: "This message has NOT been committed. Use `/commit-with-costs` to commit with cost metrics, or run `git commit` manually."
+> Inform the user: "This message has NOT been committed. Use `/commit-only` to commit, or `/commit-with-costs` to commit with cost metrics."
 
 > Return to user.

@@ -1,6 +1,6 @@
-# Draft Commit Message
+# Preview Commit Message
 
-Draft a commit message from staged changes without committing.
+Preview a commit message from staged changes without committing.
 
 ## What It Does
 
@@ -15,11 +15,11 @@ Using this skill, Claude:
 
 Slash command:
 
-```bash
-/draft-commit-message
+```
+/preview-commit-message
 ```
 
-Or tell Claude: "draft a commit message", "write a commit message", "prepare a commit message", etc.
+Or tell Claude: "draft a commit message", "write a commit message", "preview a commit message", etc.
 
 ## Shared References
 
@@ -32,7 +32,8 @@ This skill uses shared reference files located in `plugins/dev-workflow/referenc
 
 ## Related Skills
 
-- [`commit-with-costs`](../commit-with-costs/README.md) - Full commit workflow with cost metrics and approval (uses the same shared references)
+- [`commit-only`](../commit-only/README.md) - Commit staged changes with AI-generated message, no cost metrics
+- [`commit-with-costs`](../commit-with-costs/README.md) - Full commit workflow with cost metrics and approval
 
 ## Author
 
