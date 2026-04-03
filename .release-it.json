@@ -8,11 +8,16 @@
     "release": false
   },
   "npm": {
-    "publish": false
+    "publish": false,
+    "version": false
   },
   "plugins": {
     "@release-it/bumper": {
       "out": [
+        {
+          "file": "package.json",
+          "path": "version"
+        },
         {
           "file": ".claude-plugin/marketplace.json",
           "path": "metadata.version"
