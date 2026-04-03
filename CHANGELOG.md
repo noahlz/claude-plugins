@@ -1,5 +1,14 @@
 # Changelog
 
+# 0.8.0
+- Added `commit-only` skill for plain git commits without cost metrics (`/commit-only`)
+- Renamed `draft-commit-message` → `preview-commit-message` skill
+- Narrowed `commit-with-costs` triggers to cost-specific prompts only
+- Added `release-it` for automated version bumping (local tag only — no push, GitHub release, or npm publish)
+
+# 0.7.1
+- Fixed duplicate commit message display in `commit-with-costs` and `draft-commit-message` skills
+
 # 0.7.0
 - Added check-claude-changelog skill. See README
 - Fixed bug in commit-with-costs skill where Claude Code required permissions frequently due to the SESSION_ID typically starting with a hyphen (it looks like a flag injected into the node command line)
