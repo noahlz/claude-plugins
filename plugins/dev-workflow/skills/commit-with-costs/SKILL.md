@@ -140,6 +140,7 @@ echo '{"sessionId":"{{SELECTED_SESSION_ID}}"}' > .claude/settings.plugins.commit
 **If a proposed message IS found in the conversation:**
 → Extract COMMIT_SUBJECT (the line immediately after the ━━━ separator)
 → Extract COMMIT_BODY (any remaining lines before the closing ━━━ separator, or empty string if none)
+→ **Do NOT display or echo the extracted message.** It will be displayed in Step 3.
 → Skip directly to Step 3 (approval).
 
 **If NO proposed message is found:**
@@ -154,6 +155,7 @@ DELEGATE_TO: `../../references/message_guidelines.md`
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 → Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.
+→ **Do NOT display the commit message here.** It will be displayed in Step 3.
 → Proceed to Step 3.
 
 ## 3. Display Message to User for Approval

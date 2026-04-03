@@ -76,6 +76,7 @@ DELEGATE_TO: `../../references/message_guidelines.md`
 > READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 > Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.
+> **Do NOT display the commit message here.** It will be displayed in Step 3.
 > Proceed to Step 3.
 
 ## 3. Display Proposed Message
