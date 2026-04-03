@@ -24,7 +24,7 @@ Using this skill, Claude:
 Slash command:
 
 ```bash
-/changelog-update
+/update-changelog
 ```
 
 Or tell Claude: "update changelog", "add changelog entries", "what goes in the changelog since last release", etc.
@@ -46,7 +46,7 @@ Or tell Claude: "update changelog", "add changelog entries", "what goes in the c
 
 On first run, the skill prompts for your changelog file path and writes:
 
-`.claude/settings.plugins.changelog-update.json`
+`.claude/settings.plugins.update-changelog.json`
 
 ```json
 { "changelogPath": "./CHANGELOG.md" }

@@ -33,7 +33,7 @@ claude plugin install dev-workflow@noahlz.github.io
 | [`commit-only`](./plugins/dev-workflow/skills/commit-only/SKILL.md) | Commit staged changes with an AI-generated message. No cost metrics attached. | `/commit-only` | [README.md](./plugins/dev-workflow/skills/commit-only/README.md) |
 | [`view-cost-metrics`](./plugins/dev-workflow/skills/view-cost-metrics/SKILL.md) | Display current session cost metrics without creating a commit. | `/view-cost-metrics` | [README.md](./plugins/dev-workflow/skills/view-cost-metrics/README.md) |
 | [`check-claude-changelog`](./plugins/dev-workflow/skills/check-claude-changelog/SKILL.md) | Check Claude Code changelog for updates since your last commit, with relevance scoring for your project. | `/check-claude-changelog [since <version>]` | [README.md](./plugins/dev-workflow/skills/check-claude-changelog/README.md) |
-| [`changelog-update`](./plugins/dev-workflow/skills/changelog-update/SKILL.md) | Inspect commits since last release and compose changelog entries matching the project's existing format. | `/changelog-update` | [README.md](./plugins/dev-workflow/skills/changelog-update/README.md) |
+| [`update-changelog`](./plugins/dev-workflow/skills/update-changelog/SKILL.md) | Inspect commits since last release and compose changelog entries matching the project's existing format. | `/update-changelog` | [README.md](./plugins/dev-workflow/skills/update-changelog/README.md) |
 
 #### Agents
 

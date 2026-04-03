@@ -1,5 +1,5 @@
 ---
-name: changelog-update
+name: update-changelog
 description: Inspect commits since last release and compose changelog entries. Use when the user wants to update their changelog.
 model: sonnet
 context: fork
@@ -13,7 +13,7 @@ allowed-tools:
 
 Inspect commits since last release and write changelog entries matching the project's existing format.
 
-**MANDATORY:** Only activate when user invokes `/changelog-update` or explicitly asks to update their changelog. Follow steps EXACTLY.
+**MANDATORY:** Only activate when user invokes `/update-changelog` or explicitly asks to update their changelog. Follow steps EXACTLY.
 
 ---
 
@@ -47,10 +47,10 @@ Never impose a changelog format. Detect and match whatever format the existing c
 
 ## Step 0 — Config Check
 
-Run: `node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.changelog-update.json"`
+Run: `node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.update-changelog.json"`
 
-- **Found** → run `cat .claude/settings.plugins.changelog-update.json`, extract `changelogPath`, store as `CHANGELOG_PATH`. Verify it exists: `git ls-files --error-unmatch "{{CHANGELOG_PATH}}" 2>/dev/null || test -f "{{CHANGELOG_PATH}}"`. If missing, ask for correct path (default: `./CHANGELOG.md`), update config.
-- **NOT_CONFIGURED** → tell user config is missing. Ask: "Where is your changelog file? (default: `./CHANGELOG.md`)" Store response as `CHANGELOG_PATH`. Write config: `echo '{"changelogPath":"{{CHANGELOG_PATH}}"}' > .claude/settings.plugins.changelog-update.json`
+- **Found** → run `cat .claude/settings.plugins.update-changelog.json`, extract `changelogPath`, store as `CHANGELOG_PATH`. Verify it exists: `git ls-files --error-unmatch "{{CHANGELOG_PATH}}" 2>/dev/null || test -f "{{CHANGELOG_PATH}}"`. If missing, ask for correct path (default: `./CHANGELOG.md`), update config.
+- **NOT_CONFIGURED** → tell user config is missing. Ask: "Where is your changelog file? (default: `./CHANGELOG.md`)" Store response as `CHANGELOG_PATH`. Write config: `echo '{"changelogPath":"{{CHANGELOG_PATH}}"}' > .claude/settings.plugins.update-changelog.json`
 
 ## Step 1 — Detect Latest Tag
 
