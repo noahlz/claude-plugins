@@ -1,5 +1,5 @@
 ---
-name: tighten
+name: tighten-for-llms
 description: Make skill, agent, reference, rule, or doc files more concise and LLM-friendly.
 model: sonnet
 argument-hint: "[file-path | skill-name | agent-name | docs | readme | rules]"
@@ -11,7 +11,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-**MANDATORY:** Only activate when user invokes `/tighten` directly. Follow steps EXACTLY.
+**MANDATORY:** Only activate when user invokes `/tighten-for-llms` directly. Follow steps EXACTLY.
 
 ---
 

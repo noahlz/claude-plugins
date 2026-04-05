@@ -1,9 +1,13 @@
 # Changelog
 
-# NEXT_RELEASE
-- Added `tighten` skill for making skill, agent, reference, rule, and doc files more concise and LLM-friendly (`/tighten`)
+# 0.9.0
+- Added `writing-tools` plugin with `/revise-for-linkedin` skill and `linkedin-reviewer` agent
+- Renamed `tighten` → `tighten-for-llms` skill (`/dev-workflow:tighten-for-llms`)
+- Fixed release-it bumper race condition for same-file multi-path writes
+- Fixed `/reload-plugins` documentation to explain version-keyed cache behavior
 
 # 0.8.0
+- Added `tighten` skill for making skill, agent, reference, rule, and doc files more concise and LLM-friendly (`/tighten`)
 - Added `commit-only` skill for plain git commits without cost metrics (`/commit-only`)
 - Added `release-it` for automated version bumping (local tag only — no push, GitHub release, or npm publish)
 - Added `update-changelog` skill for composing changelog entries from commits since last release
