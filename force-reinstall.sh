@@ -1,16 +1,14 @@
 #!/bin/bash
 
-# Force a full uninstall + reinstall of the dev-workflow plugin.
+# Force a full uninstall + reinstall of all plugins in marketplace.json.
 #
 # WHY THIS EXISTS:
-# Claude Code caches plugins by version number. During development, when you
-# modify plugin files without bumping the version in marketplace.json, Claude
-# Code's /reload-plugins command reloads from the stale cache and does NOT
-# pick up your source changes.
+# Claude Code caches plugins by version number. When you modify plugin files
+# without bumping the version, /reload-plugins reloads from stale cache and
+# does NOT pick up source changes.
 #
-# This script bypasses the version cache by explicitly removing the cached
-# plugin directory before reinstalling, ensuring your latest source changes
-# are always picked up.
+# This script bypasses version caching by removing each plugin's cache dir
+# before reinstalling, ensuring your latest source changes are picked up.
 #
 # USE WHEN:
 #   - You've modified SKILL.md, scripts, agents, or other plugin files
@@ -24,23 +22,35 @@
 
 set -e
 
-echo "Forcing reinstallation of dev-workflow plugin..."
+MARKETPLACE=".claude-plugin/marketplace.json"
+
+# Read all plugin names and versions from marketplace.json
+PLUGIN_NAMES=($(jq -r '.plugins[].name' "$MARKETPLACE"))
+PLUGIN_VERSIONS=($(jq -r '.plugins[].version' "$MARKETPLACE"))
+
+echo "Forcing reinstallation of all plugins: ${PLUGIN_NAMES[*]}"
 echo ""
 
-# Uninstall plugin and marketplace (tolerate "not found" if already removed)
-claude plugin uninstall dev-workflow@noahlz.github.io 2>/dev/null || echo "(plugin was not installed — skipping uninstall)"
+# Uninstall all plugins before removing the marketplace
+for name in "${PLUGIN_NAMES[@]}"; do
+  claude plugin uninstall "${name}@noahlz.github.io" 2>/dev/null || echo "(${name} was not installed — skipping uninstall)"
+done
+
 claude plugin marketplace remove noahlz.github.io 2>/dev/null || echo "(marketplace was not registered — skipping remove)"
 
-# Delete the cached plugin directory to bypass version caching.
-# Without this, Claude Code would skip reinstall if the version number
-# in marketplace.json hasn't changed.
-VERSION=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
-CACHE_PATH="$HOME/.claude/plugins/cache/noahlz-github-io/dev-workflow/$VERSION"
-
-echo "Removing cached plugin at: $CACHE_PATH"
-rm -rf "$CACHE_PATH"
+# Delete each plugin's cache dir to bypass version caching.
+# Without this, Claude Code skips reinstall when the version number hasn't changed.
+for i in "${!PLUGIN_NAMES[@]}"; do
+  name="${PLUGIN_NAMES[$i]}"
+  version="${PLUGIN_VERSIONS[$i]}"
+  cache_path="$HOME/.claude/plugins/cache/noahlz-github-io/${name}/${version}"
+  echo "Removing cache: $cache_path"
+  rm -rf "$cache_path"
+done
 echo ""
 
-# Reinstall from local source
+# Reinstall all plugins from local source
 claude plugin marketplace add ./
-claude plugin install dev-workflow@noahlz.github.io
+for name in "${PLUGIN_NAMES[@]}"; do
+  claude plugin install "${name}@noahlz.github.io"
+done

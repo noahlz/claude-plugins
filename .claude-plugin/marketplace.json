@@ -5,7 +5,7 @@
     "email": "nzucker@gmail.com"
   },
   "metadata": {
-    "description": "Dev workflows and productivity tools for Claude Code.",
+    "description": "Dev workflows, productivity, and writing tools for Claude Code.",
     "version": "0.8.0"
   },
   "plugins": [
@@ -29,6 +29,28 @@
         "testing",
         "workflow",
         "productivity"
+      ]
+    },
+    {
+      "name": "writing-tools",
+      "version": "0.8.0",
+      "description": "AI-assisted writing and editing tools for content creation.",
+      "author": {
+        "name": "Noah Zucker",
+        "email": "nzucker@gmail.com",
+        "url": "https://github.com/noahlz"
+      },
+      "source": "./plugins/writing-tools",
+      "strict": false,
+      "homepage": "https://github.com/noahlz/claude-plugins",
+      "repository": "https://github.com/noahlz/claude-plugins",
+      "license": "MIT",
+      "category": "writing",
+      "tags": [
+        "linkedin",
+        "writing",
+        "editing",
+        "content"
       ]
     }
   ]

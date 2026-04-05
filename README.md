@@ -1,6 +1,6 @@
 # Claude Code Plugins
 
-Developer workflow and productivity plugins for Claude Code.
+Developer workflow, productivity, and writing plugins for Claude Code.
 
 See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-marketplaces)
 
@@ -44,6 +44,28 @@ claude plugin install dev-workflow@noahlz.github.io
 | [`failed-test-analyzer`](./plugins/dev-workflow/agents/failed-test-analyzer.md) | Analyzes test failures and provides diagnosis suitable for creating a plan to fix the tests. Used by `run-tests`. |
 | [`react-code-reviewer`](./plugins/dev-workflow/agents/react-code-reviewer.md) | Reviews React/TypeScript code changes for quality, maintainability, and best practices. Reports findings by priority with concrete fixes. |
 | [`test-quality-reviewer`](./plugins/dev-workflow/agents/test-quality-reviewer.md) | Reviews written or modified tests for assertion quality, mock validity, and clean test structure. Reports findings by severity. |
+
+### writing-tools
+
+AI-assisted writing and editing tools for content creation.
+
+**Install:**
+
+```bash
+claude plugin install writing-tools@noahlz.github.io
+```
+
+#### Skills
+
+| Skill | Description | Slash Command |
+|-------|-------------|---------------|
+| [`linkedin-rewrite`](./plugins/writing-tools/skills/linkedin-rewrite/SKILL.md) | Revise a draft LinkedIn post with passage-by-passage editing. | `/linkedin-rewrite [file]` |
+
+#### Agents
+
+| Agent | Description |
+|-------|-------------|
+| [`linkedin-reviewer`](./plugins/writing-tools/agents/linkedin-reviewer.md) | Provides honest, direct review of LinkedIn draft posts. Evaluates hook strength, clarity, mobile structure, authenticity, and engagement potential. |
 
 ## Development
 

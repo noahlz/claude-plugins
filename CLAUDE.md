@@ -1,6 +1,6 @@
 # Claude Code Plugins
 
-A collection of Claude Code [plugins](https://code.claude.com/docs/en/plugins) with standard directory conventions and an extensive test suite.
+A collection of Claude Code [plugins](https://code.claude.com/docs/en/plugins) for developer workflow, productivity, and writing — with standard directory conventions and an extensive test suite.
 
 ## Development Rules for Skills, Agents and Hooks
 
