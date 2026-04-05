@@ -81,20 +81,20 @@ claude plugin marketplace add ./
 
 ### Updating
 
-After making changes, run `/reload-plugins` in Claude Code to pick up the changes without restarting.
+Claude Code caches installed plugins as full copies in `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`. These are regular files, not symlinks — editing your source directory does not change what Claude Code reads.
 
-### Force Reinstall (Development)
+`/reload-plugins` reloads from this version-keyed cache. If you modify plugin files without bumping the version in `marketplace.json`, `/reload-plugins` will reload the stale cached copy and **not** pick up your source changes.
 
-Claude Code caches plugins by version number. If you modify plugin files without bumping the version in `marketplace.json`, `/reload-plugins` will reload from the stale cache and **not** pick up your changes.
-
-Solution: run `./force-reinstall.sh` to bypass the version cache and force a full reinstall from source:
+To pick up source changes without bumping the version, run `./force-reinstall.sh`:
 
 ```bash
 ./force-reinstall.sh
 ```
 
+This script clears the cache directories, uninstalls, and reinstalls from local source.
+
 Use this when:
-- You've modified SKILL.md, scripts, agents, or other plugin files
+- You've modified SKILL.md, scripts, agents, or other plugin files without bumping the version
 - `/reload-plugins` is not reflecting your changes
 
 

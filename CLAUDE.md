@@ -16,4 +16,4 @@ Be aware: the `dev-workflow` commit skills (`commit-with-costs`, `view-cost-metr
 
 ## Reinstall After Changes
 
-After modifying scripts, SKILL.md, agents, or references: prompt the user to run `./force-reinstall.sh` and restart Claude Code. `/reload-plugins` only works for remote registry plugins, not local development.
+After modifying scripts, SKILL.md, agents, or references: prompt the user to run `./force-reinstall.sh`. Claude Code caches plugins by version — `/reload-plugins` reloads from cache, so source edits without a version bump won't take effect until the cache is cleared.
