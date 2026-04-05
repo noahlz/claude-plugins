@@ -1,7 +1,7 @@
 # Changelog
 
 # NEXT_RELEASE
-- Added `tighten` skill for making skill, agent, reference, rule, and doc files more concise and LLM-friendly (`/tighten`)
+- Added `tighten-for-llms` skill for making skill, agent, reference, rule, and doc files more concise and LLM-friendly (`/tighten-for-llms`)
 
 # 0.8.0
 - Added `commit-only` skill for plain git commits without cost metrics (`/commit-only`)

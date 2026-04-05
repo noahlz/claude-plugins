@@ -1,12 +1,12 @@
 ---
-name: linkedin-rewrite
+name: revise-for-linkedin
 description: Revise a draft LinkedIn post.
 user-invocable: true
 ---
 
 # LinkedIn Rewrite
 
-Passage-by-passage interactive rewrite. You are an editor, not a ghostwriter. Invoked as `/linkedin-rewrite [file]` or `/linkedin-rewrite` with pasted text.
+Passage-by-passage interactive rewrite. You are an editor, not a ghostwriter. Invoked as `/revise-for-linkedin [file]` or `/revise-for-linkedin` with pasted text.
 
 ## Workflow
 

@@ -1,6 +1,6 @@
 ---
 name: linkedin-reviewer
-description: Use when you want an honest LinkedIn thought leader review of a draft post. Give it a file path or pasted text. Focused on AI, Anthropic, and agentic engineering topics.
+description: Reviews a LinkedIn draft post for hook strength, clarity, mobile structure, authenticity, and engagement potential.
 model: sonnet
 allowed-tools: Read, WebSearch, WebFetch
 ---

@@ -6,24 +6,32 @@ See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-m
 
 [![Node.js CI](https://github.com/noahlz/claude-plugins/actions/workflows/node.js.yml/badge.svg)](https://github.com/noahlz/claude-plugins/actions/workflows/node.js.yml)
 
-## Available Plugins
+## Plugins
 
-### dev-workflow
+| Plugin | Description |
+|--------|-------------|
+| [dev-workflow](#dev-workflow) | Workflows for common development tasks. |
+| [writing-tools](#writing-tools) | Writing and editing tools for content creation. |
 
-AI-assisted workflows for common development tasks.
+### Installation
 
-**Install:**
+Add the marketplace once, then install the plugins you want:
 
 ```bash
 claude plugin marketplace add noahlz/claude-plugins
 claude plugin install dev-workflow@noahlz.github.io
+claude plugin install writing-tools@noahlz.github.io
 ```
 
 #### Prerequisites
 
-- Node.js 22+
+- Node.js 22+ (required for dev-workflow only)
 
-#### Skills
+## dev-workflow
+
+Workflows for common development tasks.
+
+### Skills
 
 | Skill | Description | Slash Command |
 |-------|-------------|---------------|
@@ -34,9 +42,9 @@ claude plugin install dev-workflow@noahlz.github.io
 | [`view-cost-metrics`](./plugins/dev-workflow/skills/view-cost-metrics/SKILL.md) | Display current session cost metrics without creating a commit. | `/view-cost-metrics` |
 | [`check-claude-changelog`](./plugins/dev-workflow/skills/check-claude-changelog/SKILL.md) | Check Claude Code changelog for updates since your last commit, with relevance scoring. | `/check-claude-changelog [since <version>]` |
 | [`update-changelog`](./plugins/dev-workflow/skills/update-changelog/SKILL.md) | Inspect commits since last release and compose changelog entries matching your project's format. | `/update-changelog` |
-| [`tighten`](./plugins/dev-workflow/skills/tighten/SKILL.md) | Make skill, agent, reference, rule, or doc files more concise and LLM-friendly. | `/tighten [file-path \| skill-name \| agent-name \| docs \| readme \| rules]` |
+| [`tighten-for-llms`](./plugins/dev-workflow/skills/tighten-for-llms/SKILL.md) | Make skill, agent, reference, rule, or doc files more concise and LLM-friendly. | `/tighten-for-llms [file-path \| skill-name \| agent-name \| docs \| readme \| rules]` |
 
-#### Agents
+### Agents
 
 | Agent | Description |
 |-------|-------------|
@@ -45,27 +53,21 @@ claude plugin install dev-workflow@noahlz.github.io
 | [`react-code-reviewer`](./plugins/dev-workflow/agents/react-code-reviewer.md) | Reviews React/TypeScript code changes for quality, maintainability, and best practices. Reports findings by priority with concrete fixes. |
 | [`test-quality-reviewer`](./plugins/dev-workflow/agents/test-quality-reviewer.md) | Reviews written or modified tests for assertion quality, mock validity, and clean test structure. Reports findings by severity. |
 
-### writing-tools
+## writing-tools
 
-AI-assisted writing and editing tools for content creation.
+Writing and editing tools for content creation.
 
-**Install:**
-
-```bash
-claude plugin install writing-tools@noahlz.github.io
-```
-
-#### Skills
+### Skills
 
 | Skill | Description | Slash Command |
 |-------|-------------|---------------|
-| [`linkedin-rewrite`](./plugins/writing-tools/skills/linkedin-rewrite/SKILL.md) | Revise a draft LinkedIn post with passage-by-passage editing. | `/linkedin-rewrite [file]` |
+| [`revise-for-linkedin`](./plugins/writing-tools/skills/revise-for-linkedin/SKILL.md) | Revise a draft LinkedIn post with passage-by-passage editing. | `/revise-for-linkedin [file]` |
 
-#### Agents
+### Agents
 
 | Agent | Description |
 |-------|-------------|
-| [`linkedin-reviewer`](./plugins/writing-tools/agents/linkedin-reviewer.md) | Provides honest, direct review of LinkedIn draft posts. Evaluates hook strength, clarity, mobile structure, authenticity, and engagement potential. |
+| [`linkedin-reviewer`](./plugins/writing-tools/agents/linkedin-reviewer.md) | Reviews a LinkedIn draft post for hook strength, clarity, mobile structure, authenticity, and engagement potential. |
 
 ## Development
 

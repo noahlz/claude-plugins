@@ -34,7 +34,7 @@
     {
       "name": "writing-tools",
       "version": "0.8.0",
-      "description": "AI-assisted writing and editing tools for content creation.",
+      "description": "Writing and editing tools for content creation.",
       "author": {
         "name": "Noah Zucker",
         "email": "nzucker@gmail.com",
