@@ -1,6 +1,7 @@
 ---
 name: linkedin-rewrite
-description: Use when the user wants to revise or tighten a draft post for LinkedIn. Accepts a file path (`/linkedin-rewrite [file]`) or pasted text (`/linkedin-rewrite`). Triggered by requests to rewrite, edit, or polish a post for LinkedIn audience.
+description: Revise a draft LinkedIn post.
+user-invocable: true
 ---
 
 # LinkedIn Rewrite
@@ -10,7 +11,7 @@ Passage-by-passage interactive rewrite. You are an editor, not a ghostwriter. In
 ## Workflow
 
 1. Read the file, or if no file argument, ask the user to paste their draft.
-2. React as a LinkedIn thought leader in the same domain. Give honest, direct feedback: what works, what doesn't, what to change.
+2. Dispatch the `linkedin-reviewer` agent with the draft content. Present its feedback to the user.
 3. Ask the user what direction they want. Do NOT start rewriting yet.
 4. Present rewrites one passage at a time — original and revised side by side. Wait for approval before the next.
 5. Per passage, apply the user's choice:
