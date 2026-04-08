@@ -14,6 +14,10 @@ A collection of Claude Code [plugins](https://code.claude.com/docs/en/plugins) f
 
 Be aware: the `dev-workflow` commit skills (`commit-with-costs`, `view-cost-metrics`) use [`ccusage`](https://github.com/ryoppippi/ccusage) to extract Claude Code session cost data for commit trailers.
 
+## Versioning
+
+`release-it` handles version bumps. Do NOT edit version numbers in `marketplace.json`.
+
 ## Reinstall After Changes
 
 After modifying scripts, SKILL.md, agents, or references: prompt the user to run `./force-reinstall.sh`. Claude Code caches plugins by version — `/reload-plugins` reloads from cache, so source edits without a version bump won't take effect until the cache is cleared.
