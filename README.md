@@ -61,7 +61,7 @@ Writing and editing tools for content creation.
 
 | Skill | Description | Slash Command |
 |-------|-------------|---------------|
-| [`revise-for-linkedin`](./plugins/writing-tools/skills/revise-for-linkedin/SKILL.md) | Revise a draft LinkedIn post with passage-by-passage editing. | `/revise-for-linkedin [file]` |
+| [`craft-linkedin-post`](./plugins/writing-tools/skills/craft-linkedin-post/SKILL.md) | Draft, review, and iterate a LinkedIn post from an outline. | `/craft-linkedin-post` |
 
 ### Agents
 

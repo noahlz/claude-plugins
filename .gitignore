@@ -1,6 +1,7 @@
 # build outputs
 dist/
 node_modules/
+tmp/
 
 # Logs
 *.log
