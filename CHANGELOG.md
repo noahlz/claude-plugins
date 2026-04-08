@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.10.0
+- Replaced `revise-for-linkedin` with `craft-linkedin-post` skill – covers full post lifecycle: outline, draft, review, and passage-by-passage revision
+
 # 0.9.0
 - Added `writing-tools` plugin with `/revise-for-linkedin` skill and `linkedin-reviewer` agent
 - Renamed `tighten` → `tighten-for-llms` skill (`/dev-workflow:tighten-for-llms`)
