@@ -4,6 +4,7 @@ description: Create a git commit with trailers for session cost metrics and Clau
 model: sonnet
 context: fork
 allowed-tools:
+  - AskUserQuestion
   - Bash(git *)
   - Bash(node *)
   - Read

@@ -4,6 +4,7 @@ description: Commit staged changes with an AI-generated message. No cost metrics
 model: sonnet
 context: fork
 allowed-tools:
+  - AskUserQuestion
   - Bash(git *)
   - Read
   - Grep
