@@ -2,7 +2,6 @@
 name: commit-only
 description: Commit staged changes with an AI-generated message. No cost metrics. Use when the user asks to commit without cost tracking.
 model: sonnet
-context: fork
 allowed-tools:
   - AskUserQuestion
   - Bash(git *)

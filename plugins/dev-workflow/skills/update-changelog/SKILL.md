@@ -2,7 +2,6 @@
 name: update-changelog
 description: Inspect commits since last release and compose changelog entries. Use when the user wants to update their changelog.
 model: sonnet
-context: fork
 allowed-tools:
   - Bash(git *)
   - Bash(node *)

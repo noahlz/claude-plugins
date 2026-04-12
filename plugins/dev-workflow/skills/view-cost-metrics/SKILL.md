@@ -2,7 +2,6 @@
 name: view-cost-metrics
 description: Display current session cost metrics. Use when the user asks to see current costs, cost usage, or how much the session has cost so far.
 model: sonnet
-context: fork
 argument-hint: "[incremental|inc|cumulative|cum]"
 allowed-tools:
   - Bash(node *)

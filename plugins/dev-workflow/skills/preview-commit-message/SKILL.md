@@ -2,7 +2,6 @@
 name: preview-commit-message
 description: Preview a commit message from staged changes without committing. Use when the user asks to write, draft, or preview a commit message.
 model: sonnet
-context: fork
 allowed-tools:
   - Bash(git *)
   - Read
