@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.10.1
+- Added `AskUserQuestion` to commit skill allowed-tools to support interactive prompts during commit workflow
+
 # 0.10.0
 - Replaced `revise-for-linkedin` with `craft-linkedin-post` skill – covers full post lifecycle: outline, draft, review, and passage-by-passage revision
 
