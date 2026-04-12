@@ -17,6 +17,9 @@ tmp/
 # Claude Code - IDE settings (local user configurations, not project-level)
 .claude/settings*.json
 
+# Plans
+.claude/plans/
+
 # Git worktrees
 .worktrees/
 .claude/worktrees/
