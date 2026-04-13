@@ -1,18 +1,9 @@
-# Obtain Commit Message Approval using AskUserQuestion
+# Commit Message Approval
 
-**Contents:**
-- Mandatory Message Display Instructions
-- Mandatory User Approval Instructions using AskUserQuestion
-- Response Processing
-- Return to Main Workflow
+Two separate actions. Do not combine them.
 
----
+**Action 1 – Output the message as plain text** (not inside AskUserQuestion):
 
-## Mandatory Message Display Instructions
-
-**MANDATORY:** Use the below template EXACTLY, replacing {{COMMIT_SUBJECT}} and {{COMMIT_BODY}} with their stored values:
-
-> Template for message approval:
 ```
 Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -22,20 +13,13 @@ Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-## Mandatory User Approval Instructions using AskUserQuestion
+**Action 2 – Call AskUserQuestion** (do not repeat the message in options or descriptions):
 
-**MANDATORY:** Use AskUserQuestion to obtain explicit approval for the commit message from the user:
+Ask "Approve this commit message?" with options:
+1. "Use full message" (Recommended)
+2. "Use just the subject"
 
-> Use AskUserQuestion to ask "Approve this commit message?" with options:
-  1. "Use full message" (Recommended)
-  2. "Use just the subject"
-
-*Never "assume" approval - ALWAYS perform this step, and ALWAYS use AskUserQuestion*
-
-## Response Processing
-
-> **If user selected "Use full message":** Maintain current value in COMMIT_SUBJECT variable. Maintain current value in COMMIT_BODY variable. Store "use_full" in APPROVAL_STATUS variable.
-
-> **If user selected "Use just the subject":** Maintain current value in COMMIT_SUBJECT variable. Assign empty string `''` to COMMIT_BODY variable. Store "use_subject_only" in APPROVAL_STATUS variable.
-
-> **If user typed something else (ad-hoc instructions):** Maintain current value in COMMIT_SUBJECT variable. Maintain current value in COMMIT_BODY variable. Store "request_revisions" in APPROVAL_STATUS variable.
+Set APPROVAL_STATUS from response:
+- "Use full message" → `"use_full"`
+- "Use just the subject" → `"use_subject_only"`, clear COMMIT_BODY
+- Anything else → `"request_revisions"`

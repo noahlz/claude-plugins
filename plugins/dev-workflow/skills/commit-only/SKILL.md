@@ -10,108 +10,63 @@ allowed-tools:
 
 ---
 
-Use this skill to commit staged changes with an AI-generated message. No cost metrics are attached.
+Commit staged changes with an AI-generated message. No cost metrics.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/commit-only`) OR prompts you to commit. Examples:
-- "[git] commit"
-- "commit [this | my changes | to git]"
-- "save to git"
-- "commit without costs"
-- "just commit"
+Activate only when user invokes `/commit-only` or asks to commit (e.g. "commit", "commit my changes", "just commit", "commit without costs").
 
-Follow the workflow steps EXACTLY.
+## SKILL_BASE_DIR: `${CLAUDE_SKILL_DIR}`
+
+If the above shows literal `${CLAUDE_SKILL_DIR}`, halt: "Requires Claude Code 2.1.69+."
+
+## Rules
+
+- **DELEGATE_TO**: Read the referenced file, execute its instructions, then return here.
+- **Narration**: Only narrate steps marked STEP_DESCRIPTION. Execute all others silently.
 
 ---
 
-# Skill Workflow Checklist
-
-**Use this copyable checklist to ensure you follow ALL steps of this skill workflow:**
+## Checklist
 
 ```
 - [ ] 0. Pre-flight check
 - [ ] 1. Detect or generate commit message
-- [ ] 2. Get user approval using AskUserQuestion
+- [ ] 2. Get user approval
 - [ ] 3. Create commit
 - [ ] 4. Display summary
 ```
 
----
+## 0. Pre-flight
 
-# Skill Context
-
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
-
-⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
-
-## Workflow Rules & Guardrails
-
-**MANDATORY:** FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW.
-
-### A. Delegation Protocol
-
-When you see `DELEGATE_TO: [file]`:
-⛔ **STOP** → Use Read tool on the reference file path
-→ Execute its instructions exactly (bash commands, parsing, etc.)
-→ Return to SKILL.md only after completing reference file instructions
-
-⚠️  **IMPORTANT:** Reference files contain Bash tool commands - use them exactly as written - never improvise commands.
-
-### B. Narration Control
-
-⚠️  **SILENCE PROTOCOL**
-Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and tool calls silently - no explanatory text.
-
----
-
-# Skill Workflow Instructions
-
-## 0. Pre-Flight Check
-
-⛔ **HALT if TRUE**: Already ran `git status/diff/log` in parallel OR executing system git workflow. STOP skill immediately.
-✅ **CONTINUE if TRUE**: No git commands executed yet. Continue.
+Halt if git commands already ran in this turn.
 
 ## 1. Detect or Generate Commit Message
 
-**Check conversation context:** Look for a `Proposed commit message:` block already present in this conversation (e.g., output from `/preview-commit-message`).
+Check conversation for an existing `Proposed commit message:` block (e.g. from `/preview-commit-message`).
 
-**If a proposed message IS found in the conversation:**
-→ Extract COMMIT_SUBJECT (the line immediately after the ━━━ separator)
-→ Extract COMMIT_BODY (any remaining lines before the closing ━━━ separator, or empty string if none)
-→ **Do NOT display or echo the extracted message.** It will be displayed in Step 2.
-→ Skip directly to Step 2 (approval).
+**If found:** Extract COMMIT_SUBJECT and COMMIT_BODY from the ━━━-delimited block. Do not display yet. Skip to Step 2.
 
-**If NO proposed message is found:**
-→ Stage and analyze:
+**If not found:**
 
 DELEGATE_TO: `../../references/stage_and_analyze.md`
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
-
-→ Generate commit message:
 
 DELEGATE_TO: `../../references/message_guidelines.md`
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
-→ Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.
-→ **Do NOT display the commit message here.** It will be displayed in Step 2.
-→ Proceed to Step 2.
+Store COMMIT_SUBJECT and COMMIT_BODY. Do not display yet.
 
-## 2. Get User Approval using AskUserQuestion
+## 2. Get User Approval
 
-**BLOCKING:** Requires user approval before Step 3.
+Requires approval via **AskUserQuestion** before proceeding – never output options as plain text.
 
 DELEGATE_TO: `../../references/message_approval.md`
-⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
-→ Extract APPROVAL_STATUS and updated COMMIT_SUBJECT and COMMIT_BODY per reference file instructions.
-
-→ If APPROVAL_STATUS = "use_full" or "use_subject_only": Proceed to Step 3.
-→ If APPROVAL_STATUS = "request_revisions": Return to Step 1 to regenerate message.
+- "use_full" or "use_subject_only" → Step 3
+- "request_revisions" → return to Step 1
 
 ## 3. Create Commit
 
 **STEP_DESCRIPTION**: "Creating git commit"
 
-**MANDATORY:** Verify APPROVAL_STATUS is "use_full" OR "use_subject_only" before proceeding. If not: exit workflow immediately.
+Verify APPROVAL_STATUS is "use_full" or "use_subject_only". If not, exit.
 
 **If COMMIT_BODY is non-empty:**
 ```bash
@@ -123,21 +78,15 @@ git commit -m "{{COMMIT_SUBJECT}}" -m "{{COMMIT_BODY}}"
 git commit -m "{{COMMIT_SUBJECT}}"
 ```
 
-→ Parse stdout to extract COMMIT_SHA:
 ```bash
-git rev-parse --short HEAD
+git rev-parse --short HEAD  # store as COMMIT_SHA
 ```
 
-→ Store result as COMMIT_SHA.
-
-→ If git commit fails: display the error output to the user and exit workflow.
+If git commit fails, display the error and exit.
 
 ## 4. Summary
 
-→ Display:
 ```
 ✅ Committed: {COMMIT_SHA}
    {COMMIT_SUBJECT}
 ```
-
-→ Return to user.
