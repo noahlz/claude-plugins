@@ -1,11 +1,6 @@
 # Commit Message Guidelines
 
-**Contents:**
-- General Guidelines
-- Subject Line
-- Body
-- Examples
-- Return to Main Workflow
+**SILENCE PROTOCOL**: Do NOT output anything from this file. Store variables silently. The first visible output is the `Proposed commit message:` block in the approval step.
 
 ---
 
@@ -21,9 +16,7 @@ Generate COMMIT_SUBJECT (imperative subject line) and COMMIT_BODY (optional bull
 
 ## Subject Line
 
-Compose and store COMMIT_SUBJECT per the following guidelines:
-
-**Format:** Action verb + brief description (imperative mood, max 72 chars)
+Store as COMMIT_SUBJECT. **Format:** Action verb + brief description (imperative mood, max 72 chars)
 
 **Examples:**
 - "Add dark mode toggle"
@@ -32,9 +25,7 @@ Compose and store COMMIT_SUBJECT per the following guidelines:
 
 ## Body (Optional)
 
-Compose and store COMMIT_BODY per the following guidelines:
-
-**Default: No body** - Prefer summary-only commits when possible
+Store as COMMIT_BODY. **Default: No body** — prefer summary-only when possible.
 
 **When to omit body (summary-only):**
 - Change is straightforward and well-described by subject line
@@ -78,6 +69,3 @@ Refactor error handling and update dependencies
 - Upgrade lodash to 4.17.21
 ```
 
-## Return to Main Workflow
-
-**SILENT RETURN**: Output nothing. Do not echo COMMIT_SUBJECT or COMMIT_BODY. The first visible output in this workflow is the `Proposed commit message:` block displayed in the approval step.

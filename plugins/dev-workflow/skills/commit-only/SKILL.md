@@ -21,7 +21,7 @@ If the above shows literal `${CLAUDE_SKILL_DIR}`, halt: "Requires Claude Code 2.
 
 ## Rules
 
-- **DELEGATE_TO**: Execute the referenced file's instructions, then return.
+- **DELEGATE_TO**: Read the referenced file with the Read tool, then execute its instructions exactly. Never improvise or guess commands.
 - **Narration**: Only narrate steps marked STEP_DESCRIPTION. Execute all others silently — do NOT output or summarize intermediate values.
 
 ---

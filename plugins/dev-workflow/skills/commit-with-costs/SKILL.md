@@ -29,7 +29,7 @@ Display any WARNING before proceeding.
 
 ## Rules
 
-- **DELEGATE_TO**: Execute the referenced file's instructions, then return.
+- **DELEGATE_TO**: Read the referenced file with the Read tool, then execute its instructions exactly. Never improvise or guess commands.
 - **Narration**: Only narrate steps marked STEP_DESCRIPTION. Execute all others silently — do NOT output or summarize intermediate values.
 - **JSON outputs**: Extract fields into variables (e.g. `data.session_id` → SESSION_ID).
 - Never fabricate or estimate cost metrics. Only use values from successful ccusage execution.
