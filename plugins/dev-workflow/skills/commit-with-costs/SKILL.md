@@ -29,8 +29,8 @@ Display any WARNING before proceeding.
 
 ## Rules
 
-- **DELEGATE_TO**: Read the referenced file, execute its instructions, then return here.
-- **Narration**: Only narrate steps marked STEP_DESCRIPTION. Execute all others silently.
+- **DELEGATE_TO**: Execute the referenced file's instructions, then return.
+- **Narration**: Only narrate steps marked STEP_DESCRIPTION. Execute all others silently — do NOT output or summarize intermediate values.
 - **JSON outputs**: Extract fields into variables (e.g. `data.session_id` → SESSION_ID).
 - Never fabricate or estimate cost metrics. Only use values from successful ccusage execution.
 
@@ -41,11 +41,11 @@ Display any WARNING before proceeding.
 ```
 - [ ] 0. Pre-flight and config
 - [ ] 1. Resolve SessionID
-- [ ] 2. Detect or generate commit message
-- [ ] 3. Get user approval
-- [ ] 4. Fetch session costs
+- [ ] 2. Detect or Generate Commit Message
+- [ ] 3. Get User Approval
+- [ ] 4. Fetch Cost Data
 - [ ] 5. Create commit
-- [ ] 6. Display summary
+- [ ] 6. Display Final Summary
 ```
 
 ## 0. Pre-flight and Config
@@ -69,7 +69,7 @@ Extract `sessionId` → SESSION_ID. Proceed to Step 2.
 
 ### 1b. Create new configuration
 
-Tell user: "Configuration not found (./.claude/settings.plugins.commit-with-costs.json). Let's create it."
+Display: "Configuration not found (./.claude/settings.plugins.commit-with-costs.json). Let's create it."
 
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
@@ -87,7 +87,7 @@ Inform user of the file location.
 
 Check conversation for an existing `Proposed commit message:` block (e.g. from `/preview-commit-message`).
 
-**If found:** Extract COMMIT_SUBJECT and COMMIT_BODY from the ━━━-delimited block. Do not display yet. Skip to Step 3.
+**If found:** Extract COMMIT_SUBJECT and COMMIT_BODY from the ━━━-delimited block. Skip to Step 3.
 
 **If not found:**
 
@@ -95,11 +95,11 @@ DELEGATE_TO: `../../references/stage_and_analyze.md`
 
 DELEGATE_TO: `../../references/message_guidelines.md`
 
-Store COMMIT_SUBJECT and COMMIT_BODY. Do not display yet.
+Store COMMIT_SUBJECT and COMMIT_BODY. **SILENT STEP**: Produce no output. The first visible output in this workflow is the `Proposed commit message:` block in Step 3.
 
 ## 3. Get User Approval
 
-Requires approval via **AskUserQuestion** before proceeding – never output options as plain text.
+Obtain user approval via **AskUserQuestion** (NOT plain-text) before proceeding.
 
 DELEGATE_TO: `../../references/message_approval.md`
 
@@ -114,7 +114,7 @@ DELEGATE_TO: `references/fetch_cost.md`
 
 **If FETCH_STATUS = "success":** Store SESSION_ID, CURRENT_COST, COST_METHOD, COST_SINCE, CLEANUP_PERIOD_DAYS. Proceed to Step 5.
 
-**If not "success":** Display error. Tell user cost metrics are required. Halt workflow.
+**If not "success":** Display error. Halt: cost metrics are required.
 
 ## 5. Create Commit
 
@@ -127,7 +127,7 @@ DELEGATE_TO: `references/create_commit.md`
 **If STATUS = "success":** Extract COMMIT_SHA. Proceed to Step 6.
 **If not:** Display error. Exit.
 
-## 6. Summary
+## 6. Display Final Summary
 
 ```
 ✅ Commit created with project cost metrics in footer
