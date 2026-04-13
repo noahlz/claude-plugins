@@ -9,9 +9,9 @@
 
 ---
 
-Generate a commit message with imperative mood subject line (stored as COMMIT_SUBJECT) and optional bullet point body (stored as COMMIT_BODY) from the following inputs:
-- Output of the the most `git diff` in context
-- Any other relevant context from the current chat session, i.e. your user's intent / goal.
+Generate COMMIT_SUBJECT (imperative subject line) and COMMIT_BODY (optional bullets) from:
+- Most recent `git diff` in context
+- Any relevant intent or goals from the current session
 
 ## General Guidelines
 
@@ -77,3 +77,7 @@ Refactor error handling and update dependencies
 - Standardize error response format
 - Upgrade lodash to 4.17.21
 ```
+
+## Return to Main Workflow
+
+**SILENT RETURN**: Output nothing. Do not echo COMMIT_SUBJECT or COMMIT_BODY. The first visible output in this workflow is the `Proposed commit message:` block displayed in the approval step.
