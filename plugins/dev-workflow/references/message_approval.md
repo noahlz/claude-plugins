@@ -1,8 +1,8 @@
-# Obtain Commit Message Approval
+# Obtain Commit Message Approval using AskUserQuestion
 
 **Contents:**
 - Mandatory Message Display Instructions
-- Mandatory User Approval Instructions
+- Mandatory User Approval Instructions using AskUserQuestion
 - Response Processing
 - Return to Main Workflow
 
@@ -22,9 +22,9 @@ Proposed commit message:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-## Mandatory User Approval Instructions
+## Mandatory User Approval Instructions using AskUserQuestion
 
-**MANDATORY:** Obtain explicit approval for the commit message from the user:
+**MANDATORY:** Use AskUserQuestion to obtain explicit approval for the commit message from the user:
 
 > Use AskUserQuestion to ask "Approve this commit message?" with options:
   1. "Use full message" (Recommended)

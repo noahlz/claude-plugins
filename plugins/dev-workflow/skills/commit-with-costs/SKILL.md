@@ -31,7 +31,7 @@ Follow the workflow steps EXACTLY.
 - [ ] 1a. Check for existing configuration
 - [ ] 1b. Create new configuration (if needed)
 - [ ] 2. Detect or generate commit message
-- [ ] 3. Get user approval
+- [ ] 3. Get user approval using AskUserQuestion
 - [ ] 4. Fetch session costs
 - [ ] 5. Create commit
 - [ ] 6. Display summary
@@ -158,9 +158,9 @@ DELEGATE_TO: `../../references/message_guidelines.md`
 → **Do NOT display the commit message here.** It will be displayed in Step 3.
 → Proceed to Step 3.
 
-## 3. Display Message to User for Approval
+## 3. Display Message to User for Approval using AskUserQuestion
 
-**BLOCKING:** Requires user approval before Step 4.
+**BLOCKING:** Requires user approval using AskUserQuestion before Step 4.
 
 DELEGATE_TO: `../../references/message_approval.md`
 ⛔ READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE

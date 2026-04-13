@@ -30,7 +30,7 @@ Follow the workflow steps EXACTLY.
 ```
 - [ ] 0. Pre-flight check
 - [ ] 1. Detect or generate commit message
-- [ ] 2. Get user approval
+- [ ] 2. Get user approval using AskUserQuestion
 - [ ] 3. Create commit
 - [ ] 4. Display summary
 ```
@@ -95,7 +95,7 @@ DELEGATE_TO: `../../references/message_guidelines.md`
 → **Do NOT display the commit message here.** It will be displayed in Step 2.
 → Proceed to Step 2.
 
-## 2. Get User Approval
+## 2. Get User Approval using AskUserQuestion
 
 **BLOCKING:** Requires user approval before Step 3.
 
