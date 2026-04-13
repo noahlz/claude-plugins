@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.10.3
+- Improvement: dev-workflow git commit skills revised to have more concise, direct instructions.
+
 # 0.10.2
 - Fixed: removed `context: fork` from all six dev-workflow skills (`commit-with-costs`, `commit-only`, `update-changelog`, `preview-commit-message`, `view-cost-metrics`, `check-claude-changelog`) — Claude Code 2.1.101 began honoring this frontmatter field, causing `AskUserQuestion` to become a deferred tool in forked contexts and breaking interactive commit workflows
 
