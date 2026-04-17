@@ -1,5 +1,8 @@
 # Changelog
 
+# Unreleased
+- Added `de-llm` skill to `writing-tools` plugin: post-processes prose to strip AI-telltale patterns (puffery, inline meta-commentary, unsourced evaluative claims). Invoke as `/de-llm <path>`.
+
 # 0.10.4
 - Fixed: `DELEGATE_TO` rule now prevents command guessing in commit skills
 - Improvement: `update-changelog` skill now uses `AskUserQuestion` prompts for interactive confirmation
