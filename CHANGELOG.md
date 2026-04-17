@@ -1,6 +1,6 @@
 # Changelog
 
-# Unreleased
+# 0.11.0
 - Added `de-llm` skill to `writing-tools` plugin: post-processes prose to strip AI-telltale patterns (puffery, inline meta-commentary, unsourced evaluative claims). Invoke as `/de-llm <path>`.
 
 # 0.10.4
