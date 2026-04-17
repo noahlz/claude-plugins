@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.10.4
+- Fixed: `DELEGATE_TO` rule now prevents command guessing in commit skills
+
 # 0.10.3
 - Improvement: dev-workflow git commit skills revised to have more concise, direct instructions.
 

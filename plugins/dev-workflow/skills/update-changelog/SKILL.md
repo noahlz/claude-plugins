@@ -10,9 +10,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-Inspect commits since last release and write changelog entries matching the project's existing format.
+Write changelog entries for commits since the last release, matching the project's existing format.
 
-**MANDATORY:** Only activate when user invokes `/update-changelog` or explicitly asks to update their changelog. Follow steps EXACTLY.
+**MANDATORY:** Activate only when user invokes `/update-changelog` or explicitly asks to update their changelog. Follow steps EXACTLY.
 
 ---
 
@@ -36,11 +36,11 @@ Inspect commits since last release and write changelog entries matching the proj
 
 ## Silence Protocol
 
-Only narrate steps with a `STEP_DESCRIPTION`. Execute all other steps and tool calls silently.
+Narrate only steps with a `STEP_DESCRIPTION`. Execute all other steps and tool calls silently.
 
 ## Format Fidelity
 
-Never impose a changelog format. Detect and match whatever format the existing changelog uses.
+Detect and match the existing changelog's format. Never impose a new one.
 
 ---
 
@@ -48,8 +48,8 @@ Never impose a changelog format. Detect and match whatever format the existing c
 
 Run: `node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.update-changelog.json"`
 
-- **Found** → run `cat .claude/settings.plugins.update-changelog.json`, extract `changelogPath`, store as `CHANGELOG_PATH`. Verify it exists: `git ls-files --error-unmatch "{{CHANGELOG_PATH}}" 2>/dev/null || test -f "{{CHANGELOG_PATH}}"`. If missing, ask for correct path (default: `./CHANGELOG.md`), update config.
-- **NOT_CONFIGURED** → tell user config is missing. Ask: "Where is your changelog file? (default: `./CHANGELOG.md`)" Store response as `CHANGELOG_PATH`. Write config: `echo '{"changelogPath":"{{CHANGELOG_PATH}}"}' > .claude/settings.plugins.update-changelog.json`
+- **Found** → `cat .claude/settings.plugins.update-changelog.json`, extract `changelogPath` as `CHANGELOG_PATH`. Verify with `git ls-files --error-unmatch "{{CHANGELOG_PATH}}" 2>/dev/null || test -f "{{CHANGELOG_PATH}}"`. If missing, ask for correct path (default: `./CHANGELOG.md`) and update config.
+- **NOT_CONFIGURED** → say config is missing. Ask: "Where is your changelog file? (default: `./CHANGELOG.md`)" Store as `CHANGELOG_PATH`. Write: `echo '{"changelogPath":"{{CHANGELOG_PATH}}"}' > .claude/settings.plugins.update-changelog.json`
 
 ## Step 1 — Detect Latest Tag
 
@@ -57,9 +57,9 @@ Run: `node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/sett
 
 Run: `git tag --list --sort=-v:refname`
 
-Find the most recent semver-like tag (`v1.2.3`, `1.2.3`, `release-1.2.3`, or any digits-and-dots pattern). Store tag as `LATEST_TAG`; strip prefix to get `LATEST_VERSION`.
+Find the most recent semver-like tag (`v1.2.3`, `1.2.3`, `release-1.2.3`, or any digits-and-dots pattern). Store as `LATEST_TAG`; strip prefix for `LATEST_VERSION`.
 
-No semver tag found → tell user and **HALT**.
+No semver tag → say so and **HALT**.
 
 ## Step 2 — Collect Commits
 
@@ -67,26 +67,27 @@ No semver tag found → tell user and **HALT**.
 
 Run: `git log {{LATEST_TAG}}..HEAD --pretty=format:"%h|%s|%b---END---"`
 
-Empty output → tell user "No changes since {{LATEST_TAG}}." and **HALT**.
+Empty output → say "No changes since {{LATEST_TAG}}." and **HALT**.
 
-Parse into entries with fields: `hash`, `subject`, `body`.
+Parse into entries: `hash`, `subject`, `body`.
 
 ## Step 3 — Read Existing Changelog
 
 **STEP_DESCRIPTION**: "Analyzing existing changelog"
 
-Read `CHANGELOG_PATH`. Detect: heading style, bullet style, section names, date format. Find the most recent version entry → store as `CHANGELOG_LATEST_VERSION`.
+Read `CHANGELOG_PATH`. Detect heading style, bullet style, section names, date format. Store most recent version as `CHANGELOG_LATEST_VERSION`.
 
 - `CHANGELOG_LATEST_VERSION` == `LATEST_VERSION` → `NEEDS_NEW_VERSION = true`
-- Otherwise → `NEEDS_NEW_VERSION = false`
+- Else → `NEEDS_NEW_VERSION = false`
 
 ## Step 4 — Filter and Categorize
 
-Silent LLM step — no tool calls, no output to user yet.
+Silent — no tool calls or output.
 
-**Drop** (no external impact): refactors, CI/CD changes, dependency bumps (unless user-visible), style/lint/formatting, test-only, docs-only.
-
-**Keep** (user- or developer-facing): new features, bug fixes, API changes, breaking changes, deprecations, observable perf improvements, security fixes.
+| Action | Commits |
+|--------|---------|
+| **Drop** (no external impact) | refactors, CI/CD, dependency bumps (unless user-visible), style/lint/formatting, test-only, docs-only |
+| **Keep** (user- or developer-facing) | features, bug fixes, API changes, breaking changes, deprecations, observable perf, security fixes |
 
 Assign each kept commit a category matching the detected format (e.g., Added / Changed / Fixed / Removed / Deprecated / Security).
 
@@ -94,21 +95,34 @@ Assign each kept commit a category matching the detected format (e.g., Added / C
 
 **STEP_DESCRIPTION**: "Presenting proposed changelog entries"
 
-Show filtered entries grouped by category, formatted to match the existing changelog style exactly.
+Show filtered entries grouped by category as plain text, matching the existing style. Do NOT repeat entries inside `AskUserQuestion` options.
 
-**If `NEEDS_NEW_VERSION = true`**, ask for the new version:
-- `Major ({{NEXT_MAJOR}}.0.0)`
-- `Minor ({{MAJOR}}.{{NEXT_MINOR}}.0)`
-- `Patch ({{MAJOR}}.{{MINOR}}.{{NEXT_PATCH}})`
-- `Use NEXT_RELEASE as placeholder`
-- `Let me specify a version`
+**If `NEEDS_NEW_VERSION = false`**, call `AskUserQuestion`:
+- Question: `"Latest entry is {{CHANGELOG_LATEST_VERSION}} (unreleased). Append or new section?"`
+- Options:
+  - `Append` — `"Add bullets to {{CHANGELOG_LATEST_VERSION}}"`
+  - `New section` — `"Create a new version section"`
 
-**If `NEEDS_NEW_VERSION = false`**, ask:
-> "The latest changelog entry is `{{CHANGELOG_LATEST_VERSION}}` (unreleased). Append to it, or create a new version section?"
+`Append` → skip to approval. `New section` → continue to version question.
 
-If user wants a new section, follow up with the major/minor/patch question above.
+**If `NEEDS_NEW_VERSION = true`** (or user chose `New section`), call `AskUserQuestion`:
+- Question: `"Which version for the new section?"`
+- Options:
+  - `Major` — `"{{NEXT_MAJOR}}.0.0"`
+  - `Minor` — `"{{MAJOR}}.{{NEXT_MINOR}}.0"`
+  - `Patch` — `"{{MAJOR}}.{{MINOR}}.{{NEXT_PATCH}}"`
+  - `Placeholder` — `"Use NEXT_RELEASE as the version"`
+  - `Custom` — `"Specify a version in chat"`
 
-After the version decision, ask: "Do these entries look correct, or would you like changes?" Apply any requested edits and confirm before proceeding.
+`Custom` → prompt in plain text for the version string.
+
+**Final approval** — call `AskUserQuestion`:
+- Question: `"Approve these entries?"`
+- Options:
+  - `Approve` — `"Write changelog as shown"`
+  - `Revise` — `"Request changes in chat"`
+
+`Revise` → apply edits, re-ask until approved.
 
 ## Step 6 — Write Changelog
 
@@ -116,9 +130,11 @@ After the version decision, ask: "Do these entries look correct, or would you li
 
 Use Edit to insert or append entries into `CHANGELOG_PATH`:
 
-- **New version section**: insert after the header block, before the previous latest entry.
-- **Append to existing section**: add bullets under the appropriate headings; do not duplicate existing entries.
+| Mode | Placement |
+|------|-----------|
+| New version section | Insert after the header block, before the previous latest entry |
+| Append to existing | Add bullets under the matching headings; no duplicates |
 
-Match format exactly: heading markers, bullet characters, spacing, section names, date format. Do NOT introduce any formatting not already present.
+Match format exactly: heading markers, bullet characters, spacing, section names, date format. Do NOT introduce formatting not already present.
 
 After writing, show a brief summary: path updated, version added/appended, entry count by category.
