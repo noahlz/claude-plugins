@@ -12,13 +12,13 @@ allowed-tools:
 
 # de-llm
 
-Post-process prose to remove AI-telltale patterns. Invoked after text exists — not a style guide applied during generation.
+Post-process prose to remove AI-telltale patterns.
 
 ## Core Rule
 
 **Delete unsourced evaluative claims. Rewrite sourced ones.**
 
-A claim is "sourced" only if backed by a citation — a URL or source code reference. Cut unsourced rhetoric.
+A claim is "sourced" only if backed by a citation — a URL or source code reference.
 
 ## Pattern Actions
 
@@ -43,8 +43,6 @@ Detection phrases and before/after examples: [references/patterns.md](./referenc
 4. Apply the action above. When rewriting, preserve the fact; strip editorial framing only.
 5. Write the edited file.
 6. Report changes: `(line, pattern, action, before → after)`.
-
-No interactive prompts mid-run. Show the report at the end.
 
 ## Out of Scope
 

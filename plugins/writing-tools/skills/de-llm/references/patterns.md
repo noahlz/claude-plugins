@@ -1,16 +1,10 @@
 # Pattern Catalog
 
-AI-telltale patterns with before/after examples. Examples use technical contexts; patterns apply to any prose.
-
----
-
 ## 1. Puffery Verbs
 
 **Detection:** `stands as`, `serves as`, `is a testament to`, `underscores`, `marks a pivotal moment`, `reflects broader`, `exemplifies`.
 
 **Action:** Rewrite plainly. Keep the underlying fact; strip the editorial verb.
-
-**Examples:**
 
 | Before | After |
 |--------|-------|
@@ -26,8 +20,6 @@ AI-telltale patterns with before/after examples. Examples use technical contexts
 
 **Action:** Rewrite plainly. Convert the participle to a direct statement if it contains a real claim; delete if pure filler.
 
-**Examples:**
-
 | Before | After |
 |--------|-------|
 | "The retry logic uses exponential backoff, further enhancing reliability." | "The retry logic uses exponential backoff." |
@@ -42,8 +34,6 @@ AI-telltale patterns with before/after examples. Examples use technical contexts
 
 **Action:** Drop the defensive contrast; keep the substantive half as a direct claim.
 
-**Examples:**
-
 | Before | After |
 |--------|-------|
 | "The CLI is not just a wrapper, but a full orchestration layer." | "The CLI is an orchestration layer." |
@@ -56,8 +46,6 @@ AI-telltale patterns with before/after examples. Examples use technical contexts
 **Detection:** `robust`, `seamless`, `powerful`, `comprehensive`, `elegant`, `cutting-edge`, `rich`, `vibrant`, `flexible`, `intuitive`.
 
 **Action:** Delete the adjective; keep the noun. If the sentence collapses without the adjective, delete the sentence.
-
-**Examples:**
 
 | Before | After |
 |--------|-------|
@@ -73,8 +61,6 @@ AI-telltale patterns with before/after examples. Examples use technical contexts
 **Detection:** `this section explores`, `it's worth noting`, `it's important to understand`, `as we'll see`, `in this guide`, `the following describes`.
 
 **Action:** Delete the meta sentence. Keep the content that follows.
-
-**Examples:**
 
 | Before | After |
 |--------|-------|
@@ -92,8 +78,6 @@ AI-telltale patterns with before/after examples. Examples use technical contexts
 - **Unsourced:** delete the claim.
 - **Sourced (citation present — URL or source code reference):** rewrite with concrete attribution.
 
-**Examples:**
-
 | Before | After |
 |--------|-------|
 | "Experts agree that Postgres is the best choice for relational workloads." | (delete — no source) |
@@ -107,8 +91,6 @@ AI-telltale patterns with before/after examples. Examples use technical contexts
 **Detection:** `generally`, `typically`, `in most cases`, `usually`, `tends to` applied to claims that are exactly true or falsifiable.
 
 **Action:** Strip the hedge; keep the direct fact.
-
-**Examples:**
 
 | Before | After |
 |--------|-------|
@@ -125,8 +107,6 @@ Hedging is appropriate when the claim is genuinely probabilistic ("typically 10-
 **Detection:** Sentences leading with "X is an important/powerful/useful/critical tool/framework/library that...".
 
 **Action:** Delete the framing clause. Lead with what X actually does.
-
-**Examples:**
 
 | Before | After |
 |--------|-------|
