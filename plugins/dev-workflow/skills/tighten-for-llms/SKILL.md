@@ -13,22 +13,12 @@ allowed-tools:
 
 **MANDATORY:** Only activate when user invokes `/tighten-for-llms` directly. Follow steps EXACTLY.
 
----
-
-# Skill Workflow Checklist
-
-**Progress:**
-
 ```
 - [ ] 1. Resolve target
 - [ ] 2. Read and classify
 - [ ] 3. Tighten
 - [ ] 4. Report
 ```
-
----
-
-# Skill Workflow Instructions
 
 ## 1. Resolve Target
 
@@ -57,6 +47,8 @@ Read each file. Record word count.
 ## 3. Tighten
 
 Surgical edits per classification. Do NOT rewrite from scratch.
+
+**Context check:** Read the surrounding sentence before cutting a candidate phrase. Keep phrases that carry meaning — e.g., "You should never commit .env files" (the imperative IS the rule). Cut only padding.
 
 | Edit | LLM-facing | External-facing |
 |------|------------|-----------------|
