@@ -22,26 +22,27 @@ A claim is "sourced" only if backed by a citation — a URL or source code refer
 
 ## Pattern Actions
 
-Catalog with examples: [references/patterns.md](./references/patterns.md).
+Detection phrases and before/after examples: [references/patterns.md](./references/patterns.md).
 
 | # | Pattern | Action |
 |---|---------|--------|
-| 1 | Puffery verbs ("stands as", "serves as", "is a testament to", "underscores") | Rewrite plainly |
-| 2 | Participle bloat (trailing `-ing`: "further enhancing", "contributing to") | Rewrite plainly |
+| 1 | Puffery verbs | Rewrite plainly |
+| 2 | Participle bloat | Rewrite plainly |
 | 3 | "Not just X, but Y" contrastive framing | Rewrite plainly |
-| 4 | Promotional adjectives ("robust", "seamless", "powerful", "comprehensive", "elegant", "cutting-edge") | Delete adjective; keep noun. If sentence collapses, delete sentence. |
-| 5 | Self-referential narration ("this section explores", "it's worth noting") | Delete meta sentence |
-| 6 | Vague authority ("experts agree", "researchers argue", "widely considered") | Delete unsourced. If cited, rewrite with concrete attribution. |
-| 7 | Over-hedging on verifiable facts ("generally", "typically", "in most cases") | Strip hedge; keep direct fact |
-| 8 | Premature evaluative framing ("X is an important tool that...") | Delete framing clause; lead with fact |
+| 4 | Promotional adjectives | Delete adjective; keep noun. If sentence collapses, delete sentence. |
+| 5 | Self-referential narration | Delete meta sentence |
+| 6 | Vague authority | Delete unsourced. If cited, rewrite with concrete attribution. |
+| 7 | Over-hedging on verifiable facts | Strip hedge; keep direct fact |
+| 8 | Premature evaluative framing | Delete framing clause; lead with fact |
 
 ## Workflow
 
-1. Read the file at `$ARGUMENTS`.
-2. Scan for each pattern.
-3. Apply the action above. When rewriting, preserve the fact; strip editorial framing only.
-4. Write the edited file.
-5. Report changes: `(line, pattern, action, before → after)`.
+1. Read `references/patterns.md` for detection phrases and rewrite examples.
+2. Read the file at `$ARGUMENTS`.
+3. Scan for each pattern.
+4. Apply the action above. When rewriting, preserve the fact; strip editorial framing only.
+5. Write the edited file.
+6. Report changes: `(line, pattern, action, before → after)`.
 
 No interactive prompts mid-run. Show the report at the end.
 
