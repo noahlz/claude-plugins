@@ -28,12 +28,16 @@ Detection phrases and before/after examples: [references/patterns.md](./referenc
 |---|---------|--------|
 | 1 | Puffery verbs | Rewrite plainly |
 | 2 | Participle bloat | Rewrite plainly |
-| 3 | "Not just X, but Y" contrastive framing | Rewrite plainly |
+| 3 | "Not just X, but Y" contrastive framing (incl. comma-splice "it's not X, it's Y" and verbed "they don't just X, they Y") | Assert Y directly; drop the contrast |
 | 4 | Promotional adjectives | Delete adjective; keep noun. If sentence collapses, delete sentence. |
 | 5 | Self-referential narration | Delete meta sentence |
 | 6 | Vague authority | Delete unsourced. If cited, rewrite with concrete attribution. |
 | 7 | Over-hedging on verifiable facts | Strip hedge; keep direct fact |
 | 8 | Premature evaluative framing | Delete framing clause; lead with fact |
+| 9 | Conclusion signposts ("bottom line", "TL;DR", "the takeaway") | Delete the signpost; let the conclusion stand. If unsupported, delete the conclusion too. |
+| 10 | False-intimacy markers ("honestly", "frankly", "the honest truth") | Delete entirely; evidence carries sincerity, not adverbs |
+| 11 | Mini-conclusion headers ("**The result:**", "**What this means:**") followed by bullets | Delete the header; fold consequence-bullets into prose. Keep bullets only for parallel enumeration. |
+| 12 | Bold-as-emphasis ("**Importantly,**", "**Note that**", "**Crucially,**") | Strip the bold. If the claim needs typographic weight to land, rewrite with concrete detail. |
 
 ## Workflow
 
