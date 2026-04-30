@@ -30,14 +30,19 @@
 
 ## 3. "Not Just X, But Y" Contrastive Framing
 
-**Detection:** "not just", "not only", "more than just" paired with "but also", "but", or a contrastive clause.
+**Detection:** `not just`, `not only`, `more than just` paired with `but also`, `but`, an em-dash, or a comma splice. Includes the verbed variants `they don't just X, they Y`, `we don't just X, we Y`, `it doesn't just X, it Y`.
 
-**Action:** Drop the defensive contrast; keep the substantive half as a direct claim.
+**Action:** Drop the defensive contrast. Assert Y directly. Denying X first adds no information when Y is well-supported.
 
 | Before | After |
 |--------|-------|
 | "The CLI is not just a wrapper, but a full orchestration layer." | "The CLI is an orchestration layer." |
 | "This isn't only a refactor — it's a rethink of the module boundaries." | "This change redraws the module boundaries." |
+| "It's not a config file, it's a contract between services." | "The file is a contract between services." |
+| "This isn't a workaround, it's the supported path." | "This is the supported path." |
+| "They don't just write tests, they design for testability." | "They design for testability." |
+| "We don't just ship features, we ship migrations alongside them." | "Every feature ships with its migration." |
+| "The compiler doesn't just check types, it rewrites the AST." | "The compiler rewrites the AST during type-checking." |
 
 ---
 
@@ -113,3 +118,66 @@ Hedging is appropriate when the claim is genuinely probabilistic ("typically 10-
 | "Redis is a powerful in-memory data store that supports pub/sub, streams, and sorted sets." | "Redis is an in-memory data store. It supports pub/sub, streams, and sorted sets." |
 | "Prettier is a useful code formatter that enforces consistent style." | "Prettier formats code to a consistent style." |
 | "This is a critical utility that handles request retries." | "This utility handles request retries." |
+
+---
+
+## 9. Conclusion Signposts
+
+**Detection:** `bottom line`, `TL;DR`, `the takeaway`, `the upshot`, `long story short`, `in short`, `to sum up`, `at the end of the day`, `the punchline`, `net-net`.
+
+**Action:** Delete the signpost. A supported conclusion needs no announcement. If the surrounding prose does not back the conclusion, delete the conclusion as well — the signpost is masking an unearned verdict.
+
+| Before | After |
+|--------|-------|
+| "Bottom line: Redis is faster for this workload." | "Redis handled 12k req/s vs. Memcached's 8k on the same hardware ([benchmark](url))." |
+| "TL;DR — don't use this API in new code." | "This API is deprecated as of v3.2 ([changelog](url)). New code should use `client.send()`." |
+| "At the end of the day, the migration is necessary." | (delete — restate the concrete reason instead, or remove if already stated) |
+| "The takeaway is that mocks drift from reality." | "Mocked tests passed for six months while production was broken (incident #482)." |
+
+---
+
+## 10. False-Intimacy Markers
+
+**Detection:** `honestly`, `the honest truth`, `to be honest`, `frankly`, `truth be told`, `if I'm being real`, `let me be real`, `the reality is`, `look,` (as a sentence opener), `I'll level with you`.
+
+**Action:** Delete. These imply prior statements were not honest and add no information. Evidence carries sincerity. Adverbs do not.
+
+| Before | After |
+|--------|-------|
+| "Honestly, the codebase needs a rewrite." | "The codebase needs a rewrite. [Specific reasons follow.]" |
+| "The honest truth is that this approach won't scale." | "This approach plateaus at ~10k req/s ([load test](url))." |
+| "Frankly, I'd avoid this library." | "Avoid this library — it has unpatched CVE-2024-XXXX ([advisory](url))." |
+| "Look, the test suite is broken." | "The test suite is broken: 14 failures on `main` as of HEAD." |
+
+---
+
+## 11. Mini-Conclusion Headers
+
+**Detection:** Bolded inline phrases or sub-headings that introduce a bulleted or listed conclusion: `**The result:**`, `**What this means:**`, `**The upshot:**`, `**The takeaway:**`, `**In practice:**`, `**Net effect:**`, `**Why this matters:**`.
+
+**Action:** Delete the header. Convert the bullets to prose when they describe consequence or narrative. Keep them as bullets only when they enumerate parallel items.
+
+| Before | After |
+|--------|-------|
+| `**The result:**`<br>`- 40% lower latency`<br>`- Half the memory footprint` | "Latency drops 40%. Memory footprint halves." |
+| `**What this means:**`<br>`- Migrations are safer`<br>`- Rollbacks are reversible` | "Migrations become reversible: every change has a corresponding rollback step." |
+| `**Why this matters:** the cache is now write-through.` | "The cache is now write-through, so reads after writes return current data." |
+
+Bullets fit parallel items (files, flags, steps). They misfire when they encode a single narrative consequence.
+
+---
+
+## 12. Bold-as-Emphasis
+
+**Detection:** Bold formatting applied to sentence openers or mid-prose phrases for stress rather than to mark a defined term: `**Importantly,** ...`, `**Note that** ...`, `**Critically,** ...`, `**The key insight is** ...`, `**Remember:** ...`, `**Crucially,** ...`.
+
+**Action:** Strip the bold. If the sentence depends on typographic weight to feel important, the underlying claim is weak — rewrite it with concrete detail. Reserve bold for terms of art on first introduction (e.g., **idempotency** as a defined concept), table headers, or form labels.
+
+| Before | After |
+|--------|-------|
+| "**Importantly,** the cache invalidates on every write." | "The cache invalidates on every write." |
+| "**Note that** the function is async." | "The function is async." |
+| "**The key insight:** memoization moves cost from runtime to startup." | "Memoization moves cost from runtime to startup." |
+| "**Crucially,** the lock must be released before the callback runs." | "Release the lock before the callback runs; otherwise the callback deadlocks on re-entry." |
+
+Fix the prose, not the formatting.
