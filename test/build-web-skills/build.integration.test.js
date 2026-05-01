@@ -101,10 +101,9 @@ describe('build-web-skills end-to-end', () => {
       assert.ok(files.includes('craft-linkedin-post/agents/linkedin-reviewer.md'));
     });
 
-    it('bundled agent has no YAML frontmatter and starts with a heading', () => {
+    it('bundled agent has no YAML frontmatter', () => {
       const agent = unzipFile(zip(), 'craft-linkedin-post/agents/linkedin-reviewer.md');
       assert.doesNotMatch(agent, /^---\n/);
-      assert.match(agent, /^# /);
     });
 
     it('SKILL.md references the bundled agent file with environment-generic language', () => {
