@@ -5,14 +5,18 @@
  * added unconditionally to every entry — no per-entry flags.
  *
  * Fields:
- *   name           Folder name inside the zip (must be claude.ai-valid).
- *   plugin         Source plugin (informational; matches plugins/<plugin>/...).
- *   source         Repo-relative path to the skill source directory.
- *   include        Files to copy from the source dir into the staging dir.
- *                  SKILL.md is required; everything else is opt-in.
- *   sourceReadme?  Optional source README path (relative to source) to fold
- *                  into the generated attribution README under "About".
- *   prep?          Optional prep hook name; runs after copy + frontmatter clean.
+ *   name            Folder name inside the zip (must be claude.ai-valid).
+ *   plugin          Source plugin (informational; matches plugins/<plugin>/...).
+ *   source          Repo-relative path to the skill source directory.
+ *   include         Files to copy from the source dir into the staging dir.
+ *                   SKILL.md is required; everything else is opt-in.
+ *   sourceReadme?   Optional source README path (relative to source) to fold
+ *                   into the generated attribution README under "About".
+ *   bundleAgents?   Repo-relative paths to plugin-level agent files. Each is
+ *                   copied into the zip's `agents/<basename>` with YAML
+ *                   frontmatter stripped, so the source agent stays the
+ *                   canonical Claude Code subagent and the zip ships the
+ *                   inline-readable form.
  */
 
 import fs from 'node:fs';
@@ -30,7 +34,7 @@ export const MANIFEST = [
     plugin: 'writing-tools',
     source: 'plugins/writing-tools/skills/craft-linkedin-post',
     include: ['SKILL.md'],
-    prep: 'craft-linkedin-post',
+    bundleAgents: ['plugins/writing-tools/agents/linkedin-reviewer.md'],
   },
   {
     name: 'tighten-for-llms',
@@ -90,6 +94,21 @@ export function validateManifest(manifest, repoRoot) {
       throw new Error(
         `validateManifest [${label}]: sourceReadme not found: ${entry.sourceReadme}`
       );
+    }
+
+    if (entry.bundleAgents !== undefined) {
+      if (!Array.isArray(entry.bundleAgents) || entry.bundleAgents.length === 0) {
+        throw new Error(
+          `validateManifest [${label}]: "bundleAgents" must be a non-empty array when present`
+        );
+      }
+      for (const rel of entry.bundleAgents) {
+        if (!fs.existsSync(path.join(repoRoot, rel))) {
+          throw new Error(
+            `validateManifest [${label}]: bundleAgents source not found: ${rel}`
+          );
+        }
+      }
     }
   }
 }

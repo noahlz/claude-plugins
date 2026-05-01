@@ -85,6 +85,12 @@ describe('build-web-skills end-to-end', () => {
       const repoLicense = readFileSync(path.join(repoRoot, 'LICENSE'), 'utf8');
       assert.equal(license, repoLicense);
     });
+
+    it('SKILL.md body is environment-generic — no $ARGUMENTS or redundant H1', () => {
+      const skillMd = unzipFile(zip(), 'de-llm/SKILL.md');
+      assert.doesNotMatch(skillMd, /\$ARGUMENTS/);
+      assert.doesNotMatch(skillMd, /^# de-llm$/m);
+    });
   });
 
   describe('craft-linkedin-post zip', () => {
@@ -95,20 +101,20 @@ describe('build-web-skills end-to-end', () => {
       assert.ok(files.includes('craft-linkedin-post/agents/linkedin-reviewer.md'));
     });
 
-    it('bundled agent has no YAML frontmatter', () => {
+    it('bundled agent has no YAML frontmatter and starts with a heading', () => {
       const agent = unzipFile(zip(), 'craft-linkedin-post/agents/linkedin-reviewer.md');
       assert.doesNotMatch(agent, /^---\n/);
-    });
-
-    it('bundled agent starts with a markdown heading', () => {
-      const agent = unzipFile(zip(), 'craft-linkedin-post/agents/linkedin-reviewer.md');
       assert.match(agent, /^# /);
     });
 
-    it('SKILL.md has the bundled-agent adapter section', () => {
+    it('SKILL.md references the bundled agent file with environment-generic language', () => {
       const skillMd = unzipFile(zip(), 'craft-linkedin-post/SKILL.md');
-      assert.match(skillMd, /## Bundled agent: linkedin-reviewer/);
-      assert.ok(skillMd.includes('agents/linkedin-reviewer.md'));
+      assert.match(skillMd, /agents\/linkedin-reviewer\.md/);
+      // No legacy build-time-injected adapter section — the source references the bundle natively.
+      assert.doesNotMatch(skillMd, /## Bundled agent: linkedin-reviewer/);
+      // Source shouldn't presume a Claude Code-specific dispatch verb in isolation;
+      // it should describe both subagent and inline modes.
+      assert.match(skillMd, /subagent/i);
     });
   });
 
@@ -141,6 +147,15 @@ describe('build-web-skills end-to-end', () => {
       const readme = unzipFile(zip(), 'tighten-for-llms/README.md');
       assert.match(readme, /^# tighten-for-llms\n/);
       assert.ok(readme.includes('@noahlz'));
+    });
+
+    it('SKILL.md is environment-generic — no $ARGUMENTS, no slash-command gate, no AskUserQuestion in body', () => {
+      const skillMd = unzipFile(zip(), 'tighten-for-llms/SKILL.md');
+      assert.doesNotMatch(skillMd, /\$ARGUMENTS/);
+      assert.doesNotMatch(skillMd, /Only activate when user invokes/);
+      // Body (post-frontmatter) should not reference the AskUserQuestion tool name.
+      const body = skillMd.replace(/^---\n[\s\S]*?\n---\n/, '');
+      assert.doesNotMatch(body, /AskUserQuestion/);
     });
   });
 });

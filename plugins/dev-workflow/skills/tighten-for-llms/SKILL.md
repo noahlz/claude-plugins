@@ -1,6 +1,6 @@
 ---
 name: tighten-for-llms
-description: Make skill, agent, reference, rule, or doc files more concise and LLM-friendly.
+description: Tighten prose for LLM consumption. Strip filler, switch to imperative voice, collapse verbose lists. Apply to any markdown documentation — skill files, agents, references, rules, READMEs.
 model: sonnet
 argument-hint: "[file-path | skill-name | agent-name | docs | readme | rules]"
 allowed-tools:
@@ -11,7 +11,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-**MANDATORY:** Only activate when user invokes `/tighten-for-llms` directly. Follow steps EXACTLY.
+Follow steps EXACTLY.
 
 ```
 - [ ] 1. Resolve target
@@ -22,16 +22,19 @@ allowed-tools:
 
 ## 1. Resolve Target
 
-Parse `$ARGUMENTS` using this table:
+Identify the file(s) to tighten:
 
-| Input | Target |
-|-------|--------|
-| File path | That file |
-| `skill <name>` | Glob `**/skills/<name>/SKILL.md` + `**/skills/<name>/references/*.md` |
-| `agent <name>` | Glob `**/agents/<name>.md` |
-| `docs` or `readme` | Glob `**/README.md` (exclude `node_modules`) |
-| `rules` | Glob `**/.claude/rules/**/*.md` + `**/CLAUDE.md` |
-| Empty or ambiguous | Ask via AskUserQuestion |
+- If the user provides a file path or attached file, target that.
+- If a filesystem is searchable and the user names one of these shortcuts, expand it:
+
+| Shortcut | Expansion |
+|----------|-----------|
+| `skill <name>` | `**/skills/<name>/SKILL.md` + `**/skills/<name>/references/*.md` |
+| `agent <name>` | `**/agents/<name>.md` |
+| `docs` or `readme` | `**/README.md` (exclude `node_modules`) |
+| `rules` | `**/.claude/rules/**/*.md` + `**/CLAUDE.md` |
+
+- If empty or ambiguous, ask which file(s) to tighten.
 
 Multiple matches: confirm scope before proceeding.
 
@@ -56,7 +59,7 @@ Surgical edits per classification. Do NOT rewrite from scratch.
 | Remove | Filler ("In order to", "Please note that", "You should", "Make sure to"), meta-commentary | Internal context, author sections, internal notes |
 | Collapse | Verbose lists → tables | Bullets → tables or paragraphs |
 | Headers | — | Scannable noun phrases |
-| Preserve | Frontmatter, `---`, section headers, code blocks, DELEGATE_TO | Code examples, links, install instructions |
+| Preserve | Frontmatter, `---`, section headers, code blocks | Code examples, links, install instructions |
 
 ## 4. Report
 

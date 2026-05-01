@@ -4,15 +4,13 @@ description: Draft, review, and iterate a LinkedIn post from an outline.
 user-invocable: true
 ---
 
-# Craft LinkedIn Post
-
 Full-cycle LinkedIn post creation: outline → draft → review → passage-by-passage revision.
 
 ## Workflow
 
 1. Ask what the user wants to write about — angle, audience, examples. Do NOT draft yet.
 2. Draft the post. Present in full.
-3. Dispatch `linkedin-reviewer`. Present feedback. Ask direction. Do NOT revise yet.
+3. Review the draft using the `linkedin-reviewer` agent. Dispatch it as a subagent if available; otherwise read `agents/linkedin-reviewer.md` and apply the criteria yourself. Present the feedback. Ask direction. Do NOT revise yet.
 4. Revise passage-by-passage — original and revised side by side, wait for approval before next:
 
 | Response | Action |
@@ -22,8 +20,8 @@ Full-cycle LinkedIn post creation: outline → draft → review → passage-by-p
 | "mix" / tweaks | Combine elements |
 | Direct wording | Use verbatim |
 
-5. Assemble and write to `~/tmp/<slug>.txt`.
-6. Optionally re-run `linkedin-reviewer` for final review. Present findings; let user decide.
+5. Assemble the final post and present it in full. If a writable filesystem is available, also save to `~/tmp/<slug>.txt` and report the path.
+6. Optionally re-run `linkedin-reviewer` for final review. Present findings; let the user decide.
 
 ## Voice
 

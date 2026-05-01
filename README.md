@@ -79,7 +79,7 @@ Writing and editing tools for content creation.
 
 | Skill | Description | Slash Command |
 |-------|-------------|---------------|
-| [`craft-linkedin-post`](./plugins/writing-tools/skills/craft-linkedin-post/SKILL.md) | Draft, review, and iterate a LinkedIn post from an outline. | `/craft-linkedin-post` |
+| [`craft-linkedin-post`](./plugins/writing-tools/skills/craft-linkedin-post/SKILL.md) | Draft, review, and iterate a LinkedIn post from an outline. Uses the `linkedin-reviewer` agent. | `/craft-linkedin-post` |
 | [`de-llm`](./plugins/writing-tools/skills/de-llm/SKILL.md) | Post-process prose to strip AI-telltale patterns: puffery, inline meta-commentary, unsourced evaluative claims. Derived from [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing). | `/de-llm [file-path]` |
 
 ### Agents

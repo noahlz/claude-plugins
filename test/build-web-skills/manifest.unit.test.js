@@ -102,4 +102,40 @@ describe('manifest', () => {
       if (fakeRoot) rmSync(fakeRoot, { recursive: true, force: true });
     }
   });
+
+  it('rejects when bundleAgents is an empty array', () => {
+    const entry = {
+      name: 'x', plugin: 'p', source: 'sk',
+      include: ['SKILL.md'], bundleAgents: [],
+    };
+    let fakeRoot;
+    try {
+      fakeRoot = makeFakeRepo([{ ...entry, bundleAgents: undefined }]);
+      assert.throws(
+        () => validateManifest([entry], fakeRoot),
+        /"bundleAgents" must be a non-empty array/
+      );
+    } finally {
+      if (fakeRoot) rmSync(fakeRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects when a bundleAgents source file does not exist', () => {
+    // bundleAgents paths are repo-relative — point at a path that the fake repo
+    // doesn't stage to confirm the existence check fires.
+    const entry = {
+      name: 'x', plugin: 'p', source: 'sk',
+      include: ['SKILL.md'], bundleAgents: ['no/such/agent.md'],
+    };
+    let fakeRoot;
+    try {
+      fakeRoot = makeFakeRepo([{ ...entry, bundleAgents: undefined }]);
+      assert.throws(
+        () => validateManifest([entry], fakeRoot),
+        /bundleAgents source not found: no\/such\/agent\.md/
+      );
+    } finally {
+      if (fakeRoot) rmSync(fakeRoot, { recursive: true, force: true });
+    }
+  });
 });

@@ -13,17 +13,11 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { MANIFEST, validateManifest } from './manifest.js';
-import { cleanFrontmatter } from './clean-frontmatter.js';
+import { cleanFrontmatter, stripFrontmatter } from './clean-frontmatter.js';
 import { renderReadme } from './render-readme.js';
 import { pack } from './pack.js';
-import { run as prepCraftLinkedinPost } from './prep/craft-linkedin-post.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-
-// Explicit registry: missing names fail at module load, not mid-build.
-export const PREP_HOOKS = {
-  'craft-linkedin-post': prepCraftLinkedinPost,
-};
 
 function readVersion() {
   const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -60,6 +54,16 @@ function buildOne(entry, ctx) {
   );
   fs.writeFileSync(skillMdPath, cleanedSkill);
 
+  if (entry.bundleAgents) {
+    for (const rel of entry.bundleAgents) {
+      const src = path.join(repoRoot, rel);
+      const body = stripFrontmatter(fs.readFileSync(src, 'utf8')).trimEnd();
+      const dest = path.join(stagingDir, 'agents', path.basename(rel));
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, body + '\n');
+    }
+  }
+
   fs.copyFileSync(path.join(repoRoot, 'LICENSE'), path.join(stagingDir, 'LICENSE'));
 
   const sourceReadmeContent = entry.sourceReadme
@@ -75,12 +79,6 @@ function buildOne(entry, ctx) {
     sourceReadmeContent,
   });
   fs.writeFileSync(path.join(stagingDir, 'README.md'), readme);
-
-  if (entry.prep) {
-    const prep = PREP_HOOKS[entry.prep];
-    if (!prep) throw new Error(`Unknown prep hook: ${entry.prep}`);
-    prep({ repoRoot, stagingDir });
-  }
 
   const outputZip = path.join(distRoot, `${entry.name}-v${version}.zip`);
   fs.rmSync(outputZip, { force: true });
@@ -115,8 +113,7 @@ function main() {
   for (const r of results) console.log(`  ${r.zip}`);
 }
 
-// Only run main() when invoked directly as a CLI — not when this module is
-// imported (e.g. by tests reading PREP_HOOKS).
+// Only run main() when invoked directly as a CLI — not when imported by tests.
 const isMain = process.argv[1]
   && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
 
