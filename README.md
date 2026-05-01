@@ -13,7 +13,7 @@ See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-m
 | [dev-workflow](#dev-workflow) | Workflows for common development tasks. |
 | [writing-tools](#writing-tools) | Writing and editing tools for content creation. |
 
-### Installation
+### Installation (Claude Code)
 
 Add the marketplace once, then install the plugins you want:
 
@@ -26,6 +26,24 @@ claude plugin install writing-tools@noahlz.github.io
 #### Prerequisites
 
 - Node.js 22+ (required for dev-workflow only)
+
+### Installation (Claude.ai Web)
+
+A subset of the writing-oriented skills are packaged as standalone ZIP archives for upload to [claude.ai](https://claude.ai). Web skills do not sync from Claude Code — each surface needs its own upload, and Claude.ai requires a Pro, Max, Team, or Enterprise plan with code execution enabled.
+
+Available web-packaged skills (descriptions in the [writing-tools](#writing-tools) and [dev-workflow](#dev-workflow) sections below):
+
+- [`de-llm`](./plugins/writing-tools/skills/de-llm/SKILL.md)
+- [`craft-linkedin-post`](./plugins/writing-tools/skills/craft-linkedin-post/SKILL.md) — bundles the `linkedin-reviewer` agent
+- [`tighten-for-llms`](./plugins/dev-workflow/skills/tighten-for-llms/SKILL.md)
+
+To install:
+
+1. Open the [latest release](https://github.com/noahlz/claude-plugins/releases/latest) and download the `<skill>-v<version>.zip` for the skill you want.
+2. In Claude.ai, open **Settings → Capabilities** and choose **Upload skill**.
+3. Select the downloaded ZIP. The skill becomes available in your chats.
+
+Repeat per skill. Each archive is self-contained — it carries the SKILL.md, an attribution README, the MIT LICENSE, and any bundled references or sub-agents.
 
 ## dev-workflow
 
