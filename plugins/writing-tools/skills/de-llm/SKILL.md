@@ -45,8 +45,3 @@ Detection phrases and before/after examples: [references/patterns.md](./referenc
 4. Apply the action. When rewriting, preserve the fact; strip editorial framing only.
 5. Output the revised prose. If the input was an editable text or markdown file, write the edits back in place. Otherwise present the full revised text.
 6. Report changes: `(line, pattern, action, before → after)`.
-
-## Out of Scope
-
-- Markdown, heading, list, emoji formatting — use `tighten-for-llms`.
-- Prose voice or personality beyond the listed patterns.
