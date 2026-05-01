@@ -36,10 +36,9 @@ describe('renderReadme', () => {
     assert.ok(out.includes('abc1234'));
   });
 
-  it('mentions MIT license and the bundled LICENSE file', () => {
+  it('mentions MIT license and points to the bundled LICENSE file', () => {
     const out = renderReadme(baseInputs);
-    assert.match(out, /MIT/);
-    assert.match(out, /LICENSE/);
+    assert.match(out, /MIT — see `LICENSE` in this archive/);
   });
 
   it('omits the "About this skill" section when no source readme provided', () => {

@@ -1,23 +1,18 @@
 /**
- * Clean a SKILL.md (or any markdown file) so that its YAML frontmatter contains
- * only fields supported by claude.ai web skill uploads.
+ * Clean SKILL.md YAML frontmatter for claude.ai web upload: only `name` and
+ * `description` are kept (claude.ai rejects Claude-Code-only fields like
+ * `allowed-tools`, `argument-hint`, `model`).
  *
- * Allowlist approach: only `name` and `description` survive. Everything else
- * (Claude-Code-only fields like allowed-tools, argument-hint, model, etc.)
- * is stripped, including any indented list values that follow them.
- *
- * Validates per https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview:
- *  - name: 1–64 chars, lowercase letters/digits/hyphens, no "anthropic"/"claude"
- *  - description: 1–1024 chars, no `<` or `>`
+ * Constraints per https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview:
+ *   name: 1–64 chars, lowercase letters/digits/hyphens, no "anthropic"/"claude"
+ *   description: 1–1024 chars, no `<` or `>`
  */
 
+const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
 const WEB_ALLOWED_FIELDS = ['name', 'description'];
 const NAME_RE = /^[a-z0-9-]{1,64}$/;
 const RESERVED_WORDS = ['anthropic', 'claude'];
 
-/**
- * Strip surrounding quotes from a YAML scalar value.
- */
 function unquote(value) {
   const trimmed = value.trim();
   if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
@@ -27,37 +22,19 @@ function unquote(value) {
   return trimmed;
 }
 
-/**
- * Parse the flat key/value pairs of a YAML frontmatter block. Block-list values
- * (subsequent lines starting with whitespace + "-") are consumed but discarded
- * since we only ever read scalar fields from the allowlist; lists only appear
- * in stripped fields like `allowed-tools`.
- *
- * @param {string} block The text between the `---` delimiters (no delimiters).
- * @returns {Record<string, string>} Map of key -> raw scalar value.
- */
+// Block-list values (lines starting with whitespace + "-") are skipped — we
+// only read scalars from the allowlist; lists only appear in stripped fields.
 function parseFlatYaml(block) {
   const result = {};
-  const lines = block.split('\n');
-
-  for (const line of lines) {
-    if (line.match(/^\s+-\s/) || line.match(/^\s{2,}\S/)) {
-      // Continuation of a list or nested block under the previous key — skip.
-      continue;
-    }
+  for (const line of block.split('\n')) {
+    if (line.match(/^\s+-\s/) || line.match(/^\s{2,}\S/)) continue;
     const m = line.match(/^([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(.*)$/);
     if (!m) continue;
-    const [, key, rawValue] = m;
-    result[key] = unquote(rawValue);
+    result[m[1]] = unquote(m[2]);
   }
-
   return result;
 }
 
-/**
- * Validate the cleaned frontmatter against claude.ai's published constraints.
- * Throws an Error with a clear message on the first violation found.
- */
 function validate({ name, description }) {
   if (!name) {
     throw new Error('cleanFrontmatter: required field "name" is missing or empty');
@@ -88,30 +65,29 @@ function validate({ name, description }) {
 }
 
 /**
- * Clean YAML frontmatter for claude.ai web upload.
- *
- * @param {string} markdown Original markdown including frontmatter delimiters.
- * @returns {{ content: string, frontmatter: { name: string, description: string } }}
- *   The cleaned markdown and the parsed allowlisted frontmatter.
+ * Remove the leading YAML frontmatter block from a markdown string.
+ * Returns the body unchanged if no frontmatter is present.
  */
+export function stripFrontmatter(markdown) {
+  const m = markdown.match(FRONTMATTER_RE);
+  return m ? markdown.slice(m[0].length).replace(/^\n+/, '') : markdown;
+}
+
 export function cleanFrontmatter(markdown) {
-  const fmMatch = markdown.match(/^---\n([\s\S]*?)\n---\n?/);
+  const fmMatch = markdown.match(FRONTMATTER_RE);
   if (!fmMatch) {
     throw new Error('cleanFrontmatter: no frontmatter block found at start of file');
   }
-  const block = fmMatch[1];
   const body = markdown.slice(fmMatch[0].length);
 
-  const parsed = parseFlatYaml(block);
+  const parsed = parseFlatYaml(fmMatch[1]);
   const cleaned = {};
   for (const key of WEB_ALLOWED_FIELDS) {
     if (parsed[key] !== undefined) cleaned[key] = parsed[key];
   }
   validate(cleaned);
 
-  const fmLines = WEB_ALLOWED_FIELDS
-    .filter(k => cleaned[k] !== undefined)
-    .map(k => `${k}: ${cleaned[k]}`);
+  const fmLines = WEB_ALLOWED_FIELDS.map(k => `${k}: ${cleaned[k]}`);
   const content = `---\n${fmLines.join('\n')}\n---\n\n${body.replace(/^\n+/, '')}`;
 
   return { content, frontmatter: cleaned };

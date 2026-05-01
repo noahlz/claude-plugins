@@ -1,28 +1,11 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { rmSync } from 'node:fs';
 import path from 'node:path';
 import { MANIFEST, validateManifest } from '../../scripts/build-web-skills/manifest.js';
+import { makeFakeRepo } from './helpers.js';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
-
-function makeFakeRepo(entries) {
-  const root = mkdtempSync(path.join(tmpdir(), 'manifest-test-'));
-  for (const entry of entries) {
-    const dir = path.join(root, entry.source);
-    mkdirSync(dir, { recursive: true });
-    for (const rel of entry.include ?? []) {
-      const fp = path.join(dir, rel);
-      mkdirSync(path.dirname(fp), { recursive: true });
-      writeFileSync(fp, '---\nname: x\ndescription: y\n---\n');
-    }
-    if (entry.sourceReadme) {
-      writeFileSync(path.join(dir, entry.sourceReadme), '# x\n');
-    }
-  }
-  return root;
-}
 
 describe('manifest', () => {
   it('the real MANIFEST validates against the real repo', () => {
@@ -46,28 +29,26 @@ describe('manifest', () => {
   });
 
   it('rejects entry with invalid name', () => {
-    let fakeRoot;
-    try {
-      fakeRoot = makeFakeRepo([{ name: 'BadName', plugin: 'p', source: 'x', include: ['SKILL.md'] }]);
-      assert.throws(
-        () => validateManifest(
-          [{ name: 'BadName', plugin: 'p', source: 'x', include: ['SKILL.md'] }],
-          fakeRoot
-        ),
-        /lowercase letters/
-      );
-    } finally {
-      if (fakeRoot) rmSync(fakeRoot, { recursive: true, force: true });
-    }
+    // Name validation runs before fs lookups, so no fake repo is needed.
+    assert.throws(
+      () => validateManifest(
+        [{ name: 'BadName', plugin: 'p', source: 'x', include: ['SKILL.md'] }],
+        repoRoot
+      ),
+      /lowercase letters/
+    );
   });
 
   it('rejects duplicate names', () => {
+    // Duplicate-name check fires on the second entry, but the first entry's
+    // source-dir existence is checked first — so we need real source dirs to
+    // get past entry 1 and reach the duplicate detection on entry 2.
+    const entries = [
+      { name: 'dup', plugin: 'p', source: 'a', include: ['SKILL.md'] },
+      { name: 'dup', plugin: 'p', source: 'b', include: ['SKILL.md'] },
+    ];
     let fakeRoot;
     try {
-      const entries = [
-        { name: 'dup', plugin: 'p', source: 'a', include: ['SKILL.md'] },
-        { name: 'dup', plugin: 'p', source: 'b', include: ['SKILL.md'] },
-      ];
       fakeRoot = makeFakeRepo(entries);
       assert.throws(() => validateManifest(entries, fakeRoot), /duplicate name/);
     } finally {
@@ -96,11 +77,27 @@ describe('manifest', () => {
   });
 
   it('rejects when an include file does not exist', () => {
+    // Manifest entry claims two includes; we deliberately stage only one of them.
+    const entry = { name: 'x', plugin: 'p', source: 'sk', include: ['SKILL.md', 'missing.md'] };
     let fakeRoot;
     try {
-      const entries = [{ name: 'x', plugin: 'p', source: 'sk', include: ['SKILL.md', 'missing.md'] }];
-      fakeRoot = makeFakeRepo([{ ...entries[0], include: ['SKILL.md'] }]);
-      assert.throws(() => validateManifest(entries, fakeRoot), /include file not found/);
+      fakeRoot = makeFakeRepo([{ ...entry, include: ['SKILL.md'] }]);
+      assert.throws(() => validateManifest([entry], fakeRoot), /include file not found/);
+    } finally {
+      if (fakeRoot) rmSync(fakeRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects when sourceReadme is set but missing', () => {
+    const entry = {
+      name: 'x', plugin: 'p', source: 'sk',
+      include: ['SKILL.md'], sourceReadme: 'README.md',
+    };
+    let fakeRoot;
+    try {
+      // Stage the include but omit the sourceReadme file.
+      fakeRoot = makeFakeRepo([{ ...entry, sourceReadme: undefined }]);
+      assert.throws(() => validateManifest([entry], fakeRoot), /sourceReadme not found/);
     } finally {
       if (fakeRoot) rmSync(fakeRoot, { recursive: true, force: true });
     }

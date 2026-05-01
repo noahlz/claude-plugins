@@ -1,6 +1,13 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { cleanFrontmatter } from '../../scripts/build-web-skills/clean-frontmatter.js';
+import {
+  cleanFrontmatter,
+  stripFrontmatter,
+} from '../../scripts/build-web-skills/clean-frontmatter.js';
+
+// Mirror constraints in clean-frontmatter.js so boundary tests read as boundaries.
+const MAX_NAME_LENGTH = 64;
+const MAX_DESCRIPTION_LENGTH = 1024;
 
 const wrap = (fmLines, body = '# body\n\ntext') =>
   `---\n${fmLines.join('\n')}\n---\n\n${body}\n`;
@@ -67,6 +74,8 @@ describe('cleanFrontmatter', () => {
         'model: sonnet',
       ]);
       const { content } = cleanFrontmatter(input);
+      // model is not in WEB_ALLOWED_FIELDS, so it's stripped via the allowlist
+      // (not a special-case rule); same goes for argument-hint.
       assert.doesNotMatch(content, /argument-hint/);
       assert.doesNotMatch(content, /sonnet/);
     });
@@ -77,22 +86,25 @@ describe('cleanFrontmatter', () => {
       { name: 'valid-name-with-hyphens', ok: true },
       { name: 'name123', ok: true },
       { name: 'a', ok: true },
-      { name: 'UPPER', ok: false, reason: 'uppercase' },
-      { name: 'has_underscore', ok: false, reason: 'underscore' },
-      { name: 'has space', ok: false, reason: 'space' },
-      { name: 'has.dot', ok: false, reason: 'dot' },
-      { name: 'a'.repeat(65), ok: false, reason: '>64 chars' },
-      { name: 'anthropic-tool', ok: false, reason: 'reserved word: anthropic' },
-      { name: 'my-claude-thing', ok: false, reason: 'reserved word: claude' },
+      { name: 'UPPER', ok: false, expect: /invalid name "UPPER" — must be/, reason: 'uppercase' },
+      { name: 'has_underscore', ok: false, expect: /invalid name "has_underscore" — must be/, reason: 'underscore' },
+      { name: 'has space', ok: false, expect: /invalid name "has space" — must be/, reason: 'space' },
+      { name: 'has.dot', ok: false, expect: /invalid name "has\.dot" — must be/, reason: 'dot' },
+      { name: 'a'.repeat(MAX_NAME_LENGTH + 1), ok: false, expect: /invalid name .* — must be/, reason: `>${MAX_NAME_LENGTH} chars` },
+      { name: 'anthropic-tool', ok: false, expect: /reserved word "anthropic"/, reason: 'reserved word: anthropic' },
+      { name: 'my-claude-thing', ok: false, expect: /reserved word "claude"/, reason: 'reserved word: claude' },
     ];
 
-    for (const { name, ok, reason } of validateCases) {
+    for (const { name, ok, expect, reason } of validateCases) {
       it(`${ok ? 'accepts' : `rejects`} name "${name}"${reason ? ` (${reason})` : ''}`, () => {
         const input = wrap([`name: ${name}`, 'description: hi']);
         if (ok) {
           assert.doesNotThrow(() => cleanFrontmatter(input));
         } else {
-          assert.throws(() => cleanFrontmatter(input), /name/i);
+          // Asserting on the specific message proves the right validation branch fired
+          // — a generic `/name/i` would let reserved-word cases pass through the
+          // shape-check error message and miss a regression in the reserved-word loop.
+          assert.throws(() => cleanFrontmatter(input), expect);
         }
       });
     }
@@ -104,36 +116,66 @@ describe('cleanFrontmatter', () => {
       assert.doesNotThrow(() => cleanFrontmatter(input));
     });
 
-    it('rejects descriptions over 1024 chars', () => {
-      const long = 'a'.repeat(1025);
+    it(`rejects descriptions over ${MAX_DESCRIPTION_LENGTH} chars`, () => {
+      const long = 'a'.repeat(MAX_DESCRIPTION_LENGTH + 1);
       const input = wrap(['name: x', `description: ${long}`]);
-      assert.throws(() => cleanFrontmatter(input), /description/i);
+      assert.throws(
+        () => cleanFrontmatter(input),
+        new RegExp(`description is ${MAX_DESCRIPTION_LENGTH + 1} chars`)
+      );
     });
 
     it('rejects descriptions containing < or >', () => {
       const input = wrap(['name: x', 'description: has <xml> tag']);
-      assert.throws(() => cleanFrontmatter(input), /description/i);
+      assert.throws(() => cleanFrontmatter(input), /must not contain "<" or ">"/);
     });
 
     it('rejects empty descriptions', () => {
       const input = wrap(['name: x', 'description: ""']);
-      assert.throws(() => cleanFrontmatter(input), /description/i);
+      assert.throws(() => cleanFrontmatter(input), /required field "description" is missing or empty/);
     });
   });
 
   describe('missing fields', () => {
     it('throws when name is missing', () => {
       const input = wrap(['description: hi']);
-      assert.throws(() => cleanFrontmatter(input), /name/i);
+      assert.throws(() => cleanFrontmatter(input), /required field "name" is missing or empty/);
     });
 
     it('throws when description is missing', () => {
       const input = wrap(['name: x']);
-      assert.throws(() => cleanFrontmatter(input), /description/i);
+      assert.throws(() => cleanFrontmatter(input), /required field "description" is missing or empty/);
     });
 
     it('throws when there is no frontmatter block at all', () => {
-      assert.throws(() => cleanFrontmatter('# just a body\n'), /frontmatter/i);
+      assert.throws(() => cleanFrontmatter('# just a body\n'), /no frontmatter block found/);
     });
+  });
+});
+
+describe('stripFrontmatter', () => {
+  it('returns the body without the leading frontmatter block', () => {
+    const input = '---\nname: x\ndescription: y\n---\n\n# Heading\n\nbody text\n';
+    assert.equal(stripFrontmatter(input), '# Heading\n\nbody text\n');
+  });
+
+  it('strips trailing blank lines after the closing delimiter', () => {
+    const input = '---\nname: x\n---\n\n\n\nbody\n';
+    assert.equal(stripFrontmatter(input), 'body\n');
+  });
+
+  it('returns input unchanged when there is no frontmatter', () => {
+    const input = '# Just a body\n\nNo frontmatter here.\n';
+    assert.equal(stripFrontmatter(input), input);
+  });
+
+  it('returns input unchanged when "---" appears mid-document, not at the start', () => {
+    const input = '# Heading\n\n---\n\nA horizontal rule, not frontmatter.\n';
+    assert.equal(stripFrontmatter(input), input);
+  });
+
+  it('handles frontmatter without a trailing newline after the closing delimiter', () => {
+    const input = '---\nname: x\n---\nbody-on-next-line';
+    assert.equal(stripFrontmatter(input), 'body-on-next-line');
   });
 });

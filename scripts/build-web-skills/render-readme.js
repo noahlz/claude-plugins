@@ -1,34 +1,17 @@
 /**
- * Render the attribution README.md that is bundled into every web-skill ZIP.
- *
- * The README ensures that a forwarded archive carries provenance back to the
- * original author and source repo, plus build metadata for traceability.
+ * Render the attribution README.md bundled into every web-skill ZIP, so a
+ * forwarded archive carries provenance back to the source repo and author.
  */
 
 const REPO_URL = 'https://github.com/noahlz/claude-plugins';
 const AUTHOR_HANDLE = '@noahlz';
 const AUTHOR_URL = 'https://github.com/noahlz';
 
-/**
- * Strip a single leading H1 heading from a markdown blob so that, when folded
- * under our "## About this skill" section, the source README's own title does
- * not become a confusing second top-level heading inside the file.
- */
+// Drop the source README's H1 so it doesn't collide with our own top-level title.
 function stripLeadingH1(md) {
   return md.replace(/^# [^\n]*\n+/, '');
 }
 
-/**
- * @param {object} opts
- * @param {string} opts.name              Cleaned skill name (claude.ai-valid).
- * @param {string} opts.description       Cleaned skill description.
- * @param {string} opts.sourcePath        Repo-relative source dir (no leading slash).
- * @param {string} opts.version           Release version, e.g. "0.11.1".
- * @param {string} opts.buildDate         ISO date string YYYY-MM-DD.
- * @param {string} opts.gitSha            Short (~7 char) commit sha.
- * @param {string} [opts.sourceReadmeContent]  Optional source README to fold in.
- * @returns {string} Markdown for README.md.
- */
 export function renderReadme({
   name,
   description,

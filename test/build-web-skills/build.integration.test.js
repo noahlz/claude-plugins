@@ -1,4 +1,4 @@
-import { describe, it, before } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
@@ -33,6 +33,10 @@ describe('build-web-skills end-to-end', () => {
       r.status, 0,
       `build script exited ${r.status}\nstdout: ${r.stdout}\nstderr: ${r.stderr}`
     );
+  });
+
+  after(() => {
+    rmSync(distDir, { recursive: true, force: true });
   });
 
   it('produces three named zip artifacts', () => {
@@ -110,12 +114,26 @@ describe('build-web-skills end-to-end', () => {
 
   describe('tighten-for-llms zip', () => {
     const zip = () => path.join(distDir, `tighten-for-llms-v${pkgVersion}.zip`);
+    const sourceReadmePath = path.join(
+      repoRoot, 'plugins/dev-workflow/skills/tighten-for-llms/README.md'
+    );
 
     it('README.md folds the source README under "About this skill"', () => {
       const readme = unzipFile(zip(), 'tighten-for-llms/README.md');
       assert.match(readme, /## About this skill/);
-      // Source README mentions "/tighten" usage — the folded content should retain it.
-      assert.ok(readme.includes('/tighten'));
+      // Read the source README at runtime and assert the folded section
+      // contains the source body (with leading H1 stripped). This pins the
+      // contract — "fold the source README" — without coupling to specific
+      // wording in the source file.
+      const source = readFileSync(sourceReadmePath, 'utf8');
+      const sourceBody = source.replace(/^# [^\n]*\n+/, '').trim();
+      assert.ok(sourceBody.length > 0, 'source README must have a body to fold');
+      const aboutIdx = readme.indexOf('## About this skill');
+      const folded = readme.slice(aboutIdx);
+      assert.ok(
+        folded.includes(sourceBody),
+        `bundled README should contain the full source body under "About this skill"`
+      );
     });
 
     it('does not include a bare copy of the source README at root', () => {

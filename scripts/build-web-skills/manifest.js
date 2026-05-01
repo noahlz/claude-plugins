@@ -44,14 +44,7 @@ export const MANIFEST = [
 const REQUIRED_FIELDS = ['name', 'plugin', 'source', 'include'];
 const NAME_RE = /^[a-z0-9-]{1,64}$/;
 
-/**
- * Validate a manifest against shape and filesystem reality.
- *
- * @param {Array} manifest    The manifest to check.
- * @param {string} repoRoot   Absolute path to the repo root, used to resolve
- *                            `source` and `include` paths.
- * @throws {Error} on the first violation; the message identifies the entry.
- */
+// Throws on first violation; error message identifies the offending entry.
 export function validateManifest(manifest, repoRoot) {
   if (!Array.isArray(manifest) || manifest.length === 0) {
     throw new Error('validateManifest: manifest must be a non-empty array');

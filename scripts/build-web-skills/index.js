@@ -16,8 +16,14 @@ import { MANIFEST, validateManifest } from './manifest.js';
 import { cleanFrontmatter } from './clean-frontmatter.js';
 import { renderReadme } from './render-readme.js';
 import { pack } from './pack.js';
+import { run as prepCraftLinkedinPost } from './prep/craft-linkedin-post.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+
+// Explicit registry: missing names fail at module load, not mid-build.
+export const PREP_HOOKS = {
+  'craft-linkedin-post': prepCraftLinkedinPost,
+};
 
 function readVersion() {
   const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -25,7 +31,7 @@ function readVersion() {
 }
 
 function readGitSha() {
-  // CI: GitHub provides GITHUB_SHA; trust that over a local git rev-parse.
+  // CI provides GITHUB_SHA; trust that over a local git rev-parse.
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
   try {
     const full = execSync('git rev-parse HEAD', { cwd: repoRoot, encoding: 'utf8' }).trim();
@@ -35,51 +41,30 @@ function readGitSha() {
   }
 }
 
-function copyInclude(repoRoot, sourceDir, includes, stagingDir) {
-  for (const rel of includes) {
-    const src = path.join(repoRoot, sourceDir, rel);
-    const dest = path.join(stagingDir, rel);
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(src, dest);
-  }
-}
-
-async function loadPrep(name) {
-  const mod = await import(`./prep/${name}.js`);
-  if (typeof mod.run !== 'function') {
-    throw new Error(`prep/${name}.js must export a "run" function`);
-  }
-  return mod.run;
-}
-
-async function buildOne(entry, ctx) {
+function buildOne(entry, ctx) {
   const { repoRoot, version, buildDate, gitSha, distRoot } = ctx;
   const stagingDir = path.join(distRoot, entry.name);
 
-  // 1. Clean staging dir.
   fs.rmSync(stagingDir, { recursive: true, force: true });
   fs.mkdirSync(stagingDir, { recursive: true });
 
-  // 2. Copy include files from source.
-  copyInclude(repoRoot, entry.source, entry.include, stagingDir);
+  for (const rel of entry.include) {
+    const dest = path.join(stagingDir, rel);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(path.join(repoRoot, entry.source, rel), dest);
+  }
 
-  // 3. Clean SKILL.md frontmatter and capture parsed name/description for README.
   const skillMdPath = path.join(stagingDir, 'SKILL.md');
-  const originalSkill = fs.readFileSync(skillMdPath, 'utf8');
-  const { content: cleanedSkill, frontmatter } = cleanFrontmatter(originalSkill);
+  const { content: cleanedSkill, frontmatter } = cleanFrontmatter(
+    fs.readFileSync(skillMdPath, 'utf8')
+  );
   fs.writeFileSync(skillMdPath, cleanedSkill);
 
-  // 4. Copy repo-root LICENSE.
   fs.copyFileSync(path.join(repoRoot, 'LICENSE'), path.join(stagingDir, 'LICENSE'));
 
-  // 5. Render attribution README (folding optional sourceReadme).
-  let sourceReadmeContent;
-  if (entry.sourceReadme) {
-    sourceReadmeContent = fs.readFileSync(
-      path.join(repoRoot, entry.source, entry.sourceReadme),
-      'utf8'
-    );
-  }
+  const sourceReadmeContent = entry.sourceReadme
+    ? fs.readFileSync(path.join(repoRoot, entry.source, entry.sourceReadme), 'utf8')
+    : undefined;
   const readme = renderReadme({
     name: frontmatter.name,
     description: frontmatter.description,
@@ -91,13 +76,12 @@ async function buildOne(entry, ctx) {
   });
   fs.writeFileSync(path.join(stagingDir, 'README.md'), readme);
 
-  // 6. Per-skill prep hook (e.g. agent bundling).
   if (entry.prep) {
-    const run = await loadPrep(entry.prep);
-    run({ repoRoot, stagingDir });
+    const prep = PREP_HOOKS[entry.prep];
+    if (!prep) throw new Error(`Unknown prep hook: ${entry.prep}`);
+    prep({ repoRoot, stagingDir });
   }
 
-  // 7. Pack.
   const outputZip = path.join(distRoot, `${entry.name}-v${version}.zip`);
   fs.rmSync(outputZip, { force: true });
   pack({ stagingDir, outputZip });
@@ -105,7 +89,7 @@ async function buildOne(entry, ctx) {
   return { name: entry.name, zip: path.relative(repoRoot, outputZip) };
 }
 
-async function main() {
+function main() {
   validateManifest(MANIFEST, repoRoot);
 
   const ctx = {
@@ -121,7 +105,7 @@ async function main() {
   const results = [];
   for (const entry of MANIFEST) {
     process.stdout.write(`Building ${entry.name}... `);
-    const r = await buildOne(entry, ctx);
+    const r = buildOne(entry, ctx);
     process.stdout.write(`✔ ${r.zip}\n`);
     results.push(r);
   }
@@ -131,8 +115,17 @@ async function main() {
   for (const r of results) console.log(`  ${r.zip}`);
 }
 
-main().catch(err => {
-  console.error(`\nBuild failed: ${err.message}`);
-  if (process.env.DEBUG) console.error(err.stack);
-  process.exit(1);
-});
+// Only run main() when invoked directly as a CLI — not when this module is
+// imported (e.g. by tests reading PREP_HOOKS).
+const isMain = process.argv[1]
+  && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isMain) {
+  try {
+    main();
+  } catch (err) {
+    console.error(`\nBuild failed: ${err.message}`);
+    if (process.env.DEBUG) console.error(err.stack);
+    process.exit(1);
+  }
+}
