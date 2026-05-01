@@ -1,6 +1,6 @@
 ---
 name: de-llm
-description: Post-process prose to strip AI-telltale patterns — puffery, inline meta-commentary, unsourced evaluative claims. Invoke as /de-llm <path> to clean up an existing file.
+description: Post-process prose to strip AI-telltale patterns — puffery, inline meta-commentary, unsourced evaluative claims.
 user-invocable: true
 argument-hint: "[file-path]"
 allowed-tools:
