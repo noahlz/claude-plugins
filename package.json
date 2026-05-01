@@ -8,6 +8,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist/",
+    "build:web-skills": "node scripts/build-web-skills/index.js",
     "test": "node test/run-tests.js",
     "coverage": "node --experimental-test-coverage --test test/**/*.test.js",
     "release": "release-it",

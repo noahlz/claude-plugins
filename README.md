@@ -13,7 +13,7 @@ See: [Claude Code: Plugin Marketplaces](https://code.claude.com/docs/en/plugin-m
 | [dev-workflow](#dev-workflow) | Workflows for common development tasks. |
 | [writing-tools](#writing-tools) | Writing and editing tools for content creation. |
 
-### Installation
+### Installation (Claude Code)
 
 Add the marketplace once, then install the plugins you want:
 
@@ -26,6 +26,24 @@ claude plugin install writing-tools@noahlz.github.io
 #### Prerequisites
 
 - Node.js 22+ (required for dev-workflow only)
+
+### Installation (Claude.ai Web)
+
+Several writing-oriented skills are available standalone for use on [claude.ai](https://claude.ai). Accounts must be Pro, Max, Team, or Enterprise plan with code execution enabled.
+
+Available web-packaged skills:
+
+- [`de-llm`](./plugins/writing-tools/skills/de-llm/SKILL.md)
+- [`craft-linkedin-post`](./plugins/writing-tools/skills/craft-linkedin-post/SKILL.md) — bundles the `linkedin-reviewer` agent
+- [`tighten-for-llms`](./plugins/dev-workflow/skills/tighten-for-llms/SKILL.md)
+
+See [writing-tools](#writing-tools) and [dev-workflow](#dev-workflow) sections below for descriptions.
+
+To install:
+
+1. Download zip from the [latest release](https://github.com/noahlz/claude-plugins/releases/latest) page
+2. In Claude.ai, open **Settings → Capabilities** and choose **Upload skill**.
+3. Drag the skill ZIP file to **Upload skill**. The skill will now be available in your chats.
 
 ## dev-workflow
 
@@ -61,7 +79,7 @@ Writing and editing tools for content creation.
 
 | Skill | Description | Slash Command |
 |-------|-------------|---------------|
-| [`craft-linkedin-post`](./plugins/writing-tools/skills/craft-linkedin-post/SKILL.md) | Draft, review, and iterate a LinkedIn post from an outline. | `/craft-linkedin-post` |
+| [`craft-linkedin-post`](./plugins/writing-tools/skills/craft-linkedin-post/SKILL.md) | Draft, review, and iterate a LinkedIn post from an outline. Uses the `linkedin-reviewer` agent. | `/craft-linkedin-post` |
 | [`de-llm`](./plugins/writing-tools/skills/de-llm/SKILL.md) | Post-process prose to strip AI-telltale patterns: puffery, inline meta-commentary, unsourced evaluative claims. Derived from [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing). | `/de-llm [file-path]` |
 
 ### Agents

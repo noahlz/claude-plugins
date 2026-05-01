@@ -1,0 +1,49 @@
+name: Release web skills
+
+# Tag push → build + attach to a GitHub release.
+# Manual dispatch → build + upload as workflow artifacts (no release created),
+# so you can dry-run the build and inspect the zips before cutting a tag.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # required to create releases and upload assets on tag push
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build web-skill zips
+        run: node scripts/build-web-skills/index.js
+
+      - name: List built artifacts
+        run: ls -la dist/web-skills
+
+      # Always upload as workflow artifacts so manual runs produce
+      # downloadable zips from the Actions UI without creating a release.
+      - name: Upload zips as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-skills-zips
+          path: dist/web-skills/*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create release with assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/web-skills/*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true

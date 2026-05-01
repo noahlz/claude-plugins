@@ -1,6 +1,6 @@
 ---
 name: de-llm
-description: Post-process prose to strip AI-telltale patterns — puffery, inline meta-commentary, unsourced evaluative claims. Invoke as /de-llm <path> to clean up an existing file.
+description: Post-process prose to strip AI-telltale patterns — puffery, inline meta-commentary, unsourced evaluative claims.
 user-invocable: true
 argument-hint: "[file-path]"
 allowed-tools:
@@ -9,8 +9,6 @@ allowed-tools:
   - Glob
   - Grep
 ---
-
-# de-llm
 
 Post-process prose to remove AI-telltale patterns.
 
@@ -42,13 +40,8 @@ Detection phrases and before/after examples: [references/patterns.md](./referenc
 ## Workflow
 
 1. Read `references/patterns.md` for detection phrases and rewrite examples.
-2. Read the file at `$ARGUMENTS`.
-3. Scan for each pattern.
-4. Apply the action above. When rewriting, preserve the fact; strip editorial framing only.
-5. Write the edited file.
+2. Read the prose to edit. Accept any of: a file path, an attached file, or pasted text. For binary formats (docx, pdf), extract the text first.
+3. Scan for each pattern. Skip patterns 11 and 12 when the input has no inline markdown formatting (e.g., text extracted from PDF).
+4. Apply the action. When rewriting, preserve the fact; strip editorial framing only.
+5. Output the revised prose. If the input was an editable text or markdown file, write the edits back in place. Otherwise present the full revised text.
 6. Report changes: `(line, pattern, action, before → after)`.
-
-## Out of Scope
-
-- Markdown, heading, list, emoji formatting — use `tighten-for-llms`.
-- Prose voice or personality beyond the listed patterns.

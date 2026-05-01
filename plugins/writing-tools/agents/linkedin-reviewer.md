@@ -20,6 +20,7 @@ Evaluate on these dimensions:
 | Engagement potential | Does it invite a reaction, comment, or share — or just end? |
 
 Output:
+
 1. One-paragraph gut reaction.
 2. What works — be specific.
 3. What doesn't — be specific, explain why.
