@@ -29,21 +29,21 @@ claude plugin install writing-tools@noahlz.github.io
 
 ### Installation (Claude.ai Web)
 
-A subset of the writing-oriented skills are packaged as standalone ZIP archives for upload to [claude.ai](https://claude.ai). Web skills do not sync from Claude Code — each surface needs its own upload, and Claude.ai requires a Pro, Max, Team, or Enterprise plan with code execution enabled.
+Several writing-oriented skills are available standalone for use on [claude.ai](https://claude.ai). Accounts must be Pro, Max, Team, or Enterprise plan with code execution enabled.
 
-Available web-packaged skills (descriptions in the [writing-tools](#writing-tools) and [dev-workflow](#dev-workflow) sections below):
+Available web-packaged skills:
 
 - [`de-llm`](./plugins/writing-tools/skills/de-llm/SKILL.md)
 - [`craft-linkedin-post`](./plugins/writing-tools/skills/craft-linkedin-post/SKILL.md) — bundles the `linkedin-reviewer` agent
 - [`tighten-for-llms`](./plugins/dev-workflow/skills/tighten-for-llms/SKILL.md)
 
+See [writing-tools](#writing-tools) and [dev-workflow](#dev-workflow) sections below for descriptions.
+
 To install:
 
-1. Open the [latest release](https://github.com/noahlz/claude-plugins/releases/latest) and download the `<skill>-v<version>.zip` for the skill you want.
+1. Download zip from the [latest release](https://github.com/noahlz/claude-plugins/releases/latest) page
 2. In Claude.ai, open **Settings → Capabilities** and choose **Upload skill**.
-3. Select the downloaded ZIP. The skill becomes available in your chats.
-
-Repeat per skill. Each archive is self-contained — it carries the SKILL.md, an attribution README, the MIT LICENSE, and any bundled references or sub-agents.
+3. Drag the skill ZIP file to **Upload skill**. The skill will now be available in your chats.
 
 ## dev-workflow
 
