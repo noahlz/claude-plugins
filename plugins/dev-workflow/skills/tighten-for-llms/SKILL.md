@@ -1,6 +1,6 @@
 ---
 name: tighten-for-llms
-description: Tighten prose for LLM consumption. Strip filler, switch to imperative voice, collapse verbose lists. Apply to any markdown documentation — skill files, agents, references, rules, READMEs.
+description: Tighten prose for LLM consumption. Strip filler, switch to imperative voice, collapse verbose lists. Apply to any markdown documentation — skill files, agents, references, rules, CLAUDE.md
 model: sonnet
 argument-hint: "[file-path | skill-name | agent-name | docs | readme | rules]"
 allowed-tools:

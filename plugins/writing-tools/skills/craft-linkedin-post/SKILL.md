@@ -20,7 +20,7 @@ Full-cycle LinkedIn post creation: outline → draft → review → passage-by-p
 | "mix" / tweaks | Combine elements |
 | Direct wording | Use verbatim |
 
-5. Assemble the final post and present it in full. If a writable filesystem is available, also save to `~/tmp/<slug>.txt` and report the path.
+5. Assemble the final post and present it in full. Save to a temporary/scratch file location and report the path.
 6. Optionally re-run `linkedin-reviewer` for final review. Present findings; let the user decide.
 
 ## Voice
