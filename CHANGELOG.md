@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.12.0
+- Added claude.ai web support: `de-llm`, `craft-linkedin-post`, and `tighten-for-llms` available as installable ZIPs
+- Minor refinements to `de-llm`, `craft-linkedin-post`, and `tighten-for-llms`
+
 # 0.11.1
 - Enhanced `de-llm` skill with additional LLM indicators to detect/rewrite.
 
