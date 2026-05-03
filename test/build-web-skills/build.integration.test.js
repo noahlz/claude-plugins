@@ -106,14 +106,27 @@ describe('build-web-skills end-to-end', () => {
       assert.doesNotMatch(agent, /^---\n/);
     });
 
-    it('SKILL.md references the bundled agent file with environment-generic language', () => {
+    it('SKILL.md references the bundled agent file via the inline-read form', () => {
       const skillMd = unzipFile(zip(), 'craft-linkedin-post/SKILL.md');
-      assert.match(skillMd, /agents\/linkedin-reviewer\.md/);
-      // No legacy build-time-injected adapter section — the source references the bundle natively.
+      // The web build's agent-dispatch normalizer rewrites
+      // "Dispatch the `linkedin-reviewer` agent to ..." into a direct read of
+      // the bundled file. The source assertion lives in a separate test below.
+      assert.match(
+        skillMd,
+        /Read `agents\/linkedin-reviewer\.md` and follow its instructions to/
+      );
       assert.doesNotMatch(skillMd, /## Bundled agent: linkedin-reviewer/);
-      // Source shouldn't presume a Claude Code-specific dispatch verb in isolation;
-      // it should describe both subagent and inline modes.
-      assert.match(skillMd, /subagent/i);
+      assert.doesNotMatch(skillMd, /Dispatch the/);
+      // Step 5's scratch-save line is dropped from source.
+      assert.doesNotMatch(skillMd, /scratch[- ]?file|temporary.*location/i);
+    });
+
+    it('source SKILL.md uses the canonical "Dispatch the X agent to" form', () => {
+      const sourceSkill = readFileSync(
+        path.join(repoRoot, 'plugins/writing-tools/skills/craft-linkedin-post/SKILL.md'),
+        'utf8'
+      );
+      assert.match(sourceSkill, /Dispatch the `?linkedin-reviewer`? agent to/);
     });
   });
 
@@ -155,6 +168,12 @@ describe('build-web-skills end-to-end', () => {
       // Body (post-frontmatter) should not reference the AskUserQuestion tool name.
       const body = skillMd.replace(/^---\n[\s\S]*?\n---\n/, '');
       assert.doesNotMatch(body, /AskUserQuestion/);
+    });
+
+    it('SKILL.md leads with multi-modal input', () => {
+      const skillMd = unzipFile(zip(), 'tighten-for-llms/SKILL.md');
+      assert.match(skillMd, /attached file/i);
+      assert.match(skillMd, /pasted (?:text|block|markdown)/i);
     });
   });
 });

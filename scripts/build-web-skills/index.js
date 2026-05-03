@@ -14,6 +14,7 @@ import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { MANIFEST, validateManifest } from './manifest.js';
 import { cleanFrontmatter, stripFrontmatter } from './clean-frontmatter.js';
+import { replaceAgentDispatch } from './replace-agent-dispatch.js';
 import { renderReadme } from './render-readme.js';
 import { pack } from './pack.js';
 
@@ -52,12 +53,14 @@ function buildOne(entry, ctx) {
   const { content: cleanedSkill, frontmatter } = cleanFrontmatter(
     fs.readFileSync(skillMdPath, 'utf8')
   );
-  fs.writeFileSync(skillMdPath, cleanedSkill);
+  fs.writeFileSync(skillMdPath, replaceAgentDispatch(cleanedSkill));
 
   if (entry.bundleAgents) {
     for (const rel of entry.bundleAgents) {
       const src = path.join(repoRoot, rel);
-      const body = stripFrontmatter(fs.readFileSync(src, 'utf8')).trimEnd();
+      const body = replaceAgentDispatch(
+        stripFrontmatter(fs.readFileSync(src, 'utf8')).trimEnd()
+      );
       const dest = path.join(stagingDir, 'agents', path.basename(rel));
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.writeFileSync(dest, body + '\n');
