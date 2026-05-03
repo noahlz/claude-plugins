@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.12.1
+- `tighten-for-llms` and `craft-linkedin-post` web skills now work on claude.ai with attached files or pasted text
+
 # 0.12.0
 - Added claude.ai web support: `de-llm`, `craft-linkedin-post`, and `tighten-for-llms` available as installable ZIPs
 - Minor refinements to `de-llm`, `craft-linkedin-post`, and `tighten-for-llms`
