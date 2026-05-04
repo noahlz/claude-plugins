@@ -181,3 +181,26 @@ Bullets fit parallel items (files, flags, steps). They misfire when they encode 
 | "**Crucially,** the lock must be released before the callback runs." | "Release the lock before the callback runs; otherwise the callback deadlocks on re-entry." |
 
 Fix the prose, not the formatting.
+
+---
+
+## 13. Compressed Abstract or Metaphorical Phrasing
+
+**Detection:** Noun phrases that compress abstraction or metaphor in place of concrete description.
+
+- **Process nominalizations:** `the drift`, `the divergence`, `the convergence`, `the cascade`, `the unraveling`, `the regression`, `the slippage`, `the entanglement`, `the misalignment`.
+- **Anatomical/structural metaphors:** `load-bearing`, `the spine`, `the functional spine`, `the connective tissue`, `the scaffolding`, `the skeleton`, `the backbone`, `the seam`, `the contract` (when not a literal interface).
+- **Abstractions used as concrete nouns:** `the shape`, `the texture`, `the gravity`, `the pressure` (applied to code or systems, not physical objects).
+
+**Action:**
+- **Recoverable referent:** rewrite the phrase concretely using the surrounding prose.
+- **Unrecoverable referent:** leave it. Log `(line, pattern 13, skipped — context insufficient)` in the post-run summary. No inline markers.
+
+| Before | After |
+|--------|-------|
+| "After six months, we noticed the drift between staging and prod configs." | "After six months, staging and prod configs no longer matched." |
+| "The migration touches load-bearing changes in the auth module." | "The migration changes the session-token format — every consumer must update." |
+| "The functional spine of the parser is the recursive descent loop." | "The parser is built around a recursive descent loop." |
+| "The divergence has become unsustainable." | (skip — no antecedent; log) |
+
+Skip concrete technical artifacts: `the migration`, `the schema`, `the cache`, `the worker pool`, `surface area`. Target only abstract processes or imported physical metaphors that stand in for missing detail.
