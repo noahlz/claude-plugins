@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.12.2
+- Enhance `de-llm` skill to expand "compressed" language (metaphors often added by LLMs)
+
 # 0.12.1
 - `tighten-for-llms` and `craft-linkedin-post` web skills now work on claude.ai with attached files or pasted text
 
