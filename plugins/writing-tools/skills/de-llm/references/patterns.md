@@ -46,11 +46,15 @@
 
 ---
 
-## 4. Promotional Adjectives
+## 4. Evaluative Descriptors
 
-**Detection:** `robust`, `seamless`, `powerful`, `comprehensive`, `elegant`, `cutting-edge`, `rich`, `vibrant`, `flexible`, `intuitive`.
+**Detection:**
+- **Word-level:** `robust`, `seamless`, `powerful`, `comprehensive`, `elegant`, `cutting-edge`, `rich`, `vibrant`, `flexible`, `intuitive` applied to a noun.
+- **Clause-level:** "X is an important/powerful/useful/critical tool/framework/library that..."
 
-**Action:** Delete the adjective; keep the noun. If the sentence collapses without the adjective, delete the sentence.
+**Action:**
+- **Word-level:** Delete the adjective; keep the noun. If the sentence collapses, delete it.
+- **Clause-level:** Delete the framing clause. Lead with what X does.
 
 | Before | After |
 |--------|-------|
@@ -58,6 +62,9 @@
 | "Seamless integration with GitHub Actions." | "Integrates with GitHub Actions." |
 | "Built on a powerful, flexible plugin architecture." | "Built on a plugin architecture." |
 | "Provides comprehensive error handling." | (delete — no concrete claim remains) |
+| "Redis is a powerful in-memory data store that supports pub/sub, streams, and sorted sets." | "Redis is an in-memory data store. It supports pub/sub, streams, and sorted sets." |
+| "Prettier is a useful code formatter that enforces consistent style." | "Prettier formats code to a consistent style." |
+| "This is a critical utility that handles request retries." | "This utility handles request retries." |
 
 ---
 
@@ -107,21 +114,7 @@ Hedging is appropriate when the claim is genuinely probabilistic ("typically 10-
 
 ---
 
-## 8. Premature Evaluative Framing
-
-**Detection:** Sentences leading with "X is an important/powerful/useful/critical tool/framework/library that...".
-
-**Action:** Delete the framing clause. Lead with what X actually does.
-
-| Before | After |
-|--------|-------|
-| "Redis is a powerful in-memory data store that supports pub/sub, streams, and sorted sets." | "Redis is an in-memory data store. It supports pub/sub, streams, and sorted sets." |
-| "Prettier is a useful code formatter that enforces consistent style." | "Prettier formats code to a consistent style." |
-| "This is a critical utility that handles request retries." | "This utility handles request retries." |
-
----
-
-## 9. Conclusion Signposts
+## 8. Conclusion Signposts
 
 **Detection:** `bottom line`, `TL;DR`, `the takeaway`, `the upshot`, `long story short`, `in short`, `to sum up`, `at the end of the day`, `the punchline`, `net-net`.
 
@@ -136,7 +129,7 @@ Hedging is appropriate when the claim is genuinely probabilistic ("typically 10-
 
 ---
 
-## 10. False-Intimacy Markers
+## 9. False-Intimacy Markers
 
 **Detection:** `honestly`, `the honest truth`, `to be honest`, `frankly`, `truth be told`, `if I'm being real`, `let me be real`, `the reality is`, `look,` (as a sentence opener), `I'll level with you`.
 
@@ -151,7 +144,7 @@ Hedging is appropriate when the claim is genuinely probabilistic ("typically 10-
 
 ---
 
-## 11. Mini-Conclusion Headers
+## 10. Mini-Conclusion Headers
 
 **Detection:** Bolded inline phrases or sub-headings that introduce a bulleted or listed conclusion: `**The result:**`, `**What this means:**`, `**The upshot:**`, `**The takeaway:**`, `**In practice:**`, `**Net effect:**`, `**Why this matters:**`.
 
@@ -167,7 +160,7 @@ Bullets fit parallel items (files, flags, steps). They misfire when they encode 
 
 ---
 
-## 12. Bold-as-Emphasis
+## 11. Bold-as-Emphasis
 
 **Detection:** Bold formatting applied to sentence openers or mid-prose phrases for stress rather than to mark a defined term: `**Importantly,** ...`, `**Note that** ...`, `**Critically,** ...`, `**The key insight is** ...`, `**Remember:** ...`, `**Crucially,** ...`.
 
@@ -184,7 +177,7 @@ Fix the prose, not the formatting.
 
 ---
 
-## 13. Compressed Abstract or Metaphorical Phrasing
+## 12. Compressed Abstract or Metaphorical Phrasing
 
 **Detection:** Noun phrases that compress abstraction or metaphor in place of concrete description.
 
@@ -194,7 +187,7 @@ Fix the prose, not the formatting.
 
 **Action:**
 - **Recoverable referent:** rewrite the phrase concretely using the surrounding prose.
-- **Unrecoverable referent:** leave it. Log `(line, pattern 13, skipped — context insufficient)` in the post-run summary. No inline markers.
+- **Unrecoverable referent:** leave it. Log `(line, pattern 12, skipped — context insufficient)` in the post-run summary. No inline markers.
 
 | Before | After |
 |--------|-------|
@@ -204,3 +197,24 @@ Fix the prose, not the formatting.
 | "The divergence has become unsustainable." | (skip — no antecedent; log) |
 
 Skip concrete technical artifacts: `the migration`, `the schema`, `the cache`, `the worker pool`, `surface area`. Target only abstract processes or imported physical metaphors that stand in for missing detail.
+
+---
+
+## 13. Numeric Lead-In to Visible Bullets
+
+**Detection:** A sentence spelling out a count immediately before a bullet list: "There are three factors supporting X:", "Five things to consider:", "The problems break down into four categories:".
+
+**Action:** Replace the spelled-out count with "several," "a number of," or drop to a plain noun phrase.
+
+**Keep the number when:**
+- No list follows (the count is the information: "Three breaking changes shipped in v3.0")
+- The count is contrastive or surprising ("There are only two exit conditions" / "Eighteen failure modes were identified")
+- The number is fused into a metaphor or idiom ("a three-headed monster", "a two-edged sword", "the triple constraint")
+
+| Before | After |
+|--------|-------|
+| "There are three factors supporting this approach:" | "Several factors support this approach:" |
+| "Five things to consider before migrating:" | "Things to consider before migrating:" |
+| "The problems with JEE are a three-headed monster:" | (keep — number is fused into the metaphor) |
+| "There are only two exit conditions." | (keep — no list follows; count is contrastive) |
+| "Three breaking changes shipped in v3.0." | (keep — count is the news, no list follows) |

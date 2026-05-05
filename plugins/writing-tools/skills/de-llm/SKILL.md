@@ -1,6 +1,6 @@
 ---
 name: de-llm
-description: Post-process prose to strip AI-telltale patterns — puffery, inline meta-commentary, unsourced evaluative claims.
+description: Post-process prose to strip AI-telltale patterns — puffery, bloat, meta-commentary, false authority, and editorial framing.
 user-invocable: true
 argument-hint: "[file-path]"
 allowed-tools:
@@ -12,37 +12,58 @@ allowed-tools:
 
 Post-process prose to remove AI-telltale patterns.
 
-## Core Rule
+**Core Rule:** Preserve facts. Strip framing, bloat, and editorial noise.
 
-**Delete unsourced evaluative claims. Rewrite sourced ones.**
+## Checklist
 
-A claim is "sourced" only if backed by a citation — a URL or source code reference.
+- [ ] 1. Read the input
+- [ ] 2. Pre-scan
+- [ ] 3. Load pattern details (if step 2 found matches)
+- [ ] 4. Scan and edit
+- [ ] 5. Write output
+- [ ] 6. Report changes
 
-## Pattern Actions
+---
 
-Detection phrases and before/after examples: [references/patterns.md](./references/patterns.md).
+## Step 1: Read the Input
+
+Read the input: file path, attached file, or pasted text. Extract text from binary formats (docx, pdf) first.
+
+## Step 2: Pre-scan
+
+Without loading `references/patterns.md`, judge whether any of these patterns are likely present:
 
 | # | Pattern | Action |
 |---|---------|--------|
 | 1 | Puffery verbs | Rewrite plainly |
-| 2 | Participle bloat | Rewrite plainly |
-| 3 | "Not just X, but Y" contrastive framing (incl. comma-splice "it's not X, it's Y" and verbed "they don't just X, they Y") | Assert Y directly; drop the contrast |
-| 4 | Promotional adjectives | Delete adjective; keep noun. If sentence collapses, delete sentence. |
-| 5 | Self-referential narration | Delete meta sentence |
-| 6 | Vague authority | Delete unsourced. If cited, rewrite with concrete attribution. |
-| 7 | Over-hedging on verifiable facts | Strip hedge; keep direct fact |
-| 8 | Premature evaluative framing | Delete framing clause; lead with fact |
-| 9 | Conclusion signposts ("bottom line", "TL;DR", "the takeaway") | Delete the signpost; let the conclusion stand. If unsupported, delete the conclusion too. |
-| 10 | False-intimacy markers ("honestly", "frankly", "the honest truth") | Delete entirely; evidence carries sincerity, not adverbs |
-| 11 | Mini-conclusion headers ("**The result:**", "**What this means:**") followed by bullets | Delete the header; fold consequence-bullets into prose. Keep bullets only for parallel enumeration. |
-| 12 | Bold-as-emphasis ("**Importantly,**", "**Note that**", "**Crucially,**") | Strip the bold. If the claim needs typographic weight to land, rewrite with concrete detail. |
-| 13 | Compressed abstract or metaphorical phrasing ("the drift", "load-bearing", "the functional spine") | Expand using context. Skip and log if referent not recoverable. |
+| 2 | Participle bloat | Rewrite or delete |
+| 3 | "Not just X, but Y" | Assert Y; drop contrast |
+| 4 | Evaluative descriptors | Delete adjective or restructure clause |
+| 5 | Self-referential narration | Delete |
+| 6 | Vague authority | Delete (unsourced); reattribute (sourced) |
+| 7 | Over-hedging on verifiable facts | Strip hedge |
+| 8 | Conclusion signposts | Delete signpost; keep conclusion if supported |
+| 9 | False-intimacy markers | Delete |
+| 10 | Mini-conclusion headers + bullets | Delete header; fold bullets to prose |
+| 11 | Bold-as-emphasis | Strip bold; rewrite if claim needs weight |
+| 12 | Compressed abstraction | Expand; skip and log if referent unrecoverable |
+| 13 | Numeric lead-in to bullets | Replace count or drop to noun phrase |
 
-## Workflow
+- None present → report "No patterns detected." and stop.
+- Any present (or uncertain) → continue to step 3.
 
-1. Read `references/patterns.md` for detection phrases and rewrite examples.
-2. Read the prose to edit. Accept any of: a file path, an attached file, or pasted text. For binary formats (docx, pdf), extract the text first.
-3. Scan for each pattern. Skip patterns 11 and 12 when the input has no inline markdown formatting (e.g., text extracted from PDF).
-4. Apply the action. When rewriting, preserve the fact; strip editorial framing only.
-5. Output the revised prose. If the input was an editable text or markdown file, write the edits back in place. Otherwise present the full revised text.
-6. Report changes: `(line, pattern, action, before → after)`.
+## Step 3: Load Pattern Details
+
+Read `references/patterns.md` for detection phrases and before/after examples.
+
+## Step 4: Scan and Edit
+
+Scan for all 13 patterns. Skip 10 and 11 when input has no inline markdown. Preserve facts; strip framing only.
+
+## Step 5: Write Output
+
+Write edits back if input is an editable file; otherwise output the full revised text.
+
+## Step 6: Report Changes
+
+Report: `(line, pattern #, action, before → after)`.

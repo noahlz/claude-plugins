@@ -14,15 +14,15 @@ allowed-tools:
 Follow steps EXACTLY.
 
 ```
-- [ ] 1. Receive input
+- [ ] 1. Resolve the target
 - [ ] 2. Read and classify
 - [ ] 3. Tighten
 - [ ] 4. Report
 ```
 
-## 1. Receive Input
+## 1. Resolve the Target
 
-Accept any of: an attached file, a pasted block of markdown, or a file path. For binary formats (docx, pdf), extract text first.
+Identify the target: an attached file, a pasted block of markdown, or a file path. For binary formats (docx, pdf), extract text first.
 
 If the target is unclear, ask. Typical targets: a recently edited or created skill, agent, reference, rule, `README.md`, or `CLAUDE.md` file, or text pasted into the chat session.
 
