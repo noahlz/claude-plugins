@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.12.3
+- Overhauled `de-llm` skill: restructured as pre-scan checklist, merged patterns 4 & 8, added pattern 13 (numeric lead-in to bullets)
+- Fixed: `tighten-for-llms` and `craft-linkedin-post` skills no longer emit process-speak
+- Added `dist/` edit guard hook (blocks edits to built files); fixed `.gitignore` to track shared `settings.json` and ignore personal settings files
+- Added `examples/` directory with manual test fixtures for `de-llm` and `tighten-for-llms`
+
 # 0.12.2
 - Enhance `de-llm` skill to expand "compressed" language (metaphors often added by LLMs)
 
