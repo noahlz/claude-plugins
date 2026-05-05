@@ -20,7 +20,7 @@ Be aware: the `dev-workflow` commit skills (`commit-with-costs`, `view-cost-metr
 
 ## Examples
 
-`examples/` contains sample inputs for manual skill testing. When updating a skill, check `examples/<plugin>/<skill>/` for relevant fixtures and use them to verify behavior with `/de-llm <file>` or the appropriate skill invocation.
+`examples/<plugin>/<skill>/` contains sample inputs for manual skill testing. When updating a skill, check for fixtures and test with the appropriate invocation (e.g. `/de-llm <file>`).
 
 ## Reinstall After Changes
 
