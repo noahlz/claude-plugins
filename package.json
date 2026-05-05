@@ -1,6 +1,6 @@
 {
   "name": "claude-plugins",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "type": "module",
   "description": "A collection of Claude Code plugins",
   "engines": {
