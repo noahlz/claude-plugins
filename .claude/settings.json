@@ -1,0 +1,17 @@
+{
+  "includeGitInstructions": false,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // \"\"' | { read -r f; case \"$f\" in dist/*|*/dist/*) printf '{\"continue\":false,\"stopReason\":\"dist/ is a build artifact directory - edit sources under plugins/ instead.\"}\n';; esac; }",
+            "statusMessage": "Checking file is not in dist/"
+          }
+        ]
+      }
+    ]
+  }
+}

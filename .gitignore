@@ -14,8 +14,9 @@ tmp/
 *~
 .DS_Store
 
-# Claude Code - IDE settings (local user configurations, not project-level)
-.claude/settings*.json
+# Claude Code - local user overrides only (settings.json is project-shared)
+.claude/settings.local.json
+.claude/settings.plugins.*.json
 
 # Plans
 .claude/plans/
