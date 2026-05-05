@@ -204,3 +204,24 @@ Fix the prose, not the formatting.
 | "The divergence has become unsustainable." | (skip — no antecedent; log) |
 
 Skip concrete technical artifacts: `the migration`, `the schema`, `the cache`, `the worker pool`, `surface area`. Target only abstract processes or imported physical metaphors that stand in for missing detail.
+
+---
+
+## 14. Numeric Lead-In to Visible Bullets
+
+**Detection:** A sentence spelling out a count immediately before a bullet list: "There are three factors supporting X:", "Five things to consider:", "The problems break down into four categories:".
+
+**Action:** Replace the spelled-out count with "several," "a number of," or drop to a plain noun phrase.
+
+**Keep the number when:**
+- No list follows (the count is the information: "Three breaking changes shipped in v3.0")
+- The count is contrastive or surprising ("There are only two exit conditions" / "Eighteen failure modes were identified")
+- The number is fused into a metaphor or idiom ("a three-headed monster", "a two-edged sword", "the triple constraint")
+
+| Before | After |
+|--------|-------|
+| "There are three factors supporting this approach:" | "Several factors support this approach:" |
+| "Five things to consider before migrating:" | "Things to consider before migrating:" |
+| "The problems with JEE are a three-headed monster:" | (keep — number is fused into the metaphor) |
+| "There are only two exit conditions." | (keep — no list follows; count is contrastive) |
+| "Three breaking changes shipped in v3.0." | (keep — count is the news, no list follows) |

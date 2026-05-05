@@ -37,6 +37,7 @@ Detection phrases and before/after examples: [references/patterns.md](./referenc
 | 11 | Mini-conclusion headers ("**The result:**", "**What this means:**") followed by bullets | Delete the header; fold consequence-bullets into prose. Keep bullets only for parallel enumeration. |
 | 12 | Bold-as-emphasis ("**Importantly,**", "**Note that**", "**Crucially,**") | Strip the bold. If the claim needs typographic weight to land, rewrite with concrete detail. |
 | 13 | Compressed abstract or metaphorical phrasing ("the drift", "load-bearing", "the functional spine") | Expand using context. Skip and log if referent not recoverable. |
+| 14 | Numeric lead-in to visible bullets ("There are three factors:", "Five things to consider:") | Replace count with "several" or drop to plain noun phrase. Keep when: no list follows; count is contrastive or surprising; number is fused into a metaphor or idiom. |
 
 ## Workflow
 
