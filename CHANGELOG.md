@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.12.4
+- `tighten-for-llms`: added code block pruning rule; refined collapse/preserve criteria and structural rewrite constraint
+- Added Stop hook reminding reinstall after plugin edits
+- Improved `de-llm` skill: strip filler from action descriptions
+
 # 0.12.3
 - Overhauled `de-llm` skill: restructured as pre-scan checklist, merged patterns 4 & 8, added pattern 13 (numeric lead-in to bullets)
 - Fixed: `tighten-for-llms` and `craft-linkedin-post` skills no longer emit process-speak
