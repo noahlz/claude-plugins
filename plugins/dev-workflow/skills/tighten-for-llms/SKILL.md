@@ -46,7 +46,7 @@ Surgical edits per classification. Preserve substance, not structure — collaps
 | Edit | LLM-facing | External-facing |
 |------|------------|-----------------|
 | Voice | Imperative | — |
-| Remove | Filler ("In order to", "Please note that", "You should", "Make sure to"), meta-commentary, example scaffolding headers when their example is cut | Internal context, author sections, internal notes |
+| Remove | Filler ("In order to", "Please note that", "You should", "Make sure to"), meta-commentary, example scaffolding headers when their example is cut, H1s restating the file name or type (e.g. `# CLAUDE.md`, `# Knock-Knock Joke Skill`) | Internal context, author sections, internal notes |
 | Collapse | Verbose lists → tables; multi-bullet elaborations → single dense sentence or fragment | Bullets → tables or paragraphs |
 | Headers | — | Scannable noun phrases |
 | Preserve | Frontmatter, `---`, section headers, code blocks containing information absent from surrounding text | Code examples, links, install instructions |
