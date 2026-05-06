@@ -37,17 +37,19 @@ Read each file. Record word count.
 
 ## 3. Tighten
 
-Surgical edits per classification. Do NOT rewrite from scratch.
+Surgical edits per classification. Preserve substance, not structure — collapse or eliminate whole sections when they're mostly padding.
 
 **Context check:** Read the surrounding sentence before cutting a candidate phrase. Keep phrases that carry meaning — e.g., "You should never commit .env files" (the imperative IS the rule). Cut only padding.
+
+**Code block check:** If surrounding text makes a block redundant, cut the block and its scaffolding header ("Good example:", "But DO NOT:").
 
 | Edit | LLM-facing | External-facing |
 |------|------------|-----------------|
 | Voice | Imperative | — |
-| Remove | Filler ("In order to", "Please note that", "You should", "Make sure to"), meta-commentary | Internal context, author sections, internal notes |
-| Collapse | Verbose lists → tables | Bullets → tables or paragraphs |
+| Remove | Filler ("In order to", "Please note that", "You should", "Make sure to"), meta-commentary, example scaffolding headers when their example is cut, H1s restating the file name or type (e.g. `# CLAUDE.md`, `# Knock-Knock Joke Skill`) | Internal context, author sections, internal notes |
+| Collapse | Verbose lists → tables; multi-bullet elaborations → single dense sentence or fragment | Bullets → tables or paragraphs |
 | Headers | — | Scannable noun phrases |
-| Preserve | Frontmatter, `---`, section headers, code blocks | Code examples, links, install instructions |
+| Preserve | Frontmatter, `---`, section headers, code blocks containing information absent from surrounding text | Code examples, links, install instructions |
 
 ## 4. Report
 

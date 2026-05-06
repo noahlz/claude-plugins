@@ -22,6 +22,3 @@ Be aware: the `dev-workflow` commit skills (`commit-with-costs`, `view-cost-metr
 
 `examples/<plugin>/<skill>/` contains sample inputs for manual skill testing. When updating a skill, check for fixtures and test with the appropriate invocation (e.g. `/de-llm <file>`).
 
-## Reinstall After Changes
-
-After modifying scripts, SKILL.md, agents, or references: prompt the user to run `./force-reinstall.sh`. Claude Code caches plugins by version — `/reload-plugins` reloads from cache, so source edits without a version bump won't take effect until the cache is cleared.
