@@ -10,8 +10,6 @@ allowed-tools:
   - Grep
 ---
 
-Post-process prose to remove AI-telltale patterns.
-
 **Core Rule:** Preserve facts. Strip framing, bloat, and editorial noise.
 
 ## Checklist

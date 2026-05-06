@@ -18,7 +18,7 @@
 
 **Detection:** Trailing `-ing` clauses asserting impact: `further enhancing X`, `contributing to Y`, `creating a robust Z`, `ensuring W`.
 
-**Action:** Rewrite plainly. Convert the participle to a direct statement if it contains a real claim; delete if pure filler.
+**Action:** Rewrite plainly. Convert the participle to a direct statement if it contains a real claim; delete if no claim remains.
 
 | Before | After |
 |--------|-------|
@@ -32,7 +32,7 @@
 
 **Detection:** `not just`, `not only`, `more than just` paired with `but also`, `but`, an em-dash, or a comma splice. Includes the verbed variants `they don't just X, they Y`, `we don't just X, we Y`, `it doesn't just X, it Y`.
 
-**Action:** Drop the defensive contrast. Assert Y directly. Denying X first adds no information when Y is well-supported.
+**Action:** Drop the defensive contrast. Assert Y directly.
 
 | Before | After |
 |--------|-------|
@@ -118,7 +118,7 @@ Hedging is appropriate when the claim is genuinely probabilistic ("typically 10-
 
 **Detection:** `bottom line`, `TL;DR`, `the takeaway`, `the upshot`, `long story short`, `in short`, `to sum up`, `at the end of the day`, `the punchline`, `net-net`.
 
-**Action:** Delete the signpost. A supported conclusion needs no announcement. If the surrounding prose does not back the conclusion, delete the conclusion as well — the signpost is masking an unearned verdict.
+**Action:** Delete the signpost. A supported conclusion needs no announcement. If surrounding prose does not back the conclusion, delete it too.
 
 | Before | After |
 |--------|-------|
@@ -133,7 +133,7 @@ Hedging is appropriate when the claim is genuinely probabilistic ("typically 10-
 
 **Detection:** `honestly`, `the honest truth`, `to be honest`, `frankly`, `truth be told`, `if I'm being real`, `let me be real`, `the reality is`, `look,` (as a sentence opener), `I'll level with you`.
 
-**Action:** Delete. These imply prior statements were not honest and add no information. Evidence carries sincerity. Adverbs do not.
+**Action:** Delete.
 
 | Before | After |
 |--------|-------|
