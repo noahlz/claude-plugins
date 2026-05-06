@@ -6,12 +6,12 @@
   },
   "metadata": {
     "description": "Dev workflows, productivity, and writing tools for Claude Code.",
-    "version": "0.12.3"
+    "version": "0.12.4"
   },
   "plugins": [
     {
       "name": "dev-workflow",
-      "version": "0.12.3",
+      "version": "0.12.4",
       "description": "Plugins for claude code workflow productivity.",
       "author": {
         "name": "Noah Zucker",
@@ -33,7 +33,7 @@
     },
     {
       "name": "writing-tools",
-      "version": "0.12.3",
+      "version": "0.12.4",
       "description": "Writing and editing tools for content creation.",
       "author": {
         "name": "Noah Zucker",
