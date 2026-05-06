@@ -1,6 +1,16 @@
 {
   "includeGitInstructions": false,
   "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git diff --name-only HEAD 2>/dev/null | grep -q '^plugins/' && printf '{\"systemMessage\":\"Plugin files modified — run ./force-reinstall.sh to activate changes.\"}\n' || true"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
