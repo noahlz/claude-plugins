@@ -37,7 +37,7 @@ Read each file. Record word count.
 
 ## 3. Tighten
 
-Surgical edits per classification. Do NOT rewrite from scratch.
+Surgical edits per classification. Preserve substance, not structure — collapse or eliminate whole sections when they're mostly padding.
 
 **Context check:** Read the surrounding sentence before cutting a candidate phrase. Keep phrases that carry meaning — e.g., "You should never commit .env files" (the imperative IS the rule). Cut only padding.
 
