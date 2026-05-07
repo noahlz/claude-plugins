@@ -45,7 +45,7 @@ Without loading `references/patterns.md`, judge whether any of these patterns ar
 | 10 | Mini-conclusion headers + bullets | Delete header; fold bullets to prose |
 | 11 | Bold-as-emphasis | Strip bold; rewrite if claim needs weight |
 | 12 | Compressed abstraction | Expand; skip and log if referent unrecoverable |
-| 13 | Numeric lead-in to bullets | Replace count or drop to noun phrase |
+| 13 | Numeric lead-in to bullets, tables, or section headers | Replace count or drop to noun phrase |
 
 - None present → report "No patterns detected." and stop.
 - Any present (or uncertain) → continue to step 3.

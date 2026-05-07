@@ -200,21 +200,30 @@ Skip concrete technical artifacts: `the migration`, `the schema`, `the cache`, `
 
 ---
 
-## 13. Numeric Lead-In to Visible Bullets
+## 13. Numeric Lead-In to Bullets, Tables, or Section Headers
 
-**Detection:** A sentence spelling out a count immediately before a bullet list: "There are three factors supporting X:", "Five things to consider:", "The problems break down into four categories:".
+**Detection:** A spelled-out count immediately before a bullet list, table, or in a section header:
 
-**Action:** Replace the spelled-out count with "several," "a number of," or drop to a plain noun phrase.
+- **Bullet lead-in:** "There are three factors supporting X:", "Five things to consider:", "The problems break down into four categories:"
+- **Table lead-in:** "The following four columns describe each field:", "Six attributes are shown below:", "There are three scenarios, outlined in the table:"
+- **Section header:** `## Three Reasons to Avoid X`, `### Five Deployment Strategies`, `#### Four Common Mistakes`
+
+**Action:** Replace with "several," "a number of," or a plain noun phrase. In headers, remove the numeric prefix.
 
 **Keep the number when:**
-- No list follows (the count is the information: "Three breaking changes shipped in v3.0")
-- The count is contrastive or surprising ("There are only two exit conditions" / "Eighteen failure modes were identified")
-- The number is fused into a metaphor or idiom ("a three-headed monster", "a two-edged sword", "the triple constraint")
+- No list/table follows (count is the information: "Three breaking changes shipped in v3.0")
+- Count is contrastive or surprising ("There are only two exit conditions" / "Eighteen failure modes were identified")
+- Number is fused into a metaphor or idiom ("a three-headed monster", "a two-edged sword", "the triple constraint")
+- Number is part of a proper noun or established term ("The Twelve-Factor App", "Five Dysfunctions of a Team")
 
 | Before | After |
 |--------|-------|
 | "There are three factors supporting this approach:" | "Several factors support this approach:" |
 | "Five things to consider before migrating:" | "Things to consider before migrating:" |
+| "The following four scenarios are outlined below:" | "The following scenarios are outlined below:" |
+| "Six attributes are shown in the table:" | "Attributes:" |
+| `## Three Reasons to Avoid X` | `## Reasons to Avoid X` |
+| `### Five Deployment Strategies` | `### Deployment Strategies` |
 | "The problems with JEE are a three-headed monster:" | (keep — number is fused into the metaphor) |
 | "There are only two exit conditions." | (keep — no list follows; count is contrastive) |
 | "Three breaking changes shipped in v3.0." | (keep — count is the news, no list follows) |
