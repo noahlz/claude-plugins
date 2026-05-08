@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.12.5
+- Enhanced `de-llm` skill: pattern 13 now catches numeric lead-ins to tables and section headers
+
 # 0.12.4
 - `tighten-for-llms`: added code block pruning rule; refined collapse/preserve criteria and structural rewrite constraint
 - Added Stop hook reminding reinstall after plugin edits
