@@ -29,10 +29,12 @@ Display any WARNING before proceeding.
 
 ## Rules
 
-- **DELEGATE_TO**: Read the referenced file with the Read tool, then execute its instructions exactly. Never improvise or guess commands.
-- **Narration**: Only narrate steps marked STEP_DESCRIPTION. Execute all others silently — do NOT output or summarize intermediate values.
-- **JSON outputs**: Extract fields into variables (e.g. `data.session_id` → SESSION_ID).
-- Never fabricate or estimate cost metrics. Only use values from successful ccusage execution.
+| Rule | Behavior |
+|------|----------|
+| DELEGATE_TO | Read the referenced file; execute its instructions exactly. Never improvise or guess commands. |
+| Narration | Narrate only STEP_DESCRIPTION steps; all others silent. |
+| JSON outputs | Extract fields into variables (e.g. `data.session_id` → SESSION_ID). |
+| Cost metrics | Never fabricate or estimate. Only use values from successful ccusage execution. |
 
 ---
 
@@ -95,7 +97,7 @@ DELEGATE_TO: `../../references/stage_and_analyze.md`
 
 DELEGATE_TO: `../../references/message_guidelines.md`
 
-Store COMMIT_SUBJECT and COMMIT_BODY. **SILENT STEP**: Produce no output. The first visible output in this workflow is the `Proposed commit message:` block in Step 3.
+Store COMMIT_SUBJECT and COMMIT_BODY. Silent — first output is the `Proposed commit message:` block in Step 3.
 
 ## 3. Get User Approval
 
