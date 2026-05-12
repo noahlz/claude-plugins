@@ -12,9 +12,7 @@ allowed-tools:
 
 Write changelog entries for commits since the last release, matching the project's existing format.
 
-**MANDATORY:** Activate only when user invokes `/update-changelog` or explicitly asks to update their changelog. Follow steps EXACTLY.
-
----
+Activate only on `/update-changelog` or explicit request. Follow steps EXACTLY.
 
 # Workflow Checklist
 
@@ -34,13 +32,8 @@ Write changelog entries for commits since the last release, matching the project
 
 ⛔ If `SKILL_BASE_DIR` shows literal `${CLAUDE_SKILL_DIR}`, halt: "This skill requires Claude Code 2.1.69 or higher."
 
-## Silence Protocol
-
-Narrate only steps with a `STEP_DESCRIPTION`. Execute all other steps and tool calls silently.
-
-## Format Fidelity
-
-Detect and match the existing changelog's format. Never impose a new one.
+**Silence:** Narrate only `STEP_DESCRIPTION` steps; execute all others silently.
+**Format fidelity:** Detect and match the existing changelog's format. Never impose a new one.
 
 ---
 
@@ -135,6 +128,6 @@ Use Edit to insert or append entries into `CHANGELOG_PATH`:
 | New version section | Insert after the header block, before the previous latest entry |
 | Append to existing | Add bullets under the matching headings; no duplicates |
 
-Match format exactly: heading markers, bullet characters, spacing, section names, date format. Do NOT introduce formatting not already present.
+Match format exactly: heading markers, bullets, spacing, section names, date format. No new formatting.
 
 After writing, show a brief summary: path updated, version added/appended, entry count by category.
