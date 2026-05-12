@@ -14,7 +14,7 @@ allowed-tools:
 
 Check for Claude Code updates relevant to the current project.
 
-**MANDATORY** only activate this skill when the user invokes it directly (`/check-claude-changelog`) OR asks about Claude Code updates.
+Activate only on `/check-claude-changelog` or explicit request about Claude Code updates.
 
 ## Arguments
 
@@ -34,19 +34,13 @@ When no argument is provided, defaults to showing changes since the last git com
 
 **HALT** if Node.js Check shows `ERROR`.
 
-## Workflow Rules
+## Rules
 
-### Delegation Protocol
-
-When you see `DELEGATE_TO: [file]`: Read the reference file, execute its instructions, then return here.
-
-### Narration Control
-
-Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps silently.
-
-### Script Output
-
-All scripts return JSON with `status` ("success" or "error") and `data` or `message` fields.
+| Rule | Behavior |
+|------|----------|
+| DELEGATE_TO | Read the referenced file, execute its instructions, return here. |
+| Narration | Narrate only STEP_DESCRIPTION steps; all others silent. |
+| Script output | Scripts return JSON: `status` ("success" or "error"), `data` or `message`. |
 
 ---
 
@@ -54,11 +48,9 @@ All scripts return JSON with `status` ("success" or "error") and `data` or `mess
 
 ## 0. Parse Arguments
 
-Check if the user provided a `since <version>` argument (e.g. `since 2.1.50`). The version must match `\d+\.\d+\.\d+`.
+If `since <version>` argument found (must match `\d+\.\d+\.\d+`): set `sinceVersion`, skip Step 1, proceed to Step 2.
 
-If a version argument is found: set `sinceVersion` to that value, skip Step 1 entirely, and proceed to Step 2.
-
-If no version argument: proceed to Step 1.
+Otherwise: proceed to Step 1.
 
 ## 1. Get Last Commit Date
 
@@ -100,7 +92,7 @@ DELEGATE_TO: `references/parse-changelog.md`
 
 **STEP_DESCRIPTION**: "Scanning project for Claude Code usage patterns"
 
-Run these Glob checks (no agent needed):
+Run these Glob checks:
 
 1. `**/CLAUDE.md` — project instructions
 2. `~/.claude/settings.json` — user-level settings and hooks
@@ -110,7 +102,7 @@ Run these Glob checks (no agent needed):
 6. `**/skills/**/SKILL.md` — skill definitions
 7. `.claude/mcp*.json` or `mcp*.json` — MCP server configs
 
-For each match found, read the file (or just note its existence for large files). Build a brief summary of how this project uses Claude Code — this context informs the relevance assessment in Step 5.
+Read each match (note existence for large files). Build a brief summary of Claude Code usage — this informs Step 5.
 
 ## 5. Assess Relevance
 
@@ -140,9 +132,9 @@ Versions X.Y.Z – A.B.C
 - ...
 ```
 
-**Table rules**: Group by functional area, not by version. Keep rows tight — no explanations in the table.
+**Table rules**: Group by area, not version. No explanations in table cells.
 
-**Actionable Items**: Rephrase each change as a concrete suggestion for what the user could do in this project. Include the version in parentheses. Only list items that are relevant to the project context from Step 4.
+**Actionable Items**: Concrete suggestions for this project, version in parentheses. Only items relevant to Step 4 context.
 
 Do NOT list the full changelog version-by-version.
 
