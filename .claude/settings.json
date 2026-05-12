@@ -17,8 +17,21 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // \"\"' | { read -r f; case \"$f\" in dist/*|*/dist/*) printf '{\"continue\":false,\"stopReason\":\"dist/ is a build artifact directory - edit sources under plugins/ instead.\"}\n';; esac; }",
+            "command": "bash",
+            "args": ["-c", "jq -r '.tool_input.file_path // \"\"' | { read -r f; case \"$f\" in dist/*|*/dist/*) printf '{\"continue\":false,\"stopReason\":\"dist/ is a build artifact directory - edit sources under plugins/ instead.\"}\n';; esac; }"],
             "statusMessage": "Checking file is not in dist/"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check $ARGUMENTS. If tool_input.file_path starts with 'dist/' or contains '/dist/', respond {\"ok\": false, \"reason\": \"dist/ is a build artifact directory - edit sources under plugins/ instead.\"}. Otherwise respond {\"ok\": true}.",
+            "continueOnBlock": true
           }
         ]
       }
