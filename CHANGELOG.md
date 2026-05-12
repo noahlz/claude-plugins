@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.12.6
+- Converted `PreToolUse` dist/ guard hook to exec form (`string[]` args); added `PostToolUse` prompt hook with `continueOnBlock: true`
+- GitHub releases now use CHANGELOG.md notes instead of auto-generated release notes
+- Reduced token cost for `check-claude-changelog`, `commit-with-costs`, and `update-changelog` skill files
+
 # 0.12.5
 - Enhanced `de-llm` skill: pattern 13 now catches numeric lead-ins to tables and section headers
 
