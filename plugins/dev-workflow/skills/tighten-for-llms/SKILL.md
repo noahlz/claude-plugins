@@ -45,11 +45,15 @@ Surgical edits per classification. Preserve substance, not structure — collaps
 
 | Edit | LLM-facing | External-facing |
 |------|------------|-----------------|
-| Voice | Imperative | — |
-| Remove | Filler ("In order to", "Please note that", "You should", "Make sure to"), meta-commentary, example scaffolding headers when their example is cut, H1s restating the file name or type (e.g. `# CLAUDE.md`, `# Knock-Knock Joke Skill`) | Internal context, author sections, internal notes |
+| Voice | Imperative — convert `"[Subject] should [verb]"` → `"[Verb]"` (e.g., `"The assistant should select"` → `"Select"`) | — |
+| Remove | Filler (`"In order to"`, `"Please note that"`, `"You should"`, `"Make sure to"`), purpose framing (`"is designed to"`, `"is intended to"`, `"is used to"`), section intros that only announce what follows, result descriptions (sentences or sections that describe output shape rather than action), meta-commentary, example scaffolding headers when their example is cut, H1s restating the file name or type (e.g. `# CLAUDE.md`, `# Knock-Knock Joke Skill`) | Internal context, author sections, internal notes |
 | Collapse | Verbose lists → tables; multi-bullet elaborations → single dense sentence or fragment | Bullets → tables or paragraphs |
 | Headers | — | Scannable noun phrases |
 | Preserve | Frontmatter, `---`, section headers, code blocks containing information absent from surrounding text | Code examples, links, install instructions |
+
+**Voice conversion:** `"The assistant should select a clean joke"` → `"Select a clean joke."`
+
+**Result description (cut):** `"The output will consist of five lines"` — describes the result of steps already present; cut.
 
 ## 4. Report
 
