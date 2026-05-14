@@ -2,7 +2,7 @@
 name: tighten-for-llms
 description: Tighten prose for LLM consumption. Strip filler, switch to imperative voice, collapse verbose lists. Apply to any markdown documentation — skill files, agents, references, rules, CLAUDE.md
 model: sonnet
-argument-hint: "[file-path | skill-name | agent-name | docs | readme | rules]"
+argument-hint: "[dry-run] [file-path | skill-name | agent-name | docs | readme | rules]"
 allowed-tools:
   - Read
   - Edit
@@ -21,6 +21,8 @@ Follow steps EXACTLY.
 ```
 
 ## 1. Resolve the Target
+
+**Mode:** Dry-run is active when the invocation contains `dry-run`, or the user's request includes "dry run", "test tightening", or "try tightening". Strip `dry-run` from the argument before resolving the target file.
 
 Identify the target: an attached file, a pasted block of markdown, or a file path. For binary formats (docx, pdf), extract text first.
 
@@ -51,7 +53,7 @@ Surgical edits per classification. Preserve substance, not structure — collaps
 | Headers | — | Scannable noun phrases |
 | Preserve | Frontmatter, `---`, section headers, code blocks containing information absent from surrounding text | Code examples, links, install instructions |
 
-**Voice conversion:** `"The assistant should select a clean joke"` → `"Select a clean joke."`
+**Dry-run mode:** Instead of using Edit, output the full tightened content as a fenced markdown block with the header `## Dry Run: path/to/file.md`. Do not call the Edit tool.
 
 **Result description (cut):** `"The output will consist of five lines"` — describes the result of steps already present; cut.
 
@@ -64,3 +66,5 @@ Display a word count summary table:
 | `path/to/file.md` | 342 | 218 | 36% |
 
 Include totals row if multiple files were tightened.
+
+If dry-run mode: add `(dry run — file not modified)` below the table.
