@@ -1,8 +1,8 @@
 ---
 name: zero-shot
-description: Experimental. Aggressively distill LLM-facing prose to imperative essentials. Skill files → 1–3 sentences. Multi-section instruction files → terse imperative bullets per section. Targets SKILL.md, agent, reference, rule, CLAUDE.md.
-model: sonnet
-argument-hint: "[apply] [file-path | skill-name | agent-name | rules]"
+description: Experimental. Aggressively distill LLM-facing prose to imperative essentials. Skills → 1–3 sentences. Procedural skills → numbered list. Multi-section instruction files → bullets per section.
+model: opus
+argument-hint: "[file-path | skill-name | agent-name | rules]"
 allowed-tools:
   - Read
   - Edit
@@ -11,71 +11,54 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-Follow steps EXACTLY.
+## 1. Resolve Mode and Target 
 
-```
-- [ ] 1. Resolve the target
-- [ ] 2. Classify
-- [ ] 3. Distill
-- [ ] 4. Report
-```
+- Set "apply" mode if invocation or user message contains indicates they want to change the file. Otherwise, set "dry-run" mode.
+- Identify target (attached file, pasted markdown, file path, or skill/agent name).
+- Ask via `AskUserQuestion` if mode and target are missing/ambiguous.
 
-## 1. Resolve the Target
+## 2. Classify 
 
-**Mode:** Apply mode is active when the invocation contains `apply`, or the user's request includes "apply", "edit in place", "write it". Otherwise dry-run. Strip `apply` from the argument before resolving the target.
+Read file, record word count, then pick classification:
 
-Identify the target: an attached file, a pasted block of markdown, a file path, or a skill/agent name. If unclear, ask. Typical targets: a recently edited skill, agent, reference, rule, or `CLAUDE.md`.
+   | Classification | Triggers | Output |
+   |---|---|---|
+   | skill | Single-concept `SKILL.md` or agent without numbered steps | 1–3 imperative sentences (body only) |
+   | procedural | `SKILL.md` or agent with numbered checklist or `## N.` headers | Numbered list, 1–3 sentences per step |
+   | instruction | `CLAUDE.md`, `references/**`, `rules/**`, any non-sequential multi-`##` doc | Imperative bullets per `##` section |
 
-Refuse `README.md`. Suggest `/tighten-for-llms` instead.
+ Precedence: 
+ 1. Common-knowledge override forces skill for widely-known operations (jokes, greetings, basic formatting, well-known algorithms)
+ 2. Procedural detection on numbered checklist (`- [ ] 1. ...`) or `##` headers beginning `1.`, `2.`, …
+ 3. Instruction on non-sequential file with 2+ `##` sections; (4) skill default.
 
-## 2. Classify
+## 3. Distill 
 
-Read the file. Record word count.
+Aggression: trust LLM priors — never restate well-known formats, algorithms, or etiquette. Delete-test each sentence: if removal doesn't break the task, drop it.
 
-| Classification | Files | Output shape |
-|----------------|-------|--------------|
-| skill | `SKILL.md`, `plugins/*/agents/*.md` | 1–3 imperative sentences (body only) |
-| instruction | `CLAUDE.md`, `references/**/*.md`, `rules/**/*.md`, any multi-`##` LLM-facing doc | Imperative bullets per `##` section |
-| skip | `README.md` | Refuse |
+Reduction targets (min): common-knowledge ≥95%, skill ≥85%, procedural ≥75%, instruction ≥60%. Miss → cut again.
 
-Precedence (apply in order):
+Universal rules: 
+- Imperative voice. One verb per bullet, no qualifiers.
+- Cut framing (`Overview`, `Background`, etc.), result descriptions, H1s restating the filename, examples, rationale, and redundant "should not" clauses.
+- Cut output-format prose the imperative already implies.
+- Preserve frontmatter verbatim.
+- Preserve non-obvious code blocks; cut illustrative ones.
 
-1. **Common-knowledge override:** If the file teaches a widely-known operation (jokes, greetings, basic formatting, well-known algorithms), force skill mode regardless of section count — collapse to one imperative sentence naming the task.
-2. **Tiebreak:** Otherwise, file with 2+ `##` sections → instruction mode, even if it has frontmatter.
+Per mode: 
+- **Skill** collapses body to ≤3 sentences and drops `##`. For common-knowledge operations, prefer **one sentence**.
+- **Procedural** outputs numbered list (`1. **Step name.** ...`) of 1–3 sentences per step and drops `##`. Merge adjacent steps that share a single action.
+- **Instruction** turns each `##` into 2–6 imperative bullets and preserves `##` headers plus rule/mapping tables. 
 
-## 3. Distill
-
-Rules (both modes):
-
-- **Imperative voice ONLY.** `"Convert X"` not `"You should convert X"` or `"Converts X"`.
-- One verb per bullet/sentence. Strip qualifiers (`"typically"`, `"usually"`, `"in most cases"`).
-- Cut framing sections: `Overview`, `Purpose`, `Background`, `Description`, `Behavior`, `Introduction`.
-- Cut result descriptions (`"The output will be..."`).
-- Cut H1s restating the filename.
-- Preserve frontmatter verbatim — `name`, `description`, `model`, `argument-hint`, `allowed-tools`.
-- Preserve code blocks that carry information not derivable from prose; cut illustrative-only blocks.
-
-**Skill mode:**
-
-- Collapse the body to ≤3 imperative sentences naming concrete actions; fewer if sufficient.
-- Drop all `##` headers in the body.
-
-**Instruction mode:**
-
-- Each `##` section → 2–6 imperative bullets, each starting with a verb.
-- Preserve `##` headers and frontmatter.
-- Keep tables that encode rules or mappings; convert prose tables to bullets.
-
-**Dry-run mode (default):** Output the distilled content as a fenced markdown block headed `## Dry Run: path/to/file.md`. Do not call Edit.
-
-**Apply mode:** Use Edit to write the distilled content.
+Output: 
+- dry-run (default) prints fenced markdown headed `## Dry Run: path/to/file.md` without calling Edit
+- apply uses Edit.
 
 ## 4. Report
 
-| File | Mode | Before | After | Reduction |
-|------|------|--------|-------|-----------|
-| `path/to/file.md` | skill | 412 | 38 | 91% |
+- Print the result table, append `(dry run — file not modified)` if dry-run
+- Always append `⚠ Experimental — review for lost nuance before committing.`
 
-Append `(dry run — file not modified)` if dry-run.
-
-Append `⚠ Experimental — review for lost nuance before committing.`
+   | File | Mode | Before | After | Reduction |
+   |---|---|---|---|---|
+   | `path/to/file.md` | skill | 412 | 38 | 91% |
