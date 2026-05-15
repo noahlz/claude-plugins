@@ -38,7 +38,10 @@ Read the file. Record word count.
 | instruction | `CLAUDE.md`, `references/**/*.md`, `rules/**/*.md`, any multi-`##` LLM-facing doc | Imperative bullets per `##` section |
 | skip | `README.md` | Refuse |
 
-Tiebreak: file has 2+ `##` sections → instruction mode, even if it has frontmatter.
+Precedence (apply in order):
+
+1. **Common-knowledge override:** If the file teaches a widely-known operation (jokes, greetings, basic formatting, well-known algorithms), force skill mode regardless of section count — collapse to one imperative sentence naming the task.
+2. **Tiebreak:** Otherwise, file with 2+ `##` sections → instruction mode, even if it has frontmatter.
 
 ## 3. Distill
 
@@ -54,9 +57,8 @@ Rules (both modes):
 
 **Skill mode:**
 
-- Collapse the entire body to ≤3 imperative sentences naming concrete actions.
+- Collapse the body to ≤3 imperative sentences naming concrete actions; fewer if sufficient.
 - Drop all `##` headers in the body.
-- Use fewer sentences if sufficient.
 
 **Instruction mode:**
 
