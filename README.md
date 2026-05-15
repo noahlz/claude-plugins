@@ -61,6 +61,7 @@ Workflows for common development tasks.
 | [`check-claude-changelog`](./plugins/dev-workflow/skills/check-claude-changelog/SKILL.md) | Check Claude Code changelog for updates since your last commit, with relevance scoring. | `/check-claude-changelog [since <version>]` |
 | [`update-changelog`](./plugins/dev-workflow/skills/update-changelog/SKILL.md) | Inspect commits since last release and compose changelog entries matching your project's format. | `/update-changelog` |
 | [`tighten-for-llms`](./plugins/dev-workflow/skills/tighten-for-llms/SKILL.md) | Make skill, agent, reference, rule, or doc files more concise and LLM-friendly. | `/tighten-for-llms [file-path \| skill-name \| agent-name \| docs \| readme \| rules]` |
+| [`zero-shot`](./plugins/dev-workflow/skills/zero-shot/SKILL.md) | **Experimental.** Aggressively distill LLM-facing prose: skill files → 1–3 imperative sentences, instruction files → imperative bullets per section. | `/zero-shot [apply] [file-path \| skill-name \| agent-name \| rules]` |
 
 ### Agents
 
