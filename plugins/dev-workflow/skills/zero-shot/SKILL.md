@@ -13,9 +13,9 @@ allowed-tools:
 
 ## 1. Resolve Mode and Target 
 
-- Set "apply" mode if invocation or user message contains indicates they want to change the file. Otherwise, set "dry-run" mode.
-- Identify target (attached file, pasted markdown, file path, or skill/agent name).
-- Ask via `AskUserQuestion` if mode and target are missing/ambiguous.
+- Default to dry-run. Use apply mode only if the user asks to change the file.
+- Identify target: attached file, pasted markdown, file path, or skill/agent name.
+- If target is missing or ambiguous, ask via `AskUserQuestion`.
 
 ## 2. Classify 
 
@@ -27,38 +27,44 @@ Read file, record word count, then pick classification:
    | procedural | `SKILL.md` or agent with numbered checklist or `## N.` headers | Numbered list, 1–3 sentences per step |
    | instruction | `CLAUDE.md`, `references/**`, `rules/**`, any non-sequential multi-`##` doc | Imperative bullets per `##` section |
 
- Precedence: 
- 1. Common-knowledge override forces skill for widely-known operations (jokes, greetings, basic formatting, well-known algorithms)
- 2. Procedural detection on numbered checklist (`- [ ] 1. ...`) or `##` headers beginning `1.`, `2.`, …
- 3. Instruction on non-sequential file with 2+ `##` sections; (4) skill default.
+Precedence:
+1. Common-knowledge override → skill (jokes, greetings, basic formatting, well-known algorithms).
+2. Numbered checklist or `## N.` headers → procedural.
+3. 2+ `##` sections, non-sequential → instruction.
+4. Default → skill.
 
 ## 3. Distill 
 
-Aggression: trust LLM priors — never restate well-known formats, algorithms, or etiquette. Delete-test each sentence: if removal doesn't break the task, drop it.
+Aggression: trust LLM priors — never restate well-known formats, algorithms, etiquette, or structure the imperative already implies. Delete-test every sentence: if removal doesn't break the task, drop it. Draft, then cut again — first drafts always under-cut.
 
-Reduction targets (min): common-knowledge ≥95%, skill ≥85%, procedural ≥75%, instruction ≥60%. Miss → cut again.
+Reduction targets (min): common-knowledge ≥95%, skill ≥85%, procedural ≥75%, instruction ≥60%. If draft misses, identify under-performing clauses and cut before reporting.
 
-Universal rules: 
-- Imperative voice. One verb per bullet, no qualifiers.
-- Cut framing (`Overview`, `Background`, etc.), result descriptions, H1s restating the filename, examples, rationale, and redundant "should not" clauses.
-- Cut output-format prose the imperative already implies.
-- Preserve frontmatter verbatim.
-- Preserve non-obvious code blocks; cut illustrative ones.
+Write in imperative voice. One verb per bullet, no qualifiers.
 
-Per mode: 
-- **Skill** collapses body to ≤3 sentences and drops `##`. For common-knowledge operations, prefer **one sentence**.
-- **Procedural** outputs numbered list (`1. **Step name.** ...`) of 1–3 sentences per step and drops `##`. Merge adjacent steps that share a single action.
-- **Instruction** turns each `##` into 2–6 imperative bullets and preserves `##` headers plus rule/mapping tables. 
+Cut:
+- Framing (`Overview`, `Background`, `Introduction`), result descriptions, H1s restating the filename.
+- Examples, rationale, illustrative code, redundant "should not" clauses.
+- Format restatement after naming the format.
+- Audience qualifiers redundant with `clean`/`safe`.
+- Error-fallback clauses for common-knowledge tasks — the LLM handles failure.
+- Negation pairs where one implies the other.
+- Layout instructions implied by a count.
+- "Output only X" wrappers when the imperative already scopes the response.
 
-Output: 
-- dry-run (default) prints fenced markdown headed `## Dry Run: path/to/file.md` without calling Edit
-- apply uses Edit.
+Preserve: frontmatter verbatim, non-obvious code blocks.
+
+Per mode:
+- **Skill**: ≤3 sentences, drop `##`. Common-knowledge: one sentence.
+- **Procedural**: numbered list (`1. **Step name.** ...`), 1–3 sentences per step, drop `##`. Merge adjacent steps sharing one action.
+- **Instruction**: 2–6 imperative bullets per `##`, preserve headers and rule/mapping tables.
+
+Output: dry-run prints fenced markdown headed `## Dry Run: <path>`. Apply uses Edit.
 
 ## 4. Report
 
-- Print the result table, append `(dry run — file not modified)` if dry-run
-- Always append `⚠ Experimental — review for lost nuance before committing.`
+- Recount before printing. If reduction misses target, return to Distill — never report a miss.
+- Print the table; append `(dry run — file not modified)` if dry-run.
+- Append `⚠ Experimental — review for lost nuance before committing.`
 
    | File | Mode | Before | After | Reduction |
    |---|---|---|---|---|
-   | `path/to/file.md` | skill | 412 | 38 | 91% |
