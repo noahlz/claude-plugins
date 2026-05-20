@@ -46,6 +46,7 @@ Without loading `references/patterns.md`, judge whether any of these patterns ar
 | 11 | Bold-as-emphasis | Strip bold; rewrite if claim needs weight |
 | 12 | Compressed abstraction | Expand; skip and log if referent unrecoverable |
 | 13 | Numeric lead-in to bullets, tables, or section headers | Replace count or drop to noun phrase |
+| 14 | Cleft sentences | Rewrite as direct assertion |
 
 - None present → report "No patterns detected." and stop.
 - Any present (or uncertain) → continue to step 3.
@@ -56,7 +57,7 @@ Read `references/patterns.md` for detection phrases and before/after examples.
 
 ## Step 4: Scan and Edit
 
-Scan for all 13 patterns. Skip 10 and 11 when input has no inline markdown. Preserve facts; strip framing only.
+Scan for all 14 patterns. Skip 10 and 11 when input has no inline markdown. Preserve facts; strip framing only.
 
 ## Step 5: Write Output
 
