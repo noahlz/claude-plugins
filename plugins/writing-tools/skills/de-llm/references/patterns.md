@@ -227,3 +227,28 @@ Skip concrete technical artifacts: `the migration`, `the schema`, `the cache`, `
 | "The problems with JEE are a three-headed monster:" | (keep — number is fused into the metaphor) |
 | "There are only two exit conditions." | (keep — no list follows; count is contrastive) |
 | "Three breaking changes shipped in v3.0." | (keep — count is the news, no list follows) |
+
+---
+
+## 14. Cleft Sentences
+
+**Detection:** Fronted constructions that delay the assertion with a wh-clause, dummy `it`, or `all`.
+
+- **Wh-cleft:** `What X reveals/makes/means/needs...` + linking verb. "What this study reveals is...", "What makes Redis fast is...", "What this means is..."
+- **It-cleft:** `It is/was X that/who...` (not a contrastive `not Y`). "It is the cache that causes the slowdown."
+- **All-cleft:** `All X needs/has to do is...`. "All you need to know is...", "All the function does is..."
+
+**Action:** Rewrite as a direct assertion; drop the cleft scaffolding.
+
+| Before | After |
+|--------|-------|
+| "What this study reveals is a hidden bias in the dataset." | "The study reveals a hidden bias in the dataset." |
+| "What makes Redis fast is in-memory storage." | "Redis is fast because it stores data in memory." |
+| "What this means is that every write invalidates the cache." | "Every write invalidates the cache." |
+| "It is the cache that causes the slowdown." | "The cache causes the slowdown." |
+| "All you need to know is that the API is deprecated." | "The API is deprecated." |
+
+**Keep when:**
+- Wh-clause answers a literal question ("What does this reveal? A hidden bias.")
+- Contrastive it-cleft ("It's not the cache, it's the network.") — apply pattern 3 instead
+- Idiom, title, or quoted speech
