@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.13.0
+- Enhanced `de-llm` skill: added cleft sentence detection (pattern for "It is X that Y" constructions)
+- Added experimental `zero-shot` skill to `dev-workflow`: aggressively distills LLM-facing prose to imperative essentials
+- `tighten-for-llms`: added dry-run mode — outputs tightened content as a fenced block without modifying the file
+- `tighten-for-llms`: catch passive "[Subject] should" constructions and result descriptions
+
 # 0.12.6
 - Converted `PreToolUse` dist/ guard hook to exec form (`string[]` args); added `PostToolUse` prompt hook with `continueOnBlock: true`
 - GitHub releases now use CHANGELOG.md notes instead of auto-generated release notes
