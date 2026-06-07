@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.13.1
+- Enhanced `de-llm` skill: added zero-tolerance metaphor blacklist (15 always-flagged words like "shape", "tension", "boundary") to Pattern 12, with stronger delete directive and unit test coverage
+- Fixed: commit message now displays correctly during the commit approval flow in `commit-only`/`commit-with-costs` skills
+
 # 0.13.0
 - Enhanced `de-llm` skill: added cleft sentence detection (pattern for "It is X that Y" constructions)
 - Added experimental `zero-shot` skill to `dev-workflow`: aggressively distills LLM-facing prose to imperative essentials
