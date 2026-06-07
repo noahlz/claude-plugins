@@ -1,25 +1,24 @@
 # Commit Message Approval
 
-Two separate actions. Do not combine them.
+Display the message and request approval in a **single AskUserQuestion call**. Embed the message in the `question` field so it always renders — never use plain-text narration, which the skill's silence rules suppress. This overrides the Narration/silent rule regardless of STEP_DESCRIPTION marking.
 
-**Action 1 – Output the message as plain text** (not inside AskUserQuestion):
+Call **AskUserQuestion** with `question` set to the full message block:
 
 ```
-Proposed commit message:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Approve this commit message?
+
 {{COMMIT_SUBJECT}}
 
 {{COMMIT_BODY}}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Action 2 – Call AskUserQuestion** (do not repeat the message in options or descriptions):
+(Omit the blank line and `{{COMMIT_BODY}}` when the body is empty.)
 
-Ask "Approve this commit message?" with options:
+Options:
 1. "Use full message" (Recommended)
 2. "Use just the subject"
 
-Set APPROVAL_STATUS from response:
+Set APPROVAL_STATUS from the response:
 - "Use full message" → `"use_full"`
 - "Use just the subject" → `"use_subject_only"`, clear COMMIT_BODY
 - Anything else → `"request_revisions"`
