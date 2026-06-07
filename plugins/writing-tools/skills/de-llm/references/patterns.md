@@ -179,15 +179,19 @@ Fix the prose, not the formatting.
 
 ## 12. Compressed Abstract or Metaphorical Phrasing
 
+**🚫 Blacklist (zero tolerance).** These words are always scanned — never skipped, never softened: `shape`/`shaped`, `tension`, `boundary`, `unlock`/`unlocks`, `gate`/`gated`, `weave`/`woven`, `tapestry`, `interplay`, `surface` (as a verb), `guardrail`, `moat`. When used metaphorically: rewrite concretely if the referent is recoverable; **delete the phrasing if it is not** — a pure-rhetoric use carries no real claim. Only leave & log when deleting would drop a verifiable fact. Preserve literal technical uses (listed below).
+
 **Detection:** Noun phrases that compress abstraction or metaphor in place of concrete description.
 
 - **Process nominalizations:** `the drift`, `the divergence`, `the convergence`, `the cascade`, `the unraveling`, `the regression`, `the slippage`, `the entanglement`, `the misalignment`.
 - **Anatomical/structural metaphors:** `load-bearing`, `the spine`, `the functional spine`, `the connective tissue`, `the scaffolding`, `the skeleton`, `the backbone`, `the seam`, `the contract` (when not a literal interface).
-- **Abstractions used as concrete nouns:** `the shape`, `the texture`, `the gravity`, `the pressure` (applied to code or systems, not physical objects).
+- **Abstractions used as concrete nouns:** `the shape`/`shaped`, `the texture`, `the gravity`, `the pressure`, `the tension`, `the boundary`, `the tapestry`, `the interplay`, `the moat`, `the guardrail` (applied to code or systems, not physical objects).
+- **Metaphorical verbs:** `unlock`/`unlocks` (potential, value), `gate`/`gated` (progress, releases), `weave`/`woven` (into the fabric), `surface` (insights) — figurative action verbs standing in for a concrete one.
 
 **Action:**
-- **Recoverable referent:** rewrite the phrase concretely using the surrounding prose.
-- **Unrecoverable referent:** leave it. Log `(line, pattern 12, skipped — context insufficient)` in the post-run summary. No inline markers.
+- **General Pattern 12 — recoverable referent:** rewrite the phrase concretely using the surrounding prose.
+- **General Pattern 12 — unrecoverable referent:** leave it. Log `(line, pattern 12, skipped — context insufficient)` in the post-run summary. No inline markers.
+- **Blacklist — unrecoverable referent:** delete the rhetorical phrasing. Only leave & log when deletion would drop a verifiable fact.
 
 | Before | After |
 |--------|-------|
@@ -195,8 +199,17 @@ Fix the prose, not the formatting.
 | "The migration touches load-bearing changes in the auth module." | "The migration changes the session-token format — every consumer must update." |
 | "The functional spine of the parser is the recursive descent loop." | "The parser is built around a recursive descent loop." |
 | "The divergence has become unsustainable." | (skip — no antecedent; log) |
+| "The release process gates the project." | "Each release blocks until the project's checks pass." (recoverable → rewrite) |
+| "The shape of the process is a boundary that unlocks true devops potential." | (delete — pure rhetoric, no real claim) |
+| "There's tension between throughput and latency in the scheduler." | "The scheduler trades throughput for latency." |
+| "The cache is woven into the fabric of the request path." | "The request path reads and writes the cache on every call." (recoverable) |
+| "Observability surfaces insights and builds a moat around the product." | (delete — pure rhetoric, no real claim) |
+| "Code review is the guardrail that keeps quality high." | "Code review blocks merges that drop test coverage below 80%." (recoverable) |
+| "The array's shape is (3, 4)." / "the attack surface of the API" / "the model's safety guardrails" | (keep — literal) |
 
 Skip concrete technical artifacts: `the migration`, `the schema`, `the cache`, `the worker pool`, `surface area`. Target only abstract processes or imported physical metaphors that stand in for missing detail.
+
+**Literal exceptions (preserve) for blacklist words:** array/tensor `shape`, mutex/lock `unlock`, logic/feature/CI `gate` and `gated` rollout, `boundary` condition / bounded context, mechanical `tension`, attack/API `surface` (noun) and `surface area`, textile `weave`/`woven`, LLM/AI safety `guardrails` (content filters, policy checks), and proper nouns (e.g. the **Weave** product). `tapestry`, `interplay`, and `moat` have no literal technical sense — treat them as always-metaphorical.
 
 ---
 
