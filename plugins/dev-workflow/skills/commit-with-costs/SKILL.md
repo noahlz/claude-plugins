@@ -97,11 +97,11 @@ DELEGATE_TO: `../../references/stage_and_analyze.md`
 
 DELEGATE_TO: `../../references/message_guidelines.md`
 
-Store COMMIT_SUBJECT and COMMIT_BODY. Silent — first output is the `Proposed commit message:` block in Step 3.
+Store COMMIT_SUBJECT and COMMIT_BODY. Produce no output yet — the message is displayed in Step 3 via the AskUserQuestion `question` field.
 
 ## 3. Get User Approval
 
-Obtain user approval via **AskUserQuestion** (NOT plain-text) before proceeding.
+Obtain user approval via **AskUserQuestion** before proceeding. The commit message MUST be embedded in the question field (see reference) — this overrides the Narration silent rule.
 
 DELEGATE_TO: `../../references/message_approval.md`
 

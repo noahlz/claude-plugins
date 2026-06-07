@@ -44,7 +44,7 @@ Without loading `references/patterns.md`, judge whether any of these patterns ar
 | 9 | False-intimacy markers | Delete |
 | 10 | Mini-conclusion headers + bullets | Delete header; fold bullets to prose |
 | 11 | Bold-as-emphasis | Strip bold; rewrite if claim needs weight |
-| 12 | Compressed abstraction | Expand; skip and log if referent unrecoverable |
+| 12 | Compressed abstraction; **blacklist** shape/tension/boundary/unlock/gate/weave/surface/tapestry/interplay/moat/guardrail (zero tolerance) | Expand; blacklist → rewrite or delete |
 | 13 | Numeric lead-in to bullets, tables, or section headers | Replace count or drop to noun phrase |
 | 14 | Cleft sentences | Rewrite as direct assertion |
 
@@ -58,6 +58,8 @@ Read `references/patterns.md` for detection phrases and before/after examples.
 ## Step 4: Scan and Edit
 
 Scan for all 14 patterns. Skip 10 and 11 when input has no inline markdown. Preserve facts; strip framing only.
+
+The pattern 12 blacklist (shape, tension, boundary, unlock, gate, weave, surface, tapestry, interplay, moat, guardrail) is mandatory: always scan for it, and rewrite or delete every metaphorical use — the usual "leave it if unsure" leniency does not apply. Preserve only literal technical uses.
 
 ## Step 5: Write Output
 
