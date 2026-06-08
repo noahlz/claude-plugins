@@ -4,6 +4,7 @@ import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { pathToFileURL } from 'url';
 
 const API_BASE = 'https://api.github.com/repos/anthropics/claude-code';
 const RAW_BASE = 'https://raw.githubusercontent.com/anthropics/claude-code/main';
@@ -149,7 +150,7 @@ export function fetchChangelog(sinceDate, deps, options = {}) {
 }
 
 /* node:coverage disable */
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const sinceIndex = args.indexOf('--since');
   const sinceVersionIndex = args.indexOf('--since-version');

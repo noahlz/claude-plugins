@@ -6,6 +6,7 @@ import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 
 import {
   pwdToSessionId,
+  isProjectDirName,
   validateCostMetrics,
   filterZeroUsageCosts,
   listLocalSessions,
@@ -44,6 +45,30 @@ describe('lib: ccusage-operations.js', () => {
       const result = pwdToSessionId('/a/b/c/d/e');
       assert.equal(result, '-a-b-c-d-e');
       assert.equal((result.match(/-/g) || []).length, 5);
+    });
+
+    it('converts a Windows drive path (backslashes) without a leading dash', () => {
+      const result = pwdToSessionId('C:\\Users\\foo\\bar');
+      assert.equal(result, 'C--Users-foo-bar');
+    });
+
+    it('converts a Windows drive path with forward slashes', () => {
+      const result = pwdToSessionId('C:/Users/foo');
+      assert.equal(result, 'C--Users-foo');
+    });
+  });
+
+  describe('isProjectDirName', () => {
+    it('accepts Unix path-encoded dirs (leading dash)', () => {
+      assert.equal(isProjectDirName('-Users-foo'), true);
+    });
+
+    it('accepts Windows drive-letter dirs', () => {
+      assert.equal(isProjectDirName('C--Users-foo'), true);
+    });
+
+    it('rejects unrelated directory names', () => {
+      assert.equal(isProjectDirName('node_modules'), false);
     });
   });
 
