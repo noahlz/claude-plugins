@@ -7,6 +7,7 @@ import * as git from '../../../lib/git-operations.js';
 import * as ccusage from '../../../lib/ccusage-operations.js';
 import { computeCosts, createDefaultDeps as createCostDeps } from '../../../lib/cost-computation.js';
 import { readSessionConfig } from '../../../lib/file-utils.js';
+import { pathToFileURL } from 'url';
 
 
 /**
@@ -463,7 +464,7 @@ async function main() {
 export { saveConfig, prepare, commit, readCommitMessage };
 
 // CLI entry guard
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch(err => {
     console.log(JSON.stringify({
       status: 'error',

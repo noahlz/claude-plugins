@@ -6,6 +6,7 @@ import * as ccusage from '../../../lib/ccusage-operations.js';
 import * as git from '../../../lib/git-operations.js';
 import { computeCosts, createDefaultDeps as createCostDeps } from '../../../lib/cost-computation.js';
 import { readSessionConfig } from '../../../lib/file-utils.js';
+import { pathToFileURL } from 'url';
 
 function createDefaultDeps() {
   return {
@@ -160,7 +161,7 @@ async function main() {
 
 export { createDefaultDeps, fetchCost };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch(err => {
     console.log(JSON.stringify({ status: 'error', data: {}, message: err.message }, null, 2));
     process.exit(1);

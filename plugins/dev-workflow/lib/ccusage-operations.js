@@ -49,6 +49,17 @@ export function getProjectsDir() {
 }
 
 /**
+ * Check whether a directory name is a Claude Code project (session) directory.
+ * Unix dirs are path-encoded with a leading dash (e.g. "-Users-foo-bar").
+ * Windows dirs start with a drive letter (e.g. "C--Users-foo-bar").
+ * @param {string} name - Directory name
+ * @returns {boolean}
+ */
+export function isProjectDirName(name) {
+  return name.startsWith('-') || /^[A-Za-z]-/.test(name);
+}
+
+/**
  * List all local project sessions from filesystem
  * Uses directory mtime for sorting, doesn't read .jsonl contents
  * @returns {{status: string, data: {sessions: Array}, error?: string}}
@@ -67,7 +78,7 @@ export function listLocalSessions() {
     const entries = fs.readdirSync(projectsDir, { withFileTypes: true });
 
     const sessions = entries
-      .filter(entry => entry.isDirectory() && entry.name.startsWith('-'))
+      .filter(entry => entry.isDirectory() && isProjectDirName(entry.name))
       .map(entry => {
         const dirPath = path.join(projectsDir, entry.name);
         const stats = fs.statSync(dirPath);
@@ -121,6 +132,11 @@ export function findRecommendedSession(cwd) {
  * @returns {string} - Session ID
  */
 export function pwdToSessionId(dirPath) {
+  // Windows: C:\Users\foo -> C--Users-foo (drive letter; no leading dash)
+  if (/^[A-Za-z]:/.test(dirPath)) {
+    return dirPath.replace(/[/\\:]/g, '-');
+  }
+  // Unix: /Users/foo -> -Users-foo
   const normalized = dirPath.replace(/^\//, '').replace(/\//g, '-');
   return `-${normalized}`;
 }

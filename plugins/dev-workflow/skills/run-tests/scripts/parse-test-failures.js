@@ -3,6 +3,7 @@
 import { globSync } from 'fs';
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import { readFileSafe, compilePattern } from '../../../lib/file-utils.js';
 
 /**
@@ -237,7 +238,7 @@ function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
 /* node:coverage enable */
