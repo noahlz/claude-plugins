@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.13.2
+- Fixed: Windows path bugs in `dev-workflow` CLI scripts (drive-letter project paths and backslash entry-point checks broke cost-tracking session discovery on Windows)
+
 # 0.13.1
 - Enhanced `de-llm` skill: added zero-tolerance metaphor blacklist (15 always-flagged words like "shape", "tension", "boundary") to Pattern 12, with stronger delete directive and unit test coverage
 - Fixed: commit message now displays correctly during the commit approval flow in `commit-only`/`commit-with-costs` skills
