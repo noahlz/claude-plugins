@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.13.3
+- Enhanced `de-llm` skill: added "spine" and "load-bearing" to the metaphor blacklist
+- Fixed: `commit-only` and `commit-with-costs` skills no longer write stray flag-named files (e.g. `--session-id`) as literal files on Windows; `commit-only` now includes the Claude attribution trailer, matching `commit-with-costs`
+
 # 0.13.2
 - Fixed: Windows path bugs in `dev-workflow` CLI scripts (drive-letter project paths and backslash entry-point checks broke cost-tracking session discovery on Windows)
 
