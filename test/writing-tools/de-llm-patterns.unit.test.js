@@ -20,6 +20,7 @@ function pattern12Section(text) {
 const BLACKLIST = [
   'shape', 'tension', 'boundary', 'unlock', 'gate',
   'weave', 'woven', 'tapestry', 'interplay', 'surface', 'guardrail', 'moat',
+  'spine', 'load-bearing',
 ];
 
 describe('de-llm Pattern 12 metaphor blacklist', () => {

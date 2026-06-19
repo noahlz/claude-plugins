@@ -205,11 +205,11 @@ Fix the prose, not the formatting.
 | "The cache is woven into the fabric of the request path." | "The request path reads and writes the cache on every call." (recoverable) |
 | "Observability surfaces insights and builds a moat around the product." | (delete — pure rhetoric, no real claim) |
 | "Code review is the guardrail that keeps quality high." | "Code review blocks merges that drop test coverage below 80%." (recoverable) |
-| "The array's shape is (3, 4)." / "the attack surface of the API" / "the model's safety guardrails" | (keep — literal) |
+| "The array's shape is (3, 4)." / "the attack surface of the API" / "the model's safety guardrails" / "the spine router aggregates the leaf switches" / "the `// load-bearing` comment the build actually depends on" | (keep — literal) |
 
 Skip concrete technical artifacts: `the migration`, `the schema`, `the cache`, `the worker pool`, `surface area`. Target only abstract processes or imported physical metaphors that stand in for missing detail.
 
-**Literal exceptions (preserve) for blacklist words:** array/tensor `shape`, mutex/lock `unlock`, logic/feature/CI `gate` and `gated` rollout, `boundary` condition / bounded context, mechanical `tension`, attack/API `surface` (noun) and `surface area`, textile `weave`/`woven`, LLM/AI safety `guardrails` (content filters, policy checks), and proper nouns (e.g. the **Weave** product). `tapestry`, `interplay`, and `moat` have no literal technical sense — treat them as always-metaphorical.
+**Literal exceptions (preserve) for blacklist words:** array/tensor `shape`, mutex/lock `unlock`, logic/feature/CI `gate` and `gated` rollout, `boundary` condition / bounded context, mechanical `tension`, attack/API `surface` (noun) and `surface area`, textile `weave`/`woven`, LLM/AI safety `guardrails` (content filters, policy checks), network/book `spine` (spine router, book spine), structural or jargon `load-bearing` (a `load-bearing` comment/whitespace something actually depends on), and proper nouns (e.g. the **Weave** product). `tapestry`, `interplay`, and `moat` have no literal technical sense — treat them as always-metaphorical.
 
 ---
 
