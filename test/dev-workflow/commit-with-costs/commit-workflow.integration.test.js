@@ -191,6 +191,22 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
       assert.equal(data.status, 'error', 'Should return error for invalid config');
       assert.ok(data.message.includes('sessionId'), 'Error should mention missing sessionId');
     });
+
+    it('does not write a file named after a stray flag (e.g. --session-id)', () => {
+      // Regression: a misparsed "--session-id" token was treated as an output file path,
+      // leaving stray "--session-id" files (reported on Windows). Output must go to stdout.
+      const configPath = writeConfigFile(testEnv, '-Users-noahlz-projects-claude-plugins');
+      const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
+
+      const result = execNodeScript(scriptPath, {
+        args: ['prepare', '--config', configPath, '--session-id', '-Users-noahlz-projects-claude-plugins'],
+        cwd: testEnv.tmpDir
+      });
+
+      assert.ok(!existsSync(join(testEnv.tmpDir, '--session-id')), 'Must not create a "--session-id" file');
+      const data = extractJsonFromOutput(result.stdout);
+      assert.ok(typeof data.status === 'string', 'Should print JSON result to stdout');
+    });
   });
 
   describe("commit action", () => {

@@ -69,14 +69,16 @@ DELEGATE_TO: `../../references/message_approval.md`
 
 Verify APPROVAL_STATUS is "use_full" or "use_subject_only". If not, exit.
 
+The final `-m` adds the Claude attribution trailer as its own paragraph so git parses it as a trailer.
+
 **If COMMIT_BODY is non-empty:**
 ```bash
-git commit -m "{{COMMIT_SUBJECT}}" -m "{{COMMIT_BODY}}"
+git commit -m "{{COMMIT_SUBJECT}}" -m "{{COMMIT_BODY}}" -m "Co-Authored-By: Claude Code <noreply@anthropic.com>"
 ```
 
 **If COMMIT_BODY is empty:**
 ```bash
-git commit -m "{{COMMIT_SUBJECT}}"
+git commit -m "{{COMMIT_SUBJECT}}" -m "Co-Authored-By: Claude Code <noreply@anthropic.com>"
 ```
 
 ```bash

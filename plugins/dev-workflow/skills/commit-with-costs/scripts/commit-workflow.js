@@ -431,6 +431,13 @@ async function main() {
         break;
     }
 
+    // Never treat a flag-like token (e.g. a misparsed "--session-id") as an output
+    // file path. Writing JSON to such a path is how stray "--session" files appeared
+    // on Windows. A leading "-" always indicates a misparse, so fall back to stdout.
+    if (outputFile && outputFile.startsWith('-')) {
+      outputFile = undefined;
+    }
+
     // Output result as JSON
     const output = JSON.stringify(result, null, 2);
 
