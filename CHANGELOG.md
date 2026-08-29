@@ -4,6 +4,9 @@
 - Added `merge-with-costs` skill to `dev-workflow`: merges sub-agent worktree branches and records every contributing session's cost — each worktree plus the orchestrator — in one merge commit
 - Fixed: worktree session IDs were unresolvable because path encoding replaced only `/` rather than every non-alphanumeric character, which also broke `commit-with-costs` when run inside a worktree
 - Fixed: `dev-workflow` git operations ran through a shell, mangling arguments containing spaces or metacharacters; git now receives arguments verbatim
+- Changed: `dev-workflow` analyzer and reviewer subagents are now pinned to Sonnet instead of inheriting the main session's model
+- Changed: mechanical skills declare `effort: low` rather than a model pin, which had overridden the live session model for the rest of the turn
+- Fixed: `commit-only` skill frontmatter never parsed — a stray duplicate description line preceded the opening fence
 
 # 0.13.3
 - Enhanced `de-llm` skill: added "spine" and "load-bearing" to the metaphor blacklist
