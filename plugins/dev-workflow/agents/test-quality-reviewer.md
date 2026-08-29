@@ -1,6 +1,7 @@
 ---
 name: test-quality-reviewer
 description: Use this agent after you have written or modified tests and need them reviewed for correctness, meaningful assertions, mock validity and clean test code structure.
+model: sonnet
 color: pink
 memory: user
 ---

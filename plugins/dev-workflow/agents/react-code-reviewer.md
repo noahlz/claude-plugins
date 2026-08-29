@@ -1,6 +1,7 @@
 ---
 name: react-code-reviewer
 description: Use this agent when changes to a React/TypeScript app need review for quality, maintainability, and adherence to best practices.
+model: sonnet
 color: cyan
 memory: user
 ---

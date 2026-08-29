@@ -1,7 +1,7 @@
 ---
 name: merge-with-costs
 description: Merge sub-agent worktree branches and create the merge commit with pooled cost metrics and Claude attribution. Use when the user asks to merge worktree or sub-agent branches with costs.
-model: sonnet
+effort: low
 allowed-tools:
   - AskUserQuestion
   - Bash(git *)

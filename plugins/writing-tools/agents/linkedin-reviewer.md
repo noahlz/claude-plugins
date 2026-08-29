@@ -1,7 +1,6 @@
 ---
 name: linkedin-reviewer
 description: Reviews a LinkedIn draft post for hook strength, clarity, mobile structure, authenticity, and engagement potential.
-model: sonnet
 allowed-tools: Read, WebSearch, WebFetch
 ---
 

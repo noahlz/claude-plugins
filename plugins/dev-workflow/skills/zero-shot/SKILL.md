@@ -1,7 +1,6 @@
 ---
 name: zero-shot
 description: Experimental. Aggressively distill LLM-facing prose to imperative essentials. Skills → 1–3 sentences. Procedural skills → numbered list. Multi-section instruction files → bullets per section.
-model: opus
 argument-hint: "[file-path | skill-name | agent-name | rules]"
 allowed-tools:
   - Read

@@ -1,8 +1,7 @@
-Commit staged changes with an LLM-generated message. No cost metrics.
 ---
 name: commit-only
 description: Commit staged changes with an AI-generated message. No cost metrics. Use when the user asks to commit without cost tracking.
-model: sonnet
+effort: low
 allowed-tools:
   - AskUserQuestion
   - Bash(git *)

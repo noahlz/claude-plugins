@@ -1,7 +1,7 @@
 ---
 name: run-tests
 description: Runs the project test suite, analyzes failures, and proposes fixes via sub-agents.
-model: sonnet
+effort: low
 allowed-tools:
   - Bash(node *)
   - Bash(git *)

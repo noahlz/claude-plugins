@@ -1,6 +1,7 @@
 ---
 name: failed-test-analyzer 
 description: Analyzes test suite failures and determines root cause and potential fixes for a Plan.
+model: sonnet
 tools: Read, Glob, Grep, WebSearch, WebFetch
 disallowedTools: Write, Edit
 color: orange 
