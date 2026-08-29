@@ -55,6 +55,7 @@ Workflows for common development tasks.
 |-------|-------------|---------------|
 | [`run-tests`](./plugins/dev-workflow/skills/run-tests/SKILL.md) | Run tests, analyze failures, and propose fixes via sub-agents. | `/run-tests` |
 | [`commit-with-costs`](./plugins/dev-workflow/skills/commit-with-costs/SKILL.md) | Create git commits with Claude Code attribution and session cost metrics. | `/commit-with-costs` |
+| [`merge-with-costs`](./plugins/dev-workflow/skills/merge-with-costs/SKILL.md) | Merge sub-agent worktree branches, pooling every contributing session's cost into the merge commit. | `/merge-with-costs` |
 | [`preview-commit-message`](./plugins/dev-workflow/skills/preview-commit-message/SKILL.md) | Draft a commit message from staged changes without committing. | `/preview-commit-message` |
 | [`commit-only`](./plugins/dev-workflow/skills/commit-only/SKILL.md) | Commit staged changes with an AI-generated message. No cost metrics. | `/commit-only` |
 | [`view-cost-metrics`](./plugins/dev-workflow/skills/view-cost-metrics/SKILL.md) | Display current session cost metrics without creating a commit. | `/view-cost-metrics` |
@@ -125,6 +126,25 @@ Skills use the `${CLAUDE_SKILL_DIR}` environment variable (introduced in Claude 
 **Minimum required version: Claude Code 2.1.69**
 
 Skills will halt and display an error if run on an older version.
+
+### Releasing
+
+[`release-it`](https://github.com/release-it/release-it) drives releases, configured in [`.release-it.json`](./.release-it.json).
+
+**Never edit version numbers by hand.** The `@release-it/bumper` plugin writes all of them: `package.json`, `package-lock.json`, and `.claude-plugin/marketplace.json` (both `metadata.version` and each plugin's `version`).
+
+| Step | Command | Notes |
+|------|---------|-------|
+| 1. Write the changelog | `/update-changelog` | Composes `CHANGELOG.md` entries from commits since the last tag |
+| 2. Preview | `npm run release:dry-run` | Shows the version bump and files it would touch |
+| 3. Release | `npm run release` | Bumps versions, commits `Version X.Y.Z`, tags `vX.Y.Z` |
+| 4. Push | `git push --follow-tags` | `.release-it.json` sets `git.push: false`, so this is manual |
+
+**The changelog entry must land before the tag.** [`release-web-skills.yml`](./.github/workflows/release-web-skills.yml) extracts the GitHub release notes by matching a `# X.Y.Z` heading in `CHANGELOG.md` — a single `#`, version only, no `v` prefix. A missing or misspelled heading produces an empty release body.
+
+Pushing a `v*` tag builds the claude.ai-uploadable ZIPs listed in [`scripts/build-web-skills/manifest.js`](./scripts/build-web-skills/manifest.js) and attaches them to the GitHub release. To dry-run that build without cutting a tag, dispatch the workflow manually — it uploads the zips as workflow artifacts instead.
+
+Version choice: a new skill, agent, or plugin is a minor bump; fixes and refinements to existing ones are a patch.
 
 ## Testing
 

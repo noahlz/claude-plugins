@@ -22,7 +22,8 @@
   "knip": {
     "entry": [
       "plugins/dev-workflow/skills/view-cost-metrics/scripts/cost-workflow.js",
-      "plugins/dev-workflow/skills/commit-with-costs/scripts/commit-workflow.js"
+      "plugins/dev-workflow/skills/commit-with-costs/scripts/commit-workflow.js",
+      "plugins/dev-workflow/skills/merge-with-costs/scripts/merge-workflow.js"
     ],
     "ignoreDependencies": [
       "ccusage"

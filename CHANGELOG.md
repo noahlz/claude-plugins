@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.14.0
+- Added `merge-with-costs` skill to `dev-workflow`: merges sub-agent worktree branches and records every contributing session's cost — each worktree plus the orchestrator — in one merge commit
+- Fixed: worktree session IDs were unresolvable because path encoding replaced only `/` rather than every non-alphanumeric character, which also broke `commit-with-costs` when run inside a worktree
+- Fixed: `dev-workflow` git operations ran through a shell, mangling arguments containing spaces or metacharacters; git now receives arguments verbatim
+
 # 0.13.3
 - Enhanced `de-llm` skill: added "spine" and "load-bearing" to the metaphor blacklist
 - Fixed: `commit-only` and `commit-with-costs` skills no longer write stray flag-named files (e.g. `--session-id`) as literal files on Windows; `commit-only` now includes the Claude attribution trailer, matching `commit-with-costs`
