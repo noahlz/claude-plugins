@@ -2,11 +2,11 @@
 
 import fs from 'fs';
 import path from 'path';
-import { Readable } from 'stream';
 import * as git from '../../../lib/git-operations.js';
 import * as ccusage from '../../../lib/ccusage-operations.js';
 import { computeCosts, createDefaultDeps as createCostDeps } from '../../../lib/cost-computation.js';
 import { readSessionConfig } from '../../../lib/file-utils.js';
+import { createCommit, readCommitMessage } from '../../../lib/commit-operations.js';
 import { pathToFileURL } from 'url';
 
 
@@ -154,195 +154,13 @@ async function prepare(options = {}) {
 }
 
 /**
- * Read stdin for commit message
- * @returns {Promise<{subject: string, body: string}>}
- */
-async function readCommitMessage(inputStream = null) {
-  // Use provided stream or default to stdin
-  const stream = inputStream || process.stdin;
-
-  const chunks = [];
-  for await (const chunk of stream) {
-    chunks.push(chunk);
-  }
-
-  const message = Buffer.concat(chunks).toString('utf8').trim();
-  const lines = message.split('\n');
-
-  const subject = lines[0] || '';
-  let body = '';
-
-  // Skip first blank line (separator between subject and body)
-  let bodyStartIdx = 1;
-  if (lines[1] === '') {
-    bodyStartIdx = 2;
-  }
-
-  if (lines.length > bodyStartIdx) {
-    body = lines.slice(bodyStartIdx).join('\n').trim();
-  }
-
-  return { subject, body };
-}
-
-/**
- * Create a git commit with cost metrics footer
- * Note: SESSION_ID, CURRENT_COST, method, and since are expected to be provided by skill orchestration
- * @param {object} options - Options
- * @param {string} options.baseDir - Base directory
- * @param {string} options.sessionId - Session ID
- * @param {string|Array} options.costs - Cost metrics JSON
- * @param {string} options.method - Cost method ('incremental' or 'cumulative')
- * @param {string|null} options.since - ISO date string or null
- * @param {object} options.deps - Dependencies object (required)
+ * Create a git commit with cost metrics footer.
+ * SESSION_ID, CURRENT_COST, method, and since are provided by skill orchestration.
+ * @param {object} options - See lib/commit-operations.js createCommit
  * @returns {Promise<object>} - { status, data, message }
  */
 async function commit(options = {}) {
-  const {
-    baseDir = '.',
-    sessionId: providedSessionId = null,
-    costs: providedCosts = null,
-    method = 'cum',
-    since = null,
-    message: providedMessage = null,
-    deps
-  } = options;
-
-  // Validate deps parameter
-  if (!deps) {
-    throw new Error('deps parameter required');
-  }
-
-  const { git: gitOps, ccusage: ccusageOps } = deps;
-
-  try {
-    // Create input stream from provided message or use stdin
-    let inputStream = null;
-    if (providedMessage !== null && providedMessage !== undefined) {
-      inputStream = Readable.from([Buffer.from(providedMessage)]);
-    }
-
-    // Read commit message from stream or stdin
-    const { subject, body } = await readCommitMessage(inputStream);
-
-    if (!subject) {
-      return {
-        status: 'error',
-        data: {},
-        message: 'Missing commit subject (first line of stdin)'
-      };
-    }
-
-    // Require CLI arguments (no fallbacks)
-    let sessionId = providedSessionId;
-    let currentCost = providedCosts;
-
-    // Session ID is required
-    if (!sessionId) {
-      return {
-        status: 'error',
-        data: {},
-        message: 'Session ID not provided (use --session-id argument)'
-      };
-    }
-
-    // Current cost is required
-    if (!currentCost) {
-      return {
-        status: 'error',
-        data: {},
-        message: 'Cost metrics not provided (use --costs argument)'
-      };
-    }
-
-    // Parse if it's a string
-    if (typeof currentCost === 'string') {
-      try {
-        currentCost = JSON.parse(currentCost);
-      } catch (error) {
-        return {
-          status: 'error',
-          data: {},
-          message: `Invalid JSON in --costs argument: ${error.message}`
-        };
-      }
-    }
-
-    // Validate metrics before commit
-    const costsArray = Array.isArray(currentCost) ? currentCost : [currentCost];
-
-    // Filter out zero-usage entries before validation
-    const { filtered: freshFiltered } = ccusageOps.filterZeroUsageCosts(costsArray);
-
-    if (!ccusageOps.validateCostMetrics(freshFiltered)) {
-      return {
-        status: 'metrics_invalid',
-        data: { session_id: sessionId, attempted_costs: freshFiltered },
-        message: 'Cost metrics validation failed'
-      };
-    }
-
-    // Build cost footer JSON (single line, no pretty-print)
-    // Omit 'since' field when null/undefined (not applicable in cumulative mode)
-    // sessionId goes last to keep the compact fields at the front
-    const trailerObj = {
-      method,
-      cost: freshFiltered,
-      ...(since ? { since } : {}),
-      sessionId
-    };
-    const costFooter = JSON.stringify(trailerObj);
-
-    // Build full commit message with git trailer format
-    let fullMessage;
-    if (body) {
-      fullMessage = `${subject}\n\n${body}\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${costFooter}`;
-    } else {
-      fullMessage = `${subject}\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${costFooter}`;
-    }
-
-    // Execute git commit with better error handling
-    const commitResult = gitOps.commit(fullMessage, { cwd: baseDir });
-    if (commitResult.exitCode !== 0) {
-      return {
-        status: 'git_error',
-        data: { error_message: commitResult.stderr },
-        message: 'Failed to create git commit'
-      };
-    }
-
-    // Verify commit succeeded
-    const commitSha = gitOps.getHeadSha({ cwd: baseDir });
-    if (!commitSha) {
-      return {
-        status: 'git_error',
-        data: {},
-        message: 'Failed to retrieve commit SHA'
-      };
-    }
-
-    // Check if changes are still staged (indicates failure)
-    const stagedResult = gitOps.execGit(['diff', '--cached', '--name-only'], { cwd: baseDir });
-    if (stagedResult.stdout.trim()) {
-      return {
-        status: 'git_error',
-        data: { staged_changes: stagedResult.stdout },
-        message: 'Git commit execution failed - changes still staged'
-      };
-    }
-
-    return {
-      status: 'success',
-      data: { commit_sha: commitSha },
-      message: 'Commit created successfully'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      data: {},
-      message: error.message
-    };
-  }
+  return createCommit(options);
 }
 
 /**

@@ -14,7 +14,15 @@ import {
   commit,
   getHeadSha,
   getPreviousCostMetrics,
-  getLastCostCommitDate
+  getLastCostCommitDate,
+  getRepoRoot,
+  listWorktrees,
+  listUnmergedBranches,
+  countCommitsAhead,
+  mergeNoCommit,
+  mergeAbort,
+  isMergeInProgress,
+  listConflictedPaths
 } from '../../../plugins/dev-workflow/lib/git-operations.js';
 
 /**
@@ -45,12 +53,18 @@ describe('lib/git-operations: integration tests', () => {
       assert.ok(result.stdout.includes('On branch'), 'Should contain branch info');
     });
 
-    it('returns error when command fails', () => {
+    it('returns a non-zero exit code when the command fails', () => {
       const result = prodExecGit(['commit', '-m', 'empty commit'], { cwd: testEnv.tmpDir });
 
       assert.notEqual(result.exitCode, 0, 'Should fail with non-zero exit code');
-      assert.ok(typeof result.stderr === 'string', 'Should return stderr as string');
-      assert.ok(result.stderr.length > 0, 'Should have error message');
+      assert.match(result.stdout, /nothing to commit/, 'git reports an empty commit on stdout');
+    });
+
+    it('captures stderr for a fatal git error', () => {
+      const result = prodExecGit(['rev-parse', '--verify', 'no-such-ref'], { cwd: testEnv.tmpDir });
+
+      assert.notEqual(result.exitCode, 0, 'Should fail with non-zero exit code');
+      assert.match(result.stderr, /fatal/, 'Should have error message');
     });
 
     it('respects cwd option', () => {
@@ -286,6 +300,147 @@ describe('lib/git-operations: integration tests', () => {
 
       const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
       assert.equal(result, dateAfterGood, 'Should skip trailer with no sessionId and find older valid commit');
+    });
+  });
+});
+
+describe('lib/git-operations: worktree and merge operations', () => {
+  let testEnv;
+  let cwd;
+
+  const commitOn = (branch, filename, content) => {
+    const original = execGit(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd }).stdout.trim();
+    const exists = execGit(['rev-parse', '--verify', '--quiet', branch], { cwd }).exitCode === 0;
+    execGit(exists ? ['checkout', branch] : ['checkout', '-b', branch], { cwd });
+    writeFileSync(join(cwd, filename), content);
+    execGit(['add', filename], { cwd });
+    execGit(['commit', '-m', `add ${filename}`], { cwd });
+    execGit(['checkout', original], { cwd });
+  };
+
+  beforeEach(() => {
+    testEnv = setupTestEnv();
+    setupGitRepo(testEnv);
+    cwd = testEnv.tmpDir;
+  });
+
+  afterEach(() => teardownTestEnv(testEnv));
+
+  describe('execGit', () => {
+    it('passes an argument containing shell metacharacters through unchanged', () => {
+      const result = prodExecGit(['log', '-1', '--format=%s; echo pwned'], { cwd });
+      assert.equal(result.stdout.trim(), 'initial commit; echo pwned',
+        'the semicolon is data, not a command separator');
+    });
+  });
+
+  describe('getRepoRoot', () => {
+    it('returns the working tree root', () => {
+      assert.ok(getRepoRoot({ cwd }).endsWith(testEnv.tmpDir.split('/').pop()));
+    });
+
+    it('returns null outside a repository', () => {
+      assert.equal(getRepoRoot({ cwd: '/' }), null);
+    });
+  });
+
+  describe('listWorktrees', () => {
+    it('marks the first worktree as the main one', () => {
+      const worktrees = listWorktrees({ cwd });
+      assert.equal(worktrees.length, 1);
+      assert.equal(worktrees[0].isMain, true);
+      assert.equal(worktrees[0].branch, 'main');
+    });
+
+    it('lists a linked worktree with its branch and lock state', () => {
+      commitOn('feature-a', 'a.txt', 'a');
+      const wtPath = join(cwd, '.claude', 'worktrees', 'feature-a');
+      mkdirSync(join(cwd, '.claude', 'worktrees'), { recursive: true });
+      execGit(['worktree', 'add', wtPath, 'feature-a'], { cwd });
+      execGit(['worktree', 'lock', wtPath], { cwd });
+
+      const linked = listWorktrees({ cwd }).find(w => !w.isMain);
+      assert.equal(linked.branch, 'feature-a');
+      assert.equal(linked.locked, true);
+    });
+  });
+
+  describe('listUnmergedBranches', () => {
+    it('omits branches already reachable from HEAD', () => {
+      commitOn('merged-branch', 'm.txt', 'm');
+      execGit(['merge', '--no-ff', '-m', 'merge it', 'merged-branch'], { cwd });
+      commitOn('open-branch', 'o.txt', 'o');
+
+      assert.deepEqual(listUnmergedBranches({ cwd }), ['open-branch']);
+    });
+  });
+
+  describe('countCommitsAhead', () => {
+    it('counts commits not reachable from HEAD', () => {
+      commitOn('feature-a', 'a.txt', 'a');
+      commitOn('feature-a', 'a2.txt', 'a2');
+      assert.equal(countCommitsAhead('feature-a', { cwd }), 2);
+    });
+
+    it('returns zero for an unknown branch', () => {
+      assert.equal(countCommitsAhead('does-not-exist', { cwd }), 0);
+    });
+  });
+
+  describe('mergeNoCommit', () => {
+    it('stages an octopus merge without creating a commit', () => {
+      commitOn('feature-a', 'a.txt', 'a');
+      commitOn('feature-b', 'b.txt', 'b');
+
+      const result = mergeNoCommit(['feature-a', 'feature-b'], { cwd });
+
+      assert.equal(result.exitCode, 0);
+      assert.equal(isMergeInProgress({ cwd }), true);
+      assert.equal(execGit(['log', '-1', '--format=%s'], { cwd }).stdout.trim(), 'initial commit');
+    });
+
+    it('fails and exposes conflicted paths', () => {
+      commitOn('feature-a', 'shared.txt', 'from a');
+      commitOn('feature-b', 'shared.txt', 'from b');
+
+      const result = mergeNoCommit(['feature-a', 'feature-b'], { cwd });
+
+      assert.notEqual(result.exitCode, 0);
+      mergeAbort({ cwd });
+    });
+  });
+
+  describe('mergeAbort', () => {
+    it('restores a clean working tree', () => {
+      commitOn('feature-a', 'a.txt', 'a');
+      mergeNoCommit(['feature-a'], { cwd });
+
+      mergeAbort({ cwd });
+
+      assert.equal(isMergeInProgress({ cwd }), false);
+      assert.equal(execGit(['status', '--porcelain'], { cwd }).stdout.trim(), '');
+    });
+  });
+
+  describe('listConflictedPaths', () => {
+    it('is empty when nothing conflicts', () => {
+      assert.deepEqual(listConflictedPaths({ cwd }), []);
+    });
+
+    it('names each unresolved path during a conflicted merge', () => {
+      commitOn('feature-a', 'shared.txt', 'from a');
+      execGit(['checkout', 'feature-a'], { cwd });
+      execGit(['checkout', '-b', 'feature-c'], { cwd });
+      writeFileSync(join(cwd, 'shared.txt'), 'from c');
+      execGit(['commit', '-am', 'c version'], { cwd });
+      execGit(['checkout', 'feature-a'], { cwd });
+      writeFileSync(join(cwd, 'shared.txt'), 'from a again');
+      execGit(['commit', '-am', 'a version'], { cwd });
+
+      mergeNoCommit(['feature-c'], { cwd });
+
+      assert.deepEqual(listConflictedPaths({ cwd }), ['shared.txt']);
+      mergeAbort({ cwd });
     });
   });
 });

@@ -132,13 +132,17 @@ export function findRecommendedSession(cwd) {
  * @returns {string} - Session ID
  */
 export function pwdToSessionId(dirPath) {
+  // Claude Code encodes a project path by replacing every non-alphanumeric character with a
+  // dash, not just separators: "/repo/.claude/worktrees/x" becomes "-repo--claude-worktrees-x".
+  // Dropping the dot would miss every worktree living under a dot-directory.
+  const encode = (segment) => segment.replace(/[^A-Za-z0-9]/g, '-');
+
   // Windows: C:\Users\foo -> C--Users-foo (drive letter; no leading dash)
   if (/^[A-Za-z]:/.test(dirPath)) {
-    return dirPath.replace(/[/\\:]/g, '-');
+    return encode(dirPath);
   }
   // Unix: /Users/foo -> -Users-foo
-  const normalized = dirPath.replace(/^\//, '').replace(/\//g, '-');
-  return `-${normalized}`;
+  return `-${encode(dirPath.replace(/^\//, ''))}`;
 }
 
 /**
@@ -234,4 +238,73 @@ export function validateCostMetrics(costsArray) {
   }
 
   return true;
+}
+
+/**
+ * Check whether a project session directory holds any usage transcripts.
+ *
+ * A project directory can exist while being empty: Claude Code discards a worktree's
+ * transcripts when the worktree is removed, leaving the directory behind. Testing for
+ * the directory alone would report cost data that ccusage cannot actually load.
+ *
+ * @param {string} sessionId - Session ID (project path)
+ * @returns {boolean}
+ */
+export function hasSessionData(sessionId) {
+  try {
+    const entries = fs.readdirSync(path.join(getProjectsDir(), sessionId), { recursive: true });
+    return entries.some(entry => String(entry).endsWith('.jsonl'));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Resolve the project session ID that recorded a worktree branch's usage.
+ *
+ * A live worktree gives its path directly. A removed worktree does not, so its session is
+ * recovered by name: worktree session IDs are the repository's own session ID followed by
+ * the encoded worktree subpath, which ends in the branch name (e.g.
+ * "-Users-me-proj--claude-worktrees-003-derived" for branch "003-derived"). Matching on that
+ * suffix covers any worktree root convention (.claude/worktrees, .worktrees, and so on).
+ *
+ * @param {string} repoRoot - Absolute path of the main working tree
+ * @param {string} branch - Branch name
+ * @param {string|null} worktreePath - Absolute path of the live worktree, if it still exists
+ * @returns {{sessionId: string|null, hasData: boolean, resolvedBy: string}}
+ */
+export function findWorktreeSessionId(repoRoot, branch, worktreePath = null) {
+  if (worktreePath) {
+    const sessionId = pwdToSessionId(path.resolve(worktreePath));
+    return { sessionId, hasData: hasSessionData(sessionId), resolvedBy: 'worktree' };
+  }
+
+  const repoSessionId = pwdToSessionId(path.resolve(repoRoot));
+  const branchSuffix = `-${branch.replace(/\//g, '-')}`;
+  const projectsDir = getProjectsDir();
+
+  let candidates = [];
+  try {
+    candidates = fs.readdirSync(projectsDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+      .map(entry => entry.name)
+      .filter(name => name.startsWith(`${repoSessionId}-`) && name.endsWith(branchSuffix));
+  } catch {
+    return { sessionId: null, hasData: false, resolvedBy: 'none' };
+  }
+
+  // Prefer a match that still holds transcripts; fall back to the most recently touched one
+  // so the caller can report the session it found and that its data is gone.
+  const withData = candidates.filter(hasSessionData);
+  const pool = withData.length > 0 ? withData : candidates;
+
+  if (pool.length === 0) {
+    return { sessionId: null, hasData: false, resolvedBy: 'none' };
+  }
+
+  const sessionId = pool
+    .map(name => ({ name, mtime: fs.statSync(path.join(projectsDir, name)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime)[0].name;
+
+  return { sessionId, hasData: withData.length > 0, resolvedBy: 'branch-name' };
 }

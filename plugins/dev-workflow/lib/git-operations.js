@@ -1,10 +1,15 @@
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
+/**
+ * Run a git command with arguments passed verbatim (no shell).
+ * execFileSync rather than execSync so branch names and format strings containing
+ * shell metacharacters reach git unmangled.
+ */
 export function execGit(args, options = {}) {
   const { cwd = process.cwd(), input = '' } = options;
 
   try {
-    const result = execSync(`git ${args.join(' ')}`, {
+    const result = execFileSync('git', args, {
       cwd,
       input,
       encoding: 'utf8',
@@ -32,6 +37,16 @@ export function commit(message, options = {}) {
 export function getHeadSha(options = {}) {
   const result = execGit(['rev-parse', 'HEAD'], options);
   return result.stdout.trim();
+}
+
+/**
+ * Absolute path of the repository working tree root.
+ * @param {Object} options - { cwd }
+ * @returns {string|null}
+ */
+export function getRepoRoot(options = {}) {
+  const result = execGit(['rev-parse', '--show-toplevel'], options);
+  return result.exitCode === 0 ? result.stdout.trim() || null : null;
 }
 
 const COMMIT_DELIMITER = '---COMMIT-END---';
@@ -139,4 +154,97 @@ export function getLastCostCommitDate(sessionId, options = {}) {
   } catch {
     return null;
   }
+}
+
+/**
+ * List registered worktrees.
+ * The first porcelain record is always the main worktree; the rest are linked worktrees.
+ * @param {Object} options - { cwd }
+ * @returns {Array<{path: string, branch: string|null, isMain: boolean, locked: boolean}>}
+ */
+export function listWorktrees(options = {}) {
+  const result = execGit(['worktree', 'list', '--porcelain'], options);
+  if (result.exitCode !== 0) return [];
+
+  const worktrees = [];
+  let current = null;
+
+  for (const line of result.stdout.split('\n')) {
+    if (line.startsWith('worktree ')) {
+      if (current) worktrees.push(current);
+      current = { path: line.slice('worktree '.length).trim(), branch: null, isMain: worktrees.length === 0, locked: false };
+    } else if (!current) {
+      continue;
+    } else if (line.startsWith('branch ')) {
+      current.branch = line.slice('branch '.length).trim().replace(/^refs\/heads\//, '');
+    } else if (line.startsWith('locked')) {
+      current.locked = true;
+    }
+  }
+  if (current) worktrees.push(current);
+
+  return worktrees;
+}
+
+/**
+ * Local branch names holding commits not reachable from HEAD.
+ * @param {Object} options - { cwd }
+ * @returns {Array<string>}
+ */
+export function listUnmergedBranches(options = {}) {
+  const result = execGit(['branch', '--no-merged', 'HEAD', '--format=%(refname:short)'], options);
+  if (result.exitCode !== 0) return [];
+
+  return result.stdout
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Number of commits on `branch` that are not reachable from HEAD.
+ * @param {string} branch
+ * @param {Object} options - { cwd }
+ * @returns {number}
+ */
+export function countCommitsAhead(branch, options = {}) {
+  const result = execGit(['rev-list', '--count', `HEAD..${branch}`], options);
+  if (result.exitCode !== 0) return 0;
+  const count = parseInt(result.stdout.trim(), 10);
+  return Number.isFinite(count) ? count : 0;
+}
+
+/**
+ * Start a merge without committing, leaving MERGE_HEAD for the caller to commit.
+ * Two or more branches produce an octopus merge, which refuses to run at all if any
+ * branch conflicts — the caller is expected to abort and report.
+ * @param {Array<string>} branches
+ * @param {Object} options - { cwd }
+ */
+export function mergeNoCommit(branches, options = {}) {
+  return execGit(['merge', '--no-ff', '--no-commit', ...branches], options);
+}
+
+export function mergeAbort(options = {}) {
+  return execGit(['merge', '--abort'], options);
+}
+
+/**
+ * True when MERGE_HEAD exists, i.e. a merge is staged but not yet committed.
+ * @param {Object} options - { cwd }
+ * @returns {boolean}
+ */
+export function isMergeInProgress(options = {}) {
+  return execGit(['rev-parse', '--verify', '--quiet', 'MERGE_HEAD'], options).exitCode === 0;
+}
+
+/**
+ * Paths with unresolved merge conflicts.
+ * @param {Object} options - { cwd }
+ * @returns {Array<string>}
+ */
+export function listConflictedPaths(options = {}) {
+  const result = execGit(['diff', '--name-only', '--diff-filter=U'], options);
+  if (result.exitCode !== 0) return [];
+  return result.stdout.split('\n').map(l => l.trim()).filter(Boolean);
 }

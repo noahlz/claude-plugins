@@ -1,7 +1,8 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
 
 import {
@@ -11,7 +12,9 @@ import {
   filterZeroUsageCosts,
   listLocalSessions,
   findRecommendedSession,
-  getCleanupPeriodDays
+  getCleanupPeriodDays,
+  hasSessionData,
+  findWorktreeSessionId
 } from '../../../plugins/dev-workflow/lib/ccusage-operations.js';
 
 describe('lib: ccusage-operations.js', () => {
@@ -313,6 +316,104 @@ describe('lib: ccusage-operations.js', () => {
       process.env.HOME = testEnv.tmpDir;
       process.chdir(testEnv.tmpDir);
       assert.equal(getCleanupPeriodDays(), 30);
+    });
+  });
+});
+
+describe('lib/ccusage-operations.js worktree session resolution', () => {
+  let projectsDir;
+  let originalHome;
+
+  const makeSession = (name, { withData = true } = {}) => {
+    const dir = join(projectsDir, name);
+    mkdirSync(join(dir, 'uuid', 'subagents'), { recursive: true });
+    if (withData) {
+      writeFileSync(join(dir, 'uuid', 'subagents', 'agent-a.jsonl'), '{}\n');
+    }
+  };
+
+  beforeEach(() => {
+    originalHome = process.env.HOME;
+    const tmpHome = mkdtempSync(join(tmpdir(), 'ccusage-home-'));
+    process.env.HOME = tmpHome;
+    projectsDir = join(tmpHome, '.claude', 'projects');
+    mkdirSync(projectsDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(process.env.HOME, { recursive: true, force: true });
+    process.env.HOME = originalHome;
+  });
+
+  describe('pwdToSessionId', () => {
+    it('encodes a dot-directory the way Claude Code does', () => {
+      const result = pwdToSessionId('/Users/me/proj/.claude/worktrees/feat-x');
+      assert.equal(result, '-Users-me-proj--claude-worktrees-feat-x');
+    });
+  });
+
+  describe('hasSessionData', () => {
+    it('finds transcripts nested under subagent directories', () => {
+      makeSession('-repo--claude-worktrees-a');
+      assert.equal(hasSessionData('-repo--claude-worktrees-a'), true);
+    });
+
+    it('reports an existing but emptied project directory as having no data', () => {
+      makeSession('-repo--claude-worktrees-b', { withData: false });
+      assert.equal(hasSessionData('-repo--claude-worktrees-b'), false,
+        'a removed worktree leaves the directory behind without transcripts');
+    });
+
+    it('reports a missing project directory as having no data', () => {
+      assert.equal(hasSessionData('-nope'), false);
+    });
+  });
+
+  describe('findWorktreeSessionId', () => {
+    it('derives the session from a live worktree path', () => {
+      makeSession('-Users-me-proj--claude-worktrees-feat-x');
+      const result = findWorktreeSessionId('/Users/me/proj', 'feat-x', '/Users/me/proj/.claude/worktrees/feat-x');
+      assert.equal(result.sessionId, '-Users-me-proj--claude-worktrees-feat-x');
+      assert.equal(result.resolvedBy, 'worktree');
+      assert.equal(result.hasData, true);
+    });
+
+    it('recovers the session by branch name after the worktree is removed', () => {
+      makeSession('-Users-me-proj--claude-worktrees-feat-x');
+      const result = findWorktreeSessionId('/Users/me/proj', 'feat-x', null);
+      assert.equal(result.sessionId, '-Users-me-proj--claude-worktrees-feat-x');
+      assert.equal(result.resolvedBy, 'branch-name');
+    });
+
+    it('matches a worktree root convention other than .claude/worktrees', () => {
+      makeSession('-Users-me-proj--worktrees-feat-y');
+      const result = findWorktreeSessionId('/Users/me/proj', 'feat-y', null);
+      assert.equal(result.sessionId, '-Users-me-proj--worktrees-feat-y');
+    });
+
+    it('encodes a slash in the branch name', () => {
+      makeSession('-Users-me-proj--claude-worktrees-feat-z');
+      const result = findWorktreeSessionId('/Users/me/proj', 'feat/z', null);
+      assert.equal(result.sessionId, '-Users-me-proj--claude-worktrees-feat-z');
+    });
+
+    it('reports the session it found even when the transcripts are gone', () => {
+      makeSession('-Users-me-proj--claude-worktrees-feat-gone', { withData: false });
+      const result = findWorktreeSessionId('/Users/me/proj', 'feat-gone', null);
+      assert.equal(result.sessionId, '-Users-me-proj--claude-worktrees-feat-gone');
+      assert.equal(result.hasData, false);
+    });
+
+    it('returns no session when nothing matches the branch', () => {
+      const result = findWorktreeSessionId('/Users/me/proj', 'never-existed', null);
+      assert.equal(result.sessionId, null);
+      assert.equal(result.resolvedBy, 'none');
+    });
+
+    it('does not match a branch belonging to a different repository', () => {
+      makeSession('-Users-me-other--claude-worktrees-feat-x');
+      const result = findWorktreeSessionId('/Users/me/proj', 'feat-x', null);
+      assert.equal(result.sessionId, null);
     });
   });
 });

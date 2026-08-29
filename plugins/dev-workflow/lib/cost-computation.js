@@ -14,41 +14,83 @@ function abbreviateTokens(count) {
 }
 
 /**
- * Aggregate usage entries by model name, summing tokens and cost.
+ * Sum usage entries by model, keeping every field numeric.
  * Deduplication of entries (same API call appearing in both parent and subagent JSONL files)
  * is handled upstream by ccusage's loadSessionBlockData via messageId:requestId hashing,
  * so entries here are already unique.
- * @param {Array} entries - Array of usage entries with {model, inputTokens, outputTokens, costUSD}
- * @returns {Array} - [{model, in, out, cacheWrites, cacheReads, cost}] cost rounded to 2 decimal places;
- *   cacheWrites/cacheReads are abbreviated strings (e.g. "213k") for compactness — informational only
+ *
+ * Kept separate from abbreviation so entries pooled from several sessions can be summed
+ * once at full precision — adding pre-abbreviated cache strings would lose it.
+ *
+ * @param {Array} entries - Usage entries with {model, usage:{...}, costUSD}
+ * @returns {Array} - [{model, cost, in, out, cacheWrites, cacheReads}] all numeric, cost unrounded
  */
-export function aggregateEntriesByModel(entries) {
+export function sumEntriesByModel(entries) {
   const byModel = new Map();
 
   for (const entry of entries) {
     const key = entry.model || 'unknown';
 
     if (!byModel.has(key)) {
-      byModel.set(key, { model: key, inputTokens: 0, outputTokens: 0, cacheWriteTokens: 0, cacheReadTokens: 0, costUSD: 0 });
+      byModel.set(key, { model: key, cost: 0, in: 0, out: 0, cacheWrites: 0, cacheReads: 0 });
     }
 
     const agg = byModel.get(key);
     // Token counts are nested under entry.usage; costUSD is at the top level
-    agg.inputTokens += entry.usage?.inputTokens ?? 0;
-    agg.outputTokens += entry.usage?.outputTokens ?? 0;
-    agg.cacheWriteTokens += entry.usage?.cacheCreationInputTokens ?? 0;
-    agg.cacheReadTokens += entry.usage?.cacheReadInputTokens ?? 0;
-    agg.costUSD += entry.costUSD ?? 0;
+    agg.in += entry.usage?.inputTokens ?? 0;
+    agg.out += entry.usage?.outputTokens ?? 0;
+    agg.cacheWrites += entry.usage?.cacheCreationInputTokens ?? 0;
+    agg.cacheReads += entry.usage?.cacheReadInputTokens ?? 0;
+    agg.cost += entry.costUSD ?? 0;
   }
 
-  return Array.from(byModel.values()).map(({ model, inputTokens, outputTokens, cacheWriteTokens, cacheReadTokens, costUSD }) => ({
+  return Array.from(byModel.values());
+}
+
+/**
+ * Round costs and compact cache token counts for display and trailer embedding.
+ * @param {Array} rows - Numeric rows from sumEntriesByModel
+ * @returns {Array} - cost rounded to 2 decimals; cacheWrites/cacheReads abbreviated
+ */
+export function abbreviateCostRows(rows) {
+  return rows.map(({ model, cost, in: inTokens, out, cacheWrites, cacheReads }) => ({
     model,
-    cost: Math.round(costUSD * 100) / 100,
-    in: inputTokens,
-    out: outputTokens,
-    cacheWrites: abbreviateTokens(cacheWriteTokens),
-    cacheReads: abbreviateTokens(cacheReadTokens)
+    cost: Math.round(cost * 100) / 100,
+    in: inTokens,
+    out,
+    cacheWrites: abbreviateTokens(cacheWrites),
+    cacheReads: abbreviateTokens(cacheReads)
   }));
+}
+
+/**
+ * Aggregate usage entries by model name, summing tokens and cost.
+ * @param {Array} entries - Array of usage entries
+ * @returns {Array} - [{model, cost, in, out, cacheWrites, cacheReads}] cost rounded to 2 decimal
+ *   places; cacheWrites/cacheReads are abbreviated strings (e.g. "213k") — informational only
+ */
+export function aggregateEntriesByModel(entries) {
+  return abbreviateCostRows(sumEntriesByModel(entries));
+}
+
+/**
+ * Load a session's usage entries, optionally dropping everything at or before sinceDate.
+ * @param {Function} loadBlockData
+ * @param {string} sessionId
+ * @param {string|null} sinceDate - ISO 8601 cutoff (null = all entries)
+ * @returns {Promise<Array>}
+ */
+async function collectEntries(loadBlockData, sessionId, sinceDate) {
+  const blocks = await loadBlockData(sessionId);
+
+  // Subagent usage (nested under <session-uuid>/subagents/) is included automatically
+  // by ccusage's recursive glob; duplicates are removed by messageId:requestId before this point.
+  const allEntries = blocks.flatMap(block => block.entries ?? []);
+
+  if (!sinceDate) return allEntries;
+
+  const sinceMs = new Date(sinceDate).getTime();
+  return allEntries.filter(entry => new Date(entry.timestamp).getTime() > sinceMs);
 }
 
 /**
@@ -64,24 +106,11 @@ export async function computeCosts(sessionId, sinceDate, deps = {}) {
   const { loadBlockData, filterZeroUsageCosts } = { ...createDefaultDeps(), ...deps };
 
   try {
-    const blocks = await loadBlockData(sessionId);
+    // Incremental mode: sinceDate is the commit date of the last Claude-Cost-Metrics trailer
+    // matching this sessionId (from getLastCostCommitDate). Cumulative mode: sinceDate is null.
+    const entries = await collectEntries(loadBlockData, sessionId, sinceDate);
 
-    // Flatten blocks[].entries[] into a single array.
-    // Subagent usage (nested under <session-uuid>/subagents/) is included automatically
-    // by ccusage's recursive glob; duplicates are removed by messageId:requestId before this point.
-    const allEntries = blocks.flatMap(block => block.entries ?? []);
-
-    // Incremental mode: filter to entries after sinceDate (the commit date of the last
-    // Claude-Cost-Metrics trailer matching this sessionId, from getLastCostCommitDate).
-    // Cumulative mode: sinceDate is null, all entries are included.
-    const sinceMs = sinceDate ? new Date(sinceDate).getTime() : null;
-    const entries = sinceMs !== null
-      ? allEntries.filter(entry => new Date(entry.timestamp).getTime() > sinceMs)
-      : allEntries;
-
-    const aggregated = aggregateEntriesByModel(entries);
-
-    const { filtered: costs } = filterZeroUsageCosts(aggregated);
+    const { filtered: costs } = filterZeroUsageCosts(aggregateEntriesByModel(entries));
 
     return {
       success: true,
@@ -97,6 +126,53 @@ export async function computeCosts(sessionId, sinceDate, deps = {}) {
       costs: [],
       error: error.message
     };
+  }
+}
+
+/**
+ * Pool costs across several project sessions into one set of per-model totals.
+ *
+ * Used for merge commits: each merged worktree ran as its own project session, and the
+ * orchestrator session contributes the dispatch and review turns. Entries are pooled raw
+ * and summed once so cache token counts stay exact.
+ *
+ * Cross-session deduplication is unnecessary — each session writes to its own project
+ * directory, so no API call appears in two of them.
+ *
+ * @param {Array<{sessionId: string, since?: string|null, label?: string}>} sources
+ * @param {object} deps - { loadBlockData, filterZeroUsageCosts } for DI/testing
+ * @returns {Promise<{success: boolean, method: string, costs: Array, contributions: Array, error?: string}>}
+ */
+export async function computeMergedCosts(sources, deps = {}) {
+  const { loadBlockData, filterZeroUsageCosts } = { ...createDefaultDeps(), ...deps };
+
+  if (!Array.isArray(sources) || sources.length === 0) {
+    return { success: false, method: 'error', costs: [], contributions: [], error: 'No cost sources provided' };
+  }
+
+  try {
+    const pooled = [];
+    const contributions = [];
+
+    for (const { sessionId, since = null, label = null } of sources) {
+      const entries = await collectEntries(loadBlockData, sessionId, since);
+      pooled.push(...entries);
+
+      const total = entries.reduce((sum, entry) => sum + (entry.costUSD ?? 0), 0);
+      contributions.push({
+        label,
+        sessionId,
+        since,
+        entries: entries.length,
+        cost: Math.round(total * 100) / 100
+      });
+    }
+
+    const { filtered: costs } = filterZeroUsageCosts(aggregateEntriesByModel(pooled));
+
+    return { success: true, method: 'merge', costs, contributions };
+  } catch (error) {
+    return { success: false, method: 'error', costs: [], contributions: [], error: error.message };
   }
 }
 

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { computeCosts, aggregateEntriesByModel } from '../../../plugins/dev-workflow/lib/cost-computation.js';
+import { computeCosts, computeMergedCosts, aggregateEntriesByModel, sumEntriesByModel, abbreviateCostRows } from '../../../plugins/dev-workflow/lib/cost-computation.js';
 
 describe('lib/cost-computation.js', () => {
   describe('aggregateEntriesByModel', () => {
@@ -203,6 +203,105 @@ describe('lib/cost-computation.js', () => {
       assert.equal(result.costs.length, 1, 'Same model from different blocks should be aggregated into one row');
       assert.equal(result.costs[0].in, 300);
       assert.equal(result.costs[0].out, 130);
+    });
+  });
+});
+
+describe('lib/cost-computation.js merge pooling', () => {
+  const entry = (model, cost, cacheWrites) => ({
+    model,
+    timestamp: '2026-01-02T00:00:00Z',
+    usage: { inputTokens: 10, outputTokens: 5, cacheCreationInputTokens: cacheWrites, cacheReadInputTokens: 0 },
+    costUSD: cost
+  });
+
+  const loaderFor = (bySession) => async (sessionId) => [{ entries: bySession[sessionId] ?? [] }];
+  const passthroughFilter = (costs) => ({ filtered: costs, removed: [] });
+
+  describe('sumEntriesByModel', () => {
+    it('keeps cache counts numeric so pooled sums stay exact', () => {
+      const rows = sumEntriesByModel([entry('m', 1, 600), entry('m', 1, 600)]);
+      assert.equal(rows[0].cacheWrites, 1200, 'raw counts survive for later summing');
+    });
+  });
+
+  describe('abbreviateCostRows', () => {
+    it('compacts cache counts and rounds cost', () => {
+      const [row] = abbreviateCostRows([{ model: 'm', cost: 0.125, in: 1, out: 2, cacheWrites: 1200, cacheReads: 500 }]);
+      assert.equal(row.cost, 0.13);
+      assert.equal(row.cacheWrites, '1k');
+      assert.equal(row.cacheReads, 500);
+    });
+  });
+
+  describe('computeMergedCosts', () => {
+    it('pools entries from every session into one per-model total', async () => {
+      const deps = {
+        loadBlockData: loaderFor({ wt: [entry('opus', 2, 0)], orch: [entry('opus', 3, 0)] }),
+        filterZeroUsageCosts: passthroughFilter
+      };
+
+      const result = await computeMergedCosts([{ sessionId: 'wt' }, { sessionId: 'orch' }], deps);
+
+      assert.equal(result.success, true);
+      assert.equal(result.method, 'merge');
+      assert.equal(result.costs.length, 1);
+      assert.equal(result.costs[0].cost, 5);
+      assert.equal(result.costs[0].in, 20);
+    });
+
+    it('sums cache tokens across sessions before abbreviating', async () => {
+      const deps = {
+        loadBlockData: loaderFor({ a: [entry('m', 1, 600)], b: [entry('m', 1, 600)] }),
+        filterZeroUsageCosts: passthroughFilter
+      };
+
+      const result = await computeMergedCosts([{ sessionId: 'a' }, { sessionId: 'b' }], deps);
+
+      assert.equal(result.costs[0].cacheWrites, '1k', '600 + 600 rounds to 1k, not 1k + 1k');
+    });
+
+    it('reports each session cost separately for display', async () => {
+      const deps = {
+        loadBlockData: loaderFor({ wt: [entry('opus', 2, 0)], orch: [entry('opus', 3, 0)] }),
+        filterZeroUsageCosts: passthroughFilter
+      };
+
+      const result = await computeMergedCosts(
+        [{ sessionId: 'wt', label: 'feature-a' }, { sessionId: 'orch', label: 'orchestrator' }],
+        deps
+      );
+
+      assert.deepEqual(result.contributions.map(c => [c.label, c.cost]), [['feature-a', 2], ['orchestrator', 3]]);
+    });
+
+    it('applies a since cutoff per source', async () => {
+      const older = { ...entry('m', 5, 0), timestamp: '2026-01-01T00:00:00Z' };
+      const deps = {
+        loadBlockData: loaderFor({ orch: [older, entry('m', 1, 0)] }),
+        filterZeroUsageCosts: passthroughFilter
+      };
+
+      const result = await computeMergedCosts([{ sessionId: 'orch', since: '2026-01-01T12:00:00Z' }], deps);
+
+      assert.equal(result.costs[0].cost, 1, 'entries at or before the cutoff are excluded');
+    });
+
+    it('fails when given no sources', async () => {
+      const result = await computeMergedCosts([]);
+      assert.equal(result.success, false);
+      assert.match(result.error, /no cost sources/i);
+    });
+
+    it('reports a loader failure instead of throwing', async () => {
+      const deps = {
+        loadBlockData: async () => { throw new Error('boom'); },
+        filterZeroUsageCosts: passthroughFilter
+      };
+
+      const result = await computeMergedCosts([{ sessionId: 'x' }], deps);
+      assert.equal(result.success, false);
+      assert.equal(result.error, 'boom');
     });
   });
 });
