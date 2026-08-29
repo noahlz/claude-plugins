@@ -126,7 +126,9 @@ export function assertResultStatus(result, expectedStatus, checks = {}) {
  * @param {Object} testEnv - Test environment from setupTestEnv
  */
 export function setupGitRepo(testEnv) {
-  execGit(['init'], { cwd: testEnv.tmpDir });
+  // Pin the branch name: without it the initial branch follows the machine's
+  // init.defaultBranch, which is unset on CI runners and falls back to 'master'.
+  execGit(['init', '--initial-branch=main'], { cwd: testEnv.tmpDir });
   execGit(['config', 'user.email', 'test@example.com'], { cwd: testEnv.tmpDir });
   execGit(['config', 'user.name', 'Test User'], { cwd: testEnv.tmpDir });
 
