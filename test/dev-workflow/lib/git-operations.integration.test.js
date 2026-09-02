@@ -22,7 +22,12 @@ import {
   mergeNoCommit,
   mergeAbort,
   isMergeInProgress,
-  listConflictedPaths
+  listConflictedPaths,
+  isLinkedWorktree,
+  getMainWorktreePath,
+  getConfigValue,
+  stagePaths,
+  isMarkerFree
 } from '../../../plugins/dev-workflow/lib/git-operations.js';
 
 /**
@@ -443,4 +448,76 @@ describe('lib/git-operations: worktree and merge operations', () => {
       mergeAbort({ cwd });
     });
   });
+
+  describe('isLinkedWorktree', () => {
+    it('is false in the main working tree', () => {
+      assert.equal(isLinkedWorktree({ cwd }), false);
+    });
+
+    it('is true inside a worktree added for a branch', () => {
+      commitOn('feature-a', 'a.txt', 'a');
+      const worktreePath = join(cwd, '.worktrees', 'feature-a');
+      execGit(['worktree', 'add', worktreePath, 'feature-a'], { cwd });
+
+      assert.equal(isLinkedWorktree({ cwd: worktreePath }), true);
+    });
+  });
+
+  describe('getMainWorktreePath', () => {
+    it('names the main working tree from inside a linked one', () => {
+      commitOn('feature-a', 'a.txt', 'a');
+      const worktreePath = join(cwd, '.worktrees', 'feature-a');
+      execGit(['worktree', 'add', worktreePath, 'feature-a'], { cwd });
+
+      assert.equal(getMainWorktreePath({ cwd: worktreePath }), getRepoRoot({ cwd }));
+    });
+  });
+
+  describe('getConfigValue', () => {
+    it('returns null for a setting nothing defines', () => {
+      // A key no config level can plausibly hold: rerere.enabled may well be set globally
+      // on the machine running these tests, and reading that fallback is correct behavior.
+      assert.equal(getConfigValue('devworkflow.absentsetting', { cwd }), null);
+    });
+
+    it('reads a setting the repository does have', () => {
+      execGit(['config', 'rerere.enabled', 'true'], { cwd });
+      assert.equal(getConfigValue('rerere.enabled', { cwd }), 'true');
+    });
+  });
+
+  describe('stagePaths', () => {
+    it('stages a path whose name would otherwise read as an option', () => {
+      writeFileSync(join(cwd, '--weird.txt'), 'content');
+
+      stagePaths(['--weird.txt'], { cwd });
+
+      assert.equal(execGit(['diff', '--cached', '--name-only'], { cwd }).stdout.trim(), '--weird.txt');
+    });
+  });
+
+  describe('isMarkerFree', () => {
+    const write = (name, content) => {
+      const filePath = join(cwd, name);
+      writeFileSync(filePath, content);
+      return filePath;
+    };
+
+    it('is false for a file still holding conflict markers', () => {
+      assert.equal(isMarkerFree(write('conflicted.txt', '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> feature\n')), false);
+    });
+
+    it('is true for a resolved text file', () => {
+      assert.equal(isMarkerFree(write('resolved.txt', 'ours and theirs\n')), true);
+    });
+
+    it('is false for a file the merge deleted', () => {
+      assert.equal(isMarkerFree(join(cwd, 'never-written.txt')), false);
+    });
+
+    it('is false for a binary file, whose conflict no marker can describe', () => {
+      assert.equal(isMarkerFree(write('image.bin', Buffer.from([0x89, 0x50, 0x00, 0x4e, 0x47]))), false);
+    });
+  });
+
 });

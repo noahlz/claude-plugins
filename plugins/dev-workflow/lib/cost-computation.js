@@ -130,53 +130,6 @@ export async function computeCosts(sessionId, sinceDate, deps = {}) {
 }
 
 /**
- * Pool costs across several project sessions into one set of per-model totals.
- *
- * Used for merge commits: each merged worktree ran as its own project session, and the
- * orchestrator session contributes the dispatch and review turns. Entries are pooled raw
- * and summed once so cache token counts stay exact.
- *
- * Cross-session deduplication is unnecessary — each session writes to its own project
- * directory, so no API call appears in two of them.
- *
- * @param {Array<{sessionId: string, since?: string|null, label?: string}>} sources
- * @param {object} deps - { loadBlockData, filterZeroUsageCosts } for DI/testing
- * @returns {Promise<{success: boolean, method: string, costs: Array, contributions: Array, error?: string}>}
- */
-export async function computeMergedCosts(sources, deps = {}) {
-  const { loadBlockData, filterZeroUsageCosts } = { ...createDefaultDeps(), ...deps };
-
-  if (!Array.isArray(sources) || sources.length === 0) {
-    return { success: false, method: 'error', costs: [], contributions: [], error: 'No cost sources provided' };
-  }
-
-  try {
-    const pooled = [];
-    const contributions = [];
-
-    for (const { sessionId, since = null, label = null } of sources) {
-      const entries = await collectEntries(loadBlockData, sessionId, since);
-      pooled.push(...entries);
-
-      const total = entries.reduce((sum, entry) => sum + (entry.costUSD ?? 0), 0);
-      contributions.push({
-        label,
-        sessionId,
-        since,
-        entries: entries.length,
-        cost: Math.round(total * 100) / 100
-      });
-    }
-
-    const { filtered: costs } = filterZeroUsageCosts(aggregateEntriesByModel(pooled));
-
-    return { success: true, method: 'merge', costs, contributions };
-  } catch (error) {
-    return { success: false, method: 'error', costs: [], contributions: [], error: error.message };
-  }
-}
-
-/**
  * Create default dependency implementations backed by ccusage-operations.
  * @returns {{ loadBlockData: Function, filterZeroUsageCosts: Function }}
  */

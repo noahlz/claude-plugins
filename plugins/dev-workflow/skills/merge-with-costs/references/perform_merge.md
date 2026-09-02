@@ -1,6 +1,6 @@
 # Stage the Merge
 
-**IMPORTANT:** NEVER run `git merge` or `git merge --abort` directly. Use the script.
+**IMPORTANT:** NEVER run `git merge`, `git merge --abort`, or `git add` directly. Use the script.
 
 ---
 
@@ -13,8 +13,8 @@
 node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" merge --branches "{{BRANCHES}}"
 ```
 
-Two or more branches produce an octopus merge. Octopus refuses to run at all if any branch
-conflicts — there is no partial result to resolve. The script aborts for you on failure.
+Two or more branches produce an octopus merge. A failed octopus has already fast-forwarded to
+its first branch, leaving nothing safe to resolve, so the script rolls it back.
 
 ## Parse JSON Output
 
@@ -22,16 +22,23 @@ conflicts — there is no partial result to resolve. The script aborts for you o
 
 → "success": merge staged, MERGE_HEAD set, nothing committed.
   - `data.branches` → BRANCHES
+  - `data.resolved_by_rerere` → RERERE_RESOLVED (paths a recorded resolution settled and staged;
+    report them, they are part of the merge)
 
-→ "merge_failed": already aborted, working tree clean.
-  - `data.conflicts` → CONFLICTS (paths)
-  - Report the conflicting paths; tell the user to merge those branches by hand.
+→ "merge_conflicts": merge staged and waiting; nothing was aborted.
+  - `data.unresolved` → UNRESOLVED (paths still holding conflict markers)
+  - `data.resolved_by_rerere` → RERERE_RESOLVED (already staged)
+  - `data.rerere_enabled` → RERERE_ENABLED
+  - Go to the conflict resolution step.
+
+→ "merge_failed": nothing staged, working tree clean.
+  - Report `message`. For several branches, re-run the skill one branch at a time.
 
 → "nothing_to_merge": no merge commit produced.
 
 ## Aborting
 
-Whenever the workflow stops after a successful `merge` without committing:
+Whenever the workflow stops after a `merge` without committing:
 
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" abort

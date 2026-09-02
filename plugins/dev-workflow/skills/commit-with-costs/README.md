@@ -5,7 +5,7 @@ Three related skills share a common commit workflow, differing only in whether t
 | Skill | Slash Command | Description |
 |-------|---------------|-------------|
 | [`commit-with-costs`](#commit-with-costs) | `/commit-with-costs` | Full commit workflow with cost metrics |
-| [`merge-with-costs`](#merge-with-costs) | `/merge-with-costs` | Merge sub-agent worktree branches with pooled cost metrics |
+| [`merge-with-costs`](#merge-with-costs) | `/merge-with-costs` | Merge sub-agent worktree branches with cost metrics |
 | [`preview-commit-message`](#preview-commit-message) | `/preview-commit-message` | Draft message without committing |
 | [`commit-only`](#commit-only) | `/commit-only` | Commit without cost metrics |
 
@@ -51,7 +51,7 @@ Claude-Cost-Metrics: {"method":"inc","cost":[{"model":"...","cost":N.NN,"in":N,"
 |--------|-------------|
 | `inc` | Cost incurred **since the last git commit** in this session. Accurate per-commit attribution. |
 | `cum` | Total session cost from session start. Used as a fallback when no prior commit timestamp is available (e.g., the first commit of a session). |
-| `merge` | Costs pooled across every session a merge integrates. Written by [`merge-with-costs`](#merge-with-costs). |
+| `merge` | Cost carried by a merge commit, counted the same way as `inc`. Written by [`merge-with-costs`](#merge-with-costs). |
 
 The `since` field is present for `inc` and `merge`, holding the ISO timestamp the cost window opens at. It is omitted for `cum`.
 
@@ -95,48 +95,49 @@ Session IDs are derived from the absolute path of the current working directory,
 
 ## merge-with-costs
 
-Merge the branches a sub-agent development session left behind, and record every contributing session's cost in one merge commit.
+Merge the branches a sub-agent development session left behind, resolve any conflicts, and record the project session's cost in the merge commit.
 
 ### The Problem It Solves
 
-Each git worktree gets its own project session, because session IDs are derived from the absolute working directory. Sub-agent commits made inside a worktree carry no `Claude-Cost-Metrics` trailer, so a plain merge commit records only what the orchestrator session spent — the sub-agents' work, usually the bulk of the cost, goes unrecorded.
+A merge commit made by hand carries no cost data at all, and the branches being merged carry none either — a sub-agent's commits inside a worktree have no `Claude-Cost-Metrics` trailer to anchor against. The cost of the work being integrated goes unrecorded.
 
 ### What It Does
 
-Discovers unmerged branches and the project session that recorded each one's cost, stages an octopus merge, then commits it with the costs of every contributing session pooled by model.
+Discovers unmerged branches, stages the merge, walks you through any conflict, then commits it with the project session's cost since its own last cost-trailered commit.
 
 ```bash
 /merge-with-costs
 ```
 
-### Cost Attribution
+### Where the Cost Comes From
 
-| Source | Window | Why |
-|--------|--------|-----|
-| Each merged branch | The whole worktree session | Its commits carry no cost trailer, so there is nothing to anchor against, and a worktree session spans exactly one feature |
-| Orchestrator session | Since its own last cost-trailered commit | Dispatch and review turns not already attributed to a commit on this branch |
+Claude Code keys a project session to the directory the session was launched from, and **a sub-agent's transcripts are written under the session that dispatched it, whatever directory the sub-agent works in**. So a session run from the project root already accounts for everything its sub-agents did inside worktrees. That one session is the whole cost source:
 
-The trailer carries `"method":"merge"` and the **orchestrator's** `sessionId`, so the next `/commit-with-costs` on the branch anchors incrementally against the merge commit. Nothing is counted twice.
+| Source | Counted | Why |
+|--------|---------|-----|
+| Project-root session | Since its own last cost-trailered commit | Dispatch, review, and every sub-agent turn it spawned |
+| A Claude session launched *inside* a worktree | Not counted | Its transcripts belong to that worktree's own project session |
 
-### Recovering a Removed Worktree's Session
+The trailer carries `"method":"merge"` and the project `sessionId`, so the next `/commit-with-costs` on the branch anchors incrementally against the merge commit. Nothing is counted twice.
 
-A live worktree supplies its path directly. Once the worktree is removed, the session is recovered by name: worktree session IDs are the repository's own session ID followed by the encoded worktree subpath, which ends in the branch name.
+### What It Refuses To Do
 
-```
-/repo/.claude/worktrees/003-derived  →  -repo--claude-worktrees-003-derived
-```
+Rather than record a figure it cannot stand behind, the skill stops and says why:
 
-Matching on that suffix works for any worktree root convention.
+| Condition | Refusal |
+|-----------|---------|
+| Run from inside a linked worktree | Names the main working tree and asks you to run there |
+| Config `sessionId` names a different project than the working directory | Cost would be read from the wrong session |
+| A merged branch has its own worktree session still holding transcripts | Names the branch and session, and makes continuing an explicit choice |
+| No earlier commit anchors this session | Shows the whole-session figure and asks before writing it |
 
-### Harvest Before Removing a Worktree
+### Merge Conflicts
 
-**Claude Code deletes a worktree's transcripts when the worktree is removed.** The project directory under `~/.claude/projects/` is left behind, but empty. Run this skill *before* `git worktree remove`, or the branch's cost is unrecoverable.
+A single-branch merge that conflicts is **left staged**, not rolled back. Paths that `git rerere` settled from a recorded resolution are staged and reported by name; the rest are walked one at a time — the conflict shown, a resolution proposed, your approval taken, then staged. Staging refuses any path still holding conflict markers, and the commit refuses while anything is unmerged. Aborting is available at every step.
 
-Branches whose transcripts are already gone are reported explicitly rather than silently counted as zero — the skill names them in Step 2 and again in the final summary.
+Enable `git config rerere.enabled true` and git records each resolution, so the same conflict resolves itself next time.
 
-### Merge Strategy
-
-Two or more branches produce a single octopus merge (`git merge --no-ff --no-commit`), yielding one merge commit with all parents. Octopus refuses to run at all when any branch conflicts, so on failure the skill aborts the merge, names the conflicting paths, and stops — resolve those branches by hand.
+Two or more branches are merged as one octopus commit. A failed octopus has already fast-forwarded to its first branch and leaves a half-merged tree with no conflict markers in it, so nothing there is safe to resolve in place: the skill rolls it back and asks you to re-run one branch at a time.
 
 ### Configuration
 
