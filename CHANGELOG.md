@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.14.1
+- Changed: `merge-with-costs` now counts merge costs from the project-root session only — sub-agent transcripts already belong to the dispatching session, so pooling worktree sessions re-counted a reused worktree on every merge
+- Changed: `merge-with-costs` refuses to run from a linked worktree, with a config naming another project, or from an unanchored session, rather than recording a figure it cannot stand behind
+- Fixed: a conflicted single-branch merge in `merge-with-costs` now stays staged for in-place resolution, crediting paths git settled from a recorded rerere resolution; a failed octopus merge still rolls back
+- Changed: `merge-with-costs` no longer tells the user merged worktrees can be removed
+
 # 0.14.0
 - Added `merge-with-costs` skill to `dev-workflow`: merges sub-agent worktree branches and records every contributing session's cost — each worktree plus the orchestrator — in one merge commit
 - Fixed: worktree session IDs were unresolvable because path encoding replaced only `/` rather than every non-alphanumeric character, which also broke `commit-with-costs` when run inside a worktree
