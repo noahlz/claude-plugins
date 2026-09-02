@@ -55,7 +55,7 @@ Workflows for common development tasks.
 |-------|-------------|---------------|
 | [`run-tests`](./plugins/dev-workflow/skills/run-tests/SKILL.md) | Run tests, analyze failures, and propose fixes via sub-agents. | `/run-tests` |
 | [`commit-with-costs`](./plugins/dev-workflow/skills/commit-with-costs/SKILL.md) | Create git commits with Claude Code attribution and session cost metrics. | `/commit-with-costs` |
-| [`merge-with-costs`](./plugins/dev-workflow/skills/merge-with-costs/SKILL.md) | Merge sub-agent worktree branches, pooling every contributing session's cost into the merge commit. | `/merge-with-costs` |
+| [`merge-with-costs`](./plugins/dev-workflow/skills/merge-with-costs/SKILL.md) | Merge sub-agent worktree branches, resolve any conflicts, and record the project session's cost in the merge commit. | `/merge-with-costs` |
 | [`preview-commit-message`](./plugins/dev-workflow/skills/preview-commit-message/SKILL.md) | Draft a commit message from staged changes without committing. | `/preview-commit-message` |
 | [`commit-only`](./plugins/dev-workflow/skills/commit-only/SKILL.md) | Commit staged changes with an AI-generated message. No cost metrics. | `/commit-only` |
 | [`view-cost-metrics`](./plugins/dev-workflow/skills/view-cost-metrics/SKILL.md) | Display current session cost metrics without creating a commit. | `/view-cost-metrics` |

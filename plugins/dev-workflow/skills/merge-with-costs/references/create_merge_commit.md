@@ -7,10 +7,10 @@
 ## Execute Command
 
 **Value Replacements:**
-- `{{CURRENT_COST}}`: Literal JSON array from Step 6
-- `{{COST_SINCE}}`: Orchestrator anchor from Step 6 (ISO date, or empty string if null)
-- `{{COMMIT_SUBJECT}}`: Subject line from Step 4
-- `{{COMMIT_BODY}}`: Body from Step 4
+- `{{CURRENT_COST}}`: Literal JSON array from the cost step
+- `{{COST_SINCE}}`: Anchor from the cost step (ISO date, or empty string if null)
+- `{{COMMIT_SUBJECT}}`: Subject line from the message step
+- `{{COMMIT_BODY}}`: Body from the message step
 
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" commit \
@@ -24,7 +24,7 @@ node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" commit \
 EOF
 ```
 
-The trailer is written with `"method":"merge"` and carries the orchestrator's `sessionId`, so the
+The trailer is written with `"method":"merge"` and carries the project `sessionId`, so the
 next `/commit-with-costs` on this branch anchors incrementally against this merge commit.
 
 ## Parse JSON Output
@@ -35,6 +35,8 @@ next `/commit-with-costs` on this branch anchors incrementally against this merg
   - `data.commit_sha` → COMMIT_SHA
 
 → "no_merge_in_progress": MERGE_HEAD is gone; the merge was already committed or aborted.
+
+→ "conflicts_unresolved": `data.unresolved` are still unmerged. Back to the conflict step.
 
 → "metrics_invalid", "git_error", or "error":
   - `message` → ERROR_MESSAGE

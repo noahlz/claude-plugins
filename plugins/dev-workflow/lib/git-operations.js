@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { readFileSync } from 'fs';
 
 /**
  * Run a git command with arguments passed verbatim (no shell).
@@ -247,4 +248,72 @@ export function listConflictedPaths(options = {}) {
   const result = execGit(['diff', '--name-only', '--diff-filter=U'], options);
   if (result.exitCode !== 0) return [];
   return result.stdout.split('\n').map(l => l.trim()).filter(Boolean);
+}
+
+/**
+ * True when cwd is a linked worktree rather than the main working tree.
+ * A linked worktree's own git dir sits under the main repository's common dir,
+ * so the two paths differ only there.
+ * @param {Object} options - { cwd }
+ * @returns {boolean}
+ */
+export function isLinkedWorktree(options = {}) {
+  const gitDir = execGit(['rev-parse', '--absolute-git-dir'], options);
+  const commonDir = execGit(['rev-parse', '--path-format=absolute', '--git-common-dir'], options);
+  if (gitDir.exitCode !== 0 || commonDir.exitCode !== 0) return false;
+  return gitDir.stdout.trim() !== commonDir.stdout.trim();
+}
+
+/**
+ * Absolute path of the main working tree, which `git worktree list` always reports first.
+ * @param {Object} options - { cwd }
+ * @returns {string|null}
+ */
+export function getMainWorktreePath(options = {}) {
+  const [main] = listWorktrees(options);
+  return main ? main.path : null;
+}
+
+/**
+ * Read a git config value.
+ * @param {string} key - e.g. "rerere.enabled"
+ * @param {Object} options - { cwd }
+ * @returns {string|null} - null when unset
+ */
+export function getConfigValue(key, options = {}) {
+  const result = execGit(['config', '--get', key], options);
+  return result.exitCode === 0 ? result.stdout.trim() || null : null;
+}
+
+/**
+ * Stage paths. `--` keeps a path that looks like an option from being read as one.
+ * @param {Array<string>} paths
+ * @param {Object} options - { cwd }
+ */
+export function stagePaths(paths, options = {}) {
+  return execGit(['add', '--', ...paths], options);
+}
+
+/**
+ * True when a conflicted path is safe to stage: it exists, is text, and no longer holds
+ * conflict markers.
+ *
+ * This is how a path rerere already settled is told from one still needing hands — rerere
+ * writes its recorded resolution into the working file but leaves the index entry unmerged,
+ * so the index alone cannot distinguish the two. Anything unreadable, binary, or deleted
+ * returns false: a modify/delete or binary conflict is a decision for a person.
+ *
+ * @param {string} filePath - Absolute or cwd-relative path
+ * @returns {boolean}
+ */
+export function isMarkerFree(filePath) {
+  try {
+    const buffer = readFileSync(filePath);
+    if (buffer.subarray(0, 8192).includes(0)) return false;
+
+    const content = buffer.toString('utf-8');
+    return !(/^<{7} /m.test(content) && /^={7}$/m.test(content) && /^>{7} /m.test(content));
+  } catch {
+    return false;
+  }
 }

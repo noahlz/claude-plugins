@@ -18,6 +18,7 @@ node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" discover
   - `data.repo_root` → REPO_ROOT
   - `data.current_branch` → CURRENT_BRANCH
   - `data.candidates` → CANDIDATES (array)
+  - `data.unaccounted_sessions` → UNACCOUNTED_SESSIONS (array of {branch, session_id})
 
 | Candidate field | Meaning |
 |-----------------|---------|
@@ -25,9 +26,9 @@ node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" discover
 | `commits_ahead` | Commits not reachable from HEAD |
 | `worktree_live` | Worktree still registered |
 | `worktree_locked` | A Claude session currently holds the worktree |
-| `session_id` | Project session that recorded the branch's cost |
+| `worktree_session_id` | Project session keyed to that worktree's own directory |
 | `resolved_by` | `worktree` (path) or `branch-name` (worktree already removed) |
-| `has_cost_data` | Transcripts still on disk — `false` means the cost is unrecoverable |
+| `worktree_session_has_data` | `true`: a Claude session ran inside that worktree; its cost is NOT in this merge |
 
 → If STATUS = "no_candidates", "merge_in_progress", or "error":
   - `message` → ERROR_MESSAGE

@@ -35,6 +35,11 @@ export function createMockGit(overrides = {}) {
     mergeAbort: () => ({ stdout: '', stderr: '', exitCode: 0 }),
     isMergeInProgress: () => false,
     listConflictedPaths: () => [],
+    isLinkedWorktree: () => false,
+    getMainWorktreePath: () => '/repo',
+    getConfigValue: () => null,
+    stagePaths: () => ({ stdout: '', stderr: '', exitCode: 0 }),
+    isMarkerFree: () => false,
     ...overrides
   };
 }
@@ -60,11 +65,11 @@ export function createMockCcusage(overrides = {}) {
  */
 export function createMockCost(overrides = {}) {
   return {
-    computeMergedCosts: async (sources) => ({
+    computeCosts: async (sessionId, since) => ({
       success: true,
-      method: 'merge',
-      costs: [{ model: 'test-model', cost: 1.5, in: 10, out: 20, cacheWrites: 0, cacheReads: 0 }],
-      contributions: sources.map(s => ({ label: s.label, sessionId: s.sessionId, since: s.since, entries: 1, cost: 0.75 }))
+      method: since ? 'inc' : 'cum',
+      since,
+      costs: [{ model: 'test-model', cost: 1.5, in: 10, out: 20, cacheWrites: 0, cacheReads: 0 }]
     }),
     ...overrides
   };
@@ -110,6 +115,39 @@ export function commitOnBranch(testEnv, branch, filename, content) {
 }
 
 /**
+ * Put two branches in conflict over the same file, leaving the repo on its original branch.
+ * Returns the conflicted path.
+ */
+export function setupConflict(testEnv, { file = 'shared.txt', ours = 'from main', theirs = 'from feature', branch = 'feature-a' } = {}) {
+  const cwd = testEnv.tmpDir;
+  const original = execGit(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd }).stdout.trim();
+
+  commitOnBranch(testEnv, branch, file, theirs);
+
+  writeFileSync(join(cwd, file), ours);
+  execGit(['add', file], { cwd });
+  execGit(['commit', '-m', `${file} on ${original}`], { cwd });
+
+  return file;
+}
+
+/**
+ * Resolve a conflicted file by writing content free of conflict markers.
+ */
+export function writeResolution(testEnv, file, content) {
+  writeFileSync(join(testEnv.tmpDir, file), content);
+}
+
+/**
+ * Add a linked worktree for a branch and return its path.
+ */
+export function addWorktree(testEnv, branch, subdir = `.worktrees/${branch}`) {
+  const path = join(testEnv.tmpDir, subdir);
+  execGit(['worktree', 'add', path, branch], { cwd: testEnv.tmpDir });
+  return path;
+}
+
+/**
  * Execute merge-workflow.js and parse its JSON result.
  */
 export function execMergeWorkflow(testEnv, action, options = {}) {
@@ -117,7 +155,7 @@ export function execMergeWorkflow(testEnv, action, options = {}) {
 
   const result = execNodeScript(scriptPath, {
     args: [action, ...(options.args || [])],
-    cwd: testEnv.tmpDir,
+    cwd: options.cwd || testEnv.tmpDir,
     input: options.input
   });
 
