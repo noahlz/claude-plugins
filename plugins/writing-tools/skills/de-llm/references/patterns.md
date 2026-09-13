@@ -179,14 +179,14 @@ Fix the prose, not the formatting.
 
 ## 12. Compressed Abstract or Metaphorical Phrasing
 
-**🚫 Blacklist (zero tolerance).** These words are always scanned — never skipped, never softened: `shape`/`shaped`, `tension`, `boundary`, `unlock`/`unlocks`, `gate`/`gated`, `weave`/`woven`, `tapestry`, `interplay`, `surface` (as a verb), `guardrail`, `moat`. When used metaphorically: rewrite concretely if the referent is recoverable; **delete the phrasing if it is not** — a pure-rhetoric use carries no real claim. Only leave & log when deleting would drop a verifiable fact. Preserve literal technical uses (listed below).
+**🚫 Blacklist (zero tolerance).** These words are always scanned — never skipped, never softened: `shape`/`shaped`, `tension`, `boundary`, `unlock`/`unlocks`, `gate`/`gates`/`gated`, `weave`/`woven`, `tapestry`, `interplay`, `surface` (as a verb), `guardrail`, `moat`, `land`/`lands`/`landed`, `gap`/`gaps`. When used metaphorically: rewrite concretely if the referent is recoverable; **delete the phrasing if it is not** — a pure-rhetoric use carries no real claim. Only leave & log when deleting would drop a verifiable fact. Preserve literal technical uses (listed below).
 
 **Detection:** Noun phrases that compress abstraction or metaphor in place of concrete description.
 
 - **Process nominalizations:** `the drift`, `the divergence`, `the convergence`, `the cascade`, `the unraveling`, `the regression`, `the slippage`, `the entanglement`, `the misalignment`.
 - **Anatomical/structural metaphors:** `load-bearing`, `the spine`, `the functional spine`, `the connective tissue`, `the scaffolding`, `the skeleton`, `the backbone`, `the seam`, `the contract` (when not a literal interface).
-- **Abstractions used as concrete nouns:** `the shape`/`shaped`, `the texture`, `the gravity`, `the pressure`, `the tension`, `the boundary`, `the tapestry`, `the interplay`, `the moat`, `the guardrail` (applied to code or systems, not physical objects).
-- **Metaphorical verbs:** `unlock`/`unlocks` (potential, value), `gate`/`gated` (progress, releases), `weave`/`woven` (into the fabric), `surface` (insights) — figurative action verbs standing in for a concrete one.
+- **Abstractions used as concrete nouns:** `the shape`/`shaped`, `the texture`, `the gravity`, `the pressure`, `the tension`, `the boundary`, `the tapestry`, `the interplay`, `the moat`, `the guardrail` (applied to code or systems, not physical objects), `the gap`/`gaps` (applied to missing functionality, coverage, or requirements — not a measured or physical gap).
+- **Metaphorical verbs:** `unlock`/`unlocks` (potential, value), `gate`/`gated` (progress, releases), `weave`/`woven` (into the fabric), `surface` (insights), `land`/`lands`/`landed` (a change, feature, or fix reaching users) — figurative action verbs standing in for a concrete one.
 
 **Action:**
 - **General Pattern 12 — recoverable referent:** rewrite the phrase concretely using the surrounding prose.
@@ -200,16 +200,21 @@ Fix the prose, not the formatting.
 | "The functional spine of the parser is the recursive descent loop." | "The parser is built around a recursive descent loop." |
 | "The divergence has become unsustainable." | (skip — no antecedent; log) |
 | "The release process gates the project." | "Each release blocks until the project's checks pass." (recoverable → rewrite) |
+| "Deployment is gated by the security review." | "Deployment blocks until the security review finishes." |
 | "The shape of the process is a boundary that unlocks true devops potential." | (delete — pure rhetoric, no real claim) |
 | "There's tension between throughput and latency in the scheduler." | "The scheduler trades throughput for latency." |
 | "The cache is woven into the fabric of the request path." | "The request path reads and writes the cache on every call." (recoverable) |
 | "Observability surfaces insights and builds a moat around the product." | (delete — pure rhetoric, no real claim) |
 | "Code review is the guardrail that keeps quality high." | "Code review blocks merges that drop test coverage below 80%." (recoverable) |
-| "The array's shape is (3, 4)." / "the attack surface of the API" / "the model's safety guardrails" / "the spine router aggregates the leaf switches" / "the `// load-bearing` comment the build actually depends on" | (keep — literal) |
+| "The fix lands in the next release." | "The fix ships in v4.2." |
+| "This feature landed last sprint." | "The team added this feature last sprint." |
+| "There's a gap in our test coverage." | "Unit tests don't cover the retry path." |
+| "The proposal leaves a gap around error handling." | "The proposal doesn't specify how errors are handled." |
+| "The array's shape is (3, 4)." / "the attack surface of the API" / "the model's safety guardrails" / "the spine router aggregates the leaf switches" / "the `// load-bearing` comment the build actually depends on" / "the plane landed at 6pm" / "a 12% pay gap" / "the CI pipeline has three gates" | (keep — literal) |
 
 Skip concrete technical artifacts: `the migration`, `the schema`, `the cache`, `the worker pool`, `surface area`. Target only abstract processes or imported physical metaphors that stand in for missing detail.
 
-**Literal exceptions (preserve) for blacklist words:** array/tensor `shape`, mutex/lock `unlock`, logic/feature/CI `gate` and `gated` rollout, `boundary` condition / bounded context, mechanical `tension`, attack/API `surface` (noun) and `surface area`, textile `weave`/`woven`, LLM/AI safety `guardrails` (content filters, policy checks), network/book `spine` (spine router, book spine), structural or jargon `load-bearing` (a `load-bearing` comment/whitespace something actually depends on), and proper nouns (e.g. the **Weave** product). `tapestry`, `interplay`, and `moat` have no literal technical sense — treat them as always-metaphorical.
+**Literal exceptions (preserve) for blacklist words:** array/tensor `shape`, mutex/lock `unlock`, logic/feature/CI `gate`/`gates` and `gated` rollout, `boundary` condition / bounded context, mechanical `tension`, attack/API `surface` (noun) and `surface area`, textile `weave`/`woven`, LLM/AI safety `guardrails` (content filters, policy checks), network/book `spine` (spine router, book spine), structural or jargon `load-bearing` (a `load-bearing` comment/whitespace something actually depends on), physical `land`/`landed` (aircraft, ships, objects arriving somewhere), quantified `gap`/`gaps` backed by a number or measurement (a `12%` pay gap, a `3-day` gap between releases, `gap year`), and proper nouns (e.g. the **Weave** product, **The Gap** retailer). `tapestry`, `interplay`, and `moat` have no literal technical sense — treat them as always-metaphorical.
 
 ---
 
