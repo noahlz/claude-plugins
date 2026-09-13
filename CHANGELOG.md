@@ -1,5 +1,8 @@
 # Changelog
 
+# 0.14.2
+- Enhanced `de-llm` skill: added `lands`/`landed`, `gap`/`gaps`, and plural `gates` to the pattern 12 metaphor blacklist
+
 # 0.14.1
 - Changed: `merge-with-costs` now counts merge costs from the project-root session only — sub-agent transcripts already belong to the dispatching session, so pooling worktree sessions re-counted a reused worktree on every merge
 - Changed: `merge-with-costs` refuses to run from a linked worktree, with a config naming another project, or from an unanchored session, rather than recording a figure it cannot stand behind
