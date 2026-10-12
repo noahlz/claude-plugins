@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 
+import fs from 'fs';
 import path from 'path';
 import * as git from '../../../lib/git-operations.js';
 import * as ccusage from '../../../lib/ccusage-operations.js';
 import { computeCosts } from '../../../lib/cost-computation.js';
 import { createCommit } from '../../../lib/commit-operations.js';
 import { readSessionConfig } from '../../../lib/file-utils.js';
+import { skillConfigPath } from '../../../lib/skill-config.js';
 import { pathToFileURL } from 'url';
+
+// merge-with-costs shares commit-with-costs configuration
+const CONFIG_SKILL = 'commit-with-costs';
 
 /**
  * Create default dependency objects for production use
@@ -114,20 +119,40 @@ function preflight(options = {}) {
       return { status: 'error', data: {}, message: 'Not inside a git repository' };
     }
 
-    const config = configPath ? readSessionConfig(configPath) : {};
-    const configSessionId = config.sessionId || null;
+    const worktreeData = {
+      repo_root: repoRoot,
+      in_linked_worktree: gitOps.isLinkedWorktree({ cwd: baseDir }),
+      main_worktree_path: gitOps.getMainWorktreePath({ cwd: baseDir })
+    };
+
+    // Checked before the config: a linked worktree has its own project root, so its config
+    // is usually absent, and "not configured" would hide the real problem.
+    if (worktreeData.in_linked_worktree) {
+      return {
+        status: 'in_worktree',
+        data: worktreeData,
+        message: `Running inside a linked worktree. Cost is recorded against the project-root session, so run this skill from the main working tree: ${worktreeData.main_worktree_path}`
+      };
+    }
+
+    if (!configPath || !fs.existsSync(configPath)) {
+      return {
+        status: 'not_configured',
+        data: { ...worktreeData, config_path: configPath || null },
+        message: 'No commit-with-costs config for this project. Run /commit-with-costs once to create it.'
+      };
+    }
+
+    const configSessionId = readSessionConfig(configPath).sessionId;
     const cwdSessionId = ccusageOps.pwdToSessionId(path.resolve(baseDir));
     const repoSessionId = ccusageOps.pwdToSessionId(path.resolve(repoRoot));
 
     // A session launched in a subdirectory of the repository is keyed to that subdirectory,
     // so either encoding is a legitimate match for the configured session.
-    const sessionMatches = Boolean(configSessionId)
-      && (configSessionId === cwdSessionId || configSessionId === repoSessionId);
+    const sessionMatches = configSessionId === cwdSessionId || configSessionId === repoSessionId;
 
     const data = {
-      repo_root: repoRoot,
-      in_linked_worktree: gitOps.isLinkedWorktree({ cwd: baseDir }),
-      main_worktree_path: gitOps.getMainWorktreePath({ cwd: baseDir }),
+      ...worktreeData,
       config_session_id: configSessionId,
       cwd_session_id: cwdSessionId,
       repo_session_id: repoSessionId,
@@ -135,21 +160,11 @@ function preflight(options = {}) {
       rerere_enabled: rerereEnabled(gitOps, { cwd: baseDir })
     };
 
-    if (data.in_linked_worktree) {
-      return {
-        status: 'in_worktree',
-        data,
-        message: `Running inside a linked worktree. Cost is recorded against the project-root session, so run this skill from the main working tree: ${data.main_worktree_path}`
-      };
-    }
-
     if (!sessionMatches) {
       return {
         status: 'session_mismatch',
         data,
-        message: configSessionId
-          ? `Configured session "${configSessionId}" is not this project directory ("${cwdSessionId}"). Cost would be read from the wrong session.`
-          : 'No sessionId in the commit-with-costs config'
+        message: `Configured session "${configSessionId}" is not this project directory ("${cwdSessionId}"). Cost would be read from the wrong session.`
       };
     }
 
@@ -557,7 +572,7 @@ async function main() {
   try {
     switch (action) {
       case 'preflight':
-        result = preflight({ baseDir: '.', configPath: flagValue(args, '--config'), deps });
+        result = preflight({ baseDir: '.', configPath: skillConfigPath(CONFIG_SKILL), deps });
         break;
 
       case 'discover':
@@ -583,7 +598,7 @@ async function main() {
       case 'prepare-merge':
         result = await prepareMerge({
           baseDir: '.',
-          configPath: flagValue(args, '--config'),
+          configPath: skillConfigPath(CONFIG_SKILL),
           deps
         });
         break;
@@ -591,7 +606,7 @@ async function main() {
       case 'commit':
         result = await commitMerge({
           baseDir: '.',
-          configPath: flagValue(args, '--config'),
+          configPath: skillConfigPath(CONFIG_SKILL),
           costs: flagValue(args, '--costs'),
           since: flagValue(args, '--since') || null,
           deps

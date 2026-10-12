@@ -39,10 +39,12 @@ Activate only on `/update-changelog` or explicit request. Follow steps EXACTLY.
 
 ## Step 0 — Config Check
 
-Run: `node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.update-changelog.json"`
+Run: `node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" read update-changelog`
 
-- **Found** → `cat .claude/settings.plugins.update-changelog.json`, extract `changelogPath` as `CHANGELOG_PATH`. Verify with `git ls-files --error-unmatch "{{CHANGELOG_PATH}}" 2>/dev/null || test -f "{{CHANGELOG_PATH}}"`. If missing, ask for correct path (default: `./CHANGELOG.md`) and update config.
-- **NOT_CONFIGURED** → say config is missing. Ask: "Where is your changelog file? (default: `./CHANGELOG.md`)" Store as `CHANGELOG_PATH`. Write: `echo '{"changelogPath":"{{CHANGELOG_PATH}}"}' > .claude/settings.plugins.update-changelog.json`
+Fields: `projectRoot`, `config` (null if missing). `changelogPath` is relative to `projectRoot`. Access the config only via `skill-config.js`.
+
+- **`config` present** → `projectRoot` + `config.changelogPath` → CHANGELOG_PATH (absolute). Verify with `test -f "{{CHANGELOG_PATH}}"`. If missing, ask for the correct path (default: `CHANGELOG.md`, relative to project root) and update: `node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" write update-changelog '{"changelogPath":"{{RELATIVE_PATH}}"}' --replace`
+- **`config` null** → say config is missing; ask: "Where is your changelog file, relative to the project root? (default: `CHANGELOG.md`)" Write: `node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" write update-changelog '{"changelogPath":"{{RELATIVE_PATH}}"}'`. CHANGELOG_PATH = `projectRoot` + that path.
 
 ## Step 1 — Detect Latest Tag
 

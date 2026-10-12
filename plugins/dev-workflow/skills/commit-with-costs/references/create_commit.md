@@ -20,7 +20,7 @@
 
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" commit \
-  --config .claude/settings.plugins.commit-with-costs.json \
+  --config \
   --costs "{{CURRENT_COST}}" \
   --method "{{COST_METHOD}}" \
   --since "{{COST_SINCE}}" \

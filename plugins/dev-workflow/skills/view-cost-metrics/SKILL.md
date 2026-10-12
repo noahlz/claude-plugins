@@ -64,22 +64,23 @@ All script outputs return JSON. Extract fields and store in variables.
 
 **MODE**: Determine from `$ARGUMENTS`: if it contains "cumulative" or "cum" → `cumulative`; otherwise → `incremental` (default, also matches "incremental" or "inc")
 
-**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.view-cost-metrics.json"`
+**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" check view-cost-metrics`
 
 **Configuration Routing:**
-- If `SKILL_CONFIG` = `✓ Configuration found` → Proceed to Step 1a (Load Configuration)
-- If `SKILL_CONFIG` = `NOT_CONFIGURED` → Skip Step 1a, proceed to Step 1b (Create Configuration)
+- If `SKILL_CONFIG` starts with `✓ Configuration found` → Step 1a
+- If `SKILL_CONFIG` starts with `NOT_CONFIGURED` → Step 1b
+
+Config lives at the project root. Access it only via `skill-config.js`, never by relative path.
 
 ## 1. Resolve SessionID
 
 ### 1a. Load existing configuration
 
-→ Configuration exists. Proceed to Step 2.
-→ (The script reads the config file directly via `--config` flag.)
+→ Step 2 (`--config` reads the project config).
 
 ### 1b. Create new configuration
 
-→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! (./.claude/settings.plugins.view-cost-metrics.json). Let's create it:"
+→ **MANDATORY:** Tell the user: "⚠️  Skill configuration not found! ({{path from SKILL_CONFIG}}). Let's create it:"
 
 → Run Bash command to list available sessions:
 ```bash
@@ -92,10 +93,10 @@ node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" list-sessions
 
 → Write config file:
 ```bash
-echo '{"sessionId":"{{SESSION_ID}}"}' > .claude/settings.plugins.view-cost-metrics.json
+node "{{SKILL_BASE_DIR}}/../../lib/skill-config.js" write view-cost-metrics '{"sessionId":"{{SESSION_ID}}"}'
 ```
 
-→ Inform the user of the file location and continue to Step 2.
+→ `created` → inform user of `path`. `exists` → keep it; never overwrite. Step 2.
 
 ## 2. Fetch Cost Data
 
@@ -103,7 +104,7 @@ echo '{"sessionId":"{{SESSION_ID}}"}' > .claude/settings.plugins.view-cost-metri
 
 → Execute using Bash tool:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" fetch-cost --config .claude/settings.plugins.view-cost-metrics.json --mode {{MODE}}
+node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" fetch-cost --config --mode {{MODE}}
 ```
 
 → Parse JSON output.

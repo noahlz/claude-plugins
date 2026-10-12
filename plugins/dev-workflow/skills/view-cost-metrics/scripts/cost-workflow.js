@@ -6,6 +6,7 @@ import * as ccusage from '../../../lib/ccusage-operations.js';
 import * as git from '../../../lib/git-operations.js';
 import { computeCosts, createDefaultDeps as createCostDeps } from '../../../lib/cost-computation.js';
 import { readSessionConfig } from '../../../lib/file-utils.js';
+import { skillConfigPath } from '../../../lib/skill-config.js';
 import { pathToFileURL } from 'url';
 
 function createDefaultDeps() {
@@ -117,8 +118,8 @@ async function main() {
 
         let baseDir, sessionId;
         if (configIdx !== -1) {
-          // Read sessionId from config file (avoids passing hyphen-prefixed IDs as CLI args)
-          const config = readSessionConfig(args[configIdx + 1]);
+          // Read sessionId from the project config (avoids passing hyphen-prefixed IDs as CLI args)
+          const config = readSessionConfig(skillConfigPath('view-cost-metrics'));
           sessionId = config.sessionId;
           baseDir = process.cwd();
         } else {
@@ -127,7 +128,7 @@ async function main() {
           sessionId = args[1] || null;
         }
 
-        const flagValues = new Set([configIdx, modeIdx].filter(i => i !== -1).flatMap(i => [i, i + 1]));
+        const flagValues = new Set([configIdx, ...(modeIdx !== -1 ? [modeIdx, modeIdx + 1] : [])]);
         outputFile = args.find((a, i) => !flagValues.has(i) && (configIdx !== -1 || i >= 2));
         result = await fetchCost({ baseDir, sessionId, mode, deps });
         break;

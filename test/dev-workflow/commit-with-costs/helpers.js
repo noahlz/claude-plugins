@@ -151,7 +151,7 @@ export function stageFile(testEnv, filename, content = 'test content') {
 /**
  * Execute commit-workflow.js script (commit-with-costs version) and parse JSON result
  * @param {Object} testEnv - Test environment
- * @param {string} action - Action to execute (prepare, commit, save-config)
+ * @param {string} action - Action to execute (prepare, commit)
  * @param {Object} options - { args, input }
  * @returns {Object} Parsed JSON result
  */

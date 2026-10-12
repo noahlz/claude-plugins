@@ -63,23 +63,17 @@ Display any WARNING before proceeding.
 
 Halt if git commands already ran in this turn.
 
-**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.commit-with-costs.json"`
-
-- `✓ Configuration found` → run the check below
-- `NOT_CONFIGURED` → Halt: "Run `/commit-with-costs` once to create
-  `.claude/settings.plugins.commit-with-costs.json`, then re-run this skill."
-
-Share `commit-with-costs` configuration. Never create a second config file.
+Uses the `commit-with-costs` config; the script locates it. Never create one.
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" preflight \
-  --config .claude/settings.plugins.commit-with-costs.json
+node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" preflight
 ```
 
 | `status` | Action |
 |----------|--------|
 | `success` | Store `data.rerere_enabled` → RERERE_ENABLED. Step 1. |
 | `in_worktree` | Halt with the message; re-run from `data.main_worktree_path`. |
+| `not_configured` | Halt: "Run `/commit-with-costs` once to create the config, then re-run this skill." |
 | `session_mismatch` | Halt with the message. Fix: re-run from the configured session's directory, or correct `sessionId` in the config. |
 | `error` | Display the message and halt. |
 

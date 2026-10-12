@@ -3,8 +3,7 @@
 ## Execute Command
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" prepare-merge \
-  --config .claude/settings.plugins.commit-with-costs.json
+node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" prepare-merge
 ```
 
 **NOTE:** If the above command fails, execute this script and try again:
