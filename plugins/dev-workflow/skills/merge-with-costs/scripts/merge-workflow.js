@@ -45,6 +45,7 @@ function createDefaultDeps() {
       pwdToSessionId: ccusage.pwdToSessionId,
       findWorktreeSessionId: ccusage.findWorktreeSessionId,
       hasSessionData: ccusage.hasSessionData,
+      listWorktreeSessions: ccusage.listWorktreeSessions,
       validateCostMetrics: ccusage.validateCostMetrics,
       filterZeroUsageCosts: ccusage.filterZeroUsageCosts
     }
@@ -102,7 +103,8 @@ function partitionConflicts(gitOps, baseDir) {
  * Cost is read from one project session, and Claude Code keys a project session to the
  * directory the session was launched from. A run inside a linked worktree therefore reads a
  * different session than the one the config names, so both conditions are refusals rather
- * than warnings.
+ * than warnings. Worktree sessions active since the last cost commit are reported in
+ * `worktree_sessions` as a warning: their cost is missed unless the user includes it later.
  *
  * @param {object} options - { baseDir, configPath, deps }
  * @returns {object} - { status, data, message }
@@ -167,6 +169,13 @@ function preflight(options = {}) {
         message: `Configured session "${configSessionId}" is not this project directory ("${cwdSessionId}"). Cost would be read from the wrong session.`
       };
     }
+
+    // Warn before anything is merged: a worktree session active since the last cost commit
+    // holds cost the project session cannot see (EnterWorktree re-keys the whole transcript).
+    const anchor = gitOps.getLastCostCommitDate(configSessionId, { cwd: baseDir });
+    data.worktree_sessions = ccusageOps.listWorktreeSessions(configSessionId)
+      .filter(s => !anchor || Date.parse(s.lastActivity) > Date.parse(anchor))
+      .map(s => ({ session_id: s.sessionId, last_activity: s.lastActivity }));
 
     return { status: 'success', data, message: 'Ready to merge' };
   } catch (error) {
@@ -463,14 +472,16 @@ function latestDate(...dates) {
  * Each window opens at its session's last cost-trailered commit, so work already attributed is
  * never counted twice. The project window walks HEAD only. An included session's window also
  * walks the branches being merged, where a worktree-launched session's own trailers live, and
- * never opens before the project anchor: an `EnterWorktree` transcript can span the previous
- * merge, whose trailer already counted its earlier entries.
+ * by default never opens before the project anchor: an `EnterWorktree` transcript can span the
+ * previous merge, whose trailer already counted its earlier entries. That floor can also drop
+ * cost nobody counted, so whatever it drops is measured and returned as `excluded`; naming the
+ * session in `noFloor` opens its window at its own anchor instead.
  *
- * @param {object} options - { baseDir, configPath, includeSessions, branches, deps }
+ * @param {object} options - { baseDir, configPath, includeSessions, noFloor, branches, deps }
  * @returns {Promise<object>} - { status, data, message }
  */
 async function prepareMerge(options = {}) {
-  const { baseDir = '.', configPath, includeSessions = [], branches = [], deps } = options;
+  const { baseDir = '.', configPath, includeSessions = [], noFloor = [], branches = [], deps } = options;
   if (!deps) throw new Error('deps parameter required');
 
   const { git: gitOps, ccusage: ccusageOps, cost: costOps } = deps;
@@ -490,10 +501,28 @@ async function prepareMerge(options = {}) {
     }
 
     const since = gitOps.getLastCostCommitDate(sessionId, { cwd: baseDir, revs: ['HEAD'] });
-    const included = includeSessions.map(id => ({
-      session_id: id,
-      since: latestDate(since, gitOps.getLastCostCommitDate(id, { cwd: baseDir, revs: ['HEAD', ...branches] }))
-    }));
+    const included = [];
+    for (const id of includeSessions) {
+      const ownSince = gitOps.getLastCostCommitDate(id, { cwd: baseDir, revs: ['HEAD', ...branches] });
+      const floored = latestDate(since, ownSince);
+
+      if (floored === ownSince || noFloor.includes(id)) {
+        included.push({ session_id: id, since: ownSince });
+        continue;
+      }
+
+      // The floor drops (ownSince, since]. Measure it so the user decides whether the previous
+      // merge already counted it (EnterWorktree) or nobody did (session launched in the worktree).
+      const dropped = await costOps.computePooledCosts([{ sessionId: id, since: ownSince, until: since }]);
+      if (!dropped.success) {
+        return { status: 'error', data: { session_id: id }, message: dropped.error };
+      }
+      included.push({
+        session_id: id,
+        since: floored,
+        ...(dropped.costs.length ? { excluded: { since: ownSince, until: since, cost: dropped.costs } } : {})
+      });
+    }
 
     const costResult = await costOps.computePooledCosts([
       { sessionId, since },
@@ -635,6 +664,7 @@ async function main() {
           baseDir: '.',
           configPath: skillConfigPath(CONFIG_SKILL),
           includeSessions: flagList(args, '--include-sessions'),
+          noFloor: flagList(args, '--no-floor'),
           branches,
           deps
         });

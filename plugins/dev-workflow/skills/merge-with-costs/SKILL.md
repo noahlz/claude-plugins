@@ -71,11 +71,15 @@ node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" preflight
 
 | `status` | Action |
 |----------|--------|
-| `success` | Store `data.rerere_enabled` → RERERE_ENABLED. Step 1. |
+| `success` | Store `data.rerere_enabled` → RERERE_ENABLED. If `data.worktree_sessions` is non-empty, warn (below). Step 1. |
 | `in_worktree` | Halt with the message; re-run from `data.main_worktree_path`. |
 | `not_configured` | Halt: "Run `/commit-with-costs` once to create the config, then re-run this skill." |
 | `session_mismatch` | Halt with the message. Fix: re-run from the configured session's directory, or correct `sessionId` in the config. |
 | `error` | Display the message and halt. |
+
+**Worktree session warning.** For each `data.worktree_sessions` entry, show `session_id` and
+`last_activity`, and state: its cost sits under a worktree's project directory (launched in the
+worktree, or `EnterWorktree`), outside the project session, and Step 2 offers to include it. Continue.
 
 ## 1. Discover Merge Candidates
 
@@ -156,12 +160,20 @@ DELEGATE_TO: `../../references/message_approval.md`
 
 DELEGATE_TO: `references/fetch_merge_cost.md`
 
-- "success" → store SESSION_ID, CURRENT_COST, COST_SINCE, INCLUDED_SESSION_DETAILS. Step 8.
+- "success" → store SESSION_ID, CURRENT_COST, COST_SINCE, INCLUDED_SESSION_DETAILS. If any
+  entry carries `excluded`, resolve it (below). Step 8.
 - "no_anchor" → no earlier commit anchors this session, so the figure covers the whole session.
   Show the per-model totals and confirm with **AskUserQuestion**. On cancel, abort the merge and halt.
 - "invalid_session" → show the message. Offer **AskUserQuestion**: *Continue without* (unset
   INCLUDED_SESSIONS, re-run Step 7) / *Cancel* (abort the merge and halt).
 - Otherwise → display the error, abort the merge, halt. Cost metrics are required.
+
+**Excluded cost.** Included windows start no earlier than the project anchor. For each entry
+with `excluded`, show `session_id`, the window (`excluded.since` or session start → `excluded.until`)
+and per-model `excluded.cost`. Explain: after `EnterWorktree`, the previous merge already counted
+it; for a session launched inside the worktree, nothing did. **AskUserQuestion**: *Leave it out*
+(Recommended) / *Count it too* (add id to NO_FLOOR, re-run Step 7) / *Cancel* (abort, halt).
+Store left-out entries as EXCLUDED_SESSIONS.
 
 ## 8. Create Merge Commit
 
@@ -189,6 +201,8 @@ DELEGATE_TO: `references/create_merge_commit.md`
       • {model}: ${cost} = {in}in [+ {cacheWrites} cacheWrites] [+ {cacheReads} cacheReads] + {out}out
    (if INCLUDED_SESSIONS is set, for each in INCLUDED_SESSION_DETAILS):
       Included: {session_id} since {since}
+   (for each EXCLUDED_SESSIONS entry):
+      ⚠️  Left out: {session_id} cost before {excluded.until} (${sum of excluded.cost})
    (for each UNACCOUNTED_SESSIONS entry the user excluded):
       ⚠️  Not included: {branch} — worked on from a session inside its own worktree ({session_id})
 

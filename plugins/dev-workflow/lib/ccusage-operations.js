@@ -260,6 +260,40 @@ export function hasSessionData(sessionId) {
 }
 
 /**
+ * List this repository's worktree sessions that hold transcripts, with their latest activity.
+ *
+ * Activity is the newest transcript mtime (subagent transcripts included), not the directory
+ * mtime: appending to a transcript does not touch its directory.
+ *
+ * @param {string} projectSessionId - The repository's own session ID
+ * @returns {Array<{sessionId: string, lastActivity: string}>} - Newest first
+ */
+export function listWorktreeSessions(projectSessionId) {
+  const projectsDir = getProjectsDir();
+
+  let names;
+  try {
+    names = fs.readdirSync(projectsDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory() && entry.name.startsWith(`${projectSessionId}-`))
+      .map(entry => entry.name);
+  } catch {
+    return [];
+  }
+
+  return names
+    .map(name => {
+      const dir = path.join(projectsDir, name);
+      const newest = fs.readdirSync(dir, { recursive: true })
+        .map(String)
+        .filter(entry => entry.endsWith('.jsonl'))
+        .reduce((max, entry) => Math.max(max, fs.statSync(path.join(dir, entry)).mtimeMs), 0);
+      return newest > 0 ? { sessionId: name, lastActivity: new Date(newest).toISOString() } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.lastActivity.localeCompare(a.lastActivity));
+}
+
+/**
  * Resolve the project session ID that recorded a worktree branch's usage.
  *
  * A live worktree gives its path directly. A removed worktree does not, so its session is

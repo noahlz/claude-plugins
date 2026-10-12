@@ -7,7 +7,8 @@ node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" prepare-merge
 ```
 
 When INCLUDED_SESSIONS is set, add `--include-sessions {{INCLUDED_SESSIONS joined by commas}}`
-and `--branches {{BRANCHES joined by commas}}`.
+and `--branches {{BRANCHES joined by commas}}`. When NO_FLOOR is set, add
+`--no-floor {{NO_FLOOR joined by commas}}`.
 
 **NOTE:** If the above command fails, execute this script and try again:
 ```bash
@@ -31,7 +32,8 @@ only when INCLUDED_SESSIONS names it (Step 2).
   - `data.session_id` → SESSION_ID
   - `data.current_cost` → CURRENT_COST (JSON array, by model)
   - `data.since` → COST_SINCE
-  - `data.included_sessions` → INCLUDED_SESSION_DETAILS (array of {session_id, since})
+  - `data.included_sessions` → INCLUDED_SESSION_DETAILS (array of {session_id, since, excluded?})
+  - `excluded` = {since, until, cost}: cost the project-anchor floor dropped
 
 → If FETCH_STATUS = "no_anchor": same fields; `data.since` is null and the costs cover the whole
   session. Confirm with the user before using them.

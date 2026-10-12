@@ -53,6 +53,7 @@ export function createMockCcusage(overrides = {}) {
     pwdToSessionId: (p) => `-${String(p).replace(/^\//, '').replace(/[^A-Za-z0-9]/g, '-')}`,
     findWorktreeSessionId: () => ({ sessionId: null, hasData: false, resolvedBy: 'none' }),
     hasSessionData: () => false,
+    listWorktreeSessions: () => [],
     validateCostMetrics: (costs) => Array.isArray(costs) && costs.length > 0,
     filterZeroUsageCosts: (costs) => ({ filtered: costs, removed: [] }),
     ...overrides

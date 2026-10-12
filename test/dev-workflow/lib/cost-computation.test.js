@@ -254,6 +254,17 @@ describe('lib/cost-computation.js merge pooling', () => {
       assert.deepEqual(result.costs, [{ model: 'm', cost: 3, in: 20, out: 10, cacheWrites: '1k', cacheReads: 0 }]);
     });
 
+    it('drops entries after a window\'s until, keeping one exactly at it', async () => {
+      const loadBlockData = loaderFor({
+        '-proj--wt': [at('2026-01-01T00:00:00Z', 1), at('2026-01-02T00:00:00Z', 2), at('2026-01-03T00:00:00Z', 4)]
+      });
+
+      const result = await computePooledCosts([{ sessionId: '-proj--wt', since: null, until: '2026-01-02T00:00:00Z' }],
+        { loadBlockData, filterZeroUsageCosts: passthroughFilter });
+
+      assert.equal(result.costs[0].cost, 3);
+    });
+
     it('reports cumulative when the first window has no since', async () => {
       const loadBlockData = loaderFor({ '-proj': [at('2026-01-01T00:00:00Z', 1)] });
 
