@@ -19,7 +19,7 @@
 - `{{COMMIT_BODY}}`: Body from Step 4 (omit blank line if empty)
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" commit \
+node "{{PLUGIN_ROOT}}/skills/commit-with-costs/scripts/commit-workflow.js" commit \
   --config \
   --costs "{{CURRENT_COST}}" \
   --method "{{COST_METHOD}}" \

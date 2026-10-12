@@ -15,7 +15,6 @@ Create a git commit with cost metric trailers and Claude attribution.
 
 Activate only when user invokes `/commit-with-costs` or asks to commit with costs (e.g. "commit with costs", "commit and track costs").
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
 **PLUGIN_ROOT**: `${CLAUDE_PLUGIN_ROOT}`
 
 **Node.js Check**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-node-version.js"`
@@ -75,7 +74,7 @@ Extract `config.sessionId` → SESSION_ID. Proceed to Step 2.
 Display: "Configuration not found ({{path from SKILL_CONFIG}}). Let's create it."
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
+node "${CLAUDE_SKILL_DIR}/scripts/commit-workflow.js" list-sessions
 ```
 
 Extract `data.sessions`. Use AskUserQuestion: "Select a Claude Code session:" with first 4 session IDs as options.

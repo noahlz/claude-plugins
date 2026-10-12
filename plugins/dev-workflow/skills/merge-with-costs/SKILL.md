@@ -20,7 +20,6 @@ For an ordinary commit on the current branch, use `commit-with-costs`.
 To correct an existing merge commit's cost trailer, skip the checklist and follow
 `references/remeasure_merge.md`.
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
 **PLUGIN_ROOT**: `${CLAUDE_PLUGIN_ROOT}`
 
 **Node.js Check**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-node-version.js"`
@@ -67,7 +66,7 @@ Halt if git commands already ran in this turn.
 Uses the `commit-with-costs` config; the script locates it. Never create one.
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" preflight
+node "${CLAUDE_SKILL_DIR}/scripts/merge-workflow.js" preflight
 ```
 
 | `status` | Action |

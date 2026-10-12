@@ -29,7 +29,7 @@ Never invent content that is in neither side unless the user asks for it.
 ## 3. Stage the Resolutions
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" stage-resolved --paths "{{PATHS}}"
+node "{{PLUGIN_ROOT}}/skills/merge-with-costs/scripts/merge-workflow.js" stage-resolved --paths "{{PATHS}}"
 ```
 
 `{{PATHS}}`: comma-separated resolved paths. Omit the flag to stage everything marker-free.
@@ -48,5 +48,5 @@ node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" stage-resolved --paths "{{PA
 The user may stop at any point. Roll the merge back and return "aborted":
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" abort
+node "{{PLUGIN_ROOT}}/skills/merge-with-costs/scripts/merge-workflow.js" abort
 ```

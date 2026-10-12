@@ -11,7 +11,7 @@
 ## Execute Fetch Command
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare --config
+node "{{PLUGIN_ROOT}}/skills/commit-with-costs/scripts/commit-workflow.js" prepare --config
 ```
 
 **NOTE:** If the above command fails, execute this script and try again:

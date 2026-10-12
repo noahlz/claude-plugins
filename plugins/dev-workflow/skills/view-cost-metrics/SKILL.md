@@ -31,8 +31,6 @@ Follow the workflow steps EXACTLY.
 
 # Skill Context
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
-
 **Node.js Check**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-node-version.js"`
 
 ⛔ **HALT** if Node.js Check shows `ERROR`.
@@ -82,7 +80,7 @@ Config lives at the project root. Access it only via `skill-config.js`, never by
 
 → Run Bash command to list available sessions:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" list-sessions
+node "${CLAUDE_SKILL_DIR}/scripts/cost-workflow.js" list-sessions
 ```
 
 → Parse JSON output: Extract sessions array from `data.sessions` field.
@@ -102,7 +100,7 @@ node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" write view-cost-metrics '{"sess
 
 → Execute using Bash tool:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" fetch-cost --config --mode {{MODE}}
+node "${CLAUDE_SKILL_DIR}/scripts/cost-workflow.js" fetch-cost --config --mode {{MODE}}
 ```
 
 → Parse JSON output.

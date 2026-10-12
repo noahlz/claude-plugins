@@ -3,7 +3,7 @@
 ## Execute Command
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" prepare-merge
+node "{{PLUGIN_ROOT}}/skills/merge-with-costs/scripts/merge-workflow.js" prepare-merge
 ```
 
 When INCLUDED_SESSIONS is set, add `--include-sessions {{INCLUDED_SESSIONS joined by commas}}`

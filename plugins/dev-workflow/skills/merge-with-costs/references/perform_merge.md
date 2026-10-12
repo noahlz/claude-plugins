@@ -10,7 +10,7 @@
 - `{{BRANCHES}}`: Confirmed branch names, comma-separated, no spaces
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" merge --branches "{{BRANCHES}}"
+node "{{PLUGIN_ROOT}}/skills/merge-with-costs/scripts/merge-workflow.js" merge --branches "{{BRANCHES}}"
 ```
 
 Two or more branches produce an octopus merge. A failed octopus has already fast-forwarded to
@@ -41,5 +41,5 @@ its first branch, leaving nothing safe to resolve, so the script rolls it back.
 Whenever the workflow stops after a `merge` without committing:
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" abort
+node "{{PLUGIN_ROOT}}/skills/merge-with-costs/scripts/merge-workflow.js" abort
 ```

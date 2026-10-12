@@ -6,7 +6,7 @@
 
 → Run the build error parser:
 ```
-node "<SKILL_BASE_DIR>/scripts/parse-build-errors.js" --file dist/build.log --format <format>
+node "<PLUGIN_ROOT>/skills/run-tests/scripts/parse-build-errors.js" --file dist/build.log --format <format>
 ```
 
 (Use `--pattern "<regex>"` instead of `--format` if the built-in formats don't match.)
