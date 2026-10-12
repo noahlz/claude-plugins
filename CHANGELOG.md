@@ -1,5 +1,13 @@
 # Changelog
 
+# 0.14.3
+- Fixed: cost anchor lookup failed silently on large git histories; git failures now report an error instead of `no_anchor` or a silent cumulative figure (#46)
+- Fixed: skill configs now resolve against the project root (`CLAUDE_PROJECT_DIR`, else git toplevel) instead of cwd; first-time setup refuses to overwrite an existing config (#44)
+- Added: `merge-with-costs` can pool worktree sessions via `--include-sessions`, and the skill lets users include, skip, or cancel unaccounted worktree sessions (#45)
+- Added: `merge-with-costs` reports cost dropped by the project-anchor floor (opt in with `--no-floor`) and warns in preflight about worktree sessions active since the last cost commit (#45)
+- Added: `--since`/`--until` options for `prepare-merge` to re-measure a past merge's cost (re-measured costs use current pricing)
+- Changed: `dev-workflow` skills use `${CLAUDE_PLUGIN_ROOT}` for plugin-level paths instead of `${CLAUDE_SKILL_DIR}/../..` traversal (closes #47)
+
 # 0.14.2
 - Enhanced `de-llm` skill: added `lands`/`landed`, `gap`/`gaps`, and plural `gates` to the pattern 12 metaphor blacklist
 
