@@ -20,7 +20,6 @@ function createDefaultDeps() {
       execGit: git.execGit,
       commit: git.commit,
       getHeadSha: git.getHeadSha,
-      getPreviousCostMetrics: git.getPreviousCostMetrics,
       getLastCostCommitDate: git.getLastCostCommitDate
     },
     cost: {

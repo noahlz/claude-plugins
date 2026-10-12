@@ -432,6 +432,17 @@ describe('merge-with-costs/merge-workflow.js', () => {
       assert.equal(result.data.method, 'merge');
     });
 
+    it('reports an error rather than no_anchor when the anchor lookup fails', async () => {
+      const deps = withConfig({
+        git: { getLastCostCommitDate: () => { throw new Error('git log failed while looking for the cost anchor: boom'); } }
+      });
+
+      const result = await prepareMerge({ configPath: CONFIG, deps });
+
+      assert.equal(result.status, 'error');
+      assert.match(result.message, /git log failed/);
+    });
+
     it('withholds a whole-session figure for confirmation when no commit anchors it', async () => {
       const deps = withConfig({ git: { getLastCostCommitDate: () => null } });
 

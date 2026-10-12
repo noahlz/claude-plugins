@@ -67,7 +67,6 @@ export function createMockGit(overrides = {}) {
     execGit: () => throwUnexpected('execGit'),
     commit: () => throwUnexpected('commit'),
     getHeadSha: () => throwUnexpected('getHeadSha'),
-    getPreviousCostMetrics: () => [],
     getLastCostCommitDate: () => null,  // default: no matching cost-trailered commit
     ...overrides
   };

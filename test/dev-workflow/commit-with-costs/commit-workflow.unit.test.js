@@ -114,6 +114,26 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
 
     });
 
+    it('reports an error instead of falling back to cumulative when the anchor lookup fails', async () => {
+      const testCcusage = createMockCcusage({
+        findRecommendedSession: () => ({ match: true, sessionId: 'abc123' })
+      });
+      const testGit = createMockGit({
+        getLastCostCommitDate: () => { throw new Error('git log failed while looking for the cost anchor: boom'); }
+      });
+      let computed = false;
+      const testCost = createMockCost({ computeCosts: async () => { computed = true; return { success: true }; } });
+
+      const result = await prepare({
+        baseDir: '.',
+        deps: { ccusage: testCcusage, git: testGit, cost: testCost }
+      });
+
+      assert.equal(result.status, 'error');
+      assert.match(result.message, /git log failed/);
+      assert.equal(computed, false, 'no cost figure should be computed without a trustworthy anchor');
+    });
+
     it('returns not_found when no session matches', async () => {
       const testCcusage = createMockCcusage({
         findRecommendedSession: () => ({ match: false, sessionId: null }),
