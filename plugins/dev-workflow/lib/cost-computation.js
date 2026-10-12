@@ -103,19 +103,38 @@ async function collectEntries(loadBlockData, sessionId, sinceDate) {
  * @returns {Promise<{success: boolean, method: string, since: string|null, costs: Array, error?: string}>}
  */
 export async function computeCosts(sessionId, sinceDate, deps = {}) {
+  return computePooledCosts([{ sessionId, since: sinceDate }], deps);
+}
+
+/**
+ * Compute costs pooled across several sessions, each with its own cutoff.
+ *
+ * Entries are summed once at full precision, then abbreviated and zero-filtered. No
+ * cross-session dedupe is needed: a transcript lives in exactly one project directory at a
+ * time, and ccusage's project filter is exact-match.
+ *
+ * @param {Array<{sessionId: string, since: string|null}>} windows - First window is the primary
+ *   (project) session; its since is reported and sets the method
+ * @param {object} deps - { loadBlockData, filterZeroUsageCosts } for DI/testing
+ * @returns {Promise<{success: boolean, method: string, since: string|null, costs: Array, error?: string}>}
+ */
+export async function computePooledCosts(windows, deps = {}) {
   const { loadBlockData, filterZeroUsageCosts } = { ...createDefaultDeps(), ...deps };
+  const since = windows[0]?.since ?? null;
 
   try {
-    // Incremental mode: sinceDate is the commit date of the last Claude-Cost-Metrics trailer
-    // matching this sessionId (from getLastCostCommitDate). Cumulative mode: sinceDate is null.
-    const entries = await collectEntries(loadBlockData, sessionId, sinceDate);
+    // Incremental mode: since is the commit date of the last Claude-Cost-Metrics trailer
+    // anchoring the session (from getLastCostCommitDate). Cumulative mode: since is null.
+    const perWindow = await Promise.all(
+      windows.map(w => collectEntries(loadBlockData, w.sessionId, w.since))
+    );
 
-    const { filtered: costs } = filterZeroUsageCosts(aggregateEntriesByModel(entries));
+    const { filtered: costs } = filterZeroUsageCosts(abbreviateCostRows(sumEntriesByModel(perWindow.flat())));
 
     return {
       success: true,
-      method: sinceDate ? 'inc' : 'cum',
-      since: sinceDate,
+      method: since ? 'inc' : 'cum',
+      since,
       costs
     };
   } catch (error) {

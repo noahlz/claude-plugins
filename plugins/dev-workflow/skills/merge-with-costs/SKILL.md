@@ -38,7 +38,7 @@ Display any WARNING before proceeding.
 | Narration | Narrate only STEP_DESCRIPTION steps; all others silent. |
 | JSON outputs | Extract fields into variables (e.g. `data.candidates` → CANDIDATES). |
 | Cost metrics | Never fabricate or estimate. Use only values from a successful `prepare-merge`. |
-| Cost source | One session: the project root's. Never pool worktree sessions, never substitute another session. |
+| Cost source | The project root's session, plus worktree sessions only when the user chose Include in Step 2 (INCLUDED_SESSIONS). Never substitute another session. |
 | Merge safety | Never run `git merge`, `git merge --abort`, `git rebase`, `git reset`, or `git add` directly. Only the scripts below. |
 | Leaving mid-merge | Stopping after Step 3 without committing? Run the abort action and report. Never leave a staged merge behind. |
 
@@ -92,14 +92,17 @@ DELEGATE_TO: `references/discover_branches.md`
 
 Present CANDIDATES as a table: branch, commits ahead, worktree live?, own Claude session?
 
-For each entry in UNACCOUNTED_SESSIONS, name the branch and its session directory and state
-plainly: a Claude session ran inside that worktree, its cost belongs to that worktree's own
-session, and this merge commit will not include it. Only work done from the project root —
-including everything its sub-agents did inside worktrees — is counted.
+For each UNACCOUNTED_SESSIONS entry, name the branch and session directory, and state: a Claude
+session ran inside that worktree, its cost sits in that worktree's own session, and the merge
+counts it only if the user includes it. Project-root work, including its sub-agents' worktree
+work, is always counted.
 
 Confirm with **AskUserQuestion**. Default to every candidate; let the user narrow the set or cancel.
-With UNACCOUNTED_SESSIONS non-empty, make continuing an explicit choice against cancelling.
-Store the confirmed list as BRANCHES. Halt on cancel.
+With UNACCOUNTED_SESSIONS non-empty, add one question covering all listed sessions:
+*Include their cost* / *Continue without* / *Cancel*.
+
+Store the confirmed list as BRANCHES. Include → INCLUDED_SESSIONS = their `session_id`s.
+Continue without → INCLUDED_SESSIONS unset. Halt on cancel.
 
 ## 3. Stage the Merge
 
@@ -153,9 +156,11 @@ DELEGATE_TO: `../../references/message_approval.md`
 
 DELEGATE_TO: `references/fetch_merge_cost.md`
 
-- "success" → store SESSION_ID, CURRENT_COST, COST_SINCE. Step 8.
+- "success" → store SESSION_ID, CURRENT_COST, COST_SINCE, INCLUDED_SESSION_DETAILS. Step 8.
 - "no_anchor" → no earlier commit anchors this session, so the figure covers the whole session.
   Show the per-model totals and confirm with **AskUserQuestion**. On cancel, abort the merge and halt.
+- "invalid_session" → show the message. Offer **AskUserQuestion**: *Continue without* (unset
+  INCLUDED_SESSIONS, re-run Step 7) / *Cancel* (abort the merge and halt).
 - Otherwise → display the error, abort the merge, halt. Cost metrics are required.
 
 ## 8. Create Merge Commit
@@ -182,8 +187,14 @@ DELEGATE_TO: `references/create_merge_commit.md`
    Project: {SESSION_ID}
    (for each model in CURRENT_COST array):
       • {model}: ${cost} = {in}in [+ {cacheWrites} cacheWrites] [+ {cacheReads} cacheReads] + {out}out
-   (if UNACCOUNTED_SESSIONS is non-empty):
+   (if INCLUDED_SESSIONS is set, for each in INCLUDED_SESSION_DETAILS):
+      Included: {session_id} since {since}
+   (for each UNACCOUNTED_SESSIONS entry the user excluded):
       ⚠️  Not included: {branch} — worked on from a session inside its own worktree ({session_id})
+
+🧹 Cleanup: a merged branch tracking `origin/{CURRENT_BRANCH}` makes `git branch -d` refuse until
+   {CURRENT_BRANCH} is pushed. Push first, or use `-D` once
+   `git merge-base --is-ancestor {branch} {CURRENT_BRANCH}` passes.
 ```
 
 Show `cacheWrites`/`cacheReads` only when non-zero. Cache values are pre-abbreviated strings –

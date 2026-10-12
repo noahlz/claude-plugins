@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import * as git from '../../../lib/git-operations.js';
 import * as ccusage from '../../../lib/ccusage-operations.js';
-import { computeCosts } from '../../../lib/cost-computation.js';
+import { computePooledCosts } from '../../../lib/cost-computation.js';
 import { createCommit } from '../../../lib/commit-operations.js';
 import { readSessionConfig } from '../../../lib/file-utils.js';
 import { skillConfigPath } from '../../../lib/skill-config.js';
@@ -39,7 +39,7 @@ function createDefaultDeps() {
       isMarkerFree: git.isMarkerFree
     },
     cost: {
-      computeCosts
+      computePooledCosts
     },
     ccusage: {
       pwdToSessionId: ccusage.pwdToSessionId,
@@ -178,9 +178,10 @@ function preflight(options = {}) {
  * Find branches that a sub-agent development session left behind, and report whether any of
  * them was worked on from a Claude session launched inside its own worktree.
  *
- * A candidate is any local branch holding commits not reachable from HEAD. Cost never comes
- * from a worktree session — a worktree session that still holds transcripts means cost this
- * merge cannot account for, which the caller must raise before merging.
+ * A candidate is any local branch holding commits not reachable from HEAD. A worktree session
+ * that still holds transcripts is cost the project session does not see; it is reported in
+ * `unaccounted_sessions` so the caller can raise it before merging and, if the user chooses,
+ * pool it into the merge cost via `prepare-merge --include-sessions`.
  *
  * @param {object} options - { baseDir, deps }
  * @returns {object} - { status, data: { repo_root, current_branch, candidates, unaccounted_sessions }, message }
@@ -441,21 +442,35 @@ function abort(options = {}) {
 }
 
 /**
+ * Latest of several ISO 8601 dates, ignoring nulls; null when none is set.
+ * Compared as instants because anchors carry different timezone offsets.
+ */
+function latestDate(...dates) {
+  return dates
+    .filter(Boolean)
+    .reduce((latest, d) => (latest === null || Date.parse(d) > Date.parse(latest) ? d : latest), null);
+}
+
+/**
  * Compute the cost metrics for a merge commit.
  *
- * Cost comes from one session: the project-root session the merge is run from. Work a
- * sub-agent did inside a worktree is written to the transcripts of the session that
- * dispatched it, so it is already included; only a Claude session launched inside a worktree
- * records elsewhere, and `preflight` and `discover` refuse that case rather than guessing.
+ * Cost comes from the project-root session the merge is run from, plus any worktree sessions
+ * the user chose to include. Work a sub-agent did inside a worktree is written to the
+ * transcripts of the session that dispatched it, so it is already included. A session that
+ * recorded under a worktree's own project directory (`EnterWorktree`, or a Claude session
+ * launched inside the worktree) is counted only when named in `includeSessions`.
  *
- * The window opens at the session's own last cost-trailered commit, so work already
- * attributed on this branch is never counted twice.
+ * Each window opens at its session's last cost-trailered commit, so work already attributed is
+ * never counted twice. The project window walks HEAD only. An included session's window also
+ * walks the branches being merged, where a worktree-launched session's own trailers live, and
+ * never opens before the project anchor: an `EnterWorktree` transcript can span the previous
+ * merge, whose trailer already counted its earlier entries.
  *
- * @param {object} options - { baseDir, configPath, deps }
+ * @param {object} options - { baseDir, configPath, includeSessions, branches, deps }
  * @returns {Promise<object>} - { status, data, message }
  */
 async function prepareMerge(options = {}) {
-  const { baseDir = '.', configPath, deps } = options;
+  const { baseDir = '.', configPath, includeSessions = [], branches = [], deps } = options;
   if (!deps) throw new Error('deps parameter required');
 
   const { git: gitOps, ccusage: ccusageOps, cost: costOps } = deps;
@@ -464,8 +479,26 @@ async function prepareMerge(options = {}) {
     // readSessionConfig throws when the file is missing or carries no sessionId
     const { sessionId } = readSessionConfig(configPath);
 
-    const since = gitOps.getLastCostCommitDate(sessionId, { cwd: baseDir });
-    const costResult = await costOps.computeCosts(sessionId, since);
+    // A worktree session id is the project id followed by the encoded worktree subpath
+    const invalid = includeSessions.find(id => !id.startsWith(`${sessionId}-`) || !ccusageOps.hasSessionData(id));
+    if (invalid) {
+      return {
+        status: 'invalid_session',
+        data: { session_id: invalid },
+        message: `${invalid} is not a worktree session of ${sessionId} with recorded usage`
+      };
+    }
+
+    const since = gitOps.getLastCostCommitDate(sessionId, { cwd: baseDir, revs: ['HEAD'] });
+    const included = includeSessions.map(id => ({
+      session_id: id,
+      since: latestDate(since, gitOps.getLastCostCommitDate(id, { cwd: baseDir, revs: ['HEAD', ...branches] }))
+    }));
+
+    const costResult = await costOps.computePooledCosts([
+      { sessionId, since },
+      ...included.map(w => ({ sessionId: w.session_id, since: w.since }))
+    ]);
 
     if (!costResult.success) {
       return { status: 'error', data: { session_id: sessionId }, message: costResult.error };
@@ -484,11 +517,12 @@ async function prepareMerge(options = {}) {
       method: 'merge',
       since,
       current_cost: costResult.costs,
-      anchored: Boolean(since)
+      anchored: Boolean(since),
+      included_sessions: included
     };
 
-    // Without an anchor the figure is everything the project session has ever recorded, which
-    // is almost never what one merge commit should claim. Hand it back for confirmation
+    // Without a project anchor the figure is everything the project session has ever recorded,
+    // which is almost never what one merge commit should claim. Hand it back for confirmation
     // rather than writing it.
     if (!since) {
       return {
@@ -506,10 +540,10 @@ async function prepareMerge(options = {}) {
 
 /**
  * Create the merge commit. Requires MERGE_HEAD to be present.
- * @param {object} options - { baseDir, configPath, costs, since, message, deps }
+ * @param {object} options - { baseDir, configPath, costs, since, pooled, message, deps }
  */
 async function commitMerge(options = {}) {
-  const { baseDir = '.', configPath, costs, since, message, deps } = options;
+  const { baseDir = '.', configPath, costs, since, pooled = [], message, deps } = options;
   if (!deps) throw new Error('deps parameter required');
 
   if (!deps.git.isMergeInProgress({ cwd: baseDir })) {
@@ -533,6 +567,7 @@ async function commitMerge(options = {}) {
     costs,
     method: 'merge',
     since,
+    pooled,
     message,
     deps
   });
@@ -599,6 +634,8 @@ async function main() {
         result = await prepareMerge({
           baseDir: '.',
           configPath: skillConfigPath(CONFIG_SKILL),
+          includeSessions: flagList(args, '--include-sessions'),
+          branches,
           deps
         });
         break;
@@ -609,6 +646,7 @@ async function main() {
           configPath: skillConfigPath(CONFIG_SKILL),
           costs: flagValue(args, '--costs'),
           since: flagValue(args, '--since') || null,
+          pooled: flagList(args, '--pooled'),
           deps
         });
         break;

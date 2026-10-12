@@ -11,11 +11,13 @@
 - `{{COST_SINCE}}`: Anchor from the cost step (ISO date, or empty string if null)
 - `{{COMMIT_SUBJECT}}`: Subject line from the message step
 - `{{COMMIT_BODY}}`: Body from the message step
+- `{{INCLUDED_SESSIONS}}`: Comma-joined ids from Step 2 (empty string if unset)
 
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" commit \
   --costs "{{CURRENT_COST}}" \
   --since "{{COST_SINCE}}" \
+  --pooled "{{INCLUDED_SESSIONS}}" \
   <<'EOF'
 {{COMMIT_SUBJECT}}
 
@@ -23,8 +25,8 @@ node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" commit \
 EOF
 ```
 
-The trailer is written with `"method":"merge"` and carries the project `sessionId`, so the
-next `/commit-with-costs` on this branch anchors incrementally against this merge commit.
+The trailer carries `"method":"merge"`, the project `sessionId`, and `pooled` when sessions were
+included, so the next `/commit-with-costs` here anchors against this merge commit.
 
 ## Parse JSON Output
 

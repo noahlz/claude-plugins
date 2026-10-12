@@ -28,7 +28,7 @@ node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" discover
 | `worktree_locked` | A Claude session currently holds the worktree |
 | `worktree_session_id` | Project session keyed to that worktree's own directory |
 | `resolved_by` | `worktree` (path) or `branch-name` (worktree already removed) |
-| `worktree_session_has_data` | `true`: a Claude session ran inside that worktree; its cost is NOT in this merge |
+| `worktree_session_has_data` | `true`: a Claude session ran inside that worktree; its cost is in this merge only if the user includes it (Step 2) |
 
 → If STATUS = "no_candidates", "merge_in_progress", or "error":
   - `message` → ERROR_MESSAGE

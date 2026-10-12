@@ -6,6 +6,9 @@
 node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" prepare-merge
 ```
 
+When INCLUDED_SESSIONS is set, add `--include-sessions {{INCLUDED_SESSIONS joined by commas}}`
+and `--branches {{BRANCHES joined by commas}}`.
+
 **NOTE:** If the above command fails, execute this script and try again:
 ```bash
 if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
@@ -16,10 +19,9 @@ else
 fi
 ```
 
-Cost comes from one session: the project root's, counted since its own last cost-trailered
-commit. A sub-agent's work inside a worktree is written to the transcripts of the session that
-dispatched it, so it is already included. A Claude session launched *inside* a worktree is not;
-Step 0 and Step 2 raise that case before anything is merged.
+Cost covers the project root's session since its last cost-trailered commit, which already
+includes sub-agent work inside worktrees. A Claude session launched *inside* a worktree counts
+only when INCLUDED_SESSIONS names it (Step 2).
 
 ## Parse JSON Output
 
@@ -29,9 +31,14 @@ Step 0 and Step 2 raise that case before anything is merged.
   - `data.session_id` → SESSION_ID
   - `data.current_cost` → CURRENT_COST (JSON array, by model)
   - `data.since` → COST_SINCE
+  - `data.included_sessions` → INCLUDED_SESSION_DETAILS (array of {session_id, since})
 
 → If FETCH_STATUS = "no_anchor": same fields; `data.since` is null and the costs cover the whole
   session. Confirm with the user before using them.
+
+→ If FETCH_STATUS = "invalid_session":
+  - `message` → ERROR_MESSAGE
+  - An included id is outside this repo's session prefix or has no session data.
 
 → If FETCH_STATUS = "invalid_costs" or "error":
   - `message` → ERROR_MESSAGE

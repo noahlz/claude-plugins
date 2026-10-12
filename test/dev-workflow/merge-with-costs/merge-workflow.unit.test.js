@@ -430,24 +430,95 @@ describe('merge-with-costs/merge-workflow.js', () => {
       cost: overrides.cost || {}
     });
 
-    it('counts the project session since its own last cost-trailered commit', async () => {
-      const captured = [];
+    const WT = '-repo--claude-worktrees-014-x';
+    const EARLY = '2026-01-02T00:00:00Z';
+    const LATE = '2026-01-05T00:00:00Z';
+
+    /**
+     * Deps that anchor each session at the given date and record the anchor lookups and the
+     * windows handed to computePooledCosts.
+     */
+    function pooledDeps({ anchors = {}, hasData = () => true } = {}) {
+      const lookups = [];
+      const windows = [];
       const deps = withConfig({
+        git: {
+          getLastCostCommitDate: (id, options) => {
+            lookups.push({ id, revs: options.revs });
+            return anchors[id] ?? null;
+          }
+        },
+        ccusage: { hasSessionData: hasData },
         cost: {
-          computeCosts: async (sessionId, since) => {
-            captured.push({ sessionId, since });
-            return { success: true, method: 'inc', since, costs: [{ model: 'm', cost: 1, in: 1, out: 1 }] };
+          computePooledCosts: async (w) => {
+            windows.push(...w);
+            return { success: true, method: 'inc', since: w[0].since, costs: [{ model: 'm', cost: 1, in: 1, out: 1 }] };
           }
         }
       });
+      return { deps, lookups, windows };
+    }
+
+    it('counts the project session since its own last cost-trailered commit', async () => {
+      const { deps, lookups, windows } = pooledDeps({ anchors: { '-repo': EARLY } });
 
       const result = await prepareMerge({ configPath: CONFIG, deps });
 
       assert.equal(result.status, 'success');
-      assert.deepEqual(captured, [{ sessionId: '-repo', since: '2026-01-01T00:00:00Z' }]);
-      assert.equal(result.data.since, '2026-01-01T00:00:00Z');
+      assert.deepEqual(windows, [{ sessionId: '-repo', since: EARLY }], 'no flag → single project window');
+      assert.deepEqual(lookups, [{ id: '-repo', revs: ['HEAD'] }]);
+      assert.deepEqual(result.data.included_sessions, []);
+      assert.equal(result.data.since, EARLY);
       assert.equal(result.data.anchored, true);
       assert.equal(result.data.method, 'merge');
+    });
+
+    it('floors an included session at the project anchor when its own anchor is older', async () => {
+      const { deps, windows } = pooledDeps({ anchors: { '-repo': LATE, [WT]: EARLY } });
+
+      const result = await prepareMerge({ configPath: CONFIG, includeSessions: [WT], branches: ['feature'], deps });
+
+      assert.equal(result.status, 'success');
+      assert.deepEqual(windows, [{ sessionId: '-repo', since: LATE }, { sessionId: WT, since: LATE }]);
+      assert.deepEqual(result.data.included_sessions, [{ session_id: WT, since: LATE }]);
+    });
+
+    it('starts an included session at its own anchor when that is newer than the project anchor', async () => {
+      const { deps, lookups, windows } = pooledDeps({ anchors: { '-repo': EARLY, [WT]: LATE } });
+
+      await prepareMerge({ configPath: CONFIG, includeSessions: [WT], branches: ['feature'], deps });
+
+      assert.deepEqual(windows, [{ sessionId: '-repo', since: EARLY }, { sessionId: WT, since: LATE }]);
+      assert.deepEqual(lookups, [{ id: '-repo', revs: ['HEAD'] }, { id: WT, revs: ['HEAD', 'feature'] }],
+        'the included session is also anchored on the branches being merged');
+    });
+
+    it('counts an included session whole when neither it nor the project is anchored', async () => {
+      const { deps, windows } = pooledDeps();
+
+      const result = await prepareMerge({ configPath: CONFIG, includeSessions: [WT], deps });
+
+      assert.equal(result.status, 'no_anchor');
+      assert.deepEqual(windows, [{ sessionId: '-repo', since: null }, { sessionId: WT, since: null }]);
+    });
+
+    it('rejects an included session that does not belong to this repository', async () => {
+      const { deps, windows } = pooledDeps({ anchors: { '-repo': EARLY } });
+
+      const result = await prepareMerge({ configPath: CONFIG, includeSessions: ['-repository-other'], deps });
+
+      assert.equal(result.status, 'invalid_session');
+      assert.equal(result.data.session_id, '-repository-other');
+      assert.deepEqual(windows, [], 'no cost is computed');
+    });
+
+    it('rejects an included session with no recorded data', async () => {
+      const { deps } = pooledDeps({ anchors: { '-repo': EARLY }, hasData: (id) => id !== WT });
+
+      const result = await prepareMerge({ configPath: CONFIG, includeSessions: [WT], deps });
+
+      assert.equal(result.status, 'invalid_session');
+      assert.equal(result.data.session_id, WT);
     });
 
     it('reports an error rather than no_anchor when the anchor lookup fails', async () => {
@@ -475,7 +546,7 @@ describe('merge-with-costs/merge-workflow.js', () => {
     it('rejects cost metrics that fail validation', async () => {
       const deps = withConfig({
         ccusage: { validateCostMetrics: () => false },
-        cost: { computeCosts: async () => ({ success: true, method: 'inc', since: null, costs: [] }) }
+        cost: { computePooledCosts: async () => ({ success: true, method: 'inc', since: null, costs: [] }) }
       });
 
       assert.equal((await prepareMerge({ configPath: CONFIG, deps })).status, 'invalid_costs');
@@ -483,7 +554,7 @@ describe('merge-with-costs/merge-workflow.js', () => {
 
     it('propagates a cost computation failure', async () => {
       const deps = withConfig({
-        cost: { computeCosts: async () => ({ success: false, costs: [], error: 'ccusage exploded' }) }
+        cost: { computePooledCosts: async () => ({ success: false, costs: [], error: 'ccusage exploded' }) }
       });
 
       const result = await prepareMerge({ configPath: CONFIG, deps });
