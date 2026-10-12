@@ -275,6 +275,57 @@ describe('lib/git-operations: integration tests', () => {
       assert.equal(getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir }), anchorDate);
     });
 
+    describe('pooled sessions and revs', () => {
+      const WORKTREE = `${SESSION}--claude-worktrees-014-x`;
+      const T1 = '2026-01-01T00:00:00Z';
+      const T2 = '2026-01-02T00:00:00Z';
+
+      const trailerLine = (fields) =>
+        `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ method: 'merge', cost: [], ...fields })}`;
+
+      // Pinned author dates keep anchors distinguishable within the same second
+      function commitAt(filename, message, date) {
+        stageFile(testEnv, filename);
+        const result = execGit(['commit', '-q', `--date=${date}`, '-m', message], { cwd: testEnv.tmpDir });
+        assert.equal(result.exitCode, 0, `commit "${filename}" should succeed: ${result.stderr}`);
+      }
+
+      const authorDate = (rev = 'HEAD') => execGit(['log', '-1', '--format=%aI', rev], { cwd: testEnv.tmpDir }).stdout.trim();
+
+      it('anchors a session listed in another commit\'s pooled field', () => {
+        commitAt('file1.txt', `Merge\n\n${trailerLine({ pooled: [WORKTREE], sessionId: SESSION })}`, T1);
+
+        assert.equal(getLastCostCommitDate(WORKTREE, { cwd: testEnv.tmpDir }), authorDate());
+      });
+
+      it('does not anchor the project on a worktree session whose id extends the project id', () => {
+        commitAt('file1.txt', `Project\n\n${trailerLine({ sessionId: SESSION })}`, T1);
+        const projectDate = authorDate();
+        commitAt('file2.txt', `Worktree\n\n${trailerLine({ sessionId: WORKTREE })}`, T2);
+
+        assert.equal(getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir }), projectDate);
+      });
+
+      it('still anchors on a legacy trailer that has no pooled field', () => {
+        commitAt('file1.txt', `Legacy\n\n${makeTrailer(SESSION)}`, T1);
+        const legacyDate = authorDate();
+        commitAt('file2.txt', `Other\n\n${trailerLine({ pooled: [WORKTREE], sessionId: OTHER_SESSION })}`, T2);
+
+        assert.equal(getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir }), legacyDate);
+      });
+
+      it('finds a trailer reachable only from a branch named in revs', () => {
+        commitAt('file1.txt', 'Base', T1);
+        assert.equal(execGit(['checkout', '-q', '-b', 'feature'], { cwd: testEnv.tmpDir }).exitCode, 0);
+        commitAt('file2.txt', `Worktree work\n\n${trailerLine({ sessionId: WORKTREE })}`, T2);
+        const branchDate = authorDate();
+        assert.equal(execGit(['checkout', '-q', '-'], { cwd: testEnv.tmpDir }).exitCode, 0);
+
+        assert.equal(getLastCostCommitDate(WORKTREE, { cwd: testEnv.tmpDir }), null, 'default revs only walk HEAD');
+        assert.equal(getLastCostCommitDate(WORKTREE, { cwd: testEnv.tmpDir, revs: ['HEAD', 'feature'] }), branchDate);
+      });
+    });
+
     it('returns null in a repository with no commits', () => {
       const emptyRepo = join(testEnv.tmpDir, 'empty');
       mkdirSync(emptyRepo);

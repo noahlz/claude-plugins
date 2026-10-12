@@ -15,6 +15,7 @@ import {
   addWorktree
 } from './helpers.js';
 import { pwdToSessionId } from '../../../plugins/dev-workflow/lib/ccusage-operations.js';
+import { getLastCostCommitDate } from '../../../plugins/dev-workflow/lib/git-operations.js';
 
 describe('merge-with-costs/merge-workflow.js (integration)', () => {
   let testEnv;
@@ -332,6 +333,60 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
 
       const anchorTest = execMergeWorkflow(testEnv, 'discover');
       assert.equal(anchorTest.json.status, 'no_candidates', 'the branch is merged, so it is no longer a candidate');
+    });
+  });
+
+  describe('pooling a worktree session', () => {
+    const COSTS = '[{"model":"claude-opus-5","cost":3,"in":10,"out":20,"cacheWrites":0,"cacheReads":0}]';
+    const T1 = '2026-01-01T00:00:00Z';
+
+    const trailerOf = (rev = 'HEAD') => {
+      const line = git('log', '-1', '--format=%B', rev).stdout.split('\n').find(l => l.startsWith('Claude-Cost-Metrics: '));
+      return JSON.parse(line.replace('Claude-Cost-Metrics: ', ''));
+    };
+
+    it('advances the project anchor past a merge that pooled a worktree session', () => {
+      const project = repoSessionId();
+      const worktree = `${project}--claude-worktrees-014-x`;
+      writeSessionConfig(testEnv, project);
+
+      writeFileSync(join(testEnv.tmpDir, 'earlier.txt'), 'earlier');
+      git('add', 'earlier.txt');
+      const earlier = git('commit', '-q', `--date=${T1}`, '-m',
+        `Earlier work\n\nClaude-Cost-Metrics: ${JSON.stringify({ method: 'inc', cost: [], sessionId: project })}`);
+      assert.equal(earlier.exitCode, 0, earlier.stderr);
+      const t1 = git('log', '-1', '--format=%aI').stdout.trim();
+      assert.equal(getLastCostCommitDate(project, { cwd: testEnv.tmpDir }), t1, 'project anchored at T1 before the merge');
+
+      commitOnBranch(testEnv, 'feature-a', 'a.txt', 'a');
+      assert.equal(execMergeWorkflow(testEnv, 'merge', { args: ['--branches', 'feature-a'] }).json.status, 'success');
+
+      const { json } = execMergeWorkflow(testEnv, 'commit', {
+        args: ['--costs', COSTS, '--since', t1, '--pooled', worktree],
+        input: 'Merge feature-a'
+      });
+      assert.equal(json.status, 'success');
+
+      const trailer = trailerOf();
+      assert.deepEqual(trailer.pooled, [worktree]);
+      assert.equal(trailer.sessionId, project);
+
+      const mergeDate = git('log', '-1', '--format=%aI').stdout.trim();
+      assert.notEqual(mergeDate, t1);
+      assert.equal(getLastCostCommitDate(project, { cwd: testEnv.tmpDir }), mergeDate,
+        'entries moving back under the project key after ExitWorktree start after the merge');
+      assert.equal(getLastCostCommitDate(worktree, { cwd: testEnv.tmpDir }), mergeDate);
+    });
+
+    it('rejects an included session that does not belong to this repository', () => {
+      writeSessionConfig(testEnv, repoSessionId());
+
+      const { json } = execMergeWorkflow(testEnv, 'prepare-merge', {
+        args: ['--include-sessions', '-some-other-project', '--branches', 'feature-a']
+      });
+
+      assert.equal(json.status, 'invalid_session');
+      assert.equal(json.data.session_id, '-some-other-project');
     });
   });
 });

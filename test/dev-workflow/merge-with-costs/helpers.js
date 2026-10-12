@@ -53,6 +53,7 @@ export function createMockCcusage(overrides = {}) {
     pwdToSessionId: (p) => `-${String(p).replace(/^\//, '').replace(/[^A-Za-z0-9]/g, '-')}`,
     findWorktreeSessionId: () => ({ sessionId: null, hasData: false, resolvedBy: 'none' }),
     hasSessionData: () => false,
+    listWorktreeSessions: () => [],
     validateCostMetrics: (costs) => Array.isArray(costs) && costs.length > 0,
     filterZeroUsageCosts: (costs) => ({ filtered: costs, removed: [] }),
     ...overrides
@@ -64,13 +65,16 @@ export function createMockCcusage(overrides = {}) {
  * @param {Object} overrides
  */
 export function createMockCost(overrides = {}) {
+  const result = (since) => ({
+    success: true,
+    method: since ? 'inc' : 'cum',
+    since,
+    costs: [{ model: 'test-model', cost: 1.5, in: 10, out: 20, cacheWrites: 0, cacheReads: 0 }]
+  });
+
   return {
-    computeCosts: async (sessionId, since) => ({
-      success: true,
-      method: since ? 'inc' : 'cum',
-      since,
-      costs: [{ model: 'test-model', cost: 1.5, in: 10, out: 20, cacheWrites: 0, cacheReads: 0 }]
-    }),
+    computeCosts: async (sessionId, since) => result(since),
+    computePooledCosts: async (windows) => result(windows[0]?.since ?? null),
     ...overrides
   };
 }

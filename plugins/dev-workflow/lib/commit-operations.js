@@ -34,14 +34,16 @@ export async function readCommitMessage(inputStream = null) {
 /**
  * Assemble the full commit message with attribution and cost trailers.
  * `since` is omitted when absent, as it does not apply in cumulative mode.
- * `sessionId` goes last to keep the compact fields at the front of the trailer.
+ * `pooled` lists additional sessions whose cost the commit counted; omitted when empty.
+ * `sessionId` (the primary session) goes last to keep the compact fields at the front of the trailer.
  * @returns {string}
  */
-export function buildCommitMessage({ subject, body, method, costs, since, sessionId }) {
+export function buildCommitMessage({ subject, body, method, costs, since, pooled, sessionId }) {
   const trailer = JSON.stringify({
     method,
     cost: costs,
     ...(since ? { since } : {}),
+    ...(pooled?.length ? { pooled } : {}),
     sessionId
   });
 
@@ -64,6 +66,7 @@ export function buildCommitMessage({ subject, body, method, costs, since, sessio
  * @param {string|Array} options.costs - Cost metrics, JSON string or array
  * @param {string} options.method - 'inc', 'cum', or 'merge'
  * @param {string|null} options.since
+ * @param {Array<string>} options.pooled - Additional session IDs whose cost is counted
  * @param {string|null} options.message - Commit message; reads stdin when null
  * @param {object} options.deps - { git, ccusage }
  * @returns {Promise<{status: string, data: object, message: string}>}
@@ -75,6 +78,7 @@ export async function createCommit(options = {}) {
     costs = null,
     method = 'cum',
     since = null,
+    pooled = [],
     message: providedMessage = null,
     deps
   } = options;
@@ -125,7 +129,7 @@ export async function createCommit(options = {}) {
       };
     }
 
-    const fullMessage = buildCommitMessage({ subject, body, method, costs: filtered, since, sessionId });
+    const fullMessage = buildCommitMessage({ subject, body, method, costs: filtered, since, pooled, sessionId });
 
     const commitResult = gitOps.commit(fullMessage, { cwd: baseDir });
     if (commitResult.exitCode !== 0) {

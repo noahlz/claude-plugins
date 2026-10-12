@@ -66,18 +66,24 @@ const ANCHOR_PAGE_SIZE = 20;
  * - Multi-author repos may have commits from different session IDs; we should only anchor
  *   incremental cost against a commit for the same session.
  *
- * git's --grep narrows the log to commits mentioning both the trailer and this session, read
- * a page at a time, so output stays small however long the history grows. A grep hit is only a
- * candidate: the first trailer line must parse and carry this sessionId (a squash commit can
+ * A trailer matches when its `sessionId` is this session or its `pooled` list names it: a
+ * merge commit that pooled a worktree session's cost anchors that session too.
+ *
+ * git's --grep narrows the log to commits mentioning both the trailer and the quoted session
+ * id, read a page at a time, so output stays small however long the history grows. Quoting
+ * keeps "-Users-me-proj" from matching "-Users-me-proj--claude-worktrees-x". A grep hit is only
+ * a candidate: the first trailer line must parse and carry this session (a squash commit can
  * hold another session's trailer first).
  *
  * @param {string} sessionId - The session ID to match (e.g. "-Users-foo-bar")
- * @param {Object} options - { cwd }
+ * @param {Object} options - { cwd, revs } where revs are the revisions `git log` walks
+ *   (default ['HEAD']); pass merged branches to find trailers not yet reachable from HEAD
  * @returns {string|null} ISO 8601 date string, or null if no matching commit (or no commits) exist
  * @throws {Error} when git fails while reading history, so a failure can't pass for "no anchor"
  */
 export function getLastCostCommitDate(sessionId, options = {}) {
-  if (execGit(['rev-parse', '--verify', '--quiet', 'HEAD'], options).exitCode !== 0) {
+  const { revs = ['HEAD'], ...gitOptions } = options;
+  if (execGit(['rev-parse', '--verify', '--quiet', 'HEAD'], gitOptions).exitCode !== 0) {
     return null;
   }
 
@@ -86,9 +92,11 @@ export function getLastCostCommitDate(sessionId, options = {}) {
       'log', `-n${ANCHOR_PAGE_SIZE}`, `--skip=${skip}`,
       '--all-match', '--fixed-strings',
       `--grep=${COST_TRAILER_PREFIX}`,
-      `--grep="sessionId":${JSON.stringify(sessionId)}`,
-      `--format=%aI%n%B${COMMIT_DELIMITER}`
-    ], options);
+      `--grep=${JSON.stringify(sessionId)}`,
+      `--format=%aI%n%B${COMMIT_DELIMITER}`,
+      ...revs,
+      '--'
+    ], gitOptions);
 
     if (result.exitCode !== 0) {
       throw new Error(`git log failed while looking for the cost anchor: ${result.stderr.trim()}`);
@@ -107,7 +115,7 @@ export function getLastCostCommitDate(sessionId, options = {}) {
       if (!trailerLine) continue;
       try {
         const parsed = JSON.parse(trailerLine.trim().slice(COST_TRAILER_PREFIX.length));
-        if (parsed && parsed.sessionId === sessionId) {
+        if (parsed && (parsed.sessionId === sessionId || (Array.isArray(parsed.pooled) && parsed.pooled.includes(sessionId)))) {
           return commitDate;
         }
       } catch {

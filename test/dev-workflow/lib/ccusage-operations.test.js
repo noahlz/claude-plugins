@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdirSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, mkdtempSync, rmSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setupTestEnv, teardownTestEnv } from '../../lib/helpers.js';
@@ -14,6 +14,7 @@ import {
   findRecommendedSession,
   getCleanupPeriodDays,
   hasSessionData,
+  listWorktreeSessions,
   findWorktreeSessionId
 } from '../../../plugins/dev-workflow/lib/ccusage-operations.js';
 
@@ -366,6 +367,33 @@ describe('lib/ccusage-operations.js worktree session resolution', () => {
 
     it('reports a missing project directory as having no data', () => {
       assert.equal(hasSessionData('-nope'), false);
+    });
+  });
+
+  describe('listWorktreeSessions', () => {
+    const touch = (name, iso) => {
+      const file = join(projectsDir, name, 'uuid', 'subagents', 'agent-a.jsonl');
+      utimesSync(file, new Date(iso), new Date(iso));
+    };
+
+    it('lists only this repository\'s worktree sessions that hold transcripts, newest first', () => {
+      makeSession('-repo--claude-worktrees-a');
+      makeSession('-repo--claude-worktrees-b');
+      makeSession('-repo--claude-worktrees-empty', { withData: false });
+      makeSession('-repo');
+      makeSession('-other--claude-worktrees-a');
+      touch('-repo--claude-worktrees-a', '2026-01-01T00:00:00Z');
+      touch('-repo--claude-worktrees-b', '2026-01-02T00:00:00Z');
+
+      assert.deepEqual(listWorktreeSessions('-repo'), [
+        { sessionId: '-repo--claude-worktrees-b', lastActivity: '2026-01-02T00:00:00.000Z' },
+        { sessionId: '-repo--claude-worktrees-a', lastActivity: '2026-01-01T00:00:00.000Z' }
+      ]);
+    });
+
+    it('returns nothing when the projects directory is missing', () => {
+      rmSync(projectsDir, { recursive: true, force: true });
+      assert.deepEqual(listWorktreeSessions('-repo'), []);
     });
   });
 

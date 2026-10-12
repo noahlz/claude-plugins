@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { computeCosts, aggregateEntriesByModel, sumEntriesByModel, abbreviateCostRows } from '../../../plugins/dev-workflow/lib/cost-computation.js';
+import { computeCosts, computePooledCosts, aggregateEntriesByModel, sumEntriesByModel, abbreviateCostRows } from '../../../plugins/dev-workflow/lib/cost-computation.js';
 
 describe('lib/cost-computation.js', () => {
   describe('aggregateEntriesByModel', () => {
@@ -234,4 +234,55 @@ describe('lib/cost-computation.js merge pooling', () => {
     });
   });
 
+  describe('computePooledCosts', () => {
+    const at = (timestamp, cost) => ({ ...entry('m', cost, 600), timestamp });
+
+    it('sums one model across windows, each filtered by its own since', async () => {
+      const loadBlockData = loaderFor({
+        '-proj': [at('2026-01-01T00:00:00Z', 100), at('2026-01-03T00:00:00Z', 1)],
+        '-proj--wt': [at('2026-01-02T00:00:00Z', 200), at('2026-01-04T00:00:00Z', 2)]
+      });
+
+      const result = await computePooledCosts([
+        { sessionId: '-proj', since: '2026-01-02T00:00:00Z' },
+        { sessionId: '-proj--wt', since: '2026-01-03T00:00:00Z' }
+      ], { loadBlockData, filterZeroUsageCosts: passthroughFilter });
+
+      assert.equal(result.success, true);
+      assert.equal(result.method, 'inc');
+      assert.equal(result.since, '2026-01-02T00:00:00Z', 'since is the first (project) window');
+      assert.deepEqual(result.costs, [{ model: 'm', cost: 3, in: 20, out: 10, cacheWrites: '1k', cacheReads: 0 }]);
+    });
+
+    it('drops entries after a window\'s until, keeping one exactly at it', async () => {
+      const loadBlockData = loaderFor({
+        '-proj--wt': [at('2026-01-01T00:00:00Z', 1), at('2026-01-02T00:00:00Z', 2), at('2026-01-03T00:00:00Z', 4)]
+      });
+
+      const result = await computePooledCosts([{ sessionId: '-proj--wt', since: null, until: '2026-01-02T00:00:00Z' }],
+        { loadBlockData, filterZeroUsageCosts: passthroughFilter });
+
+      assert.equal(result.costs[0].cost, 3);
+    });
+
+    it('reports cumulative when the first window has no since', async () => {
+      const loadBlockData = loaderFor({ '-proj': [at('2026-01-01T00:00:00Z', 1)] });
+
+      const result = await computePooledCosts([{ sessionId: '-proj', since: null }],
+        { loadBlockData, filterZeroUsageCosts: passthroughFilter });
+
+      assert.equal(result.method, 'cum');
+      assert.equal(result.costs[0].cost, 1);
+    });
+
+    it('returns an error result when loading a window fails', async () => {
+      const loadBlockData = async () => { throw new Error('ccusage exploded'); };
+
+      const result = await computePooledCosts([{ sessionId: '-proj', since: null }],
+        { loadBlockData, filterZeroUsageCosts: passthroughFilter });
+
+      assert.equal(result.success, false);
+      assert.equal(result.error, 'ccusage exploded');
+    });
+  });
 });

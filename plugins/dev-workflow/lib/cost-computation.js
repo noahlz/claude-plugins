@@ -74,23 +74,28 @@ export function aggregateEntriesByModel(entries) {
 }
 
 /**
- * Load a session's usage entries, optionally dropping everything at or before sinceDate.
+ * Load a session's usage entries in the window (sinceDate, untilDate].
  * @param {Function} loadBlockData
  * @param {string} sessionId
- * @param {string|null} sinceDate - ISO 8601 cutoff (null = all entries)
+ * @param {string|null} sinceDate - ISO 8601 lower cutoff, exclusive (null = no lower bound)
+ * @param {string|null} untilDate - ISO 8601 upper cutoff, inclusive (null = no upper bound)
  * @returns {Promise<Array>}
  */
-async function collectEntries(loadBlockData, sessionId, sinceDate) {
+async function collectEntries(loadBlockData, sessionId, sinceDate, untilDate = null) {
   const blocks = await loadBlockData(sessionId);
 
   // Subagent usage (nested under <session-uuid>/subagents/) is included automatically
   // by ccusage's recursive glob; duplicates are removed by messageId:requestId before this point.
   const allEntries = blocks.flatMap(block => block.entries ?? []);
 
-  if (!sinceDate) return allEntries;
+  if (!sinceDate && !untilDate) return allEntries;
 
-  const sinceMs = new Date(sinceDate).getTime();
-  return allEntries.filter(entry => new Date(entry.timestamp).getTime() > sinceMs);
+  const sinceMs = sinceDate ? new Date(sinceDate).getTime() : -Infinity;
+  const untilMs = untilDate ? new Date(untilDate).getTime() : Infinity;
+  return allEntries.filter(entry => {
+    const t = new Date(entry.timestamp).getTime();
+    return t > sinceMs && t <= untilMs;
+  });
 }
 
 /**
@@ -103,19 +108,38 @@ async function collectEntries(loadBlockData, sessionId, sinceDate) {
  * @returns {Promise<{success: boolean, method: string, since: string|null, costs: Array, error?: string}>}
  */
 export async function computeCosts(sessionId, sinceDate, deps = {}) {
+  return computePooledCosts([{ sessionId, since: sinceDate }], deps);
+}
+
+/**
+ * Compute costs pooled across several sessions, each with its own cutoff.
+ *
+ * Entries are summed once at full precision, then abbreviated and zero-filtered. No
+ * cross-session dedupe is needed: a transcript lives in exactly one project directory at a
+ * time, and ccusage's project filter is exact-match.
+ *
+ * @param {Array<{sessionId: string, since: string|null, until?: string|null}>} windows - First
+ *   window is the primary (project) session; its since is reported and sets the method
+ * @param {object} deps - { loadBlockData, filterZeroUsageCosts } for DI/testing
+ * @returns {Promise<{success: boolean, method: string, since: string|null, costs: Array, error?: string}>}
+ */
+export async function computePooledCosts(windows, deps = {}) {
   const { loadBlockData, filterZeroUsageCosts } = { ...createDefaultDeps(), ...deps };
+  const since = windows[0]?.since ?? null;
 
   try {
-    // Incremental mode: sinceDate is the commit date of the last Claude-Cost-Metrics trailer
-    // matching this sessionId (from getLastCostCommitDate). Cumulative mode: sinceDate is null.
-    const entries = await collectEntries(loadBlockData, sessionId, sinceDate);
+    // Incremental mode: since is the commit date of the last Claude-Cost-Metrics trailer
+    // anchoring the session (from getLastCostCommitDate). Cumulative mode: since is null.
+    const perWindow = await Promise.all(
+      windows.map(w => collectEntries(loadBlockData, w.sessionId, w.since, w.until ?? null))
+    );
 
-    const { filtered: costs } = filterZeroUsageCosts(aggregateEntriesByModel(entries));
+    const { filtered: costs } = filterZeroUsageCosts(abbreviateCostRows(sumEntriesByModel(perWindow.flat())));
 
     return {
       success: true,
-      method: sinceDate ? 'inc' : 'cum',
-      since: sinceDate,
+      method: since ? 'inc' : 'cum',
+      since,
       costs
     };
   } catch (error) {
