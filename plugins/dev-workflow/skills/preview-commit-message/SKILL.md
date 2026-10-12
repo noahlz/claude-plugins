@@ -36,8 +36,6 @@ Follow the workflow steps EXACTLY.
 
 # Skill Context
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
-
 ## Workflow Rules & Guardrails
 
 **MANDATORY:** FOLLOW THESE RULES FOR THE ENTIRE WORKFLOW.
@@ -67,12 +65,12 @@ Only narrate steps with a STEP_DESCRIPTION field. Execute all other steps and to
 
 ## 1. Stage and Analyze Changes
 
-DELEGATE_TO: `../../references/stage_and_analyze.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/stage_and_analyze.md`
 > READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 ## 2. Generate Commit Message
 
-DELEGATE_TO: `../../references/message_guidelines.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/message_guidelines.md`
 > READ FILE AND FOLLOW INSTRUCTIONS, THEN RETURN HERE
 
 > Extract COMMIT_SUBJECT and COMMIT_BODY per the reference file instructions.

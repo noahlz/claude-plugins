@@ -15,17 +15,16 @@ Create a git commit with cost metric trailers and Claude attribution.
 
 Activate only when user invokes `/commit-with-costs` or asks to commit with costs (e.g. "commit with costs", "commit and track costs").
 
-## SKILL_BASE_DIR: `${CLAUDE_SKILL_DIR}`
+**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
+**PLUGIN_ROOT**: `${CLAUDE_PLUGIN_ROOT}`
 
-If the above shows literal `${CLAUDE_SKILL_DIR}`, halt: "Requires Claude Code 2.1.69+."
-
-**Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
+**Node.js Check**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-node-version.js"`
 Halt if ERROR.
 
 **Git Instructions Check**: !`node "${CLAUDE_SKILL_DIR}/scripts/check-git-instructions.js"`
 Display any WARNING before proceeding.
 
-**Dependencies**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-dependencies.js" "${CLAUDE_SKILL_DIR}/../.."`
+**Dependencies**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-dependencies.js" "${CLAUDE_PLUGIN_ROOT}"`
 
 ## Rules
 
@@ -54,7 +53,7 @@ Display any WARNING before proceeding.
 
 Halt if git commands already ran in this turn.
 
-**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" check commit-with-costs`
+**SKILL_CONFIG**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" check commit-with-costs`
 
 - Starts with `✓ Configuration found` → Step 1a
 - Starts with `NOT_CONFIGURED` → Step 1b
@@ -66,7 +65,7 @@ Config lives at the project root. Access it only via `skill-config.js`, never by
 ### 1a. Load existing configuration
 
 ```bash
-node "{{SKILL_BASE_DIR}}/../../lib/skill-config.js" read commit-with-costs
+node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" read commit-with-costs
 ```
 
 Extract `config.sessionId` → SESSION_ID. Proceed to Step 2.
@@ -82,7 +81,7 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
 Extract `data.sessions`. Use AskUserQuestion: "Select a Claude Code session:" with first 4 session IDs as options.
 
 ```bash
-node "{{SKILL_BASE_DIR}}/../../lib/skill-config.js" write commit-with-costs '{"sessionId":"{{SELECTED_SESSION_ID}}"}'
+node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" write commit-with-costs '{"sessionId":"{{SELECTED_SESSION_ID}}"}'
 ```
 
 - `created` → inform user of `path`.
@@ -96,9 +95,9 @@ Check conversation for an existing `Proposed commit message:` block (e.g. from `
 
 **If not found:**
 
-DELEGATE_TO: `../../references/stage_and_analyze.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/stage_and_analyze.md`
 
-DELEGATE_TO: `../../references/message_guidelines.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/message_guidelines.md`
 
 Store COMMIT_SUBJECT and COMMIT_BODY. Produce no output yet — the message is displayed in Step 3 via the AskUserQuestion `question` field.
 
@@ -106,7 +105,7 @@ Store COMMIT_SUBJECT and COMMIT_BODY. Produce no output yet — the message is d
 
 Obtain user approval via **AskUserQuestion** before proceeding. The commit message MUST be embedded in the question field (see reference) — this overrides the Narration silent rule.
 
-DELEGATE_TO: `../../references/message_approval.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/message_approval.md`
 
 - "use_full" or "use_subject_only" → Step 4
 - "request_revisions" → return to Step 2

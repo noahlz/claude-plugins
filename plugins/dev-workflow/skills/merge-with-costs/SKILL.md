@@ -20,17 +20,16 @@ For an ordinary commit on the current branch, use `commit-with-costs`.
 To correct an existing merge commit's cost trailer, skip the checklist and follow
 `references/remeasure_merge.md`.
 
-## SKILL_BASE_DIR: `${CLAUDE_SKILL_DIR}`
+**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
+**PLUGIN_ROOT**: `${CLAUDE_PLUGIN_ROOT}`
 
-If the above shows literal `${CLAUDE_SKILL_DIR}`, halt: "Requires Claude Code 2.1.69+."
-
-**Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
+**Node.js Check**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-node-version.js"`
 Halt if ERROR.
 
-**Git Instructions Check**: !`node "${CLAUDE_SKILL_DIR}/../commit-with-costs/scripts/check-git-instructions.js"`
+**Git Instructions Check**: !`node "${CLAUDE_PLUGIN_ROOT}/skills/commit-with-costs/scripts/check-git-instructions.js"`
 Display any WARNING before proceeding.
 
-**Dependencies**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-dependencies.js" "${CLAUDE_SKILL_DIR}/../.."`
+**Dependencies**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-dependencies.js" "${CLAUDE_PLUGIN_ROOT}"`
 
 ## Rules
 
@@ -133,7 +132,7 @@ DELEGATE_TO: `references/resolve_conflicts.md`
 
 ## 5. Generate Commit Message
 
-DELEGATE_TO: `../../references/message_guidelines.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/message_guidelines.md`
 
 Merge-specific overrides:
 
@@ -150,7 +149,7 @@ git diff --cached --stat
 
 ## 6. Get User Approval
 
-DELEGATE_TO: `../../references/message_approval.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/message_approval.md`
 
 - "use_full" or "use_subject_only" → Step 7
 - "request_revisions" → return to Step 5
