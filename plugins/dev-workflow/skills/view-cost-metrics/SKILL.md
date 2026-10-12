@@ -31,15 +31,11 @@ Follow the workflow steps EXACTLY.
 
 # Skill Context
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
-
-⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
-
-**Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
+**Node.js Check**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-node-version.js"`
 
 ⛔ **HALT** if Node.js Check shows `ERROR`.
 
-**Dependencies**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-dependencies.js" "${CLAUDE_SKILL_DIR}/../.."`
+**Dependencies**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-dependencies.js" "${CLAUDE_PLUGIN_ROOT}"`
 
 ## Workflow Rules & Guardrails
 
@@ -64,7 +60,7 @@ All script outputs return JSON. Extract fields and store in variables.
 
 **MODE**: Determine from `$ARGUMENTS`: if it contains "cumulative" or "cum" → `cumulative`; otherwise → `incremental` (default, also matches "incremental" or "inc")
 
-**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" check view-cost-metrics`
+**SKILL_CONFIG**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" check view-cost-metrics`
 
 **Configuration Routing:**
 - If `SKILL_CONFIG` starts with `✓ Configuration found` → Step 1a
@@ -84,7 +80,7 @@ Config lives at the project root. Access it only via `skill-config.js`, never by
 
 → Run Bash command to list available sessions:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" list-sessions
+node "${CLAUDE_SKILL_DIR}/scripts/cost-workflow.js" list-sessions
 ```
 
 → Parse JSON output: Extract sessions array from `data.sessions` field.
@@ -93,7 +89,7 @@ node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" list-sessions
 
 → Write config file:
 ```bash
-node "{{SKILL_BASE_DIR}}/../../lib/skill-config.js" write view-cost-metrics '{"sessionId":"{{SESSION_ID}}"}'
+node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" write view-cost-metrics '{"sessionId":"{{SESSION_ID}}"}'
 ```
 
 → `created` → inform user of `path`. `exists` → keep it; never overwrite. Step 2.
@@ -104,7 +100,7 @@ node "{{SKILL_BASE_DIR}}/../../lib/skill-config.js" write view-cost-metrics '{"s
 
 → Execute using Bash tool:
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/cost-workflow.js" fetch-cost --config --mode {{MODE}}
+node "${CLAUDE_SKILL_DIR}/scripts/cost-workflow.js" fetch-cost --config --mode {{MODE}}
 ```
 
 → Parse JSON output.

@@ -28,10 +28,6 @@ Activate only on `/update-changelog` or explicit request. Follow steps EXACTLY.
 
 ---
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
-
-⛔ If `SKILL_BASE_DIR` shows literal `${CLAUDE_SKILL_DIR}`, halt: "This skill requires Claude Code 2.1.69 or higher."
-
 **Silence:** Narrate only `STEP_DESCRIPTION` steps; execute all others silently.
 **Format fidelity:** Detect and match the existing changelog's format. Never impose a new one.
 
@@ -39,12 +35,12 @@ Activate only on `/update-changelog` or explicit request. Follow steps EXACTLY.
 
 ## Step 0 — Config Check
 
-Run: `node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" read update-changelog`
+Run: `node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" read update-changelog`
 
 Fields: `projectRoot`, `config` (null if missing). `changelogPath` is relative to `projectRoot`. Access the config only via `skill-config.js`.
 
-- **`config` present** → `projectRoot` + `config.changelogPath` → CHANGELOG_PATH (absolute). Verify with `test -f "{{CHANGELOG_PATH}}"`. If missing, ask for the correct path (default: `CHANGELOG.md`, relative to project root) and update: `node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" write update-changelog '{"changelogPath":"{{RELATIVE_PATH}}"}' --replace`
-- **`config` null** → say config is missing; ask: "Where is your changelog file, relative to the project root? (default: `CHANGELOG.md`)" Write: `node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" write update-changelog '{"changelogPath":"{{RELATIVE_PATH}}"}'`. CHANGELOG_PATH = `projectRoot` + that path.
+- **`config` present** → `projectRoot` + `config.changelogPath` → CHANGELOG_PATH (absolute). Verify with `test -f "{{CHANGELOG_PATH}}"`. If missing, ask for the correct path (default: `CHANGELOG.md`, relative to project root) and update: `node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" write update-changelog '{"changelogPath":"{{RELATIVE_PATH}}"}' --replace`
+- **`config` null** → say config is missing; ask: "Where is your changelog file, relative to the project root? (default: `CHANGELOG.md`)" Write: `node "${CLAUDE_PLUGIN_ROOT}/lib/skill-config.js" write update-changelog '{"changelogPath":"{{RELATIVE_PATH}}"}'`. CHANGELOG_PATH = `projectRoot` + that path.
 
 ## Step 1 — Detect Latest Tag
 

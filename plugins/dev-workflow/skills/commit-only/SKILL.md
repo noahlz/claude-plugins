@@ -14,10 +14,6 @@ Create a git commit with Claude attribution.
 
 Activate only when user invokes `/commit-only` or asks to commit (e.g. "commit", "commit my changes", "just commit", "commit without costs").
 
-## SKILL_BASE_DIR: `${CLAUDE_SKILL_DIR}`
-
-If the above shows literal `${CLAUDE_SKILL_DIR}`, halt: "Requires Claude Code 2.1.69+."
-
 ## Rules
 
 - **DELEGATE_TO**: Read the referenced file with the Read tool, then execute its instructions exactly. Never improvise or guess commands.
@@ -47,9 +43,9 @@ Check conversation for an existing `Proposed commit message:` block (e.g. from `
 
 **If not found:**
 
-DELEGATE_TO: `../../references/stage_and_analyze.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/stage_and_analyze.md`
 
-DELEGATE_TO: `../../references/message_guidelines.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/message_guidelines.md`
 
 Store COMMIT_SUBJECT and COMMIT_BODY. Produce no output yet — the message is displayed in Step 2 via the AskUserQuestion `question` field.
 
@@ -57,7 +53,7 @@ Store COMMIT_SUBJECT and COMMIT_BODY. Produce no output yet — the message is d
 
 Obtain user approval via **AskUserQuestion** before proceeding. The commit message MUST be embedded in the question field (see reference) — this overrides the Narration silent rule.
 
-DELEGATE_TO: `../../references/message_approval.md`
+DELEGATE_TO: `${CLAUDE_PLUGIN_ROOT}/references/message_approval.md`
 
 - "use_full" or "use_subject_only" → Step 3
 - "request_revisions" → return to Step 1

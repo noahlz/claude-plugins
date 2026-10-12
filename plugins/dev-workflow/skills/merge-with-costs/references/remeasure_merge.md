@@ -19,7 +19,7 @@ PREVIOUS_COST_COMMIT: last commit before BAD_MERGE whose trailer covers the proj
 Run from the main working tree:
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" prepare-merge --since "{{SINCE}}" --until "{{UNTIL}}"
+node "{{PLUGIN_ROOT}}/skills/merge-with-costs/scripts/merge-workflow.js" prepare-merge --since "{{SINCE}}" --until "{{UNTIL}}"
 ```
 
 Add `--include-sessions`, `--branches`, `--no-floor` as the original merge should have.

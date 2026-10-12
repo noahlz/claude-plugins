@@ -7,7 +7,7 @@
 ## Execute Command
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" discover
+node "{{PLUGIN_ROOT}}/skills/merge-with-costs/scripts/merge-workflow.js" discover
 ```
 
 ## Parse JSON Output

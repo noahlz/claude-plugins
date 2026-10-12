@@ -121,11 +121,12 @@ Use this when:
 
 ### Plugin Root Resolution
 
-Skills use the `${CLAUDE_SKILL_DIR}` environment variable (introduced in Claude Code 2.1.69) to locate their packaged scripts. Claude Code substitutes this variable in SKILL.md content at load time with the skill's installed directory path.
+Claude Code substitutes two variables in SKILL.md content at load time:
+
+- `${CLAUDE_PLUGIN_ROOT}` – the plugin's installed directory. Skills use it for shared code in `lib/` and shared docs in `references/`.
+- `${CLAUDE_SKILL_DIR}` – the skill's own directory (added in Claude Code 2.1.69). Skills use it for their own `scripts/`.
 
 **Minimum required version: Claude Code 2.1.69**
-
-Skills will halt and display an error if run on an older version.
 
 ### Releasing
 

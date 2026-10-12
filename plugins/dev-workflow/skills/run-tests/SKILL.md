@@ -28,11 +28,9 @@ Activate this skill when:
 
 # Skill Context
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
+**PLUGIN_ROOT**: `${CLAUDE_PLUGIN_ROOT}`
 
-⛔ **VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
-
-**Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
+**Node.js Check**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-node-version.js"`
 
 ⛔ **HALT** if Node.js Check shows `ERROR`.
 
@@ -66,7 +64,7 @@ Most projects don't need a separate build step. Skip this step unless you have d
 
 **Run build command:**
 ```
-node "<SKILL_BASE_DIR>/scripts/run-command.js" --cmd "<build command>" --out dist/build.log
+node "${CLAUDE_SKILL_DIR}/scripts/run-command.js" --cmd "<build command>" --out dist/build.log
 ```
 
 Parse the JSON output. If `exitCode` is non-zero:
@@ -82,7 +80,7 @@ Parse the JSON output. If `exitCode` is non-zero:
 
 Run the test command using `run-command.js` — NEVER run it directly:
 ```
-node "<SKILL_BASE_DIR>/scripts/run-command.js" --cmd "<test command>" --out dist/test-results.log
+node "${CLAUDE_SKILL_DIR}/scripts/run-command.js" --cmd "<test command>" --out dist/test-results.log
 ```
 
 Parse the JSON output. Store the `outputFile` path and `exitCode`.
@@ -117,7 +115,7 @@ Determine:
 **If test failures** (assertions, expected vs actual, test names visible):
 → Run the failure parser:
 ```
-node "<SKILL_BASE_DIR>/scripts/parse-test-failures.js" --file dist/test-results.log --format <format>
+node "${CLAUDE_SKILL_DIR}/scripts/parse-test-failures.js" --file dist/test-results.log --format <format>
 ```
 (Use `--pattern "<regex>"` instead of `--format` if the built-in formats don't match.)
 

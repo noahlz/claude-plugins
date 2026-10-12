@@ -26,11 +26,7 @@ When no argument is provided, defaults to showing changes since the last git com
 
 # Skill Context
 
-**SKILL_BASE_DIR**: `${CLAUDE_SKILL_DIR}`
-
-**VERSION CHECK**: If `SKILL_BASE_DIR` above shows literal `${CLAUDE_SKILL_DIR}` instead of a real path, halt: "This skill requires Claude Code 2.1.69 or higher."
-
-**Node.js Check**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-node-version.js"`
+**Node.js Check**: !`node "${CLAUDE_PLUGIN_ROOT}/lib/check-node-version.js"`
 
 **HALT** if Node.js Check shows `ERROR`.
 

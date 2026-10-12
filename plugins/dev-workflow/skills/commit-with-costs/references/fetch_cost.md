@@ -11,14 +11,14 @@
 ## Execute Fetch Command
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" prepare --config
+node "{{PLUGIN_ROOT}}/skills/commit-with-costs/scripts/commit-workflow.js" prepare --config
 ```
 
 **NOTE:** If the above command fails, execute this script and try again:
 ```bash
-if [ ! -d "{{SKILL_BASE_DIR}}/../../node_modules/ccusage" ]; then
+if [ ! -d "{{PLUGIN_ROOT}}/node_modules/ccusage" ]; then
   echo "!!! Installing ccusage:"
-  npm install --prefix "{{SKILL_BASE_DIR}}/../.."
+  npm install --prefix "{{PLUGIN_ROOT}}"
 else
   echo "✓ ccusage available"
 fi

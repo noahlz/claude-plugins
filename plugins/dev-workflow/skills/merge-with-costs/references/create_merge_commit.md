@@ -14,7 +14,7 @@
 - `{{INCLUDED_SESSIONS}}`: Comma-joined ids from Step 2 (empty string if unset)
 
 ```bash
-node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" commit \
+node "{{PLUGIN_ROOT}}/skills/merge-with-costs/scripts/merge-workflow.js" commit \
   --costs "{{CURRENT_COST}}" \
   --since "{{COST_SINCE}}" \
   --pooled "{{INCLUDED_SESSIONS}}" \
