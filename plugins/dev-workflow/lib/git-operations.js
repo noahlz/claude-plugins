@@ -14,6 +14,7 @@ export function execGit(args, options = {}) {
       cwd,
       input,
       encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
@@ -25,7 +26,8 @@ export function execGit(args, options = {}) {
   } catch (error) {
     return {
       stdout: error.stdout || '',
-      stderr: error.stderr || '',
+      // ENOBUFS and spawn failures leave stderr empty; the message is the only clue
+      stderr: error.stderr || error.message || '',
       exitCode: error.status || 1
     };
   }
@@ -52,51 +54,7 @@ export function getRepoRoot(options = {}) {
 
 const COMMIT_DELIMITER = '---COMMIT-END---';
 const COST_TRAILER_PREFIX = 'Claude-Cost-Metrics: ';
-
-/**
- * Get the cost metrics from the most recent commit with a Claude-Cost-Metrics trailer.
- * Searches backwards through git log, not just HEAD.
- * Uses full commit body parsing rather than %(trailers:...) format for reliability.
- * @param {Object} options - { cwd }
- * @returns {Array} - Array of cost objects, or empty array if none found
- */
-export function getPreviousCostMetrics(options = {}) {
-  try {
-    const result = execGit(
-      ['log', `--format=%B${COMMIT_DELIMITER}`],
-      options
-    );
-
-    if (result.exitCode !== 0 || !result.stdout.trim()) {
-      return [];
-    }
-
-    // Split on delimiter to get individual commit bodies (most recent first)
-    const commits = result.stdout.split(COMMIT_DELIMITER);
-    for (const commitBody of commits) {
-      if (!commitBody.trim()) continue;
-      // Scan lines for the Claude-Cost-Metrics trailer
-      for (const line of commitBody.split('\n')) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith(COST_TRAILER_PREFIX)) continue;
-        const jsonStr = trimmed.slice(COST_TRAILER_PREFIX.length).trim();
-        try {
-          const parsed = JSON.parse(jsonStr);
-          if (parsed && Array.isArray(parsed.cost)) {
-            return parsed.cost;
-          }
-        } catch {
-          // Malformed JSON in this commit, try next
-        }
-        break; // Found trailer line but invalid — move to next commit
-      }
-    }
-
-    return [];
-  } catch {
-    return [];
-  }
-}
+const ANCHOR_PAGE_SIZE = 20;
 
 /**
  * Get the ISO 8601 author date of the most recent commit that has a Claude-Cost-Metrics
@@ -108,52 +66,58 @@ export function getPreviousCostMetrics(options = {}) {
  * - Multi-author repos may have commits from different session IDs; we should only anchor
  *   incremental cost against a commit for the same session.
  *
+ * git's --grep narrows the log to commits mentioning both the trailer and this session, read
+ * a page at a time, so output stays small however long the history grows. A grep hit is only a
+ * candidate: the first trailer line must parse and carry this sessionId (a squash commit can
+ * hold another session's trailer first).
+ *
  * @param {string} sessionId - The session ID to match (e.g. "-Users-foo-bar")
  * @param {Object} options - { cwd }
- * @returns {string|null} ISO 8601 date string or null if no matching commit found
+ * @returns {string|null} ISO 8601 date string, or null if no matching commit (or no commits) exist
+ * @throws {Error} when git fails while reading history, so a failure can't pass for "no anchor"
  */
 export function getLastCostCommitDate(sessionId, options = {}) {
-  try {
-    // %aI = author date ISO 8601; output one date line then the full body per commit
-    const result = execGit(
-      ['log', `--format=%aI%n%B${COMMIT_DELIMITER}`],
-      options
-    );
+  if (execGit(['rev-parse', '--verify', '--quiet', 'HEAD'], options).exitCode !== 0) {
+    return null;
+  }
 
-    if (result.exitCode !== 0 || !result.stdout.trim()) {
-      return null;
+  for (let skip = 0; ; skip += ANCHOR_PAGE_SIZE) {
+    const result = execGit([
+      'log', `-n${ANCHOR_PAGE_SIZE}`, `--skip=${skip}`,
+      '--all-match', '--fixed-strings',
+      `--grep=${COST_TRAILER_PREFIX}`,
+      `--grep="sessionId":${JSON.stringify(sessionId)}`,
+      `--format=%aI%n%B${COMMIT_DELIMITER}`
+    ], options);
+
+    if (result.exitCode !== 0) {
+      throw new Error(`git log failed while looking for the cost anchor: ${result.stderr.trim()}`);
     }
 
-    // Split on delimiter to get individual commit blocks (most recent first).
-    // Each block starts with the author date on the first non-empty line, followed by the commit body.
-    // Note: %B appends a trailing newline before the delimiter, so blocks after the first start
-    // with an empty line — we must find the first non-empty line to locate the date.
-    const blocks = result.stdout.split(COMMIT_DELIMITER);
+    // Each block holds the author date on its first non-empty line, then the body.
+    // %B ends with a newline, so every block after the first starts with an empty line.
+    const blocks = result.stdout.split(COMMIT_DELIMITER).filter(b => b.trim());
     for (const block of blocks) {
       const lines = block.split('\n');
       const dateIndex = lines.findIndex(l => l.trim() !== '');
-      if (dateIndex === -1) continue;
       const commitDate = lines[dateIndex].trim();
 
-      for (const line of lines.slice(dateIndex + 1)) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith(COST_TRAILER_PREFIX)) continue;
-        const jsonStr = trimmed.slice(COST_TRAILER_PREFIX.length).trim();
-        try {
-          const parsed = JSON.parse(jsonStr);
-          if (parsed && parsed.sessionId === sessionId) {
-            return commitDate;
-          }
-        } catch {
-          // Malformed JSON — skip this commit
+      // --grep matches anywhere in a line; a mid-line mention has no trailer line to read
+      const trailerLine = lines.slice(dateIndex + 1).find(l => l.trim().startsWith(COST_TRAILER_PREFIX));
+      if (!trailerLine) continue;
+      try {
+        const parsed = JSON.parse(trailerLine.trim().slice(COST_TRAILER_PREFIX.length));
+        if (parsed && parsed.sessionId === sessionId) {
+          return commitDate;
         }
-        break; // Found trailer line but didn't match — move to next commit
+      } catch {
+        // Malformed JSON – skip this commit
       }
     }
 
-    return null;
-  } catch {
-    return null;
+    if (blocks.length < ANCHOR_PAGE_SIZE) {
+      return null;
+    }
   }
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   setupTestEnv,
@@ -13,7 +13,6 @@ import {
   execGit as prodExecGit,
   commit,
   getHeadSha,
-  getPreviousCostMetrics,
   getLastCostCommitDate,
   getRepoRoot,
   listWorktrees,
@@ -157,63 +156,6 @@ describe('lib/git-operations: integration tests', () => {
     });
   });
 
-  describe("getPreviousCostMetrics", () => {
-    it('returns empty array when no commits have trailer', () => {
-      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
-      assert.deepEqual(result, []);
-    });
-
-    it('returns cost array from most recent commit with trailer', () => {
-      const costs = [
-        { model: 'claude-sonnet-4-6', in: 100, out: 50, cost: 1.05 }
-      ];
-      // Use two trailer lines (like real commits) to ensure git recognizes the trailer block
-      const trailers = `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId: 'test', cost: costs })}`;
-      stageFile(testEnv, 'file1.txt');
-      commit(`Add file\n\n${trailers}`, { cwd: testEnv.tmpDir });
-
-      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
-      assert.deepEqual(result, costs);
-    });
-
-    it('skips commits with malformed JSON and returns empty array', () => {
-      stageFile(testEnv, 'file1.txt');
-      commit('Add file\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: not-valid-json', { cwd: testEnv.tmpDir });
-
-      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
-      assert.deepEqual(result, []);
-    });
-
-    it('skips JSON without cost array and returns empty array', () => {
-      stageFile(testEnv, 'file1.txt');
-      commit('Add file\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: {"sessionId":"x","other":"field"}', { cwd: testEnv.tmpDir });
-
-      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
-      assert.deepEqual(result, []);
-    });
-
-    it('finds trailer in older commit when most recent has none', () => {
-      const costs = [
-        { model: 'claude-opus-4-6', in: 10, out: 5, cost: 0.50 }
-      ];
-      const trailers = `Co-Authored-By: Claude Code <noreply@anthropic.com>\nClaude-Cost-Metrics: ${JSON.stringify({ sessionId: 'test', cost: costs })}`;
-
-      stageFile(testEnv, 'file1.txt');
-      commit(`First\n\n${trailers}`, { cwd: testEnv.tmpDir });
-
-      stageFile(testEnv, 'file2.txt');
-      commit('Second commit without trailer', { cwd: testEnv.tmpDir });
-
-      const result = getPreviousCostMetrics({ cwd: testEnv.tmpDir });
-      assert.deepEqual(result, costs);
-    });
-
-    it('returns empty array when cwd is not a git repo', () => {
-      const result = getPreviousCostMetrics({ cwd: '/tmp' });
-      assert.deepEqual(result, []);
-    });
-  });
-
   describe("getLastCostCommitDate", () => {
     // Session IDs are path-derived with a leading dash, e.g. /Users/test/project → -Users-test-project
     const SESSION = '-Users-test-project';
@@ -305,6 +247,49 @@ describe('lib/git-operations: integration tests', () => {
 
       const result = getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir });
       assert.equal(result, dateAfterGood, 'Should skip trailer with no sessionId and find older valid commit');
+    });
+
+    function commitFile(filename, message) {
+      stageFile(testEnv, filename);
+      assert.equal(commit(message, { cwd: testEnv.tmpDir }).exitCode, 0, `commit "${filename}" should succeed`);
+    }
+
+    it('finds the anchor when full git log output exceeds 1 MiB', () => {
+      commitFile('huge.txt', `Huge message\n\n${'x'.repeat(1100000)}`);
+      commitFile('file1.txt', `Anchored\n\n${makeTrailer(SESSION)}`);
+      const headDate = execGit(['log', '-1', '--format=%aI'], { cwd: testEnv.tmpDir }).stdout.trim();
+
+      assert.equal(getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir }), headDate);
+    });
+
+    it('keeps searching past a full page of commits that mention the session but do not anchor it', () => {
+      commitFile('file1.txt', `Anchored\n\n${makeTrailer(SESSION)}`);
+      const anchorDate = execGit(['log', '-1', '--format=%aI'], { cwd: testEnv.tmpDir }).stdout.trim();
+
+      // Squash-style messages: another session's trailer comes first, so only that one counts
+      const squashed = `${makeTrailer(OTHER_SESSION)}\n${makeTrailer(SESSION).split('\n')[1]}`;
+      for (let i = 0; i < 25; i++) {
+        commitFile(`squash${i}.txt`, `Squash ${i}\n\n${squashed}`);
+      }
+
+      assert.equal(getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir }), anchorDate);
+    });
+
+    it('returns null in a repository with no commits', () => {
+      const emptyRepo = join(testEnv.tmpDir, 'empty');
+      mkdirSync(emptyRepo);
+      execGit(['init', '-q'], { cwd: emptyRepo });
+
+      assert.equal(getLastCostCommitDate(SESSION, { cwd: emptyRepo }), null);
+    });
+
+    it('throws instead of returning null when git cannot walk the history', () => {
+      commitFile('file1.txt', 'Parent');
+      const parent = execGit(['rev-parse', 'HEAD'], { cwd: testEnv.tmpDir }).stdout.trim();
+      commitFile('file2.txt', `Child\n\n${makeTrailer(OTHER_SESSION)}`);
+      rmSync(join(testEnv.tmpDir, '.git', 'objects', parent.slice(0, 2), parent.slice(2)), { force: true });
+
+      assert.throws(() => getLastCostCommitDate(SESSION, { cwd: testEnv.tmpDir }), /git log failed/);
     });
   });
 });
