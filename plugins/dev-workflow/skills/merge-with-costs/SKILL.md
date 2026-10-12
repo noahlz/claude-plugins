@@ -17,6 +17,8 @@ cost in the merge commit.
 
 Activate only on `/merge-with-costs` or a request to merge worktree/sub-agent branches with costs.
 For an ordinary commit on the current branch, use `commit-with-costs`.
+To correct an existing merge commit's cost trailer, skip the checklist and follow
+`references/remeasure_merge.md`.
 
 ## SKILL_BASE_DIR: `${CLAUDE_SKILL_DIR}`
 

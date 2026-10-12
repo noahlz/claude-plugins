@@ -477,14 +477,27 @@ function latestDate(...dates) {
  * cost nobody counted, so whatever it drops is measured and returned as `excluded`; naming the
  * session in `noFloor` opens its window at its own anchor instead.
  *
- * @param {object} options - { baseDir, configPath, includeSessions, noFloor, branches, deps }
+ * `since` and `until` re-measure a past window, e.g. to correct a merge trailer. `since`
+ * replaces the project anchor, and therefore the floor. `until` caps every window (inclusive).
+ * An included session's anchor at or after `until` belongs to the commit being re-measured or
+ * a later one, so it is disregarded.
+ *
+ * @param {object} options - { baseDir, configPath, includeSessions, noFloor, branches, since, until, deps }
  * @returns {Promise<object>} - { status, data, message }
  */
 async function prepareMerge(options = {}) {
-  const { baseDir = '.', configPath, includeSessions = [], noFloor = [], branches = [], deps } = options;
+  const {
+    baseDir = '.', configPath, includeSessions = [], noFloor = [], branches = [],
+    since: sinceOverride = null, until = null, deps
+  } = options;
   if (!deps) throw new Error('deps parameter required');
 
   const { git: gitOps, ccusage: ccusageOps, cost: costOps } = deps;
+
+  const unparseable = [sinceOverride, until].find(d => d && Number.isNaN(Date.parse(d)));
+  if (unparseable) {
+    return { status: 'invalid_range', data: { since: sinceOverride, until }, message: `${unparseable} is not an ISO 8601 date` };
+  }
 
   try {
     // readSessionConfig throws when the file is missing or carries no sessionId
@@ -500,10 +513,22 @@ async function prepareMerge(options = {}) {
       };
     }
 
-    const since = gitOps.getLastCostCommitDate(sessionId, { cwd: baseDir, revs: ['HEAD'] });
+    const since = sinceOverride ?? gitOps.getLastCostCommitDate(sessionId, { cwd: baseDir, revs: ['HEAD'] });
+    if (until && since && Date.parse(until) <= Date.parse(since)) {
+      return {
+        status: 'invalid_range',
+        data: { since, until },
+        message: `--until ${until} must be later than since ${since}`
+      };
+    }
+
+    const isAtOrAfterUntil = (date) => Boolean(until && date && Date.parse(date) >= Date.parse(until));
+    const cap = until ? { until } : {};
+
     const included = [];
     for (const id of includeSessions) {
-      const ownSince = gitOps.getLastCostCommitDate(id, { cwd: baseDir, revs: ['HEAD', ...branches] });
+      const ownAnchor = gitOps.getLastCostCommitDate(id, { cwd: baseDir, revs: ['HEAD', ...branches] });
+      const ownSince = isAtOrAfterUntil(ownAnchor) ? null : ownAnchor;
       const floored = latestDate(since, ownSince);
 
       if (floored === ownSince || noFloor.includes(id)) {
@@ -525,8 +550,8 @@ async function prepareMerge(options = {}) {
     }
 
     const costResult = await costOps.computePooledCosts([
-      { sessionId, since },
-      ...included.map(w => ({ sessionId: w.session_id, since: w.since }))
+      { sessionId, since, ...cap },
+      ...included.map(w => ({ sessionId: w.session_id, since: w.since, ...cap }))
     ]);
 
     if (!costResult.success) {
@@ -545,6 +570,7 @@ async function prepareMerge(options = {}) {
       session_id: sessionId,
       method: 'merge',
       since,
+      until,
       current_cost: costResult.costs,
       anchored: Boolean(since),
       included_sessions: included
@@ -561,7 +587,7 @@ async function prepareMerge(options = {}) {
       };
     }
 
-    return { status: 'success', data, message: `Costs computed since ${since}` };
+    return { status: 'success', data, message: `Costs computed since ${since}${until ? ` until ${until}` : ''}` };
   } catch (error) {
     return { status: 'error', data: {}, message: error.message };
   }
@@ -666,6 +692,8 @@ async function main() {
           includeSessions: flagList(args, '--include-sessions'),
           noFloor: flagList(args, '--no-floor'),
           branches,
+          since: flagValue(args, '--since') || null,
+          until: flagValue(args, '--until') || null,
           deps
         });
         break;

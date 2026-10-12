@@ -461,6 +461,7 @@ describe('merge-with-costs/merge-workflow.js', () => {
     const WT = '-repo--claude-worktrees-014-x';
     const EARLY = '2026-01-02T00:00:00Z';
     const LATE = '2026-01-05T00:00:00Z';
+    const LATER = '2026-01-08T00:00:00Z';
 
     /**
      * Deps that anchor each session at the given date and record the anchor lookups and the
@@ -480,8 +481,8 @@ describe('merge-with-costs/merge-workflow.js', () => {
         ccusage: { hasSessionData: hasData },
         cost: {
           computePooledCosts: async (w) => {
-            // A bounded window is the floor measurement, not the merge cost itself
-            if (w[0].until !== undefined) {
+            // The merge cost always leads with the project window; anything else is the floor measurement
+            if (w[0].sessionId !== '-repo') {
               measured.push(...w);
               return { success: true, method: 'inc', since: w[0].since, costs: droppedCosts };
             }
@@ -577,6 +578,86 @@ describe('merge-with-costs/merge-workflow.js', () => {
 
       assert.equal(result.status, 'no_anchor');
       assert.deepEqual(windows, [{ sessionId: '-repo', since: null }, { sessionId: WT, since: null }]);
+    });
+
+    describe('with --since/--until', () => {
+      it('caps the project window at until', async () => {
+        const { deps, windows } = pooledDeps({ anchors: { '-repo': EARLY } });
+
+        const result = await prepareMerge({ configPath: CONFIG, until: LATE, deps });
+
+        assert.equal(result.status, 'success');
+        assert.deepEqual(windows, [{ sessionId: '-repo', since: EARLY, until: LATE }]);
+        assert.equal(result.data.since, EARLY);
+        assert.equal(result.data.until, LATE);
+      });
+
+      it('opens the project window at since instead of looking up the anchor', async () => {
+        const { deps, lookups, windows } = pooledDeps({ anchors: { '-repo': LATER } });
+
+        const result = await prepareMerge({ configPath: CONFIG, since: EARLY, until: LATE, deps });
+
+        assert.equal(result.status, 'success');
+        assert.deepEqual(windows, [{ sessionId: '-repo', since: EARLY, until: LATE }]);
+        assert.deepEqual(lookups, [], 'the anchor a re-measured merge wrote is never consulted');
+        assert.equal(result.data.anchored, true);
+      });
+
+      it('floors an included session at the overriding since and caps it at until', async () => {
+        const { deps, windows, measured } = pooledDeps({ anchors: { [WT]: EARLY } });
+
+        const result = await prepareMerge({ configPath: CONFIG, includeSessions: [WT], since: LATE, until: LATER, deps });
+
+        assert.deepEqual(windows, [
+          { sessionId: '-repo', since: LATE, until: LATER },
+          { sessionId: WT, since: LATE, until: LATER }
+        ]);
+        assert.deepEqual(measured, [{ sessionId: WT, since: EARLY, until: LATE }], 'the floor still measures what it drops');
+        assert.equal(result.data.included_sessions[0].since, LATE);
+      });
+
+      it('caps a no-floor session at until while opening it at its own anchor', async () => {
+        const { deps, windows } = pooledDeps({ anchors: { [WT]: EARLY } });
+
+        await prepareMerge({ configPath: CONFIG, includeSessions: [WT], noFloor: [WT], since: LATE, until: LATER, deps });
+
+        assert.deepEqual(windows[1], { sessionId: WT, since: EARLY, until: LATER });
+      });
+
+      it('disregards an included session anchor at or after until', async () => {
+        const { deps, windows, measured } = pooledDeps({ anchors: { [WT]: LATER } });
+
+        await prepareMerge({ configPath: CONFIG, includeSessions: [WT], since: EARLY, until: LATER, deps });
+
+        assert.deepEqual(windows[1], { sessionId: WT, since: EARLY, until: LATER },
+          'the re-measured merge\'s own trailer must not empty the window');
+        assert.deepEqual(measured, [{ sessionId: WT, since: null, until: EARLY }]);
+      });
+
+      for (const [label, range] of [
+        ['equal to since', { since: LATE, until: LATE }],
+        ['earlier than since', { since: LATE, until: EARLY }],
+        ['earlier than the project anchor', { until: EARLY }]
+      ]) {
+        it(`rejects until ${label}`, async () => {
+          const { deps, windows } = pooledDeps({ anchors: { '-repo': LATE } });
+
+          const result = await prepareMerge({ configPath: CONFIG, ...range, deps });
+
+          assert.equal(result.status, 'invalid_range');
+          assert.deepEqual(windows, [], 'no cost is computed');
+        });
+      }
+
+      it('rejects a date that does not parse', async () => {
+        const { deps, windows } = pooledDeps({ anchors: { '-repo': EARLY } });
+
+        const result = await prepareMerge({ configPath: CONFIG, until: 'yesterday', deps });
+
+        assert.equal(result.status, 'invalid_range');
+        assert.match(result.message, /yesterday/);
+        assert.deepEqual(windows, []);
+      });
     });
 
     it('rejects an included session that does not belong to this repository', async () => {
