@@ -26,6 +26,8 @@ Add `--include-sessions`, `--branches`, `--no-floor` as the original merge shoul
 
 - `--since` replaces the project anchor (otherwise BAD_MERGE's own trailer) and so the floor.
 - `--until` caps every window. An included session's anchor at or after UNTIL is ignored.
+- Costs use current pricing, so they can differ from a trailer written earlier. Token counts reproduce
+  exactly – compare those to check a re-measure.
 
 | `status` | Action |
 |----------|--------|
