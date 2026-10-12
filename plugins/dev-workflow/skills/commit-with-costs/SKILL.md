@@ -54,24 +54,26 @@ Display any WARNING before proceeding.
 
 Halt if git commands already ran in this turn.
 
-**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/check-skill-config.js" "./.claude/settings.plugins.commit-with-costs.json"`
+**SKILL_CONFIG**: !`node "${CLAUDE_SKILL_DIR}/../../lib/skill-config.js" check commit-with-costs`
 
-- `✓ Configuration found` → Step 1a
-- `NOT_CONFIGURED` → Step 1b
+- Starts with `✓ Configuration found` → Step 1a
+- Starts with `NOT_CONFIGURED` → Step 1b
+
+Config lives at the project root. Access it only via `skill-config.js`, never by relative path.
 
 ## 1. Resolve SessionID
 
 ### 1a. Load existing configuration
 
 ```bash
-cat .claude/settings.plugins.commit-with-costs.json
+node "{{SKILL_BASE_DIR}}/../../lib/skill-config.js" read commit-with-costs
 ```
 
-Extract `sessionId` → SESSION_ID. Proceed to Step 2.
+Extract `config.sessionId` → SESSION_ID. Proceed to Step 2.
 
 ### 1b. Create new configuration
 
-Display: "Configuration not found (./.claude/settings.plugins.commit-with-costs.json). Let's create it."
+Display: "Configuration not found ({{path from SKILL_CONFIG}}). Let's create it."
 
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
@@ -80,10 +82,11 @@ node "{{SKILL_BASE_DIR}}/scripts/commit-workflow.js" list-sessions
 Extract `data.sessions`. Use AskUserQuestion: "Select a Claude Code session:" with first 4 session IDs as options.
 
 ```bash
-echo '{"sessionId":"{{SELECTED_SESSION_ID}}"}' > .claude/settings.plugins.commit-with-costs.json
+node "{{SKILL_BASE_DIR}}/../../lib/skill-config.js" write commit-with-costs '{"sessionId":"{{SELECTED_SESSION_ID}}"}'
 ```
 
-Inform user of the file location.
+- `created` → inform user of `path`.
+- `exists` → keep it; never overwrite. Step 1a.
 
 ## 2. Detect or Generate Commit Message
 

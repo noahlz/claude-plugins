@@ -1,9 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { Readable } from 'stream';
-import fs from 'fs';
-import path from 'path';
-import { saveConfig, prepare, commit, readCommitMessage }
+import { prepare, commit, readCommitMessage }
   from '../../../plugins/dev-workflow/skills/commit-with-costs/scripts/commit-workflow.js';
 import {
   setupTestEnv,
@@ -28,51 +26,6 @@ describe('commit-with-costs: commit-workflow.js unit tests', () => {
     teardownTestEnv(testEnv);
   });
 
-
-  describe('saveConfig', () => {
-    it('succeeds with valid sessionId', async () => {
-      const result = saveConfig({ baseDir: testEnv.tmpDir, sessionId: 'test-123' });
-
-      assert.equal(result.status, 'success');
-      assert.equal(result.data.session_id, 'test-123');
-
-      const configPath = path.join(testEnv.tmpDir, '.claude/settings.plugins.commit-with-costs.json');
-      assert.ok(fs.existsSync(configPath));
-
-      const content = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      assert.equal(content.sessionId, 'test-123');
-
-    });
-
-    it('fails when sessionId is missing', async () => {
-      const result = saveConfig({ baseDir: testEnv.tmpDir });
-
-      assert.equal(result.status, 'error');
-      assert.match(result.message, /sessionId parameter required/);
-
-    });
-
-    it('creates .claude directory if missing', async () => {
-      const result = saveConfig({ baseDir: testEnv.tmpDir, sessionId: 'test' });
-
-      assert.equal(result.status, 'success');
-
-      const claudeDir = path.join(testEnv.tmpDir, '.claude');
-      assert.ok(fs.existsSync(claudeDir));
-
-      const configPath = path.join(claudeDir, 'settings.plugins.commit-with-costs.json');
-      assert.ok(fs.existsSync(configPath));
-
-    });
-
-    it('saveConfig handles write errors gracefully', async () => {
-      const result = saveConfig({ baseDir: '/invalid/nonexistent/path/that/does/not/exist', sessionId: 'test' });
-
-      assert.equal(result.status, 'error');
-      assert.match(result.message, /Failed to save config/);
-
-    });
-  });
 
   describe("prepare command", () => {
     it('throws error when deps parameter is missing', async () => {

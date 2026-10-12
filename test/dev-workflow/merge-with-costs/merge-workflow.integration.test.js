@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   setupTestEnv,
@@ -26,7 +26,6 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
 
   afterEach(() => teardownTestEnv(testEnv));
 
-  const CONFIG = ['--config', '.claude/settings.plugins.commit-with-costs.json'];
   const git = (...args) => execGit(args, { cwd: testEnv.tmpDir });
   const headSubject = () => git('log', '-1', '--format=%s').stdout.trim();
   const parentCount = () => git('rev-list', '--parents', '-n', '1', 'HEAD').stdout.trim().split(/\s+/).length - 1;
@@ -37,31 +36,46 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
     it('accepts a run from the main working tree whose config names this project', () => {
       writeSessionConfig(testEnv, repoSessionId());
 
-      const { json } = execMergeWorkflow(testEnv, 'preflight', { args: CONFIG });
+      const { json } = execMergeWorkflow(testEnv, 'preflight');
 
       assert.equal(json.status, 'success');
       assert.equal(json.data.in_linked_worktree, false);
     });
 
-    it('refuses a run from inside a linked worktree', () => {
+    it('reads the root config when run from a subdirectory', () => {
+      writeSessionConfig(testEnv, repoSessionId());
+      const subdir = join(testEnv.tmpDir, 'docs');
+      mkdirSync(subdir);
+
+      const { json } = execMergeWorkflow(testEnv, 'preflight', { cwd: subdir });
+
+      assert.equal(json.status, 'success');
+      assert.equal(json.data.config_session_id, repoSessionId());
+    });
+
+    it('refuses a run from inside a linked worktree that has no config of its own', () => {
       writeSessionConfig(testEnv, repoSessionId());
       commitOnBranch(testEnv, 'feature-a', 'a.txt', 'a');
       const worktreePath = addWorktree(testEnv, 'feature-a');
-      writeSessionConfig(testEnv, repoSessionId());
+      assert.ok(existsSync(join(worktreePath, 'a.txt')), 'worktree should check out the committed branch');
 
-      const { json } = execMergeWorkflow(testEnv, 'preflight', {
-        args: ['--config', join(testEnv.tmpDir, '.claude', 'settings.plugins.commit-with-costs.json')],
-        cwd: worktreePath
-      });
+      const { json } = execMergeWorkflow(testEnv, 'preflight', { cwd: worktreePath });
 
       assert.equal(json.status, 'in_worktree');
       assert.match(json.message, /main working tree/);
     });
 
+    it('reports not_configured when the project has no config', () => {
+      const { json } = execMergeWorkflow(testEnv, 'preflight');
+
+      assert.equal(json.status, 'not_configured');
+      assert.match(json.message, /commit-with-costs/);
+    });
+
     it('refuses a config naming a different project', () => {
       writeSessionConfig(testEnv, '-some-other-project');
 
-      const { json } = execMergeWorkflow(testEnv, 'preflight', { args: CONFIG });
+      const { json } = execMergeWorkflow(testEnv, 'preflight');
 
       assert.equal(json.status, 'session_mismatch');
       assert.equal(json.data.config_session_id, '-some-other-project');
@@ -71,7 +85,7 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
       writeSessionConfig(testEnv, repoSessionId());
       git('config', 'rerere.enabled', 'true');
 
-      const { json } = execMergeWorkflow(testEnv, 'preflight', { args: CONFIG });
+      const { json } = execMergeWorkflow(testEnv, 'preflight');
 
       assert.equal(json.data.rerere_enabled, true);
     });
@@ -156,7 +170,7 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
       assert.deepEqual(staged.json.data.remaining, []);
 
       const { json } = execMergeWorkflow(testEnv, 'commit', {
-        args: [...CONFIG, '--costs', COSTS, '--since', '2026-01-01T00:00:00Z'],
+        args: ['--costs', COSTS, '--since', '2026-01-01T00:00:00Z'],
         input: 'Merge feature-a\n\n- Resolve shared.txt by keeping both edits'
       });
 
@@ -196,7 +210,7 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
       execMergeWorkflow(testEnv, 'merge', { args: ['--branches', 'feature-a'] });
 
       const { json } = execMergeWorkflow(testEnv, 'commit', {
-        args: [...CONFIG, '--costs', COSTS],
+        args: ['--costs', COSTS],
         input: 'Merge feature-a'
       });
 
@@ -213,7 +227,7 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
       writeResolution(testEnv, file, 'from main and from feature');
       execMergeWorkflow(testEnv, 'stage-resolved', { args: ['--paths', file] });
       execMergeWorkflow(testEnv, 'commit', {
-        args: [...CONFIG, '--costs', COSTS, '--since', '2026-01-01T00:00:00Z'],
+        args: ['--costs', COSTS, '--since', '2026-01-01T00:00:00Z'],
         input: 'Merge feature-a'
       });
 
@@ -259,7 +273,7 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
       execMergeWorkflow(testEnv, 'merge', { args: ['--branches', 'feature-a,feature-b'] });
 
       const { json } = execMergeWorkflow(testEnv, 'commit', {
-        args: [...CONFIG, '--costs', COSTS, '--since', '2026-01-01T00:00:00Z'],
+        args: ['--costs', COSTS, '--since', '2026-01-01T00:00:00Z'],
         input: 'Merge 2 sub-agent branches\n\n- Integrate feature-a and feature-b'
       });
 
@@ -282,7 +296,7 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
       writeSessionConfig(testEnv, '-test-session');
 
       const { json } = execMergeWorkflow(testEnv, 'commit', {
-        args: [...CONFIG, '--costs', COSTS],
+        args: ['--costs', COSTS],
         input: 'Merge nothing'
       });
 
@@ -295,7 +309,7 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
       execMergeWorkflow(testEnv, 'merge', { args: ['--branches', 'feature-a'] });
 
       const { json } = execMergeWorkflow(testEnv, 'commit', {
-        args: [...CONFIG, '--costs', '[]'],
+        args: ['--costs', '[]'],
         input: 'Merge feature-a'
       });
 
@@ -308,7 +322,7 @@ describe('merge-with-costs/merge-workflow.js (integration)', () => {
       commitOnBranch(testEnv, 'feature-a', 'a.txt', 'a');
       execMergeWorkflow(testEnv, 'merge', { args: ['--branches', 'feature-a'] });
       execMergeWorkflow(testEnv, 'commit', {
-        args: [...CONFIG, '--costs', COSTS],
+        args: ['--costs', COSTS],
         input: 'Merge feature-a'
       });
 

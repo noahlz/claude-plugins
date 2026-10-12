@@ -10,6 +10,22 @@ const TESTS_ROOT = __dirname; // test/
 const PLUGIN_ROOT = join(dirname(TESTS_ROOT), 'plugins'); // project root plugins directory
 
 /**
+ * Build a child-process environment. CLAUDE_PROJECT_DIR is dropped so a test run inside
+ * Claude Code cannot resolve project paths to the real repository; tests opt back in via
+ * `overrides`. An override of `undefined` removes the variable.
+ * @param {Object} overrides - Variables to set or remove
+ * @returns {Object} Environment for spawnSync
+ */
+function childEnv(overrides) {
+  const env = { ...process.env, ...overrides };
+  if (!('CLAUDE_PROJECT_DIR' in overrides)) delete env.CLAUDE_PROJECT_DIR;
+  for (const key of Object.keys(env)) {
+    if (env[key] === undefined) delete env[key];
+  }
+  return env;
+}
+
+/**
  * Generic command executor
  * @param {string} command - Command to execute
  * @param {string[]} args - Command arguments
@@ -21,13 +37,15 @@ const PLUGIN_ROOT = join(dirname(TESTS_ROOT), 'plugins'); // project root plugin
 function execCommand(command, args, options = {}) {
   const {
     cwd = process.cwd(),
-    input = ''
+    input = '',
+    env = {}
   } = options;
 
   try {
     const result = spawnSync(command, args, {
       cwd,
       input,
+      env: childEnv(env),
       encoding: 'utf8'
     });
 
@@ -103,10 +121,11 @@ export function execNodeScript(scriptPath, options = {}) {
   const {
     cwd = process.cwd(),
     input = '',
-    args = []
+    args = [],
+    env = {}
   } = options;
 
-  return execCommand('node', [scriptPath, ...args], { cwd, input });
+  return execCommand('node', [scriptPath, ...args], { cwd, input, env });
 }
 
 /**

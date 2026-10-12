@@ -6,8 +6,11 @@ import * as git from '../../../lib/git-operations.js';
 import * as ccusage from '../../../lib/ccusage-operations.js';
 import { computeCosts, createDefaultDeps as createCostDeps } from '../../../lib/cost-computation.js';
 import { readSessionConfig } from '../../../lib/file-utils.js';
+import { skillConfigPath } from '../../../lib/skill-config.js';
 import { createCommit, readCommitMessage } from '../../../lib/commit-operations.js';
 import { pathToFileURL } from 'url';
+
+const CONFIG_SKILL = 'commit-with-costs';
 
 
 /**
@@ -36,49 +39,6 @@ function createDefaultDeps() {
       getCleanupPeriodDays: ccusage.getCleanupPeriodDays
     }
   };
-}
-
-/**
- * Save session configuration
- * @param {object} options - Options
- * @param {string} options.baseDir - Base directory (defaults to current dir)
- * @param {string} options.sessionId - Session ID to save
- * @returns {object} - { status, data, message }
- */
-function saveConfig({ baseDir = '.', sessionId } = {}) {
-  if (!sessionId) {
-    return {
-      status: 'error',
-      data: {},
-      message: 'sessionId parameter required'
-    };
-  }
-
-  try {
-    const configPath = path.join(baseDir, '.claude/settings.plugins.commit-with-costs.json');
-    const configDir = path.dirname(configPath);
-
-    // Create .claude directory if needed
-    if (!fs.existsSync(configDir)) {
-      fs.mkdirSync(configDir, { recursive: true });
-    }
-
-    // Write config
-    const config = { sessionId };
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-
-    return {
-      status: 'success',
-      data: { session_id: sessionId },
-      message: 'Configuration saved'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      data: {},
-      message: `Failed to save config: ${error.message}`
-    };
-  }
 }
 
 /**
@@ -191,8 +151,8 @@ async function main() {
         const configIdx = args.indexOf('--config');
         let baseDir, sessionId;
         if (configIdx !== -1) {
-          // Read sessionId from config file (avoids passing hyphen-prefixed IDs as CLI args)
-          const config = readSessionConfig(args[configIdx + 1]);
+          // Read sessionId from the project config (avoids passing hyphen-prefixed IDs as CLI args)
+          const config = readSessionConfig(skillConfigPath(CONFIG_SKILL));
           sessionId = config.sessionId;
           baseDir = process.cwd();
         } else {
@@ -200,17 +160,8 @@ async function main() {
           baseDir = args[0] || '.';
           sessionId = args[1] || null;
         }
-        const flagValues = new Set([configIdx].filter(i => i !== -1).flatMap(i => [i, i + 1]));
-        outputFile = args.find((a, i) => !flagValues.has(i) && (configIdx !== -1 || i >= 2));
+        outputFile = args.find((a, i) => i !== configIdx && (configIdx !== -1 || i >= 2));
         result = await prepare({ baseDir, sessionId, deps });
-        break;
-      }
-
-      case 'save-config': {
-        const baseDir = args[0] || '.';
-        const sessionId = args[1];
-        outputFile = args[2];
-        result = saveConfig({ baseDir, sessionId });
         break;
       }
 
@@ -223,8 +174,8 @@ async function main() {
 
         let sessionId;
         if (configIdx !== -1) {
-          // Read sessionId from config file (avoids passing hyphen-prefixed IDs as CLI args)
-          const config = readSessionConfig(args[configIdx + 1]);
+          // Read sessionId from the project config (avoids passing hyphen-prefixed IDs as CLI args)
+          const config = readSessionConfig(skillConfigPath(CONFIG_SKILL));
           sessionId = config.sessionId;
         } else {
           sessionId = sessionIdIndex !== -1 ? args[sessionIdIndex + 1] : null;
@@ -285,7 +236,7 @@ async function main() {
 }
 
 // Export functions for testing
-export { saveConfig, prepare, commit, readCommitMessage };
+export { prepare, commit, readCommitMessage };
 
 // CLI entry guard
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

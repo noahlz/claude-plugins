@@ -146,11 +146,11 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
 
   describe("prepare action with --config flag", () => {
     it('reads sessionId from config file instead of positional arg', () => {
-      const configPath = writeConfigFile(testEnv, '-Users-noahlz-projects-claude-plugins');
+      writeConfigFile(testEnv, '-Users-noahlz-projects-claude-plugins');
       const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
       const result = execNodeScript(scriptPath, {
-        args: ['prepare', '--config', configPath],
+        args: ['prepare', '--config'],
         cwd: testEnv.tmpDir
       });
 
@@ -161,11 +161,26 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
       }
     });
 
+    it('reads the root config when run from a subdirectory', () => {
+      writeConfigFile(testEnv, '-Users-noahlz-projects-claude-plugins');
+      const subdir = join(testEnv.tmpDir, 'docs');
+      mkdirSync(subdir);
+      const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
+
+      const result = execNodeScript(scriptPath, { args: ['prepare', '--config'], cwd: subdir });
+
+      const data = extractJsonFromOutput(result.stdout);
+      assert.doesNotMatch(data.message, /skill config/, 'Should find the config at the project root');
+      if (data.status === 'success') {
+        assert.equal(data.data.session_id, '-Users-noahlz-projects-claude-plugins');
+      }
+    });
+
     it('returns error when config file does not exist', () => {
       const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
       const result = execNodeScript(scriptPath, {
-        args: ['prepare', '--config', join(testEnv.tmpDir, 'nonexistent.json')],
+        args: ['prepare', '--config'],
         cwd: testEnv.tmpDir
       });
 
@@ -177,13 +192,12 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
     it('returns error when config file missing sessionId', () => {
       const claudeDir = join(testEnv.tmpDir, '.claude');
       if (!existsSync(claudeDir)) mkdirSync(claudeDir, { recursive: true });
-      const configPath = join(claudeDir, 'bad-config.json');
-      writeFileSync(configPath, JSON.stringify({ otherField: 'value' }));
+      writeFileSync(join(claudeDir, 'settings.plugins.commit-with-costs.json'), JSON.stringify({ otherField: 'value' }));
 
       const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
       const result = execNodeScript(scriptPath, {
-        args: ['prepare', '--config', configPath],
+        args: ['prepare', '--config'],
         cwd: testEnv.tmpDir
       });
 
@@ -195,11 +209,11 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
     it('does not write a file named after a stray flag (e.g. --session-id)', () => {
       // Regression: a misparsed "--session-id" token was treated as an output file path,
       // leaving stray "--session-id" files (reported on Windows). Output must go to stdout.
-      const configPath = writeConfigFile(testEnv, '-Users-noahlz-projects-claude-plugins');
+      writeConfigFile(testEnv, '-Users-noahlz-projects-claude-plugins');
       const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
       const result = execNodeScript(scriptPath, {
-        args: ['prepare', '--config', configPath, '--session-id', '-Users-noahlz-projects-claude-plugins'],
+        args: ['prepare', '--config', '--session-id', '-Users-noahlz-projects-claude-plugins'],
         cwd: testEnv.tmpDir
       });
 
@@ -385,7 +399,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
       it('reads sessionId from config file instead of --session-id flag', () => {
         stageFile(testEnv, 'test.txt');
 
-        const configPath = writeConfigFile(testEnv, 'config-session-id');
+        writeConfigFile(testEnv, 'config-session-id');
         const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
 
         const validMetrics = JSON.stringify([
@@ -393,7 +407,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         ]);
 
         const result = execNodeScript(scriptPath, {
-          args: ['commit', '--config', configPath, '--costs', validMetrics],
+          args: ['commit', '--config', '--costs', validMetrics],
           cwd: testEnv.tmpDir,
           input: 'Test commit with config'
         });
@@ -410,6 +424,28 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         assert.equal(trailerObj.sessionId, 'config-session-id', 'Should use sessionId from config file');
       });
 
+      it('uses the root config sessionId when run from a subdirectory', () => {
+        stageFile(testEnv, 'test.txt');
+        writeConfigFile(testEnv, 'root-session-id');
+        const subdir = join(testEnv.tmpDir, 'docs');
+        mkdirSync(subdir);
+        const scriptPath = getPluginScriptPath('dev-workflow', 'commit-with-costs', 'commit-workflow.js');
+        const validMetrics = JSON.stringify([{ model: 'test-model', in: 100, out: 50, cost: 0.05 }]);
+
+        const result = execNodeScript(scriptPath, {
+          args: ['commit', '--config', '--costs', validMetrics],
+          cwd: subdir,
+          input: 'Commit from subdirectory'
+        });
+
+        const data = extractJsonFromOutput(result.stdout);
+        assert.equal(data.status, 'success', `Commit should succeed: ${data.message}`);
+        const body = execGit(['log', '-1', '--format=%B'], { cwd: testEnv.tmpDir }).stdout;
+        const trailer = JSON.parse(body.match(/Claude-Cost-Metrics: (.+)/)[1]);
+        assert.equal(trailer.sessionId, 'root-session-id');
+        assert.equal(existsSync(join(subdir, '.claude')), false, 'Should not create a config under the subdirectory');
+      });
+
       it('returns error when config file does not exist', () => {
         stageFile(testEnv, 'test.txt');
 
@@ -420,7 +456,7 @@ describe('commit-with-costs: commit-workflow.js integration tests', () => {
         ]);
 
         const result = execNodeScript(scriptPath, {
-          args: ['commit', '--config', join(testEnv.tmpDir, 'nonexistent.json'), '--costs', validMetrics],
+          args: ['commit', '--config', '--costs', validMetrics],
           cwd: testEnv.tmpDir,
           input: 'Test commit'
         });

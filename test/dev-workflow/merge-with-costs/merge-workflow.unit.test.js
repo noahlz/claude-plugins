@@ -17,6 +17,7 @@ const FAIL = { stdout: '', stderr: 'conflict', exitCode: 1 };
 // The fixture config names session "-repo", which the mock encoder derives from "/repo".
 const CONFIG = 'test/dev-workflow/merge-with-costs/fixtures/session-config.json';
 const REPO = '/repo';
+const MISSING_CONFIG = 'test/dev-workflow/merge-with-costs/fixtures/does-not-exist.json';
 
 const headIs = (branch) => ({ execGit: () => ({ ...OK, stdout: `${branch}\n` }) });
 
@@ -49,6 +50,23 @@ function mergeWithConflicts({ conflicted, mergeHeadSurvives, markerFree = [], br
 
 describe('merge-with-costs/merge-workflow.js', () => {
   describe('preflight', () => {
+    it('reports in_worktree before reading a config that does not exist', () => {
+      const deps = createMockDeps({
+        git: { isLinkedWorktree: () => true, getMainWorktreePath: () => '/repo' }
+      });
+
+      const result = preflight({ baseDir: REPO, configPath: MISSING_CONFIG, deps });
+
+      assert.equal(result.status, 'in_worktree');
+    });
+
+    it('reports not_configured when the config file does not exist', () => {
+      const result = preflight({ baseDir: REPO, configPath: MISSING_CONFIG, deps: createMockDeps() });
+
+      assert.equal(result.status, 'not_configured');
+      assert.match(result.message, /commit-with-costs/);
+    });
+
     it('refuses to run from inside a linked worktree', () => {
       const deps = createMockDeps({
         git: { isLinkedWorktree: () => true, getMainWorktreePath: () => '/repo' }

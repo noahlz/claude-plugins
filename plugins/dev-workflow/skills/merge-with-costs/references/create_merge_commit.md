@@ -14,7 +14,6 @@
 
 ```bash
 node "{{SKILL_BASE_DIR}}/scripts/merge-workflow.js" commit \
-  --config .claude/settings.plugins.commit-with-costs.json \
   --costs "{{CURRENT_COST}}" \
   --since "{{COST_SINCE}}" \
   <<'EOF'
